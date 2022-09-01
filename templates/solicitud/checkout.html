@@ -1,0 +1,117 @@
+{% extends 'partials/base.html' %}
+{% load crispy_forms_tags %}
+{% load static %}
+{% load widget_tweaks %}
+<html>
+<head>
+{% block title %}Crear Solicitud{% endblock %}
+</head>
+<body>
+{% block content %}
+<hr>
+<hr>
+<hr>
+<div class="row">
+    <div class="col-lg-6">
+        <div class="box-element" id="form-wrapper">
+            <div id="Solicitud-info">
+                <hr>
+					<h2>Información de Solicitud:</h2>
+					<hr>
+					<form method="POST" id='OrderForm' data-subproyecto-url="{% url 'ajax_load_subproyectos' %}" novalidate>
+                        {% csrf_token %}
+                        {{ form|crispy }}
+                        <input class="btn btn-outline-info btn-block my-2" name="agregar" type="submit" value="Agregar Solicitud">
+                    </form>
+            </div>
+            <hr>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="box-element">
+            <a class="btn btn-outline-dark" href="{% url 'solicitud-product-selection' %}"><i class="fa-solid fa-arrow-left">Agregar productos</i></a>
+            <hr>
+            <h3>Resumen de solicitud</h3>
+            <hr>
+            {% for producto in productos %}
+            <div class='cart-row'>
+                <table class="table table-ligth table-striped mx-1">
+                <form method="POST">
+                {% csrf_token %}
+                <thead>
+                        <tr>
+                        <th scope="col">#</th>
+                        <th scope="col">Código</th>
+                        <th scope="col">Producto</th>
+                        <th scope="col">Cantidad</th>
+                        <th scope="col"></th>
+                        </tr>
+                </thead>
+                <tbody>
+                        <tr>
+                            <th scope="col"><img class="row-image" src="{{producto.producto.producto.imageURL}}"></th>
+                            <th scope="col">{{producto.producto.producto.codigo}}</th>
+                            <th scope="col">{{producto.producto.producto.nombre}}</th>
+                            <th scope="col">{{producto.cantidad}}</th>
+                            <th scope="col">
+                            <td>
+                                <a class="btn btn-outline-info" id="btnActualizar" type="button" data-bs-toggle="modal" data-bs-target="#dialog" hx-target="#document" hx-get="{% url 'product-quantity-edit' producto.id %}">
+                                    <i class="fa-solid fa-pen-to-square"></i>
+                                </a>
+                                <button type="button" class="btn btn-danger add-btn update-cart" value="Delete" data-product={{producto.producto.id}} data-action="remove" aria-label="Close"><i class="fa-solid fa-trash-can"></i></button>
+                            </td>
+                        </tr>
+                </tbody>
+                </form>
+                </table>
+            </div>
+            <hr>
+            {% endfor %}
+            <h5>Artículos: {{orden.get_cart_quantity}}</h5>
+
+        </div>
+    </div>
+    <div class="modal fade" id ="dialog" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" role="dialog">
+        <div class="modal-dialog modal-lg modal-dialog-centered" id="document" role="document" hx-target="this">
+
+        </div>
+    </div>
+</div>
+<!--AJAX CALL-->
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+  <script>
+    $("#id_proyecto").change(function () {
+      const url = $("#OrderForm").attr("data-subproyecto-url");  // get the url of the `load_subproyectos` view
+      const proyectoId = $(this).val();  // get the selected proyecto ID from the HTML input
+
+      $.ajax({                       // initialize an AJAX request
+        url: url,                    // set the url of the request (= localhost:8000/hr/ajax/load-cities/)
+        data: {
+          'proyecto_id': proyectoId       // add the proyecto id to the GET parameters
+        },
+        success: function (data) {   // `data` is the return of the `load_subproyectos` view function
+          $("#id_subproyecto").html(data);  // replace the contents of the subproyectos input with the data that came from the server
+        }
+      });
+
+    });
+
+    ;(function(){
+    const modal = new bootstrap.Modal(document.getElementById('dialog'))
+
+    htmx.on('htmx:beforeSwap',(e)=>{
+        if (e.detail.target.id === "document" && !e.detail.xhr.response)
+        modal.hide()
+    })
+    })()
+
+    var myModal = document.getElementById('dialog')
+
+    myModal.addEventListener('hidden.bs.modal', function (event) {
+    location.reload();
+    })
+</script>
+{% endblock %}
+</body>
+</html>

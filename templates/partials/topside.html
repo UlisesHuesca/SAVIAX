@@ -1,0 +1,72 @@
+<html>
+<head>
+
+<link rel="stylesheet" href="./style.css">
+
+
+{% block title %}
+
+{% endblock %}
+<hr>
+</head>
+<body>
+{% block content %}
+<div class="container">
+    <div class="row mt-4">
+        <div class="col-md-2">
+            <div class="card">
+                <div class="card-header bg-light text-dark">
+                    <strong>
+                        SAVIA X
+                    </strong>
+                </div>
+                <div class="card-body">
+                    <img src="https://www.pythonanywhere.com/user/UlisesHuesca/files/home/UlisesHuesca/inventoryproject/templates/partials/SAVIA_Logo.png" alt="SAVIA" width="160" height="170">
+
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-light text-dark">
+                    <strong>
+                        Estadísitcas
+                    </strong>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <a class="text-decoration-none text-dark" href="{% url 'dashboard-staff' %}">
+                                <div class="card my-card shadow text-center p-3">
+                                    <h4>Personal <i class="fa-solid fa-users"></i></h4>
+                                    <h3>4</h3>
+                                </div>
+                            </a>
+                        </div>
+                        <div class="col-md-4">
+                            <a class="text-decoration-none text-dark" href="{% url 'dashboard-product' %}">
+                                <div class="card my-card shadow text-center p-3">
+                                    <h4>Productos <i class="fa-solid fa-box"></i></h4>
+                                    <h3>4</h3>
+                                </div>
+                            </a>
+                        </div>
+                        <div class="col-md-4">
+                            <a class="text-decoration-none text-dark" href="{% url 'dashboard-order' %}">
+                                <div class="card my-card shadow text-center p-3">
+                                    <h4>Ordenes <i class="fa-solid fa-truck-fast"></i></h4>
+                                    <h3>4</h3>
+                                </div>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}
+</body>
+</html>

@@ -1,0 +1,38 @@
+{% extends 'partials/base.html' %}
+{% block title %} Login Page {% endblock %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+<hr>
+<hr>
+{% if user.is_authenticated %}
+  <div class='container'>
+        <div class='row mt-5'>
+            <div class='col-md-6 offset-md-3'>
+                <div class='border p-3 bg-white'>
+                    <h3>Login Page</h3>
+                    <hr>
+                   <h6>En este momento ya estás activo en el sistema como: {{user.username}}</h6>
+                </div>
+            </div>
+        </div>
+    </div>
+{%else%}
+    <div class='container'>
+        <div class='row mt-5'>
+            <div class='col-md-6 offset-md-3'>
+                <div class='border p-3 bg-white'>
+                    <h3>Login Page</h3>
+                    <hr>
+                    <form method='POST'>
+                        {% csrf_token %}
+                        {{form|crispy}}
+                        <hr>
+                        <input class='btn btn-success' type='submit' value='Log in'>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endif%}
+{% endblock%}

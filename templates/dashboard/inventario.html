@@ -1,0 +1,116 @@
+{% extends 'partials/base.html' %}
+{% load crispy_forms_tags %}
+{% load widget_tweaks %}
+<html>
+<head>
+{% block title %}Página de Inventario{% endblock %}
+</head>
+<body>
+{% block content %}
+<hr>
+<hr>
+<hr>
+    <div class="container">
+        <div class="row">
+            <div class="card my-2 mx-1" style="width: 20rem;">
+                <div class="card-body">
+                    <h5 class="card-title">Valor de Inventario:</h5>
+                    <hr>
+                    <h5 class="card-subtitle mb-2 text-muted">{{valor_inv}}</h5>
+                </div>
+            </div>
+            <div class="card my-2 mx-1" style="width: 15rem;">
+                <div class="card-body">
+                    <h5 class="card-title">Agregar Productos:</h5>
+                    <hr>
+                    <ul class="nav nav-pills my-2" >
+                        <li>
+                            <a class="btn btn-outline-info btn-block mx-auto" type="button" data-bs-toggle="modal" data-bs-target="#dialog" hx-target="#document" hx-get="{% url 'solicitud-inventario-add' %}"><i class="fa-solid fa-circle-plus">AGREGAR</i></a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            <div class="card my-2 mx-1" style="width: 15rem;">
+                <div class="card-body">
+                    <h5 class="card-title">Reportes:</h5>
+                    <hr>
+                    <form method=POST>
+                    {% csrf_token %}
+                    <ul class="nav nav-pills my-2" >
+                        <li class="nav-item mx-2 pl-5">
+                            <button type="submit" name="btnExcel" class="btn btn-outline-success" value='Reporte Excel'>
+                                <i class="fa-solid fa-file-excel fa-2xl"></i>
+                            </button>
+                        </li>
+                        <li class="nav-item mx-2">
+                            <button type="button" class="btn btn-outline-danger">
+                                <i class="fa-solid fa-file-pdf fa-2xl"></i>
+                            </button>
+                        </li>
+                    </ul>
+                    </form>
+                </div>
+        </div>
+        </div>
+
+
+            <div class="col-md-8">
+                <table class="table bg-white">
+                    <thead class="text-black" style="background-color: #F5F5F5;">
+                        <tr>
+                            <th scope="row">Código</th>
+                            <th scope="col">Producto</th>
+                            <th scope="col">Distrito</th>
+                            <th scope="col">Cantidad</th>
+                            <th scope="col">Apartados</th>
+                            <th scope="col">Precio</th>
+                            <th scope="col">Mínimo</th>
+                            <th scope="col">Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for producto in existencia %}
+                        <tr>
+                            <th scope="row">{{producto.producto.codigo}}</th>
+                            <td>{{producto.producto.nombre}}</td>
+                            <td>{{producto.distrito}}</td>
+                            <td>{{producto.cantidad}}</td>
+                            <td>{{producto.cantidad_apartada}}</td>
+                            <td>{{producto.price}}</td>
+                            <td>{{producto.minimo}}</td>
+                            <td><a class="btn btn-outline-info" id="btnActualizar" type="button" data-bs-toggle="modal" data-bs-target="#dialog" hx-target="#document" hx-get="{% url 'solicitud-inventario-update-modal' producto.id %}"><i class="fa-solid fa-pen-to-square"></i></a>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <!--Este es el modal-->
+        <div class="modal fade" id ="dialog" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" role="dialog">
+            <div class="modal-dialog modal-lg modal-dialog-centered" id="document" role="document" hx-target="this">
+
+            </div>
+        </div>
+
+    </div>
+<script>
+;(function(){
+    const modal = new bootstrap.Modal(document.getElementById('dialog'))
+
+    htmx.on('htmx:beforeSwap',(e)=>{
+        if (e.detail.target.id === "document" && !e.detail.xhr.response)
+        modal.hide()
+    })
+})()
+
+var myModal = document.getElementById('dialog')
+
+myModal.addEventListener('hidden.bs.modal', function (event) {
+  location.reload();
+})
+</script>
+
+{% endblock %}
+
+</body>
+</html>

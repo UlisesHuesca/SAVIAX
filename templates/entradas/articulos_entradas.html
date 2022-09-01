@@ -1,0 +1,270 @@
+{% extends 'partials/base_w_nav.html' %}
+{% load crispy_forms_tags %}
+{% load static %}
+{% load djmoney %}
+{% load widget_tweaks %}
+<html>
+<head>
+{% block title %}Autorización OC{% endblock %}
+</head>
+<body>
+{% block content %}
+
+<!-- Esta es la zona donde se crean los mensajes perrones con sweet alert -->
+<div>
+    <script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+        {% if messages %}
+            {% for message in messages %}
+                {% if message.tags == "error" %}
+                <script>
+                Swal.fire({
+                    "title":"Error",
+                    "text":"{{message}}",
+                    "icon":"error",
+                })
+                </script>
+                {% else %}
+                <script>
+                Swal.fire({
+                    "title":"Excelente",
+                    "text":"{{message}}",
+                    "icon":"success",
+                })
+                </script>
+                {% endif %}
+            {% endfor %}
+        {% endif %}
+</div>
+
+
+<div class="row">
+    <div class="col-lg-6">
+        <div class="box-element" id="form-wrapper">
+            <div class="card-header mt-3 mb-4">
+            <form method="POST">
+            <h5 class="modal-title" id="entrada" value="{{entrada.id}}">Entrada: {{entrada.id}}&ensp;&ensp; Compra: {{compra.folio}}</h5>
+        </div>
+
+
+            <table class='table table-dark table striped'>
+                <thead>
+                    <tr>
+                        <th scope="col">Codigo:</th>
+                        <th scope="col">{{compra.proveedor.nombre.nombre}}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <th scope="col">RFC:</th>
+                        <th scope="col">{{compra.proveedor.nombre.rfc}}</th>
+                    </tr>
+                </tbody>
+            </table>
+            <hr>
+
+            {% csrf_token %}
+            <div class="row">
+                <label class="col-auto col-form-label"><strong>Productos:</strong></label>
+                <div class="col-sm-4">
+                    <div class="selector">
+                        <select class="form-select form-select-sm" id="producto">
+                            <option id="default_sel">      </option>
+                            {% for articulo in articulos %}
+                            <option id="js" target="{{articulo.id}}" producto="{{articulo.producto.producto.articulos.id}}" cantidad="{{articulo.cantidad_pendiente}}">
+                            {{articulo.producto.producto.articulos.producto}}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="col-sm-2">
+                    <label class="col-auto col-form-label"><strong>Solicitado:</strong></label>
+                </div>
+                <div class="col-sm-2">
+                    <label id="solicitado" class="col-sm-1 col-form-label"><strong> </strong></label>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-sm-2">
+                <label for="form_product.cantidad" class="col-auto col-form-label"><strong>Cantidad:</strong></label>
+                </div>
+                <div class="col-sm-4">
+                    {{form.cantidad|add_class:"form-control"}}
+                </div>
+                <div class="col-sm-1">
+                    <a class="btn btn-success" id='update-entrada' type="submit" name="entrada_articulo">
+                        <i class="fa-solid fa-circle-plus"></i>
+                    </a>
+                </div>
+            </div>
+
+        <hr>
+        <table class="table table-dark table-striped table-hover">
+                    <thead>
+                        <tr>
+                            <th scope="col">#</th>
+                            <th scope="col">Producto</th>
+                            <th scope="col">Cantidad</th>
+                            <th scope="col" class="col-sm-2">Acción</th>
+                        </tr>
+                    </thead>
+
+                    <tbody id="mytbl">
+                    {% for producto in articulos_entrada %}
+                    <tr>
+                        <td scope="col" id=>#</td>
+                        <td scope="col">{{producto.articulo_comprado.producto.producto.articulos.producto.producto.nombre}}</td>
+                        <td scope="col">{{producto.cantidad}}</td>
+                        <td scope="col"><button type="button" class="btn btn-danger" id="delete" value="remove" cantidad="{{producto.cantidad}}" producto="{{producto.articulo_comprado.id}}" entrada="{{producto.entrada.id}}" onclick="deleteRow(this)" aria-label="Close"><i class="fa-solid fa-trash-can"></i></button></td>
+                    </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+
+
+            <button id="Crear" name="entrada" type="submit" class="btn btn-success">Crear</button>
+            <a id="cerrar" type="button" class="btn btn-secondary cerrar"  href="{% url 'pendientes_entrada' %}">Cerrar</a>
+    </form>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+
+var cerrarBtn = document.getElementsByClassName('cerrar')
+
+for(var i=0; i< cerrarBtn.length; i++){
+    cerrarBtn[i].addEventListener('click',function(){
+    var rows = document.getElementById("mytbl").rows.length;
+    if (rows == 1) {
+            Swal.fire({
+                    "title":"Error",
+                    "text":"Favor de eliminar el producto para poder salir",
+                    "icon":"error",
+                })
+        }if (rows > 1) {
+            Swal.fire({
+                    "title":"Error",
+                    "text":"Favor de eliminar los productos para poder salir",
+                    "icon":"error",
+                })
+    }
+})
+};
+
+
+document.getElementById("producto").addEventListener("change", function(element){
+    var select = document.getElementById('producto');
+    var current_option = select.options[select.selectedIndex];
+    let target = current_option.getAttribute('target')
+    //var other_select = document.getElementById('id_articulo_comprado')
+    //other_select.value = target
+    let cantidad =  current_option.getAttribute('cantidad')
+    var solicitado = document.getElementById('solicitado');
+    solicitado.innerHTML = cantidad;
+    //console.log(target);
+    //console.log(other_select);
+});
+
+var updateBtn = document.getElementById('update-entrada')
+    let count=0;
+    let suma=0;
+    let array_id_prod=[];
+
+
+updateBtn.addEventListener('click',function(){
+        let entrada = document.getElementById('entrada')
+        entrada_id = entrada.getAttribute('value')
+        var select = document.getElementById('producto');
+        var current_option = select.options[select.selectedIndex];
+        var current_cantidad = current_option.getAttribute('cantidad')
+        producto = current_option.getAttribute('target');
+        console.log('producto',producto)
+        producto_id = current_option.getAttribute('producto');
+        var select = document.getElementById('producto');
+        var cantidad_form = document.getElementById('id_cantidad');
+        var value = select.options[select.selectedIndex].value;
+        var default_op = document.getElementById('default_sel');
+        cantidad_ingresada = cantidad_form.value;
+        console.log(cantidad_ingresada)
+        action = "add"
+
+
+
+        if (!value) {
+            Swal.fire({
+                "title":"Error",
+                "text":"Favor de seleccionar algún valor de la lista",
+                "icon":"error",
+            })
+        } else if (Number(cantidad_ingresada)>Number(current_cantidad)){
+            Swal.fire({
+                    "title":"Error",
+                    "text":"La cantidad ingresada es mayor que la cantidad solicitada",
+                    "icon":"error",
+                })
+        } else if (Number(cantidad_ingresada<=0)) {
+            Swal.fire({
+                    "title":"Error",
+                    "text":"La cantidad ingresada debe ser mayor que 0",
+                    "icon":"error",
+                })
+            } else {
+            count += 1;
+
+            select.value = default_sel;
+
+
+            ActualizarArticulos(producto, cantidad_ingresada, action, entrada_id);
+
+            var botonCrear = document.getElementById("Crear");
+            botonCrear.setAttribute("class","btn btn-success");
+            }
+    });
+
+
+
+//ActualizarArticulos(array_id_prod)
+
+    function ActualizarArticulos(array_id_prod){
+        console.log('User is logged in, sending data...' )
+
+    var url = '/entradas/update_entrada/'
+
+    fetch( url, {
+        method:'POST',
+        headers:{
+            'Content-Type':'application/json',
+            'X-CSRFToken': csrftoken,
+        },
+        body:JSON.stringify({ 'producto': producto, 'cantidad_ingresada': cantidad_ingresada, 'action': action, 'entrada_id':entrada_id})
+    })
+    .then((response)=>{
+        return response.json()
+    })
+    .then((data)=>{
+        console.log('data:', data)
+        location.reload()
+    })
+}
+
+
+
+function deleteRow(element) {
+    let btn_delete = document.getElementById('delete');
+    producto = btn_delete.getAttribute('producto');
+    cantidad_ingresada = btn_delete.getAttribute('cantidad');
+    //cantidad_ingresada = cantidad.value
+    entrada_id= btn_delete.getAttribute('entrada');
+    action = "remove" ;
+    console.log(producto, cantidad_ingresada, action, entrada_id);
+    console.log(JSON.stringify({ 'producto': producto, 'cantidad_ingresada': cantidad_ingresada, 'action': action, 'entrada_id':entrada_id}))
+
+    ActualizarArticulos(producto, cantidad_ingresada, action, entrada_id);
+}
+
+</script>
+{% endblock %}
+</body>
+</html>

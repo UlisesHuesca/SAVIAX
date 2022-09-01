@@ -1,0 +1,61 @@
+{% extends 'partials/base.html' %}
+{% load crispy_forms_tags %}
+{% load static %}
+<html>
+<head>
+{% block title %}Solicitudes pendientes{% endblock %}
+</head>
+<body>
+{% block content %}
+<hr>
+<hr>
+<hr>
+<hr>
+<div>
+<div class = "row mt-2 bg-white">
+    <ul class="nav nav-pills">
+        <li class="nav-item ml-2 mr-2">
+            <a class="btn btn-outline-secondary" href="{% url 'solicitud-matriz' %}">&#x2190;Volver a Matriz Solicitud</a>
+        </li>
+        <li class="nav-item mr-2">
+            <button type="button" class="btn btn-outline-success">Reporte en Excel</button>
+        </li>
+        <li class="nav-item mr-2">
+            <button type="button" class="btn btn-outline-danger">Reporte en PDF</button>
+        </li>
+    </ul>
+</div>
+<div class = "row mt-2">
+    <div class="col-md-10">
+        <table class="table bg-white">
+            <thead class="text-black" style="background-color: #F5F5F5;">
+                <tr>
+                    <th scope="col">Folio</th>
+                    <th scope="col">Solicitado por</th>
+                    <th scope="col">Cantidad</th>
+                    <th scope="col">Producto</th>
+                    <th scope="col">Creado</th>
+                    <th scope="col">Acción</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for producto in productos %}
+                <tr>
+                    <th scope="row">{{producto.orden.folio}}</th>
+                    <td>{{producto.orden.staff.staff.first_name}} {{producto.orden.staff.staff.last_name}}</td>
+                    <td>{{producto.cantidad}}</td>
+                    <td>{{producto.producto}}</td>
+                    <td>{{producto.orden.created_at}}</td>
+                    <td><a class="btn btn-outline-info" href="{% url 'solicitud-checkout-editar' producto.orden.id %}">Actualizar</a>
+                    <a class="btn btn-light" href="">Detalle</a></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+</div>
+
+{% endblock %}
+</body>
+</html>

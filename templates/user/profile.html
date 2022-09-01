@@ -1,0 +1,53 @@
+{% extends 'partials/base.html' %}
+{% block title %} Profile Page {% endblock %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+<body>
+    <div class="container">
+        <div class="row my-4">
+            <div class="col-md-4"></div>
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header text-black" style="background-color: #F5F5F5;">
+                        <strong>
+                            Profile Page
+                        </strong>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-8">
+                                <span class="h4"> Profile Information</span> <a class="btn btn btn-sm float-right" style="background-color: #F5F5F5;color: black" href="">Edit</a>
+                                <hr>
+                                <table class="table bg-white table-borderless">
+                                    <tbody>
+                                        <tr>
+                                            <th scope="row">Name</th>
+                                            <td>{{user.first_name}} {{user.last_name}}</td>
+                                        </tr>
+                                        <tr>
+                                            <th scope="row">Email</th>
+                                            <td>{{user.email}}</td>
+                                        </tr>
+                                        <tr>
+                                            <th scope="row">Phone</th>
+                                            <td>{{user.profile.phone}}</td>
+                                        </tr>
+                                        <tr>
+                                            <th scope="row">Address</th>
+                                            <td>{{user.profile.address}}</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+
+                            </div>
+                            <div class="col-md-4">
+                                <img class="img-thumbnail" src="{{user.profile.imageURL}}" alt="Imagen de Usuario">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
