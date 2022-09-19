@@ -4,10 +4,10 @@ from dashboard.models import Inventario, Order, ArticulosparaSurtir, ArticulosOr
 from user.models import Profile
 from .models import ArticulosRequisitados, Requis
 from entradas.models import Entrada, EntradaArticulo
-from requisiciones.models import Salidas
+from requisiciones.models import Salidas, ValeSalidas
 from django.contrib.auth.decorators import login_required
 from .filters import ArticulosparaSurtirFilter, SalidasFilter, EntradasFilter
-from .forms import SalidasForm, ArticulosRequisitadosForm
+from .forms import SalidasForm, ArticulosRequisitadosForm, ValeSalidasForm
 from django.http import HttpResponse
 from openpyxl import Workbook
 from openpyxl.styles import NamedStyle, Font, PatternFill
@@ -17,6 +17,8 @@ from datetime import date, datetime
 from django.db.models.functions import Concat
 from django.db.models import Value, Sum
 from django.contrib import messages
+from django.http import JsonResponse
+import json
 #PDF generator
 import io
 from reportlab.pdfgen import canvas
@@ -29,14 +31,14 @@ from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib.enums import TA_CENTER
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
 from django.db.models import Q
-#import json
+
 
 # Create your views here.
 @login_required(login_url='user-login')
 def solicitud_autorizada(request):
     #Aquí aparecen todas las ordenes, es decir sería el filtro para administrador, el objeto Q no tiene propiedad conmutativa
     #productos= ArticulosparaSurtir.objects.filter(Q(salida=False) | Q(requisitar=True), articulos__orden__autorizar = True )
-    productos= ArticulosparaSurtir.objects.filter(salida=False, articulos__orden__autorizar = True, articulos__orden__requisitar = False, articulos__producto__producto__servicio = False, articulos__orden__tipo__tipo='normal').order_by('-articulos__orden__folio')
+    productos= ArticulosparaSurtir.objects.filter(salida=False, articulos__orden__autorizar = True, surtir=True, articulos__producto__producto__servicio = False, articulos__orden__tipo__tipo='normal').order_by('-articulos__orden__folio')
     myfilter = ArticulosparaSurtirFilter(request.GET, queryset=productos)
     productos = myfilter.qs
 
@@ -52,53 +54,128 @@ def solicitud_autorizada(request):
         }
     return render(request, 'requisiciones/solicitudes_autorizadas.html',context)
 
+
+def update_salida(request):
+    data= json.loads(request.body)
+    action = data["action"]
+    cantidad = data["val_cantidad"]
+    salida = data["salida"]
+    producto_id = data["id"]
+    id_salida =data["id_salida"]
+    producto = ArticulosparaSurtir.objects.get(id=producto_id)
+    vale_salida = ValeSalidas.objects.get(id=salida)
+    inv_del_producto = Inventario.objects.get(producto = producto.articulos.producto.producto)
+    if action == "add":
+        cantidad_total = producto.cantidad - int(cantidad)
+        if cantidad_total < 0:
+            messages.error(request,f'La cantidad que se quiere comprar sobrepasa la cantidad requisitada {cantidad_total} mayor que {producto.cantidad}')
+        else:
+            salida, created = Salidas.objects.get_or_create(producto=producto, vale_salida = vale_salida, complete=False)
+            producto.seleccionado = True
+            dif_inv = inv_del_producto.cantidad_apartada - inv_del_producto.cantidad_entradas
+            if producto.cantidad > 0 and dif_inv > 0:     #Diferencia de inventario mayor a cero quiere decir que al menos un producto de los que tienes pertenece al inventario inicial
+                salida.cantidad = producto.cantidad  #Lo que se surte es la cantidad pedida
+                inv_del_producto.cantidad_apartada = inv_del_producto.cantidad_apartada - producto.cantidad #Se le resta los artículos que se van a surtir
+                producto.cantidad = 0                #Se vacían los artículos que se van surtir
+                salida.precio = producto.precio
+                producto.save()
+                inv_del_producto._change_reason = f'Esta es una salida desde un resurtimiento de inventario {salida.id}'
+                inv_del_producto.save()
+                salida.save()
+            entradas = EntradaArticulo.objects.filter(articulo_comprado__producto__producto__articulos__producto = producto.articulos.producto, agotado=False)
+            for entrada in entradas:
+                if producto.cantidad > 0:
+                    salida, created = Salidas.objects.get_or_create(producto=producto, vale_salida = vale_salida, complete=False)
+                    if entrada.cantidad_por_surtir >= producto.cantidad:
+                        salida.precio = entrada.articulo_comprado.precio_unitario
+                        salida.cantidad = producto.cantidad
+                        producto.cantidad = 0
+                        salida.entrada = entrada.id
+                        entrada.cantidad_por_surtir = entrada.cantidad_por_surtir - salida.cantidad
+                        salida.complete = True
+                        if entrada.cantidad_por_surtir == producto.cantidad:
+                            entrada.agotado = True
+                        producto.save()
+                        entrada.save()
+                        salida.save()
+                    elif entrada.cantidad_por_surtir < producto.cantidad:
+                        salida.cantidad = entrada.cantidad_por_surtir
+                        producto.cantidad = producto.cantidad - entrada.cantidad
+                        salida.entrada = entrada.id
+                        entrada.agotado = True
+                        entrada.cantidad_por_surtir = 0
+                        producto.save()
+                        entrada.save()
+                        salida.save()
+                    inv_del_producto.cantidad_entradas = inv_del_producto.cantidad_entradas - salida.cantidad
+                    inv_del_producto.cantidad_apartada = inv_del_producto.cantidad_apartada - salida.cantidad
+                    inv_del_producto.save()
+    if action == "remove":
+        item = Salidas.objects.get(vale_salida = vale_salida, id = id_salida)
+        if item.entrada != 0:
+            entrada = EntradaArticulo.objects.get(id=item.entrada)
+            entrada.cantidad_por_surtir = entrada.cantidad_por_surtir + int(cantidad)
+            entrada.save()
+        producto.seleccionado = False
+        producto.salida= False
+        producto.cantidad = producto.cantidad + int(cantidad)
+        inv_del_producto.cantidad_apartada = inv_del_producto.cantidad_apartada + int(cantidad)
+        inv_del_producto._change_reason = f'Esta es una cancelación de una salida {item.id}'
+        producto.save()
+        inv_del_producto.save()
+        item.delete()
+
+    return JsonResponse('Item updated, action executed: '+data["action"], safe=False)
+
+
 @login_required(login_url='user-login')
 def salida_material(request, pk):
     usuario = Profile.objects.get(id=request.user.id)
-    productos= ArticulosparaSurtir.objects.get(id = pk)
-    prod_inventario = Inventario.objects.get(producto = productos.articulos.producto.producto)
-    salida, created = Salidas.objects.get_or_create(almacenista=usuario, producto=productos, salida_firmada=False)
-    orden = Salidas.objects.filter(producto__articulos__orden= productos.articulos.orden,
-                                    producto = productos).aggregate(Sum('cantidad'))
-    suma_salidas = orden['cantidad__sum']
-    disponible = productos.cantidad - suma_salidas
+    orden = Order.objects.get(id = pk)
+    productos= ArticulosparaSurtir.objects.filter(articulos__orden = orden, surtir=True)
+    vale_salida, created = ValeSalidas.objects.get_or_create(almacenista = usuario,complete = False,solicitud=orden)
+    salidas = Salidas.objects.filter(vale_salida = vale_salida)
+    cantidad_items = salidas.count()
+
+    #for producto in productos:
+    #    prod_inventario = Inventario.objects.filter(producto = producto.articulos.producto.producto)
+    #    orden = Salidas.objects.filter(producto__articulos__orden= producto.articulos.orden, producto = producto).aggregate(Sum('cantidad'))
+    #    suma_salidas = orden['cantidad__sum']
+    #    if suma_salidas == None:
+    #        suma_salidas=0
+    #        disponible = producto.cantidad - suma_salidas
+
+
+    formVale = ValeSalidasForm()
     form = SalidasForm()
 
     if request.method == 'POST':
-        #vato_que_recibe = Profile.objects.get(id=request.POST.get('material_recibido_por'))
-        #cantidad_post = int(request.POST.get('cantidad'))
-        #salida.material_recibido_por=vato_que_recibe
-
-        form = SalidasForm(request.POST,instance = salida)
-        form.save(commit=False)
-        if salida.cantidad <= 0:
-            messages.error(request, 'La cantidad capturada debe ser mayor que 0')
-        else:
-            cantidad_actual = suma_salidas + salida.cantidad
-            if cantidad_actual > productos.cantidad:
-                messages.error(request,f'La salida no ha sido creada, la cantidad de producto solicitada [{salida.cantidad}] es mayor que lo disponible [{disponible}]')
-            if cantidad_actual == productos.cantidad:
-                messages.success(request,'La salida ha sido creada y completada')
-                prod_inventario.cantidad_apartada = prod_inventario.cantidad_apartada - salida.cantidad
-                if form.is_valid():
-                    prod_inventario._change_reason = 'Esta es una salida de material view:salida_material'
-                    productos.salida= True
-                    productos.save()
-                    form.save()
-                    prod_inventario.save()
-            elif cantidad_actual < productos.cantidad:
-                messages.success(request,f'Esta es una salida parcial de {salida.cantidad} pieza(s) de las {disponible} disponibles')
-                prod_inventario.cantidad_apartada = prod_inventario.cantidad_apartada - salida.cantidad
-                if form.is_valid():
-
-                    form.save()
-                    prod_inventario.save()
-        return redirect('solicitud-autorizada')
+        formVale = ValeSalidasForm(request.POST, instance=vale_salida)
+        vale = formVale.save(commit=False)
+        vale.complete = True
+        for producto in productos:
+            if producto.cantidad == 0:
+                producto.salida=True
+                producto.surtir=False
+                producto.save()
+        #if cantidad_actual > productos.cantidad:
+        #
+        #if cantidad_actual == productos.cantidad:
+        #messages.success(request,'La salida ha sido creada y completada')
+        #prod_inventario.cantidad_apartada = prod_inventario.cantidad_apartada - salida.cantidad
+        if formVale.is_valid():
+            formVale.save()
+            messages.success(request,'La salida se ha generado de manera exitosa')
+            return redirect('solicitud-autorizada')
 
     context= {
         'productos':productos,
         'form':form,
-        'disponible':disponible,
+        'formVale':formVale,
+        #'disponible':disponible,
+        'vale_salida':vale_salida,
+        'cantidad_items':cantidad_items,
+        'salidas':salidas,
         }
 
     return render(request, 'requisiciones/salida_material.html',context)
@@ -212,7 +289,7 @@ def requisicion_detalle(request, pk):
     orden = Order.objects.get(id = pk)
     usuario = Profile.objects.get(id=request.user.id)
     requi, created = Requis.objects.get_or_create(complete=False, orden=orden)
-    requis = Requis.objects.filter(orden__staff__distrito = usuario.distrito)
+    requis = Requis.objects.filter(orden__staff__distrito = usuario.distrito, complete = True)
     consecutivo = requis.count() + 1
 
     for producto in productos:
@@ -229,8 +306,8 @@ def requisicion_detalle(request, pk):
         requitem.almacenista = usuario
         requi.folio = str(usuario.distrito.abreviado)+str(consecutivo).zfill(4)
         requi.save()
-        requitem.save()
         orden.save()
+        requitem.save()
         messages.success(request,f'Has realizado la requisición {requi.folio} con éxito')
         return redirect('solicitud-autorizada-orden')
 

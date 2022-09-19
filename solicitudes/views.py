@@ -200,7 +200,7 @@ def product_quantity_edit(request, pk):
 def checkout_resurtimiento(request):
     usuario = Profile.objects.get(id=request.user.id)
     #Tengo que revisar primero si ya existe una orden pendiente del usuario
-    orders = Order.objects.filter(staff__distrito = usuario.distrito)
+    orders = Order.objects.filter(staff__distrito = usuario.distrito, complete = False)
     consecutivo = orders.count()+1
 
 
@@ -343,7 +343,15 @@ def solicitud_matriz_productos(request):
 @login_required(login_url='user-login')
 def inventario(request):
     existencia = Inventario.objects.filter(complete=True, producto__servicio = False).order_by('producto__codigo')
-    entradas = EntradaArticulo.objects.all().annotate(Sum('cantidad'))
+    entries = EntradaArticulo.objects.all()
+    entradas = entries.annotate(Sum('cantidad'))
+    for item in existencia:
+        query = entries.filter(articulo_comprado__producto__producto__articulos__producto = item, agotado = False)
+        if query.exists():
+            cantidad = query.aggregate(Sum('cantidad_por_surtir'))
+            item.cantidad_entradas = cantidad['cantidad_por_surtir__sum']
+            item.save()
+
 
     #apartado = ArticulosparaSurtir.objects.values('articulos__producto__producto__codigo').annotate(cantidad_total=Sum('cantidad'))
     #Este es el metodo que utilicé para multiplicar 2 columnas de un mismo modelo y devolver el total
@@ -479,9 +487,11 @@ def autorizada_sol(request, pk):
             # We fetch inventory product corresponding to product (that's why we use product.id)
             # We create a new product line in a new database to control the ArticlestoDeliver (ArticulosparaSurtir)
             prod_inventario = Inventario.objects.get(id = producto.producto.id)
+            #if prod_inventario.cantidad_entradas > 0:
+                #entradas = EntradaArticulo.objects.filter(articulo_comprado__producto__producto__articulos = producto, agotado = False).order_by('id')
             ordensurtir , created = ArticulosparaSurtir.objects.get_or_create(articulos = producto)
-            #cond:1
-            if prod_inventario.cantidad >= producto.cantidad:
+            #cond:1 evalua si la cantidad en inventario es mayor que lo solicitado
+            if prod_inventario.cantidad >= producto.cantidad and order.tipo.tipo == "normal":
                 prod_inventario.cantidad = prod_inventario.cantidad - producto.cantidad
                 prod_inventario.cantidad_apartada = producto.cantidad + prod_inventario.cantidad_apartada
                 prod_inventario._change_reason = f'Se modifica el inventario en view: autorizada_sol:{order.id} cond:1'
@@ -491,11 +501,51 @@ def autorizada_sol(request, pk):
                 ordensurtir.requisitar = False
                 ordensurtir.save()
                 prod_inventario.save()
-            elif prod_inventario.cantidad <= 0:
-                ordensurtir.cantidad_requisitar = producto.cantidad
-                ordensurtir.surtir = False
+            elif producto.cantidad >= prod_inventario.cantidad and prod_inventario.cantidad > 0 and order.tipo.tipo == "normal": #si la cantidad solicitada es mayor que la cantidad en inventario
+                ordensurtir.cantidad = prod_inventario.cantidad #lo que puedes surtir es igual a lo que tienes en el inventario
+                ordensurtir.precio = prod_inventario.price
+                #total = ordensurtir.cantidad * ordensurtir.precio
+                ordensurtir.cantidad_requisitar = producto.cantidad - ordensurtir.cantidad #lo que falta por surtir
+                prod_inventario.cantidad_apartada = prod_inventario.cantidad_apartada + prod_inventario.cantidad
+                prod_inventario.cantidad = 0
+                ordensurtir.surtir = True
                 ordensurtir.requisitar=True
-                order.requisitar=True
+                prod_inventario.save()
+                ordensurtir.save()
+                #if ordensurtir.cantidad_requisitar > 0: #si lo que falta por surtir es mayor que 0
+                #    for entrada in entradas:
+                #        if entrada.cantidad_por_surtir > ordensurtir.cantidad_requisitar and ordensurtir.cantidad_requisitar > 0:
+                #            entrada.cantidad = entrada.cantidad_por_surtir - ordensurtir.cantidad_requisitar
+                #            total = total + ordensurtir.cantidad_requisitar * entrada.articulo_comprado.precio_unitario
+                #            ordensurtir.cantidad = ordensurtir.cantidad + entrada.cantidad_por_surtir
+                #            ordensurtir.precio = total/ordensurtir.cantidad
+                #            ordensurtir.cantidad_requisitar = 0  #Aquí ya no habría nada que requisitar
+                #            ordensurtir.surtir = True
+
+                #        elif entrada.cantidad_por_surtir <= ordensurtir.cantidad_requisitar and ordensurtir.cantidad_requisitar > 0:
+                #            ordensurtir.cantidad_requisitar = ordensurtir.cantidad_requisitar - entrada.cantidad_por_surtir
+                #            entrada.cantidad_cantidad_por_surtir = 0 # En este escenario se agota una las entradas
+                #            total = total + entrada.cantidad_por_surtir * entrada.articulo_comprado.precio_unitario
+                #            ordensurtir.cantidad = ordensurtir.cantidad + entrada.cantidad_por_surtir
+                #            ordensurtir.precio = total/ordensurtir.cantidad
+                #            entrada.agotado = True
+                #        entrada.save()
+
+                #    ordensurtir.save()
+                #    if ordensurtir.cantidad_requisitar > 0:
+                #        ordensurtir.requisitar=True
+                #        order.requisitar=True
+                #    order.save()
+                #elif ordensurtir.cantidad_requisitar > 0 and prod_inventario.cantidad_entradas < 0:
+                #    ordensurtir.requisitar = True
+                #    order.requisitar = True
+                #    ordensurtir.save()
+                #    order.save()
+            #cond:3
+            elif prod_inventario.cantidad + prod_inventario.cantidad_entradas == 0 or order.tipo.tipo == "resurtimiento":
+                ordensurtir.requisitar = True
+                ordensurtir.cantidad_requisitar = producto.cantidad
+                order.requisitar = True
                 if producto.producto.producto.servicio == True:
                     requi, created = Requis.objects.get_or_create(complete = True, orden = order)
                     requitem, created = ArticulosRequisitados.objects.create(req = requi, producto= ordensurtir, cantidad = producto.cantidad)
@@ -505,19 +555,7 @@ def autorizada_sol(request, pk):
                     requi.save()
                     requitem.save()
                 ordensurtir.save()
-            #cond:3
-            elif prod_inventario.cantidad >0 and prod_inventario.cantidad < producto.cantidad:
-                ordensurtir.surtir = True
-                ordensurtir.requisitar = True
-                order.requisitar=True
-                ordensurtir.cantidad = prod_inventario.cantidad
-                ordensurtir.precio = prod_inventario.price
-                prod_inventario.cantidad_apartada = prod_inventario.cantidad
-                ordensurtir.cantidad_requisitar = producto.cantidad - ordensurtir.cantidad
-                prod_inventario._change_reason = f'Se modifica el inventario en view: autorizada_sol:{order.id} cond:3'
-                prod_inventario.cantidad = 0
-                prod_inventario.save()
-                ordensurtir.save()
+                order.save()
         order.autorizar = True
         order.approved_at = date.today()
         order.approved_at_time = datetime.now().time()

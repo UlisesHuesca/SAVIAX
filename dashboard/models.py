@@ -21,7 +21,7 @@ class Unidad(models.Model):
         return f'{self.nombre}'
 
 class Subfamilia(models.Model):
-    nombre = models.CharField(max_length=10, null=True)
+    nombre = models.CharField(max_length=15, null=True)
     familia = models.ForeignKey(Familia, on_delete = models.CASCADE, null=True)
 
     def __str__(self):
@@ -82,8 +82,8 @@ class Inventario(models.Model):
     distrito = models.ForeignKey(Distrito, on_delete = models.CASCADE, null=True)
     marca = models.ManyToManyField(Marca)
     cantidad = models.PositiveIntegerField(default=0)
-    entrada = models.CharField(max_length=20, null=True, blank=True)
     cantidad_apartada = models.PositiveIntegerField(default=0)
+    cantidad_entradas = models.PositiveIntegerField(default=0)
     price = MoneyField(max_digits=14, decimal_places=2,default_currency= 'MXN',default=0)
     minimo = models.PositiveIntegerField(default =0)
     history = HistoricalRecords(history_change_reason_field=models.TextField(null=True))
@@ -170,7 +170,7 @@ class ArticulosparaSurtir(models.Model):
     requisitar = models.BooleanField(null=True, default=False)
     salida = models.BooleanField(null=True, default=False)
     history = HistoricalRecords(history_change_reason_field=models.TextField(null=True))
-    firma = models.BooleanField(null=True, default=False)
+    seleccionado = models.BooleanField(null=True, default=False)
     created_at = models.DateField(auto_now_add=True)
     created_at_time = models.TimeField(auto_now_add=True)
     modified_at = models.DateField(auto_now=True)

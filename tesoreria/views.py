@@ -77,6 +77,9 @@ def compras_pagos(request, pk):
         cuenta = Cuenta.objects.get(cuenta = pago.cuenta.cuenta)
         #La utilizo para sacar la información de todos los pagos relacionados con esa cuenta y sumarlos
         cuenta_pagos = Pago.objects.filter(cuenta = pago.cuenta).aggregate(Sum('monto'))
+        if cuenta_pagos['monto__sum'] == None:
+            cuenta_pagos['monto__sum']=0
+
         # Actualizo el saldo de la cuenta
         #Agarré el valor directo del post y lo convertí a Money porque marcaba como error la no existencía de pago.monto
         monto_actual = Money(request.POST['monto_0'], request.POST['monto_1'])

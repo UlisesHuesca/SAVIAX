@@ -94,8 +94,11 @@
                         <h6 class="dropdown-header">Requisiciones</h6>
                         <div class="dropdown-divider"></div>
                             <a class="dropdown-item" href="{% url 'solicitud-autorizada' %}">
-                                Solicitudes autorizadas <span class="badge bg-danger">({{conteodeordenes}})</span>
+                                Solicitudes autorizadas
+                                {% if conteodeordenes > 0 %}
+                                <span class="badge bg-danger">({{conteodeordenes}})</span>
                                 <span class="sr-only">unread messages</span>
+                                {% endif %}
                             </a>
                         <div class="dropdown-divider"></div>
                     </div>
@@ -126,7 +129,13 @@
                     {% endif %}
                         <h6 class="dropdown-header">Autorización</h6>
                         <div class="dropdown-divider"></div>
-                            <a class="dropdown-item" href="{% url 'solicitud-pendientes-autorizacion' %}">Solicitudes</a>
+                            <a class="dropdown-item" href="{% url 'solicitud-pendientes-autorizacion' %}">
+                                Solicitudes
+                                {% if conteo_pendientes > 0 %}
+                                <span class="badge bg-danger">({{conteo_pendientes}})</span>
+                                <span class="sr-only">unread messages</span>
+                                {% endif %}
+                            </a>
                             <a class="dropdown-item" href="{% url 'requisicion-autorizacion' %}">Requisiciones</a>
                             <a class="dropdown-item" href="{% url 'autorizacion-oc1' %}">OC Superintendencia</a>
                             <a class="dropdown-item" href="{% url 'autorizacion-oc2' %}">OC Gerencia</a>

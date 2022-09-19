@@ -18,9 +18,11 @@ class Entrada(models.Model):
 class EntradaArticulo(models.Model):
     entrada = models.ForeignKey(Entrada, on_delete = models.CASCADE, null=True)
     cantidad = models.PositiveIntegerField(null=True, blank=True)
+    cantidad_por_surtir = models.PositiveIntegerField(null=True, blank=True)
     articulo_comprado = models.ForeignKey(ArticuloComprado, on_delete = models.CASCADE, null=True)
     history = HistoricalRecords(history_change_reason_field=models.TextField(null=True))
     created_at = models.DateTimeField(auto_now_add=True)
+    agotado = models.BooleanField(default=False)
 
     def __str__(self):
         return f'{self.id} - {self.entrada} - {self.cantidad} - {self.articulo_comprado}'

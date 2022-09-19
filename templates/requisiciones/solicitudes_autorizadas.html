@@ -150,7 +150,7 @@
                                 {% else %}
                                 <div class='invisible'>
                                 {% endif %}
-                                    <a type="button" class="btn btn-outline-info" data-bs-toggle="modal" data-bs-target='#dialog' hx-target="#document" hx-get="{% url 'salida-material' producto.id %}">Surtir</a>
+                                    <a type="button" class="btn btn-outline-info" href="{% url 'salida-material' producto.articulos.orden.id %}">Surtir</a>
                                 </div>
                             </li>
                         </ul>

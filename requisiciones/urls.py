@@ -5,6 +5,7 @@ from . import views
 urlpatterns = [
     path('sol_autorizadas/', views.solicitud_autorizada, name='solicitud-autorizada'),
     path('salida_material/<int:pk>/', views.salida_material, name='salida-material'),
+    path('update_salida/', views.update_salida, name='update-salida'),
     path('sol_autorizadas/firma', views.solicitud_autorizada_firma, name='solicitud-autorizada-firma'),
     path('salida_material/firma/<int:pk>/', views.salida_material_usuario, name='salida-material-usuario'),
     path('sol_autorizadas_orden/', views.solicitud_autorizada_orden, name='solicitud-autorizada-orden'),
