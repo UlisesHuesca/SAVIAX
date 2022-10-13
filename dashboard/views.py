@@ -4,13 +4,14 @@ from django.contrib.auth.decorators import login_required
 from dashboard.models import ArticulosparaSurtir
 from .models import Product, Subfamilia, Order, Products_Batch, Familia, Unidad
 from solicitudes.models import Subproyecto
-from requisiciones.models import Salidas
+from requisiciones.models import Salidas, ValeSalidas
 from user.models import Profile
 from .forms import ProductForm, Products_BatchForm, AddProduct_Form
 from django.contrib.auth.models import User
 from .filters import ProductFilter
 from django.contrib import messages
 import csv
+from django.core.paginator import Paginator
 from django.db.models import Sum
 #import decimal
 
@@ -18,7 +19,8 @@ from django.db.models import Sum
 @login_required(login_url='user-login')
 def index(request):
     usuario = Profile.objects.get(id=request.user.id)
-    salidas = Salidas.objects.filter(material_recibido_por = usuario)
+    #vale_salidas = ValeSalidas.objects.filter(material_recibido_por = usuario)
+    #salidas = Salidas.objects.filter(vale_salida = vale_salidas) | No jala me marca que la búsqueda por un valor exacto debe estar limtado a un resultado no debería ser porque hay 3
     subproyectos = Subproyecto.objects.all()
     #productos = Inventario.objects.filter(producto = salidas.producto.articulos.producto.producto)
     labels = []
@@ -27,13 +29,14 @@ def index(request):
     gast = []
     pres = []
 
-    for salida in salidas:
-        if salida.producto.articulos.producto.producto.nombre not in labels:
-            labels.append(salida.producto.articulos.producto.producto.nombre)
-            data.append(salida.cantidad)
-        else:
-            index = labels.index(salida.producto.articulos.producto.producto.nombre)
-            data[index] = data[index]+salida.cantidad
+
+    #for salida in salidas:
+    #    if salida.producto.articulos.producto.producto.nombre not in labels:
+    #        labels.append(salida.producto.articulos.producto.producto.nombre)
+    #        data.append(salida.cantidad)
+    #    else:
+    #        index = labels.index(salida.producto.articulos.producto.producto.nombre)
+    #        data[index] = data[index]+salida.cantidad
 
     for subproyecto in subproyectos:
         subproy.append(subproyecto.nombre)
@@ -62,12 +65,17 @@ def product(request):
     items = Product.objects.filter(completado = True).order_by('codigo')
 
     myfilter=ProductFilter(request.GET, queryset=items)
-
     items = myfilter.qs
+
+    #Set up pagination
+    p = Paginator(items, 50)
+    page = request.GET.get('page')
+    items_list = p.get_page(page)
 
     context = {
         'items': items,
         'myfilter':myfilter,
+        'items_list':items_list,
         }
 
 
@@ -88,18 +96,24 @@ def upload_batch_products(request):
         next(reader) #Advance past the reader
 
         for row in reader:
-            unidad = Unidad.objects.get(nombre = row[2])
-            familia = Familia.objects.get(nombre = row[3])
-            subfamilia = Subfamilia.objects.get(nombre = row[4], familia = familia)
-            if unidad == None:
-                messages.error('La unidad no existe dentro de la base de datos')
-            elif familia == None:
-                messages.error('La familia no existe dentro de la base de datos')
-            elif subfamilia == None:
-                messages.error('La subfamilia no existe dentro de la base de datos')
+            if not Product.objects.filter(codigo=row[0]):
+                if Unidad.objects.get(nombre = row[2]):
+                    unidad = Unidad.objects.get(nombre = row[2])
+                    if Familia.objects.get(nombre = row[3]):
+                        familia = Familia.objects.get(nombre = row[3])
+                        if Subfamilia.objects.get(nombre = row[4], familia = familia):
+                            subfamilia = Subfamilia.objects.get(nombre = row[4], familia = familia)
+                            producto = Product(codigo=row[0],nombre=row[1], unidad=unidad, familia=familia, subfamilia=subfamilia,especialista=row[5],iva=row[6],activo=row[7],servicio=row[8],baja_item=False,completado=True)
+                            producto.save()
+                        else:
+                            messages.error(request,f'La subfamilia no existe dentro de la base de datos, producto:{row[0]}')
+                    else:
+                        messages.error(request,f'La familia no existe dentro de la base de datos, producto:{row[0]}')
+                else:
+                    messages.error(request,f'La unidad no existe dentro de la base de datos, producto:{row[0]}')
             else:
-                producto = Product(codigo=row[0],nombre=row[1], unidad=unidad, familia=familia, subfamilia=subfamilia,especialista=row[5],iva=row[6],activo=row[7],servicio=row[8],baja_item=False,completado=True)
-                producto.save()
+                messages.error(request,f'El producto código:{row[0]} ya existe dentro de la base de datos')
+
         product_list.activated = True
         product_list.save()
 

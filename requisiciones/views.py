@@ -1,6 +1,7 @@
 3
 from django.shortcuts import render, redirect
-from dashboard.models import Inventario, Order, ArticulosparaSurtir, ArticulosOrdenados
+from dashboard.models import Inventario, Order, ArticulosparaSurtir, ArticulosOrdenados, Inventario_Batch
+from dashboard.forms import  Inventario_BatchForm
 from user.models import Profile
 from .models import ArticulosRequisitados, Requis
 from entradas.models import Entrada, EntradaArticulo
@@ -19,6 +20,7 @@ from django.db.models import Value, Sum
 from django.contrib import messages
 from django.http import JsonResponse
 import json
+import csv
 #PDF generator
 import io
 from reportlab.pdfgen import canvas
@@ -180,7 +182,47 @@ def salida_material(request, pk):
 
     return render(request, 'requisiciones/salida_material.html',context)
 
+@login_required(login_url='user-login')
+def upload_batch_inventario(request):
 
+    form = Inventario_BatchForm(request.POST or None, request.FILES or None)
+
+    if form.is_valid():
+        form.save()
+        form = Inventario_BatchForm()
+        product_list = Inventario_Batch.objects.get(activated = False)
+        f = open(product_list.file_name.path, 'r')
+        reader = csv.reader(f)
+        next(reader) #Advance past the reader
+
+        for row in reader:
+            if not Product.objects.filter(codigo=row[0]):
+                if distrito.objects.get(nombre = row[2]):
+                    unidad = Unidad.objects.get(nombre = row[2])
+                    if Familia.objects.get(nombre = row[3]):
+                        familia = Familia.objects.get(nombre = row[3])
+                        if Subfamilia.objects.get(nombre = row[4], familia = familia):
+                            subfamilia = Subfamilia.objects.get(nombre = row[4], familia = familia)
+                            producto = Product(codigo=row[0],nombre=row[1], unidad=unidad, familia=familia, subfamilia=subfamilia,especialista=row[5],iva=row[6],activo=row[7],servicio=row[8],baja_item=False,completado=True)
+                            producto.save()
+                        else:
+                            messages.error(request,f'La subfamilia no existe dentro de la base de datos, producto:{row[0]}')
+                    else:
+                        messages.error(request,f'La familia no existe dentro de la base de datos, producto:{row[0]}')
+                else:
+                    messages.error(request,f'La unidad no existe dentro de la base de datos, producto:{row[0]}')
+            else:
+                messages.error(request,f'El producto código:{row[0]} ya existe dentro de la base de datos')
+
+        product_list.activated = True
+        product_list.save()
+
+
+    context = {
+        'form': form,
+        }
+
+    return render(request,'dashboard/upload_batch_products.html', context)
 
 
 def solicitud_autorizada_firma(request):

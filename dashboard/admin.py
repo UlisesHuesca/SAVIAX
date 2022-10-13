@@ -24,10 +24,13 @@ class ArticulosparaSurtirAdmin(admin.ModelAdmin):
 class OrderAdmin(admin.ModelAdmin):
     list_display = ('id','folio','staff','proyecto','subproyecto','approved_at')
 
+class SubfamiliaAdmin(admin.ModelAdmin):
+    list_display = ('id','nombre','familia')
+
 # Register your models here.
 admin.site.register(Familia)
 
-admin.site.register(Subfamilia)
+admin.site.register(Subfamilia,SubfamiliaAdmin)
 
 admin.site.register(Unidad)
 

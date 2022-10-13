@@ -1,5 +1,5 @@
 from django import forms
-from .models import Product, Subfamilia, Products_Batch
+from .models import Product, Subfamilia, Products_Batch, Inventario_Batch
 
 
 class ProductForm(forms.ModelForm):
@@ -24,6 +24,11 @@ class ProductForm(forms.ModelForm):
 class Products_BatchForm(forms.ModelForm):
     class Meta:
         model = Products_Batch
+        fields= ['file_name']
+
+class Inventario_BatchForm(forms.ModelForm):
+    class Meta:
+        model = Inventario_Batch
         fields= ['file_name']
 
 class AddProduct_Form(forms.ModelForm):

@@ -77,6 +77,14 @@ class Marca(models.Model):
     def __str__(self):
         return f'{self.nombre}'
 
+class Inventario_Batch(models.Model):
+    file_name = models.FileField(upload_to='inventario_batch')
+    uploaded = models.DateField(auto_now_add=True)
+    activated = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f'File id:{self.id}'
+
 class Inventario(models.Model):
     producto = models.ForeignKey(Product, on_delete =models.CASCADE, null=True)
     distrito = models.ForeignKey(Distrito, on_delete = models.CASCADE, null=True)
