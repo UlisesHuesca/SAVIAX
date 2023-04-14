@@ -1,14 +1,14 @@
 from django.shortcuts import render, redirect
 from django.http import HttpResponse
 from django.contrib.auth.decorators import login_required
-from dashboard.models import ArticulosparaSurtir
 from .models import Product, Subfamilia, Order, Products_Batch, Familia, Unidad
-from solicitudes.models import Subproyecto
+from compras.models import Proveedor, Proveedor_Batch, Proveedor_Direcciones_Batch, Proveedor_direcciones, Estatus_proveedor, Estado
+from solicitudes.models import Subproyecto, Proyecto
 from requisiciones.models import Salidas, ValeSalidas
-from user.models import Profile
-from .forms import ProductForm, Products_BatchForm, AddProduct_Form
+from user.models import Profile, Distrito, Banco
+from .forms import ProductForm, Products_BatchForm, AddProduct_Form, Proyectos_Form, ProveedoresForm, Proyectos_Add_Form, Proveedores_BatchForm, ProveedoresDireccionesForm, Proveedores_Direcciones_BatchForm
 from django.contrib.auth.models import User
-from .filters import ProductFilter
+from .filters import ProductFilter, ProyectoFilter, ProveedorFilter
 from django.contrib import messages
 import csv
 from django.core.paginator import Paginator
@@ -18,7 +18,8 @@ from django.db.models import Sum
 # Create your views here.
 @login_required(login_url='user-login')
 def index(request):
-    usuario = Profile.objects.get(id=request.user.id)
+    usuario = Profile.objects.get(staff=request.user)
+    #usuario = Profile.objects.get(id=request.user.id)
     #vale_salidas = ValeSalidas.objects.filter(material_recibido_por = usuario)
     #salidas = Salidas.objects.filter(vale_salida = vale_salidas) | No jala me marca que la búsqueda por un valor exacto debe estar limtado a un resultado no debería ser porque hay 3
     subproyectos = Subproyecto.objects.all()
@@ -40,17 +41,101 @@ def index(request):
 
     for subproyecto in subproyectos:
         subproy.append(subproyecto.nombre)
-        gast.append(format(subproyecto.gastado.amount, '.2f'))
-        pres.append(format(subproyecto.presupuesto.amount, '.2f'))
+        gast.append(format(subproyecto.gastado, '.2f'))
+        pres.append(format(subproyecto.presupuesto, '.2f'))
 
     context= {
-        'usuario':usuario,
+        #'usuario':usuario,
         'labels':labels,
         'data':data,
         'subproyecto':subproy,
         'gastado':gast,
         }
     return render(request,'dashboard/index.html',context)
+
+@login_required(login_url='user-login')
+def proyectos(request):
+    proyectos = Proyecto.objects.all()
+
+    myfilter=ProyectoFilter(request.GET, queryset=proyectos)
+    proyectos = myfilter.qs
+
+    #Set up pagination
+    p = Paginator(proyectos, 50)
+    page = request.GET.get('page')
+    proyectos_list = p.get_page(page)
+
+    context = {
+        'proyectos':proyectos,
+        'proyectos_list':proyectos_list,
+        'myfilter':myfilter,
+        }
+
+    return render(request,'dashboard/proyectos.html',context)
+
+@login_required(login_url='user-login')
+def proyectos_edit(request, pk):
+
+    proyecto = Proyecto.objects.get(id=pk)
+
+    if request.method =='POST':
+        form = Proyectos_Form(request.POST, instance=proyecto)
+        if form.is_valid():
+            form.save()
+            messages.success(request,f'Has actualizado correctamente el proyecto {proyecto.nombre}')
+            return redirect('configuracion-proyectos')
+    else:
+        form = Proyectos_Form(instance=proyecto)
+
+
+    context = {
+        'form': form,
+        'proyecto':proyecto,
+        }
+    return render(request,'dashboard/proyectos_edit.html', context)
+
+@login_required(login_url='user-login')
+def proveedor_direcciones(request, pk):
+
+    direcciones = Proveedor_direcciones.objects.filter(nombre__id=pk)
+
+    #if request.method =='POST':
+        #form = Proyectos_Form(request.POST, instance=proyecto)
+     #   if form.is_valid():
+      #      form.save()
+            #messages.success(request,f'Has actualizado correctamente el proyecto {proyecto.nombre}')
+       #     return redirect('configuracion-proyectos')
+    #else:
+        #form = Proyectos_Form(instance=proyecto)
+
+
+    context = {
+        #'form': form,
+        'direcciones':direcciones,
+        }
+    return render(request,'dashboard/direcciones_proveedor.html', context)
+
+@login_required(login_url='user-login')
+def proyectos_add(request):
+
+
+    form = Proyectos_Add_Form()
+
+    if request.method =='POST':
+        form = Proyectos_Add_Form(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request,'Has agregado correctamente el proyecto')
+            return redirect('configuracion-proyectos')
+    else:
+        form = Proyectos_Add_Form()
+
+    context = {
+        'form': form,
+        }
+
+    return render(request,'dashboard/proyectos_add.html',context)
+
 
 @login_required(login_url='user-login')
 def staff(request):
@@ -62,7 +147,7 @@ def staff(request):
 
 @login_required(login_url='user-login')
 def product(request):
-    items = Product.objects.filter(completado = True).order_by('codigo')
+    items = Product.objects.filter(completado = True)
 
     myfilter=ProductFilter(request.GET, queryset=items)
     items = myfilter.qs
@@ -83,30 +168,164 @@ def product(request):
 
 
 @login_required(login_url='user-login')
+def proveedores(request):
+    proveedores = Proveedor.objects.all()
+
+    total_prov = proveedores.count()
+
+    myfilter=ProveedorFilter(request.GET, queryset=proveedores)
+    proveedores = myfilter.qs
+
+    #Set up pagination
+    p = Paginator(proveedores, 50)
+    page = request.GET.get('page')
+    proveedores_list = p.get_page(page)
+
+    context = {
+        'proveedores': proveedores,
+        'myfilter':myfilter,
+        'proveedores_list':proveedores_list,
+        'total_prov':total_prov,
+        }
+
+
+    return render(request,'dashboard/proveedores.html', context)
+
+
+@login_required(login_url='user-login')
+def proveedores_update(request, pk):
+
+    proveedores = Proveedor.objects.get(id=pk)
+
+    if request.method =='POST':
+        form = ProveedoresForm(request.POST, instance=proveedores)
+        if form.is_valid():
+            form.save()
+            messages.success(request,f'Has actualizado correctamente el proyecto {proveedores.razon_social}')
+            return redirect('configuracion-proyectos')
+    else:
+        form = ProveedoresForm(instance=proveedores)
+
+    context = {
+        'form': form,
+        'proveedores':proveedores,
+        }
+
+    return render(request,'dashboard/proveedores_update.html', context)
+
+@login_required(login_url='user-login')
+def upload_batch_proveedores(request):
+
+    form = Proveedores_BatchForm(request.POST or None, request.FILES or None)
+
+
+    if form.is_valid():
+        form.save()
+        form = Proveedores_BatchForm()
+        proveedores_list = Proveedor_Batch.objects.get(activated = False)
+
+        f = open(proveedores_list.file_name.path, 'r')
+        reader = csv.reader(f)
+        next(reader)
+
+        for row in reader:
+            if not Proveedor.objects.filter(razon_social=row[0]):
+                proveedor = Proveedor(razon_social=row[0], rfc=row[1])
+                proveedor.save()
+            else:
+                messages.error(request,f'El proveedor código:{row[0]} ya existe dentro de la base de datos')
+
+        proveedores_list.activated = True
+        proveedores_list.save()
+    elif request.FILES:
+        messages.error(request,'El formato no es CSV')
+
+    context = {
+        'form': form,
+        }
+
+    return render(request,'dashboard/upload_batch_proveedor.html', context)
+
+@login_required(login_url='user-login')
+def upload_batch_proveedores_direcciones(request):
+
+    form = Proveedores_Direcciones_BatchForm(request.POST or None, request.FILES or None)
+
+
+    if form.is_valid():
+        form.save()
+        form = Proveedores_Direcciones_BatchForm()
+        proveedores_list = Proveedor_Direcciones_Batch.objects.get(activated=False)
+
+        f = open(proveedores_list.file_name.path, 'r')
+        reader = csv.reader(f)
+        next(reader)
+
+        for row in reader:
+            if Proveedor.objects.filter(razon_social=row[0]):
+                nombre = Proveedor.objects.get(razon_social=row[0])
+                if Distrito.objects.filter(nombre = row[1]):
+                    distrito = Distrito.objects.get(nombre = row[1])
+                    if Banco.objects.filter(nombre= row[6]):
+                        banco = Banco.objects.get(nombre = row[6])
+                        if Estatus_proveedor.objects.filter(nombre = row[11]):
+                            estatus = Estatus_proveedor.objects.get(nombre = row[11])
+                            if Estado.objects.filter(nombre = row[3]):
+                                estado = Estado.objects.get(nombre = row[3])
+                                proveedor_direccion = Proveedor_direcciones(nombre=nombre, distrito=distrito,domicilio=row[2],estado=estado,contacto=row[4],email=row[5], banco=banco, clabe=row[7], cuenta=row[8], financiamiento=row[9],dias_credito=row[10],estatus=estatus)
+                                proveedor_direccion.save()
+                            else:
+                                messages.error(request,f'El estado:{row[3]} no existe dentro de la base de datos')
+                        else:
+                             messages.error(request,f'El estatus:{row[11]} no existe dentro de la base de datos')
+                    else:
+                         messages.error(request,f'El banco:{row[6]} no existe dentro de la base de datos')
+                else:
+                    messages.error(request,f'El distrito:{row[1]} no existe dentro de la base de datos')
+            else:
+                messages.error(request,f'El proveedor código:{row[0]} no existe dentro de la base de datos')
+
+        proveedores_list.activated = True
+        proveedores_list.save()
+    elif request.FILES:
+        messages.error(request,'El formato no es CSV')
+
+    context = {
+        'form': form,
+        }
+
+    return render(request,'dashboard/upload_batch_proveedor_direcciones.html', context)
+
+
+
+@login_required(login_url='user-login')
 def upload_batch_products(request):
 
     form = Products_BatchForm(request.POST or None, request.FILES or None)
+
 
     if form.is_valid():
         form.save()
         form = Products_BatchForm()
         product_list = Products_Batch.objects.get(activated = False)
+
         f = open(product_list.file_name.path, 'r')
         reader = csv.reader(f)
-        next(reader) #Advance past the reader
+        next(reader)
 
         for row in reader:
             if not Product.objects.filter(codigo=row[0]):
-                if Unidad.objects.get(nombre = row[2]):
+                if Unidad.objects.filter(nombre = row[2]):
                     unidad = Unidad.objects.get(nombre = row[2])
-                    if Familia.objects.get(nombre = row[3]):
+                    if Familia.objects.filter(nombre = row[3]):
                         familia = Familia.objects.get(nombre = row[3])
-                        if Subfamilia.objects.get(nombre = row[4], familia = familia):
+                        if Subfamilia.objects.filter(nombre = row[4], familia = familia):
                             subfamilia = Subfamilia.objects.get(nombre = row[4], familia = familia)
                             producto = Product(codigo=row[0],nombre=row[1], unidad=unidad, familia=familia, subfamilia=subfamilia,especialista=row[5],iva=row[6],activo=row[7],servicio=row[8],baja_item=False,completado=True)
                             producto.save()
                         else:
-                            messages.error(request,f'La subfamilia no existe dentro de la base de datos, producto:{row[0]}')
+                            producto = Product(codigo=row[0],nombre=row[1], unidad=unidad, familia=familia,especialista=row[5],iva=row[6],activo=row[7],servicio=row[8],baja_item=False,completado=True)
+                            producto.save()
                     else:
                         messages.error(request,f'La familia no existe dentro de la base de datos, producto:{row[0]}')
                 else:
@@ -116,6 +335,10 @@ def upload_batch_products(request):
 
         product_list.activated = True
         product_list.save()
+    elif request.FILES:
+        messages.error(request,'El formato no es CSV')
+
+
 
 
     context = {

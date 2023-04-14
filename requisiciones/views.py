@@ -1,14 +1,14 @@
-3
 from django.shortcuts import render, redirect
-from dashboard.models import Inventario, Order, ArticulosparaSurtir, ArticulosOrdenados, Inventario_Batch
+from solicitudes.models import Proyecto, Subproyecto
+from dashboard.models import Inventario, Order, ArticulosparaSurtir, ArticulosOrdenados, Inventario_Batch, Product, Marca
 from dashboard.forms import  Inventario_BatchForm
-from user.models import Profile
+from user.models import Profile, User
 from .models import ArticulosRequisitados, Requis
 from entradas.models import Entrada, EntradaArticulo
 from requisiciones.models import Salidas, ValeSalidas
 from django.contrib.auth.decorators import login_required
 from .filters import ArticulosparaSurtirFilter, SalidasFilter, EntradasFilter
-from .forms import SalidasForm, ArticulosRequisitadosForm, ValeSalidasForm
+from .forms import SalidasForm, ArticulosRequisitadosForm, ValeSalidasForm, ValeSalidasProyForm, RequisForm
 from django.http import HttpResponse
 from openpyxl import Workbook
 from openpyxl.styles import NamedStyle, Font, PatternFill
@@ -21,6 +21,8 @@ from django.contrib import messages
 from django.http import JsonResponse
 import json
 import csv
+import ast # Para leer el csr many to many
+
 #PDF generator
 import io
 from reportlab.pdfgen import canvas
@@ -34,25 +36,79 @@ from reportlab.lib.enums import TA_CENTER
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
 from django.db.models import Q
 
-
 # Create your views here.
 @login_required(login_url='user-login')
+def liberar_stock(request, pk):
+    usuario = Profile.objects.get(staff__id=request.user.id)
+    orden = Order.objects.get(id = pk)
+    productos= ArticulosparaSurtir.objects.filter(articulos__orden = orden, surtir=True)
+    vale_salida, created = ValeSalidas.objects.get_or_create(almacenista = usuario,complete = False,solicitud=orden)
+    salidas = Salidas.objects.filter(vale_salida = vale_salida)
+    cantidad_items = salidas.count()
+    proyectos = Proyecto.objects.filter(activo=True)
+    subproyectos = Subproyecto.objects.all()
+
+
+    formVale = ValeSalidasProyForm()
+    form = SalidasForm()
+    users = Profile.objects.all()
+
+    if request.method == 'POST':
+        formVale = ValeSalidasProyForm(request.POST, instance=vale_salida)
+        vale = formVale.save(commit=False)
+        vale.complete = True
+        for producto in productos:
+            if producto.cantidad == 0:
+                producto.salida = True
+                producto.surtir = False
+                producto.save()
+        if formVale.is_valid():
+            formVale.save()
+            messages.success(request,'La salida se ha generado de manera exitosa')
+            return redirect('solicitud-autorizada')
+
+    context= {
+        'proyectos':proyectos,
+        'subproyectos':subproyectos,
+        'productos':productos,
+        'orden':orden,
+        'form':form,
+        'formVale':formVale,
+        'users': users,
+        'vale_salida':vale_salida,
+        'cantidad_items':cantidad_items,
+        'salidas':salidas,
+        }
+    return render(request,'requisiciones/liberar_stock.html',context)
+
+
+
+@login_required(login_url='user-login')
 def solicitud_autorizada(request):
+    usuario = Profile.objects.get(staff__id=request.user.id)
+    #productos= Requis.objects.filter(complete=True, autorizar=None)
     #Aquí aparecen todas las ordenes, es decir sería el filtro para administrador, el objeto Q no tiene propiedad conmutativa
     #productos= ArticulosparaSurtir.objects.filter(Q(salida=False) | Q(requisitar=True), articulos__orden__autorizar = True )
-    productos= ArticulosparaSurtir.objects.filter(salida=False, articulos__orden__autorizar = True, surtir=True, articulos__producto__producto__servicio = False, articulos__orden__tipo__tipo='normal').order_by('-articulos__orden__folio')
+
+    #if usuario.tipo.superintendente == True:
+        #productos= Requis.objects.filter(complete=True, autorizar=None, orden__superintendente=usuario)
+    if usuario.tipo.almacenista == True:
+        #productos= ArticulosparaSurtir.objects.filter(Q(salida=False) | Q(surtir=True), articulos__orden__autorizar = True)
+        productos= ArticulosparaSurtir.objects.filter(Q(salida=False) | Q(surtir=True), articulos__orden__autorizar = True, articulos__orden__tipo__tipo = "normal")
+    #else:
+        #productos = Requis.objects.filter(complete=None)
     myfilter = ArticulosparaSurtirFilter(request.GET, queryset=productos)
     productos = myfilter.qs
-
-
     #Here is where call a function to generate XLSX, using Openpyxl library
-    if request.method == 'POST' and 'btnExcel' in request.POST:
 
+    if request.method == 'POST' and 'btnExcel' in request.POST:
         return convert_solicitud_autorizada_to_xls(productos)
+
 
     context= {
         'productos':productos,
         'myfilter':myfilter,
+        'usuario':usuario,
         }
     return render(request, 'requisiciones/solicitudes_autorizadas.html',context)
 
@@ -60,68 +116,106 @@ def solicitud_autorizada(request):
 def update_salida(request):
     data= json.loads(request.body)
     action = data["action"]
-    cantidad = data["val_cantidad"]
+    cantidad = int(data["val_cantidad"])
     salida = data["salida"]
     producto_id = data["id"]
     id_salida =data["id_salida"]
-    producto = ArticulosparaSurtir.objects.get(id=producto_id)
-    vale_salida = ValeSalidas.objects.get(id=salida)
+    producto = ArticulosparaSurtir.objects.get(id = producto_id)
+    vale_salida = ValeSalidas.objects.get(id = salida)
     inv_del_producto = Inventario.objects.get(producto = producto.articulos.producto.producto)
     if action == "add":
-        cantidad_total = producto.cantidad - int(cantidad)
+        cantidad_total = producto.cantidad - cantidad
+        if cantidad_total < 0 and inv_del_producto.cantidad > 0:
+            cantidad_total = inv_del_producto.cantidad - cantidad
         if cantidad_total < 0:
-            messages.error(request,f'La cantidad que se quiere comprar sobrepasa la cantidad requisitada {cantidad_total} mayor que {producto.cantidad}')
+            messages.error(request,f'La cantidad que se quiere egresar sobrepasa la cantidad disponible. {cantidad_total} mayor que {producto.cantidad}')
         else:
             salida, created = Salidas.objects.get_or_create(producto=producto, vale_salida = vale_salida, complete=False)
             producto.seleccionado = True
-            dif_inv = inv_del_producto.cantidad_apartada - inv_del_producto.cantidad_entradas
-            if producto.cantidad > 0 and dif_inv > 0:     #Diferencia de inventario mayor a cero quiere decir que al menos un producto de los que tienes pertenece al inventario inicial
-                salida.cantidad = producto.cantidad  #Lo que se surte es la cantidad pedida
-                inv_del_producto.cantidad_apartada = inv_del_producto.cantidad_apartada - producto.cantidad #Se le resta los artículos que se van a surtir
-                producto.cantidad = 0                #Se vacían los artículos que se van surtir
-                salida.precio = producto.precio
+            if inv_del_producto.cantidad_apartada > inv_del_producto.cantidad_entradas or inv_del_producto.cantidad_apartada >0:
+
+                #Voy a crear un vale de salida con producto salida desde al apartado, lo voy a mandar a llamar aqui, si existe, entonces no hay ni resurtimiento ni salidas derivadas de entradas, solo salidas derivadas de inventario
+                try:
+                    EntradaArticulo.objects.get(articulo_comprado__producto__producto__articulos__producto = inv_del_producto, articulo_comprado__producto__producto__articulos__orden__tipo__tipo = 'resurtimiento')
+                except EntradaArticulo.DoesNotExist:
+                    entrada_res = None
+                else:
+                    entrada_res = EntradaArticulo.objects.get(articulo_comprado__producto__producto__articulos__producto = inv_del_producto, articulo_comprado__producto__producto__articulos__orden__tipo__tipo = 'resurtimiento')
+
+                salida.cantidad = cantidad #Lo que se surte es la cantidad pedida
+                producto.cantidad = producto.cantidad - salida.cantidad   #se le resta a los articulos por surtir la cantidad que sale
+
+
+
+                if entrada_res:   #si hay resurtimiento
+                    #inv_del_producto.cantidad = inv_del_producto.cantidad - salida.cantidad #    Este falló ya con el nuevo método salida.precio = entrada_res.articulo_comprado.precio_unitario
+                    entrada_res.cantidad_por_surtir = entrada_res.cantidad_por_surtir - salida.cantidad
+                    inv_del_producto.cantidad_apartada = inv_del_producto.cantidad_apartada - salida.cantidad
+                    #producto.cantidad_apartada = producto.cantidad_apartada - salida.cantidad
+                    salida.entrada = entrada_res.id
+                    if producto.cantidad_requisitar == 0:
+                        producto.requisitar = False
+                    if entrada_res.cantidad_por_surtir == 0:
+                        entrada_res.agotado = True
+                    entrada_res.save()
+                    inv_del_producto._change_reason = f'Esta es una salida desde un resurtimiento de inventario {salida.id}'
+                    salida.precio = entrada_res.articulo_comprado.precio_unitario
+                else:    #si no hay resurtimiento
+                    salida.entrada = 0
+                    salida.precio = inv_del_producto.price
+
                 producto.save()
-                inv_del_producto._change_reason = f'Esta es una salida desde un resurtimiento de inventario {salida.id}'
                 inv_del_producto.save()
                 salida.save()
-            entradas = EntradaArticulo.objects.filter(articulo_comprado__producto__producto__articulos__producto = producto.articulos.producto, agotado=False)
-            for entrada in entradas:
-                if producto.cantidad > 0:
-                    salida, created = Salidas.objects.get_or_create(producto=producto, vale_salida = vale_salida, complete=False)
-                    if entrada.cantidad_por_surtir >= producto.cantidad:
+
+            else:
+                entradas = EntradaArticulo.objects.filter(articulo_comprado__producto__producto = producto, agotado=False, entrada__oc__req__orden= producto.articulos.orden)
+                for entrada in entradas:
+                    if producto.cantidad > 0:
+                        salida, created = Salidas.objects.get_or_create(producto=producto, vale_salida = vale_salida, complete=False)
                         salida.precio = entrada.articulo_comprado.precio_unitario
-                        salida.cantidad = producto.cantidad
-                        producto.cantidad = 0
-                        salida.entrada = entrada.id
-                        entrada.cantidad_por_surtir = entrada.cantidad_por_surtir - salida.cantidad
-                        salida.complete = True
-                        if entrada.cantidad_por_surtir == producto.cantidad:
+                        if entrada.cantidad_por_surtir >= cantidad:
+                            salida.cantidad = cantidad
+                            producto.cantidad = producto.cantidad - salida.cantidad
+                            salida.entrada = entrada.id
+                            entrada.cantidad_por_surtir = entrada.cantidad_por_surtir - salida.cantidad
+                            salida.complete = True
+                            if entrada.cantidad_por_surtir == 0:
+                                entrada.agotado = True
+                            producto.save()
+                            entrada.save()
+                            salida.save()
+                        elif entrada.cantidad_por_surtir < cantidad:
+                            salida.cantidad = entrada.cantidad_por_surtir #No puedo surtir mas que la cantidad que tengo disponible en la entrada
+                            cantidad = cantidad - salida.cantidad #La nueva cantidad a surtir es la cantidad menos lo que ya salió
+                            producto.cantidad = producto.cantidad - salida.cantidad
+                            salida.entrada = entrada.id
+                            salida.complete = True
                             entrada.agotado = True
-                        producto.save()
-                        entrada.save()
-                        salida.save()
-                    elif entrada.cantidad_por_surtir < producto.cantidad:
-                        salida.cantidad = entrada.cantidad_por_surtir
-                        producto.cantidad = producto.cantidad - entrada.cantidad
-                        salida.entrada = entrada.id
-                        entrada.agotado = True
-                        entrada.cantidad_por_surtir = 0
-                        producto.save()
-                        entrada.save()
-                        salida.save()
-                    inv_del_producto.cantidad_entradas = inv_del_producto.cantidad_entradas - salida.cantidad
-                    inv_del_producto.cantidad_apartada = inv_del_producto.cantidad_apartada - salida.cantidad
-                    inv_del_producto.save()
+                            entrada.cantidad_por_surtir = 0
+                            #producto.salida = True si vuelvo la entrada de resurtimiento verdadera anulo la posibilidad de realizar más salidas
+                            producto.save()
+                            entrada.save()
+                            salida.save()
+                        inv_del_producto.cantidad_entradas = inv_del_producto.cantidad_entradas - salida.cantidad
+                        if inv_del_producto.cantidad_apartada > 0:
+                            inv_del_producto.cantidad_apartada = inv_del_producto.cantidad_apartada - salida.cantidad
+                        #inv_del_producto.cantidad = inv_del_producto.cantidad - salida.cantidad si hago una salida que proviene de entradas voy a obtener un inv_del_producto negativo
+                        inv_del_producto.save()
     if action == "remove":
         item = Salidas.objects.get(vale_salida = vale_salida, id = id_salida)
         if item.entrada != 0:
             entrada = EntradaArticulo.objects.get(id=item.entrada)
-            entrada.cantidad_por_surtir = entrada.cantidad_por_surtir + int(cantidad)
+            if entrada.entrada.oc.req.orden.tipo.tipo == "normal":
+                inv_del_producto.cantidad_apartada = inv_del_producto.cantidad_apartada + item.cantidad
+            inv_del_producto.cantidad_entradas = inv_del_producto.cantidad_entradas + item.cantidad
+            entrada.cantidad_por_surtir = entrada.cantidad_por_surtir + item.cantidad
+            entrada.agotado = False
             entrada.save()
+        inv_del_producto.cantidad = inv_del_producto.cantidad + item.cantidad
         producto.seleccionado = False
         producto.salida= False
-        producto.cantidad = producto.cantidad + int(cantidad)
-        inv_del_producto.cantidad_apartada = inv_del_producto.cantidad_apartada + int(cantidad)
+        producto.cantidad = producto.cantidad + item.cantidad
         inv_del_producto._change_reason = f'Esta es una cancelación de una salida {item.id}'
         producto.save()
         inv_del_producto.save()
@@ -132,48 +226,44 @@ def update_salida(request):
 
 @login_required(login_url='user-login')
 def salida_material(request, pk):
-    usuario = Profile.objects.get(id=request.user.id)
+    usuario = Profile.objects.get(staff__id=request.user.id)
     orden = Order.objects.get(id = pk)
     productos= ArticulosparaSurtir.objects.filter(articulos__orden = orden, surtir=True)
     vale_salida, created = ValeSalidas.objects.get_or_create(almacenista = usuario,complete = False,solicitud=orden)
     salidas = Salidas.objects.filter(vale_salida = vale_salida)
     cantidad_items = salidas.count()
 
-    #for producto in productos:
-    #    prod_inventario = Inventario.objects.filter(producto = producto.articulos.producto.producto)
-    #    orden = Salidas.objects.filter(producto__articulos__orden= producto.articulos.orden, producto = producto).aggregate(Sum('cantidad'))
-    #    suma_salidas = orden['cantidad__sum']
-    #    if suma_salidas == None:
-    #        suma_salidas=0
-    #        disponible = producto.cantidad - suma_salidas
-
 
     formVale = ValeSalidasForm()
     form = SalidasForm()
+    users = Profile.objects.all()
 
     if request.method == 'POST':
         formVale = ValeSalidasForm(request.POST, instance=vale_salida)
         vale = formVale.save(commit=False)
         vale.complete = True
+        cantidad_salidas = 0
+        cantidad_productos = productos.count()
         for producto in productos:
+            producto.seleccionado = False
             if producto.cantidad == 0:
                 producto.salida=True
                 producto.surtir=False
-                producto.save()
-        #if cantidad_actual > productos.cantidad:
-        #
-        #if cantidad_actual == productos.cantidad:
-        #messages.success(request,'La salida ha sido creada y completada')
-        #prod_inventario.cantidad_apartada = prod_inventario.cantidad_apartada - salida.cantidad
+                cantidad_salidas = cantidad_salidas + 1
+            producto.save()
+        if cantidad_productos == cantidad_salidas:
+            orden.requisitado == True
+            orden.save()
         if formVale.is_valid():
             formVale.save()
             messages.success(request,'La salida se ha generado de manera exitosa')
-            return redirect('solicitud-autorizada')
+            return redirect('reporte-salidas')
 
     context= {
         'productos':productos,
         'form':form,
         'formVale':formVale,
+        'users': users,
         #'disponible':disponible,
         'vale_salida':vale_salida,
         'cantidad_items':cantidad_items,
@@ -182,51 +272,9 @@ def salida_material(request, pk):
 
     return render(request, 'requisiciones/salida_material.html',context)
 
-@login_required(login_url='user-login')
-def upload_batch_inventario(request):
-
-    form = Inventario_BatchForm(request.POST or None, request.FILES or None)
-
-    if form.is_valid():
-        form.save()
-        form = Inventario_BatchForm()
-        product_list = Inventario_Batch.objects.get(activated = False)
-        f = open(product_list.file_name.path, 'r')
-        reader = csv.reader(f)
-        next(reader) #Advance past the reader
-
-        for row in reader:
-            if not Product.objects.filter(codigo=row[0]):
-                if distrito.objects.get(nombre = row[2]):
-                    unidad = Unidad.objects.get(nombre = row[2])
-                    if Familia.objects.get(nombre = row[3]):
-                        familia = Familia.objects.get(nombre = row[3])
-                        if Subfamilia.objects.get(nombre = row[4], familia = familia):
-                            subfamilia = Subfamilia.objects.get(nombre = row[4], familia = familia)
-                            producto = Product(codigo=row[0],nombre=row[1], unidad=unidad, familia=familia, subfamilia=subfamilia,especialista=row[5],iva=row[6],activo=row[7],servicio=row[8],baja_item=False,completado=True)
-                            producto.save()
-                        else:
-                            messages.error(request,f'La subfamilia no existe dentro de la base de datos, producto:{row[0]}')
-                    else:
-                        messages.error(request,f'La familia no existe dentro de la base de datos, producto:{row[0]}')
-                else:
-                    messages.error(request,f'La unidad no existe dentro de la base de datos, producto:{row[0]}')
-            else:
-                messages.error(request,f'El producto código:{row[0]} ya existe dentro de la base de datos')
-
-        product_list.activated = True
-        product_list.save()
-
-
-    context = {
-        'form': form,
-        }
-
-    return render(request,'dashboard/upload_batch_products.html', context)
-
 
 def solicitud_autorizada_firma(request):
-    usuario = Profile.objects.get(id=request.user.id)
+    usuario = Profile.objects.get(staff__id=request.user.id)
     #Aquí aparecen todas las ordenes, es decir sería el filtro para administrador
     productos= Salidas.objects.filter(producto__articulos__orden__autorizar = True, salida_firmada=False)
     myfilter = SalidasFilter(request.GET, queryset=productos)
@@ -270,12 +318,20 @@ def salida_material_usuario(request, pk):
 @login_required(login_url='user-login')
 def solicitud_autorizada_orden(request):
     #obtengo el id de usuario, lo paso como argumento a id de profiles para obtener el objeto profile que coindice con ese usuario_id
-    usuario = request.user.id
-    perfil = Profile.objects.get(id=usuario)
+    #usuario = request.user.id
+
+    perfil = Profile.objects.get(staff__id=request.user.id)
+    ordenes = Order.objects.filter(requisitar = True, complete=True, autorizar=True, staff__distrito=perfil.distrito, requisitado = False)
+
+
+    if perfil.tipo.almacenista == True:
+        ordenes = Order.objects.filter(requisitar = True, requisitado=False)
+        #ordenes = Order.objects.filter(requisitar = True, complete=True, autorizar =True)
+    #perfil = Profile.objects.get(id=usuario)
 
     #Este es un filtro por perfil supervisor o superintendente, es decir puede ver todo lo del distrito
     #productos= ArticulosparaSurtir.objects.filter(Q(salida=False) | Q(requisitar=True), articulos__orden__autorizar = True )
-    ordenes = Order.objects.filter(requisitar = True, complete=True, autorizar=True, staff__distrito=perfil.distrito)
+
 
     if request.method == "POST" and 'btnExcel' in request.POST:
 
@@ -287,10 +343,10 @@ def solicitud_autorizada_orden(request):
 
     return render(request, 'requisiciones/solicitudes_autorizadas_orden.html',context)
 
+
 def detalle_orden(request, pk):
     orden = Order.objects.get(id=pk)
     productos = ArticulosOrdenados.objects.filter(orden=pk)
-
 
     context = {
         'productos': productos,
@@ -298,14 +354,20 @@ def detalle_orden(request, pk):
      }
     return render(request,'requisiciones/orden_detail.html', context)
 
+
 @login_required(login_url='user-login')
 def requisicion_autorizacion(request):
+    perfil = Profile.objects.get(staff__id=request.user.id)
     #obtengo el id de usuario, lo paso como argumento a id de profiles para obtener el objeto profile que coindice con ese usuario_id
 
     #Este es un filtro por perfil supervisor o superintendente, es decir puede ver todo lo del distrito
 
     #ordenes = Order.objects.filter(complete=True, autorizar=True, staff__distrito=perfil.distrito)
-    requis = Requis.objects.filter(autorizar=None)
+    if perfil.tipo.superintendente == True:
+        requis = Requis.objects.filter(autorizar=None, orden__superintendente=perfil, complete =True)
+    else:
+        requis = Requis.objects.filter(complete=None)
+    #requis = Requis.objects.filter(autorizar=None)
 
 
     context= {
@@ -325,40 +387,79 @@ def requisicion_creada_detalle(request, pk):
 
     return render(request,'requisiciones/requisicion_creada_detalle.html', context)
 
+def update_requisicion(request):
+    data= json.loads(request.body)
+    action = data["action"]
+    producto_id = data["id"]
+    pk = data["requi"]
+    cantidad = int(data["cantidad"])
+
+    requi = Requis.objects.get(id=pk)
+    #orden = Order.objects.get(id=requi.orden.id)
+    producto = ArticulosparaSurtir.objects.get(id = producto_id)
+    if action == "add":
+        item, created = ArticulosRequisitados.objects.get_or_create(req=requi, producto = producto, cantidad = cantidad)
+        producto.requisitar = False
+        producto.seleccionado = True
+        producto.save()
+        item.save()
+    if action == "remove":
+        item = ArticulosRequisitados.objects.get(req = requi, producto__articulos = producto)
+        articulo_requisitado = ArticulosparaSurtir.objects.get(articulos =producto_id)
+        articulo_requisitado.requisitar = True
+        articulo_requisitado.seleccionado = False
+        articulo_requisitado.save()
+        item.delete()
+
+    return JsonResponse('Item updated, action executed: '+data["action"], safe=False)
+
+
 def requisicion_detalle(request, pk):
     #Vista de creación de requisición
     productos = ArticulosparaSurtir.objects.filter(articulos__orden__id = pk, requisitar= True)
     orden = Order.objects.get(id = pk)
-    usuario = Profile.objects.get(id=request.user.id)
+    usuario = Profile.objects.get(staff__id=request.user.id)
     requi, created = Requis.objects.get_or_create(complete=False, orden=orden)
     requis = Requis.objects.filter(orden__staff__distrito = usuario.distrito, complete = True)
     consecutivo = requis.count() + 1
 
-    for producto in productos:
-        requitem, created = ArticulosRequisitados.objects.get_or_create(req = requi, producto= producto, cantidad=producto.cantidad_requisitar)
+    #for producto in productos:
+    productos_requisitados = ArticulosRequisitados.objects.filter(req = requi)
+
+    form = RequisForm()
 
 
     if request.method == 'POST':
+        form = RequisForm(request.POST, instance=requi)
         requi.complete = True
-        orden.requisitar = False
+        orden.requisitado = True
         for producto in productos:
-            #Vuelve false para que desaparezca de la vista pero creo que debo evaluar si es la mejor manera lo mismo para orden.requisitar = False
-            producto.requisitar = False
+            #Vuelve false para que desaparezca de la vista pero creo que debo evaluar si es la mejor manera lo mismo para orden.requisitar = False, esto me está causando problemas en la vista
+            producto.seleccionado = False
             producto.save()
-        requitem.almacenista = usuario
-        requi.folio = str(usuario.distrito.abreviado)+str(consecutivo).zfill(4)
-        requi.save()
-        orden.save()
-        requitem.save()
-        messages.success(request,f'Has realizado la requisición {requi.folio} con éxito')
-        return redirect('solicitud-autorizada-orden')
+            if producto.requisitar == False:
+                orden.requisitado = False
+                orden.save()
+        if productos_requisitados:
+            requi.folio = str(usuario.distrito.abreviado)+str(requi.id).zfill(4)
+            requi.save()
+            form.save()
+            orden.save()
+            messages.success(request,f'Has realizado la requisición {requi.folio} con éxito')
+            return redirect('solicitud-autorizada-orden')
+        else:
+             messages.error(request,'No se puede crear la requisición debido a que no productos agregados')
+
 
     context = {
         'productos': productos,
+        'productos_requisitados':productos_requisitados,
         'orden': orden,
-     }
+        'requi':requi,
+        'form':form,
+        }
 
-    return render(request,'requisiciones/detalle_requisitar.html', context)
+    return render(request,'requisiciones/detalle_requisitar_editar.html', context)
 
 def requisicion_autorizar(request, pk):
     usuario = request.user.id
@@ -433,20 +534,24 @@ def render_pdf_view(request, pk):
     #Encabezado
     c.setFillColor(black)
     c.setLineWidth(.3)
-    c.setFont('Helvetica-Bold',12)
-    c.drawString(30,730,'Solicitud:')
+    c.setFont('Helvetica-Bold',14)
+    c.drawString(180,760,'Solicitud')
+    c.setFont('Helvetica',12)
+    c.drawString(300,760,'Preparado por:')
+
+
     c.setFillColor(rojo)
-    c.drawString(90,730,orden.get_folio)
+    #c.drawString(90,730,orden.get_folio)
     c.setFillColor(black)
     c.setFont('Helvetica',22)
-    c.drawString(30,750,'Vordtec de México')
+    #c.drawString(30,750,'Vordtec de México')
 
     c.setFont('Helvetica-Bold',12)
     c.drawString(480,740,orden.created_at.strftime("%d/%m/%Y"))
 
 
 
-    c.drawInlineImage('static/images/Logo-Vordtec.png',50,590, 6.0 * cm, 3.0 * cm)
+    c.drawInlineImage('static/images/logo vordtec_documento.png',30,740, 3.0 * cm, 1.5 * cm)
     c.setFillColor(white)
     c.setFont('Helvetica',14)
     c.drawCentredString(320,700,'Comprobante de Solicitud')
@@ -454,16 +559,15 @@ def render_pdf_view(request, pk):
     c.setFont('Helvetica',12)
     c.drawString(290,680,'Estatus:')
     c.drawString(290,660, 'Proyecto:')
-    c.drawString(290,640, 'Activo:')
-    c.drawString(290,620, 'Operación:')
-    c.drawString(290,600, 'Sector:')
-    c.drawString(290,580, 'Almacén:')
+    c.drawString(290,640, 'Área:')
+    c.drawString(290,620, 'Almacén:')
+
 
     c.drawString(370,660, orden.proyecto.nombre)
-    c.drawString(370,640, orden.activo.eco_unidad)
-    c.drawString(370,620, orden.operacion.nombre)
-    c.drawString(370,600, orden.sector.nombre)
-    c.drawString(370,580, orden.staff.distrito.nombre)
+    c.drawString(370,640, orden.area.nombre)
+    c.drawString(370,620, orden.staff.distrito.nombre)
+    #c.drawString(370,600, orden.sector.nombre)
+
 
 
     c.setLineWidth(.3)
@@ -493,14 +597,14 @@ def render_pdf_view(request, pk):
     c.drawCentredString(230,high-190, orden.staff.staff.first_name +' '+ orden.staff.staff.last_name)
     c.line(180,high-195,280,high-195)
     c.drawCentredString(230,high-205, 'Solicitado')
-    if orden.sol_autorizada_por == None:
-        c.setFillColor(rojo)
-        c.drawCentredString(410, high-190, '{Esta orden no ha sido autorizada}')
-        c.drawString(370,680, 'No aprobada')
-    else:
-        c.setFillColor(black)
-        c.drawCentredString(410,high-190, orden.sol_autorizada_por.staff.first_name+' '+ orden.staff.staff.last_name)
-        c.drawString(370,680, 'Aprobada')
+    #if orden.sol_autorizada_por == None:
+    #    c.setFillColor(rojo)
+    #    c.drawCentredString(410, high-190, '{Esta orden no ha sido autorizada}')
+    #    c.drawString(370,680, 'No aprobada')
+    #else:
+    #    c.setFillColor(black)
+    #    c.drawCentredString(410,high-190, orden.sol_autorizada_por.staff.first_name+' '+ orden.staff.staff.last_name)
+    #    c.drawString(370,680, 'Aprobada')
     c.setFillColor(black)
     c.line(360,high-195,460,high-195)
     c.drawCentredString(410,high-205,'Aprobado por')
@@ -569,13 +673,13 @@ def reporte_entradas(request):
     return render(request,'requisiciones/reporte_entradas.html', context)
 
 def reporte_salidas(request):
-    salidas = Salidas.objects.filter(salida_firmada = True)
+    salidas = Salidas.objects.all()
     myfilter = SalidasFilter(request.GET, queryset=salidas)
     salidas = myfilter.qs
 
     if request.method == "POST" and 'btnExcel' in request.POST:
-
         return convert_salidas_to_xls(salidas)
+
 
 
     context = {
@@ -809,7 +913,7 @@ def convert_salidas_to_xls(salidas):
 
     rows = salidas.values_list('producto__articulos__orden__id','created_at',Concat('producto__articulos__orden__staff__staff__first_name',Value(' '),'producto__articulos__orden__staff__staff__last_name'),
                         'producto__articulos__orden__proyecto__nombre','producto__articulos__orden__subproyecto__nombre','producto__articulos__producto__producto__codigo','producto__articulos__producto__producto__nombre',
-                        Concat('material_recibido_por__staff__first_name',Value(' '),'material_recibido_por__staff__last_name'),'cantidad')
+                        Concat('vale_salida__material_recibido_por__staff__first_name',Value(' '),'vale_salida__material_recibido_por__staff__last_name'),'cantidad')
 
     for row in rows:
         row_num += 1
@@ -824,3 +928,139 @@ def convert_salidas_to_xls(salidas):
 
     return(response)
 #Aquí termina la implementación del XLSX
+
+
+def render_salida_pdf(request, pk):
+    #Configuration of the PDF object
+    buf = io.BytesIO()
+    c = canvas.Canvas(buf, pagesize=(595.27, 420))
+    #Here ends conf.
+    articulo = Salidas.objects.get(id=pk)
+    vale = ValeSalidas.objects.get(id = articulo.vale_salida.id)
+    productos = Salidas.objects.filter(vale_salida = vale)
+
+
+    #Azul Vordcab
+    prussian_blue = Color(0.0859375,0.1953125,0.30859375)
+    rojo = Color(0.59375, 0.05859375, 0.05859375)
+    #Encabezado
+    c.setFillColor(black)
+    c.setLineWidth(.2)
+    c.setFont('Helvetica',8)
+    caja_iso = 408
+    #Elaborar caja
+    #c.line(caja_iso,500,caja_iso,720)
+
+
+    c.drawString(420,caja_iso,'Preparado por:')
+    c.drawString(420,caja_iso-10,'SUP. ADMON')
+    c.drawString(520,caja_iso,'Aprobación')
+    c.drawString(520,caja_iso-10,'SUB ADM')
+    c.drawString(150,caja_iso-20,'Número de documento')
+    c.drawString(160,caja_iso-30,'F-ALM-N4-01.02')
+    c.drawString(245,caja_iso-20,'Clasificación del documento')
+    c.drawString(275,caja_iso-30,'Controlado')
+    c.drawString(355,caja_iso-20,'Nivel del documento')
+    c.drawString(380,caja_iso-30, 'N5')
+    c.drawString(440,caja_iso-20,'Revisión No.')
+    c.drawString(452,caja_iso-30,'000')
+    c.drawString(510,caja_iso-20,'Fecha de Emisión')
+    c.drawString(525,caja_iso-30,'1-Sep.-18')
+
+
+    c.drawString(510,caja_iso-50,'Folio: ')
+    c.drawString(530,caja_iso-50, str(vale.id))
+    c.drawString(510,caja_iso-60,'Fecha:')
+    c.drawString(540,caja_iso-60,vale.created_at.strftime("%d/%m/%Y"))
+
+
+    c.setFont('Helvetica',12)
+    c.setFillColor(prussian_blue)
+    # REC (Dist del eje Y, Dist del eje X, LARGO DEL RECT, ANCHO DEL RECT)
+    c.rect(150,caja_iso-15,250,20, fill=True, stroke=False) #Barra azul superior Orden de Compra
+
+    c.setFillColor(white)
+    c.setLineWidth(.2)
+    c.setFont('Helvetica-Bold',14)
+    c.drawCentredString(280,caja_iso-10,'Vale de Salida Almacén')
+    c.setLineWidth(.3) #Grosor
+
+    c.drawInlineImage('static/images/logo vordtec_documento.png',45,caja_iso-40, 3 * cm, 1.5 * cm) #Imagen vortec
+
+
+    data =[]
+    high = 310
+    data.append(['''Código''','''Producto''', '''Cantidad''', '''Unidad''','''P.Unitario''', '''Importe'''])
+    for producto in productos:
+        data.append([producto.producto.articulos.producto.producto.codigo, producto.producto.articulos.producto.producto.nombre,producto.cantidad, producto.producto.articulos.producto.producto.unidad, producto.precio, producto.precio * producto.cantidad])
+        high = high - 18
+
+    c.setFillColor(black)
+    c.setFont('Helvetica',8)
+
+
+    c.setFillColor(prussian_blue)
+    # REC (Dist del eje Y, Dist del eje X, LARGO DEL RECT, ANCHO DEL RECT)
+    c.rect(20,high-125,250,20, fill=True, stroke=False) #3ra linea azul
+    c.setFillColor(black)
+    c.setFont('Helvetica',7)
+
+
+    c.setFillColor(white)
+    c.setLineWidth(.1)
+    c.setFont('Helvetica-Bold',10)
+    c.drawCentredString(70,high-120,'Proyecto')
+    c.drawCentredString(165,high-120,'Subproyecto')
+
+    c.setFont('Helvetica',8)
+    c.setFillColor(black)
+    c.drawCentredString(70,high-135, str(vale.solicitud.proyecto.nombre))
+    c.drawCentredString(165,high-135, str(vale.solicitud.subproyecto.nombre))
+
+
+    c.setFillColor(black)
+    c.setFont('Helvetica',8)
+    #c.line(135,high-200,215, high-200) #Linea de Autorizacion
+    c.drawCentredString(180,high-210,'Entregó')
+    c.drawCentredString(180,high-220, vale.almacenista.staff.first_name +' '+vale.almacenista.staff.last_name)
+
+    c.line(370,high-200,430, high-200)
+    c.drawCentredString(400,high-210,'Recibió')
+    c.drawCentredString(400,high-220, vale.material_recibido_por.staff.first_name +' '+vale.material_recibido_por.staff.last_name)
+
+
+    #c.line(240, high-200, 310, high-200)
+    c.drawCentredString(280,high-210,'Autorizó')
+    c.drawCentredString(280,high-220, vale.solicitud.staff.staff.first_name + ' ' + vale.solicitud.staff.staff.last_name)
+
+
+
+    c.setFont('Helvetica',10)
+    c.setFillColor(prussian_blue)
+    c.setFont('Helvetica', 9)
+    c.setFillColor(black)
+
+    c.setFillColor(prussian_blue)
+    c.rect(20,20,565,20, fill=True, stroke=False)
+    c.setFillColor(white)
+
+    width, height = letter
+    table = Table(data, colWidths=[2.8 * cm, 6 * cm, 2.8 * cm, 2.8 * cm, 2.8 * cm, 2.8 * cm])
+    table.setStyle(TableStyle([ #estilos de la tabla
+        ('INNERGRID',(0,0),(-1,-1), 0.25, colors.white),
+        ('BOX',(0,0),(-1,-1), 0.25, colors.black),
+        ('VALIGN',(0,0),(-1,-1),'MIDDLE'),
+        #ENCABEZADO
+        ('TEXTCOLOR',(0,0),(-1,0), white),
+        ('FONTSIZE',(0,0),(-1,0), 12),
+        ('BACKGROUND',(0,0),(-1,0), prussian_blue),
+        #CUERPO
+        ('TEXTCOLOR',(0,1),(-1,-1), colors.black),
+        ('FONTSIZE',(0,1),(-1,-1), 8),
+        ]))
+    table.wrapOn(c, width, height)
+    table.drawOn(c, 20, high)
+    c.save()
+    c.showPage()
+    buf.seek(0)
+    return FileResponse(buf, as_attachment=True, filename='vale_salida_'+str(vale.id) +'.pdf')

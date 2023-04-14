@@ -1,17 +1,12 @@
 from django.db import models
 from dashboard.models import Order, Inventario, ArticulosparaSurtir
 from requisiciones.models import Requis, ArticulosRequisitados
-from user.models import Profile, Distrito
-from djmoney.models.fields import MoneyField
+from user.models import Profile, Distrito, Banco
 from simple_history.models import HistoricalRecords
 from django.core.validators import FileExtensionValidator
 # Create your models here.
 
-class Banco(models.Model):
-    nombre = models.CharField(max_length=10, null=True, unique=True)
 
-    def __str__(self):
-        return f'{self.nombre}'
 
 class Estatus_proveedor(models.Model):
     nombre = models.CharField(max_length=10, null=True, unique=True)
@@ -21,16 +16,35 @@ class Estatus_proveedor(models.Model):
 
 
 class Proveedor(models.Model):
-    nombre = models.CharField(max_length=100, null=True, unique=True)
+    razon_social = models.CharField(max_length=100, null=True, unique=True)
+    nombre_comercial = models.CharField(max_length=100, null=True)
     rfc = models.CharField(max_length=13, null=True, unique=True)
+
+
+    def __str__(self):
+        return f'{self.razon_social}'
+
+class Proveedor_Batch(models.Model):
+    file_name = models.FileField(upload_to='product_bash', validators = [FileExtensionValidator(allowed_extensions=('csv',))])
+    uploaded = models.DateField(auto_now_add=True)
+    activated = models.BooleanField(default=False)
+
+
+    def __str__(self):
+        return f'File id:{self.id}'
+
+class Estado(models.Model):
+    nombre = models.CharField(max_length=30, null=True)
 
     def __str__(self):
         return f'{self.nombre}'
 
-class Proveedor_completo(models.Model):
+
+class Proveedor_direcciones(models.Model):
     nombre = models.ForeignKey(Proveedor, on_delete=models.CASCADE, null=True)
     distrito = models.ForeignKey(Distrito, on_delete=models.CASCADE, null=True)
     domicilio = models.CharField(max_length=200, null=True)
+    estado = models.ForeignKey(Estado, on_delete=models.CASCADE, null=True)
     contacto = models.CharField(max_length=50, null=True)
     email = models.EmailField(max_length=254, null=True)
     banco = models.ForeignKey(Banco, on_delete=models.CASCADE, null=True)
@@ -43,6 +57,11 @@ class Proveedor_completo(models.Model):
 
     def __str__(self):
         return f'{self.nombre}'
+
+class Proveedor_Direcciones_Batch(models.Model):
+    file_name = models.FileField(upload_to='product_bash', validators = [FileExtensionValidator(allowed_extensions=('csv',))])
+    uploaded = models.DateField(auto_now_add=True)
+    activated = models.BooleanField(default=False)
 
 class Uso_cfdi(models.Model):
     codigo = models.CharField(max_length=3, null=True)
@@ -78,29 +97,37 @@ class Compra(models.Model):
     autorizado_date2 = models.DateField(null=True, blank=True)
     autorizado_hora2 = models.TimeField(null=True, blank=True)
     autorizado2 = models.BooleanField(null=True, default=None)
-    proveedor = models.ForeignKey(Proveedor_completo, on_delete = models.CASCADE, null=True, blank=True)
-    cond_de_pago = models.ForeignKey(Cond_credito, on_delete = models.CASCADE, null=True, blank=True)
-    uso_del_cfdi = models.ForeignKey(Uso_cfdi, on_delete = models.CASCADE, null=True, blank=True)
+    proveedor = models.ForeignKey(Proveedor_direcciones, on_delete = models.CASCADE, null=True)
+    deposito_comprador = models.ForeignKey(Profile, on_delete = models.CASCADE, null=True, blank=True, related_name='Comprador')
+    referencia = models.CharField(max_length=20, null=True, blank=True)
+    cond_de_pago = models.ForeignKey(Cond_credito, on_delete = models.CASCADE, null=True)
+    uso_del_cfdi = models.ForeignKey(Uso_cfdi, on_delete = models.CASCADE, null=True)
     dias_de_credito =  models.PositiveIntegerField(null=True, blank=True)
-    moneda = models.ForeignKey(Moneda, on_delete=models.CASCADE, null=True, blank=True)
-    tipo_de_cambio = MoneyField(max_digits=14, decimal_places=4, null=True, blank=True, default_currency= 'MXN')
+    moneda = models.ForeignKey(Moneda, on_delete=models.CASCADE, null=True)
+    tipo_de_cambio = models.DecimalField(max_digits=14, decimal_places=4, null=True, blank=True)
     anticipo = models.BooleanField(default=False)
-    monto_anticipo = MoneyField(max_digits=14, decimal_places=2, null=True, blank=True, default_currency= 'MXN')
+    monto_anticipo = models.DecimalField(max_digits=14, decimal_places=2, null=True, blank=True)
     dias_de_entrega = models.PositiveIntegerField(null=True, blank=True)
     impuesto =  models.BooleanField(default=False)
-    impuestos_adicionales = MoneyField(max_digits=14, decimal_places=2, null=True, blank=True, default_currency= 'MXN')
+    impuestos_adicionales = models.DecimalField(max_digits=14, decimal_places=2, null=True, blank=True)
     flete = models.BooleanField(default=False)
-    costo_fletes = MoneyField(max_digits=14, decimal_places=2, null=True, blank=True, default_currency= 'MXN')
+    costo_fletes = models.DecimalField(max_digits=14, decimal_places=2, null=True, blank=True)
+    logistica = models.BooleanField(default=False)
     tesoreria_matriz = models.BooleanField(default=False)
     opciones_condiciones = models.CharField(max_length=250, null=True, blank=True)
     history = HistoricalRecords(history_change_reason_field=models.TextField(null=True))
-    factura_pdf = models.FileField(blank=True, null=True, upload_to='facturas',validators=[FileExtensionValidator(['pdf'])])
-    factura_xml = models.FileField(blank=True, null=True, upload_to='xml', validators=[FileExtensionValidator(['xml'])])
-    costo_oc = MoneyField(max_digits=14,decimal_places=2, null=True, blank=True, default_currency= 'MXN')
-    costo_iva = MoneyField(max_digits=14,decimal_places=2, null=True, blank=True, default_currency= 'MXN')
+    #factura_pdf = models.FileField(blank=True, null=True, upload_to='facturas',validators=[FileExtensionValidator(['pdf'])])
+    #factura_xml = models.FileField(blank=True, null=True, upload_to='xml', validators=[FileExtensionValidator(['xml'])])
+    costo_oc = models.DecimalField(max_digits=14,decimal_places=2, null=True, blank=True)
+    costo_iva = models.DecimalField(max_digits=14,decimal_places=2, null=True, blank=True)
     pagada = models.BooleanField(default=False)
-    monto_pagado = MoneyField(max_digits=14,decimal_places=2, default=0, default_currency= 'MXN')
+    monto_pagado = models.DecimalField(max_digits=14,decimal_places=2, default=0)
     entrada_completa = models.BooleanField(default=False)
+
+    @property
+    def get_pagos(self):
+        pagos = self.pago_set.all()
+        return pagos
 
     def __str__(self):
         return f'oc:{self.folio} - {self.id} - req:{self.req.folio} - sol:{self.req.orden.folio}'
@@ -112,10 +139,24 @@ class ArticuloComprado(models.Model):
     cantidad = models.PositiveIntegerField(null=True, blank=True)
     cantidad_pendiente = models.PositiveIntegerField(null=True, blank=True)
     entrada_completa = models.BooleanField(default=False)
-    precio_unitario = MoneyField(max_digits=14, decimal_places=2, null=True, blank=True, default_currency= 'MXN')
+    seleccionado = models.BooleanField(default=False)
+    precio_unitario = models.DecimalField(max_digits=14, decimal_places=2, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     history = HistoricalRecords(history_change_reason_field=models.TextField(null=True))
     def __str__(self):
         return f'{self.id} - {self.producto.producto.articulos.producto.producto} - {self.oc.id} - {self.cantidad} - {self.precio_unitario}'
+
+
+class Facturas(models.Model):
+    oc = models.ForeignKey(Compra, on_delete = models.CASCADE, null=True)
+    fecha_subido = models.DateField(null=True, blank=True)
+    hora_subido = models.TimeField(null=True, blank=True)
+    comentario = models.CharField(max_length=100, null=True)
+    hecho = models.BooleanField(default=False)
+    factura_pdf = models.FileField(blank=True, null=True, upload_to='facturas',validators=[FileExtensionValidator(['pdf'])])
+    factura_xml = models.FileField(blank=True, null=True, upload_to='xml', validators=[FileExtensionValidator(['xml'])])
+
+    def __str__(self):
+        return f'id:{self.id} oc:{self.oc}'
 
 

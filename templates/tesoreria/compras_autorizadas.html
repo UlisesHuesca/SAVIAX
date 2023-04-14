@@ -68,6 +68,11 @@
                                <i class="fa-solid fa-file-pdf fa-2xl"></i>
                             </button>
                         </li>
+                        <li class="nav-item mx-2">
+                            <a type="button" class="btn btn-outline-success" href="{% url 'pago-gastos-autorizados' %}">
+                                Gastos
+                            </a>
+                        </li>
                     </ul>
                 </form>
             </div>
@@ -130,21 +135,24 @@
                     <td>{{compra.req.orden.subproyecto.nombre}}</td>
                     <td>{{compra.autorizado_date2}} </td>
                     <td>{{compra.proveedor}}</td>
-                    <td>{{compra.costo_oc}}</td>
+                    <td>${{compra.costo_oc}}</td>
                     <td>{{compra.moneda}}</td>
-                    <td>{{compra.monto_pagado}}</td>
+                    <td>${{compra.monto_pagado}}</td>
                     <td>{{compra.cond_de_pago}}</td>
                     <td>
                         <ul class="nav nav-pills">
                             <li class="nav-item mx-1">
                                 <button id="myBtn" type="button" class="btn btn-outline-info" data-bs-toggle="modal" data-bs-target='#dialog' hx-target="#document" hx-get="{% url 'compras-pagos' compra.id %}">Detalle</button>
                             </li>
+                            {% if compra.get_pagos %}
                             <li class="nav-item mx-1">
-                                <a type="button" class="btn btn-outline-light" style="background-color:#990f0f" data-bs-toggle="modal" data-bs-target='#dialog' hx-target="#document" hx-get="{% url 'upload-facturas' compra.id %}"><i class="fa-solid fa-cloud-arrow-up"></i><i class="fa-solid fa-file-pdf"></i></a>
+                                <a type="button" class="btn btn-outline-light" style="background-color:#990f0f" href="{% url 'matriz-facturas' compra.id %}"><i class="fa-solid fa-cloud-arrow-up"></i></a>
                             </li>
+                            {% else %}
                             <li class="nav-item mx-1">
-                                <a type="button" class="btn btn-outline-light" style="background-color:#9a9b9d" data-bs-toggle="modal" data-bs-target='#dialog' hx-target="#document" hx-get="{% url 'upload-xml' compra.id %}"><i class="fa-solid fa-cloud-arrow-up"></i><i class="fa-solid fa-file-code"></i></i></a>
+                                <a type="button" class="btn btn-outline-danger" href="{{compra.factura_pdf.url}}" download><i class="fa-solid fa-file-pdf"></i></a>
                             </li>
+                            {% endif %}
                         </ul>
                     </td>
                 </tr>

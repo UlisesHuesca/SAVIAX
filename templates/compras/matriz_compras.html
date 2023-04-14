@@ -114,10 +114,11 @@
                     <th scope="col">Solicitado por</th>
                     <th scope="col">Proyecto</th>
                     <th scope="col">Subproyecto</th>
-                    <th scope="col">Operación</th>
+                    <th scope="col">Área</th>
                     <th scope="col">Creado</th>
                     <th scope="col">Proveedor</th>
                     <th scope="col">Costo</th>
+                    <th scope="col">Status Pago</th>
                     <th scope="col">Acción</th>
                 </tr>
             </thead>
@@ -130,10 +131,15 @@
                     <td>{{compra.req.orden.staff.staff.first_name}} {{compra.req.orden.staff.staff.last_name}}</td>
                     <td>{{compra.req.orden.proyecto.nombre}}</td>
                     <td>{{compra.req.orden.subproyecto.nombre}}</td>
-                    <td>{{compra.req.orden.operacion}}</td>
+                    <td>{{compra.req.orden.area}}</td>
                     <td>{{compra.created_at}} </td>
                     <td>{{compra.proveedor}}</td>
-                    <td>{{compra.costo_oc}}</td>
+                    <td>${{compra.costo_oc}}</td>
+                    {% if compra.pagada %}
+                    <td>Pagada</td>
+                    {% else %}
+                    <td>No Pagada</td>
+                    {% endif %}
                     <td>
                         <ul class="nav nav-pills">
                             <li class="nav-item mx-1">

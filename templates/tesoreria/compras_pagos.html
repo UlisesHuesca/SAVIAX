@@ -9,7 +9,7 @@
 </head>
 <body>
 {% block content %}
-<!-- Esta es la zona donde se crean los mensajes perrones con sweet alert -->
+<!-- Esta es la zona donde se crean los mensajes exitantes con sweet alert -->
 <div>
     <script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
         {% if messages %}
@@ -48,7 +48,7 @@
                     <thead>
                         <tr>
                         <th scope="col">Proveedor:</th>
-                        <th scope="col">{{compra.proveedor.nombre.nombre}}</th>
+                        <th scope="col">{{compra.proveedor.nombre.razon_social}}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -56,6 +56,24 @@
                             <th scope="col">RFC:</th>
                             <th scope="col">{{compra.proveedor.nombre.rfc}}</th>
                         </tr>
+                        {% if compra.deposito_comprador %}
+                         <tr>
+                            <th scope="col">Comentario:</th>
+                            <th scope="col">Esta depósito se realizará a la cuenta de {{compra.deposito_comprador.staff.first_name}} {{compra.deposito_comprador.staff.last_name}}</th>
+                        </tr>
+                        <tr>
+                            <th scope="col">Banco Comprador:</th>
+                            <th scope="col">{{compra.de}}</th>
+                        </tr>
+                        <tr>
+                            <th scope="col">Cuenta:</th>
+                            <th scope="col">{{compra.proveedor.cuenta}}</th>
+                        </tr>
+                        <tr>
+                            <th scope="col">Clabe:</th>
+                            <th scope="col">{{compra.proveedor.clabe}}</th>
+                        </tr>
+                        {% else %}
                         <tr>
                             <th scope="col">Banco:</th>
                             <th scope="col">{{compra.proveedor.banco}}</th>
@@ -68,6 +86,16 @@
                             <th scope="col">Clabe:</th>
                             <th scope="col">{{compra.proveedor.clabe}}</th>
                         </tr>
+                        {% if compra.referencia %}
+                        <tr>
+                            <th scope="col">Referencia</th>
+                            <th scope="col">{{compra.referencia}}</th>
+                        </tr>
+                        {% else %}
+                        <tr> </tr>
+                        {% endif %}
+
+                        {% endif %}
                     </tbody>
                 </table>
                 <hr>
@@ -177,8 +205,7 @@ if (tipo_cambio) {
     tipo_cambio.setAttribute("class","form-control d-none");
 }
 
-monto_moneda.setAttribute("class","form-control d-none");
-console.log(compra_moneda);
+
 
 if (compra_moneda == "Dólares"){
     monto_moneda.selectedIndex = 1;

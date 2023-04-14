@@ -50,6 +50,11 @@
                                     {{form.cantidad|add_class:"form-control"}}
                                 </div>
                             </th>
+                            <th scope="col">
+                                <div class="col-20">
+                                    {{form.comentario|add_class:"form-control"}}
+                                </div>
+                            </th>
                         </tr>
                     </tbody>
                 </table>
@@ -91,12 +96,19 @@ cant.addEventListener('change', function(){
                 })
 
     }
-    if (cant.value >0 ){
+    if (cant.value >0 ) ({
         btn.removeAttribute('class');
         btn.setAttribute('class','btn btn-outline-info col-2');
     }
 
 });
+//var comentario = document.getElementById('id_comentario');
+
+//comentario.addEventListener('change', function(){
+//   var coment = comentario.value;
+
+//   if (comentario.value)
+//});
 
 
 </script>

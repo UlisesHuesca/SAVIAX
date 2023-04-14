@@ -1,0 +1,1 @@
+[{"model": "compras.estatus_proveedor", "pk": 1, "fields": {"nombre": "NUEVO"}}, {"model": "compras.estatus_proveedor", "pk": 2, "fields": {"nombre": "APROBADO"}}, {"model": "compras.estatus_proveedor", "pk": 3, "fields": {"nombre": "SUSPENDIDO"}}]

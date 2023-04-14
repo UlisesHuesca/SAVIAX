@@ -17,19 +17,36 @@
         <div class="box-element" id="form-wrapper">
             <div class="card-header mt-3 mb-4">
             <!-- Aqui es el encabezado de los filtros -->
-                <h5 id="oc" target={{oc.id}}>ORDEN DE COMPRA: {{oc.folio}}</h5>
+                <h5 id="oc" target={{oc.id}}>ORDEN DE COMPRA: {{oc.id}}</h5>
             </div>
             <form method="POST">
             <div>
                 {% csrf_token %}
                 <div class="row my-2">
                     <label for="form.proveedor" class="col-auto col-form-label"><strong>Proveedor:</strong></label>
+
+                        {{form.proveedor | add_class:"form-select d-none" }}
+
                     <div class="col-sm-6">
-                        {{form.proveedor | add_class:"form-select" }}
+                    <input type="text" list="proveedor" id="txt_proveedor" valor="{{proveedor.id}}" placeholder="Proveedores..." class="form-control">
+
+                    <datalist id="proveedor" name='proveedor'>
+                        {% for item in proveedores %}
+                        <option valor="{{item.id}}" value="{{item.nombre.razon_social}}"></option>
+                        {% endfor %}
+                    </datalist>
                     </div>
+                </div>
+                <div class="row my-2">
                     <label for="form.cond_de_pago" class="col-auto col-form-label my-1"><strong>Condiciones de pago:</strong></label>
                     <div class="col-2">
                         {{ form.cond_de_pago|add_class:"form-select my-1" }}
+                    </div>
+                </div>
+                <div id="comprador" class="row my-2 d-none">
+                 <label for="form.cond_de_pago" class="col-auto col-form-label my-1"><strong>Comprador:</strong></label>
+                    <div class="col-sm-6">
+                    {{ form.deposito_comprador|add_class:"form-select my-1" }}
                     </div>
                 </div>
                 <div class="row my-2">
@@ -60,6 +77,18 @@
                         {{form.dias_de_entrega|add_class:"form-control"}}
                     </div>
                 </div>
+                <div class="row my-2">
+                    <div class="form-check form-switch col-auto mx-4" id="referencia">
+                        <input class="form-check-input" type="checkbox" role="switch" id="SwitchReferencia">
+                        <label class="form-check-label" for="flexSwitchCheckDefault" id="LabelReferencia"><strong>Referencia</strong></label>
+                    </div>
+                    <div id="referencialbl" class="col-sm d-none">
+                        <label for="form.referencia" class="col"><strong>Referencia:</strong></label>
+                        <div class="col-sm-5">
+                            {{form.referencia|add_class:"form-control"}}
+                        </div>
+                    </div>
+                </div>
                 <div class="row ms-3 my-2">
                     <div class="form-check form-switch col-sm-3">
                     <label for="form.impuesto" class="form-check-label"><strong>Impuesto</strong></label>
@@ -88,6 +117,12 @@
                     <label for="form.monto_anticipo" id="anticipo" class="col-auto col-form-label d-none"><strong>Monto de anticipo:</strong></label>
                     <div class="col-sm-2">
                         {{form.monto_anticipo|add_class:"form-control d-none"}}
+                    </div>
+                </div>
+                <div class="row ms-3 my-2">
+                    <div class="form-check form-switch col-sm">
+                    <label for="form.logistica" class="form-check-label"><strong>Logística</strong></label>
+                        {{form.logistica|add_class:"form-check-input"}}
                     </div>
                 </div>
                 <div class="row ms-3 my-2">
@@ -154,7 +189,7 @@
                     <th scope="col">#</th>
                     <th scope="col">Producto</th>
                     <th scope="col">Cantidad</th>
-                    <th scope="col">Precio</th>
+                    <th scope="col">P.U.</th>
                     <th scope="col">Subtotal</th>
                     <th scope="col" class="col-sm-2">Acción</th>
                 </tr>
@@ -165,9 +200,9 @@
                     <td scope="col">{{product.producto.producto.articulos.producto.codigo}}</td>
                     <td scope="col">{{product.producto.producto.articulos.producto.producto}}</td>
                     <td scope="col">{{product.cantidad}}</td>
-                    <td scope="col">{{product.precio_unitario}}</td>
-                    {% if product.precio_unitario.amount != None  and product.cantidad != None %}
-                    <td scope="col">MX${% widthratio product.precio_unitario.amount 1 product.cantidad %}</td>
+                    <td scope="col">${{product.precio_unitario}}</td>
+                    {% if product.precio_unitario != None  and product.cantidad != None %}
+                    <td scope="col">${% widthratio product.precio_unitario 1 product.cantidad %}</td>
                     {% endif %}
                     <td scope="col"><button type="button" class="btn btn-danger" value="Delete" onclick="deleteRow(this)" iva="{{product.producto.producto.articulos.producto.producto.iva}}" id="delete" producto="{{product.producto.id}}" cantidad="{{product.cantidad}}" precio="{{product.precio_unitario.amount}}" aria-label="Close"><i class="fa-solid fa-trash-can"></i></button></td>
                 </tr>
@@ -178,17 +213,17 @@
             <thead>
                 <tr>
                     <th scope="col">Subtotal</th>
-                    <td scope="col" id="subtotal">{{subtotal}}</td>
+                    <td scope="col" id="subtotal">${{subtotal}}</td>
                 </tr>
                 </thead>
             <tbody>
                 <tr>
                     <th scope="col">IVA</th>
-                    <td scope="col" id="iva">{{iva}}</td>
+                    <td scope="col" id="iva">${{iva}}</td>
                 </tr>
                 <tr>
                     <th scope="col">Total</th>
-                    <td scope="col" id="total">{{total}}</td>
+                    <td scope="col" id="total">${{total}}</td>
                 </tr>
             </tbody>
             </table>
@@ -203,7 +238,6 @@
     </div>
 </div>
 
-
 <!--AJAX CALL-->
 <script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
@@ -216,8 +250,42 @@ var format = new Intl.NumberFormat('en-US', {
 
 
 var crear = document.getElementById("crear")
-var precio_mod = document.getElementById("id_precio_unitario_1")
-precio_mod.setAttribute("class","form-control d-none")
+var precio_mod = document.getElementById("id_precio_unitario")
+
+document.getElementById("txt_proveedor").addEventListener("change", (event)=>{
+    var select = document.getElementById("txt_proveedor");
+    console.log(select.value)
+    var browserChildren = document.getElementById('proveedor').children;
+    //var browserChildren = document.getElementById('proveedor')
+    //var dataList = document.getElementById(browserChildren.getAttribute("valor"))
+    var other_select = document.getElementById('id_proveedor');
+
+
+    cont = 0
+
+    for(let i = 0; i < browserChildren.length; i++){
+        console.log(browserChildren[i].value)
+
+        if (browserChildren[i].value === select.value) {
+            console.log(browserChildren[i])
+            console.log(select.value)
+            let id = browserChildren[i].getAttribute('valor');
+            console.log(id)
+            other_select.value = id;
+            cont = 1
+            } //else {
+            //    console.log(browserChildren[i].value)
+              //  console.log(select)
+           // }
+    }
+    //console.log(select.value)
+    //El cont = 0 es un indicador/bandera si encuentra al menos una similitud en el for no se activa
+    if ((!select.value) || (cont = 0)){
+        other_select.value = 0
+    }
+});
+
+
 
 
 document.getElementById("crear").addEventListener("click", function(element){
@@ -328,8 +396,48 @@ document.getElementById("crear").addEventListener("click", function(element){
                 "text":"Puedes crear la OC, ahora",
                 "icon":"success",
             })
+
             }
 });
+
+//Esta es la rutina para ejecutar lo de mercado libre
+//document.getElementById("id_proveedor").addEventListener("change", function(element){
+//   var select = document.getElementById("id_proveedor")
+//   var current_option = select.options[select.selectedIndex]
+//   var comprador = document.getElementById("comprador")
+//   var lbl_comprador = document.getElementById("lbl_comprador")
+
+//   id = current_option.getAttribute('value')
+//   if (id == 2){
+ //      comprador.setAttribute("class", "row my-2")
+  //     Swal.fire({
+//                "title":"Success",
+ //               "text":"Al seleccionar el proveedor Mercado Libre, se debe seleccionar un comprador para depositarle",
+  //              "icon":"success",
+//            })
+ //  } else {
+  //      comprador.setAttribute("class", "row my-2 d-none")
+   //}
+//});
+
+
+
+var checkref = document.getElementById("SwitchReferencia");
+
+
+document.getElementById("SwitchReferencia").addEventListener("change", function(element){
+	console.log('referencia check:'+checkref.checked);
+	var referencia = document.getElementById('referencialbl');
+
+
+	if (checkref.checked){
+	    referencia.setAttribute('class','col-sm')
+	} else{
+	    referencia.setAttribute('class','col-sm d-none')
+	}
+});
+
+
 
 
 document.getElementById("producto").addEventListener("change", function(element){
@@ -366,7 +474,7 @@ updateBtn.addEventListener('click',function(){
         var iva = current_option.getAttribute('iva');
         //Esta es la cantidad realmente pedida en la OC
         var quantity = document.getElementById('id_cantidad');
-        var precio = document.getElementById('id_precio_unitario_0');
+        var precio = document.getElementById('id_precio_unitario');
         var default_op = document.getElementById('default_sel');
         var val_cantidad = quantity.value;
         console.log('val_cantidad',val_cantidad)
@@ -403,7 +511,7 @@ updateBtn.addEventListener('click',function(){
         } else {
             ActualizarArticulos(oc,id,val_cantidad,val_precio,action);
             document.getElementById("id_cantidad").value= null;
-            document.getElementById("id_precio_unitario_0").value= null;
+            document.getElementById("id_precio_unitario").value= null;
 
         }
 })
@@ -459,7 +567,7 @@ var checkflete = document.getElementById("id_flete")
 document.getElementById("id_flete").addEventListener("change", function(element){
 	console.log('checkflete:'+checkflete.checked);
 	var lbl_flete = document.getElementById('fletes')
-	var txt_flete1 = document.getElementById('id_costo_fletes_0')
+	var txt_flete1 = document.getElementById('id_costo_fletes')
 
 	if (checkflete.checked){
 	    lbl_flete.removeAttribute('class');
@@ -479,7 +587,7 @@ var checkdof = document.getElementById("SwitchDof");
 
 document.getElementById("SwitchDof").addEventListener("change", function(element){
 	console.log('Dof:'+checkdof.checked);
-	var tipo_cambio = document.getElementById('id_tipo_de_cambio_0');
+	var tipo_cambio = document.getElementById('id_tipo_de_cambio');
 	let check = document.getElementById('Dof');
 	let checkdof_val = check.getAttribute('valor');
 	//
@@ -496,7 +604,7 @@ var checkanticipo = document.getElementById("id_anticipo")
 document.getElementById("id_anticipo").addEventListener("change", function(element){
 	console.log('checkanticipo:'+checkanticipo.checked);
 	var lbl_anticipo = document.getElementById('anticipo')
-	var txt_anticipo = document.getElementById('id_monto_anticipo_0')
+	var txt_anticipo = document.getElementById('id_monto_anticipo')
 
 	if (checkanticipo.checked){
 	    lbl_anticipo.removeAttribute('class');
@@ -519,7 +627,7 @@ var checkimpuesto = document.getElementById("id_impuesto")
 document.getElementById("id_impuesto").addEventListener("change", function(element){
 	console.log('checkimpuesto:'+checkimpuesto.checked);
 	var lbl_impuestos = document.getElementById('impuestos')
-	var txt_impuestos = document.getElementById('id_impuestos_adicionales_0')
+	var txt_impuestos = document.getElementById('id_impuestos_adicionales')
 
 	if (checkimpuesto.checked){
 	    lbl_impuestos.removeAttribute('class');
@@ -559,12 +667,12 @@ var moneda = document.getElementById("id_moneda")
 
 document.getElementById("id_moneda").addEventListener("change", function(element){
     var lbl_tipo_cambio = document.getElementById('tipo_de_cambio')
-    var txt_tipo_cambio = document.getElementById('id_tipo_de_cambio_0')
+    var txt_tipo_cambio = document.getElementById('id_tipo_de_cambio')
     var div_dof = document.getElementById('Dof')
-    var precio_mod = document.getElementById("id_precio_unitario_1");
-    var flete_mod = document.getElementById("id_costo_fletes_1");
-    var impuestos_mod = document.getElementById("id_impuestos_adicionales_1");
-    var anticipo_mod = document.getElementById("id_monto_anticipo_1");
+    var precio_mod = document.getElementById("id_precio_unitario");
+    var flete_mod = document.getElementById("id_costo_fletes");
+    var impuestos_mod = document.getElementById("id_impuestos_adicionales");
+    var anticipo_mod = document.getElementById("id_monto_anticipo");
 
     if (moneda.value == 2){
         lbl_tipo_cambio.removeAttribute('class');
@@ -589,6 +697,8 @@ document.getElementById("id_moneda").addEventListener("change", function(element
         anticipo_mod.selectedIndex = 0;
     }
 });
+
+
 
 </script>
 {% endblock %}

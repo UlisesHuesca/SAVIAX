@@ -1,4 +1,4 @@
-{% extends 'partials/base_w_nav.html' %}
+{% extends 'partials/base.html' %}
 {% load widget_tweaks %}
 {% load static %}
 {% load crispy_forms_tags %}
@@ -7,20 +7,35 @@
 {% block title %}Productos{% endblock %}
 </head>
 <body>
-{% block content %}
-<!-- Esta es la zona donde se crean los mensajes perrones con sweet alert -->
-<div class="row my-4">
-    <div class="col-md-4">
-        {% for message in messages %}
-            {% if message %}
-            <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
-            <script>
 
-            </script>
-            {% endif %}
-        {% endfor %}
-    </div>
+{% block content %}
+<!-- Esta es la zona donde se crean los mensajes excitantes con sweet alert -->
+<div>
+    <script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+        {% if messages %}
+            {% for message in messages %}
+                {% if message.tags == "error" %}
+                <script>
+                Swal.fire({
+                    "title":"Error",
+                    "text":"{{message}}",
+                    "icon":"error",
+                })
+                </script>
+                {% else %}
+                <script>
+                Swal.fire({
+                    "title":"Excelente",
+                    "text":"{{message}}",
+                    "icon":"success",
+                })
+                </script>
+                {% endif %}
+            {% endfor %}
+        {% endif %}
 </div>
+<hr>
+<hr>
 <div class="row">
     <div class="col-lg-6">
         <div class="box-element" id="form-wrapper">
@@ -34,11 +49,20 @@
                         <div class="row my-5">
                             <label for="form.moneda" class="col-auto col-form-label my-1"><strong>Material entregado a:</strong></label>
                             <div class="col-5">
-                                {{ formVale.material_recibido_por|add_class:"form-select my-1" }}
+                                {{ formVale.material_recibido_por|add_class:"form-select my-1 d-none" }}
                             </div>
-                            <div class="col-3">
-                                <input class="btn btn-outline-info btn-block my-1" name="agregar" type="submit" value="Guardar vale">
+                            <div class="col-12">
+                                <input type="text" list="user" id="txt_usuario" valor="{{user.id}}" placeholder="Usuarios..." class="form-control">
+                                <datalist id="user" name='user'>
+                                    {% for user in users %}
+                                        <option valor="{{user.id}}" value="{{user.staff.first_name}} {{user.staff.last_name}}"></option>
+                                    {% endfor %}
+                                </datalist>
                             </div>
+
+                                <div class="col-3">
+                                <input class="btn btn-outline-info btn-block my-4" name="agregar" type="submit" value="Guardar vale">
+                                </div>
                         </div>
                     </form>
             </div>
@@ -60,7 +84,7 @@
                             <option id="default_sel">      </option>
                             {% for producto in productos %}
                             {% if producto.seleccionado == False %}
-                            <option id="js" target="{{producto.id}}" producto="{{producto.articulos.producto}}" cantidad="{{producto.cantidad}}">
+                            <option id="js" target="{{producto.id}}" producto="{{producto.articulos.producto}}" cantidad="{{producto.cantidad}}" cantidad_sol ="{{producto.articulos.cantidad}}" stock="{{producto.articulos.producto.cantidad}}">
                                 {{producto.articulos.producto}}
                             </option>
                             {% endif %}
@@ -145,11 +169,46 @@ document.getElementById("producto").addEventListener("change", function(element)
     var select = document.getElementById('producto');
     var current_option = select.options[select.selectedIndex];
     let cantidad = current_option.getAttribute('cantidad');
-    let cantidad_comprada = current_option.getAttribute('cantidad_comprada');
-    var cantidad_pendiente = cantidad - cantidad_comprada;
-    console.log(cantidad);
+    let cantidad_sol = current_option.getAttribute('cantidad_sol');
+    let stock = current_option.getAttribute('stock');
+
+    console.log('sol:',cantidad_sol)
+    console.log('cantidad:', cantidad)
+    if (cantidad == 0) {
+        if (cantidad_sol > 0) {
+            cantidad_pendiente = cantidad_sol
+        }
+    } else {
+    var cantidad_pendiente = cantidad}
+
+    console.log('stock',stock);
     var solicitado = document.getElementById('solicitado');
     solicitado.innerHTML = cantidad_pendiente;
+});
+
+document.getElementById("txt_usuario").addEventListener("change", (event)=>{
+    var select = document.getElementById("txt_usuario");
+    var browserChildren = document.getElementById('user').children;
+    var other_select = document.getElementById('id_material_recibido_por');
+    console.log(browserChildren)
+    //other_select.value = select.valor
+    cont = 0
+
+    for(let i = 0; i < browserChildren.length; i++){
+        if (browserChildren[i].value === select.value){
+            console.log(browserChildren[i])
+            console.log(select.value)
+            let id = browserChildren[i].getAttribute('valor');
+            console.log(id)
+            other_select.value = id;
+            cont = 1
+            }
+    }
+    //console.log(select.value)
+    //El cont = 0 es un indicador/bandera si encuentra al menos una similitud en el for no se activa
+    if ((!select.value) || (cont = 0)){
+        other_select.value = 0
+    }
 });
 
 var updateBtn = document.getElementById('update-purchase')
@@ -168,10 +227,23 @@ updateBtn.addEventListener('click',function(){
         var producto = current_option.getAttribute('producto');
         //Esta es la cantidad establecida en la requisición
         var cantidad = current_option.getAttribute('cantidad');
+        var cantidad_sol = current_option.getAttribute('cantidad_sol');
+        console.log(cantidad_sol)
         var quantity = document.getElementById('id_cantidad');
         //Esta es la cantidad comprada de acuerdo a la requisición
         var val_cantidad = quantity.value;
-        var cantidad_pendiente = cantidad - val_cantidad
+
+
+        if (cantidad == 0) {
+            if (cantidad_sol > 0) {
+                cantidad_pendiente = cantidad_sol
+            }
+        } else {
+            var cantidad_pendiente = cantidad - val_cantidad
+        }
+
+
+        console.log(cantidad_pendiente)
         id_salida = 0
 
 
@@ -187,7 +259,7 @@ updateBtn.addEventListener('click',function(){
         } else if (cantidad_pendiente < 0)  {
             Swal.fire({
                     "title":"Error",
-                    "text":"La cantidad ingresada es mayor que la cantidad requerida",
+                    "text":"La cantidad ingresada es mayor que la cantidad disponible",
                     "icon":"error",
                 })
         //Si "la cantidad comprada" es menor que cero
@@ -198,7 +270,11 @@ updateBtn.addEventListener('click',function(){
                     "icon":"error",
                 })
         } else {
-            console.log(current_option)
+            console.log('val:',val_cantidad)
+            console.log('salida:',salida)
+            console.log('id',id)
+            console.log('action',action)
+            console.log('id_salida:',id_salida)
 
             ActualizarArticulos(salida,id,val_cantidad,action,id_salida);
             //current_option.setAttribute("class","d-none");
@@ -216,9 +292,10 @@ function deleteRow(element) {
     id_salida = element.getAttribute('id_salida')
     id = element.getAttribute('producto_id');
     val_cantidad = element.getAttribute('cantidad');
-    var action = "remove";
+    var action = "remove"
     ActualizarArticulos(salida, id, val_cantidad, action, id_salida);
 }
+
 
 
 function ActualizarArticulos(oc,id,val_cantidad,action){
