@@ -7,7 +7,7 @@ from compras.filters import CompraFilter
 from compras.views import dof, attach_oc_pdf
 from dashboard.models import Subproyecto
 from .models import Pago, Cuenta, Facturas
-from .forms import PagoForm
+from .forms import PagoForm, Facturas_Form
 from .filters import PagoFilter
 from user.models import Profile
 from django.contrib import messages
@@ -26,7 +26,7 @@ def compras_autorizadas(request):
         compras = Compra.objects.filter(autorizado2=True, pagada=False).order_by('-folio')
     else:
         compras = Compra.objects.filter(flete=True,costo_fletes='1')
-    #compras = Compra.objects.filter(autorizado2=True, pagada=False).order_by('-folio')
+    compras = Compra.objects.filter(autorizado2=True, pagada=False).order_by('-folio')
     myfilter = CompraFilter(request.GET, queryset=compras)
     compras = myfilter.qs
 
@@ -115,14 +115,14 @@ def compras_pagos(request, pk):
                                 f'Compra Autorizada {compra.folio}',
                                 f'Estimado(a) {compra.proveedor.contacto} | Proveedor {compra.proveedor.nombre}:\n\nEstás recibiendo este correo porque has sido seleccionado para surtirnos la OC adjunta con folio: {compra.folio} y referencia: {compra.referencia}.\n\n Atte. {compra.creada_por.staff.first_name} {compra.creada_por.staff.last_name} \nGrupo Vordcab S.A. de C.V.\n\n Este mensaje ha sido automáticamente generado por SAVIA VORDTEC',
                                 'saviax.vordcab@gmail.com',
-                                ['ulises_huesc@hotmail.com'],#[compra.proveedor.email],
+                                ['ulises_huesc@hotmail.com'],[compra.proveedor.email],
                                 )
                         else:
                             email = EmailMessage(
                                 f'Compra Autorizada {compra.folio}',
                                 f'Estimado(a) {compra.proveedor.contacto} | Proveedor {compra.proveedor.nombre}:\n\nEstás recibiendo este correo porque has sido seleccionado para surtirnos la OC adjunta con folio: {compra.folio}.\n\n Atte. {compra.creada_por.staff.first_name} {compra.creada_por.staff.last_name} \nGrupo Vordcab S.A. de C.V.\n\n Este mensaje ha sido automáticamente generado por SAVIA VORDTEC',
                                 'saviax.vordcab@gmail.com',
-                                ['ulises_huesc@hotmail.com'],#[compra.proveedor.email],
+                                ['ulises_huesc@hotmail.com'],[compra.proveedor.email],
                                 )
                         email.attach(f'OC_folio_{compra.folio}.pdf',archivo_oc,'application/pdf')
                         email.attach('Pago.pdf',request.FILES['comprobante_pago'].read(),'application/pdf')
@@ -185,15 +185,112 @@ def matriz_pagos(request):
 
 @login_required(login_url='user-login')
 def matriz_facturas(request, pk):
+    usuario = Profile.objects.get(staff__id=request.user.id)
     compra = Compra.objects.get(id = pk)
-    pagos = Pago.objects.filter(oc = compra, hecho=True)
-    facturas = None
+    facturas = Facturas.objects.filter(oc = compra, hecho=True)
+    factura, created = Facturas.objects.get_or_create(oc=compra, hecho=False)
+
+    form = Facturas_Form()
+
+    if request.method == 'POST':
+        if "btn_factura" in request.POST:
+            form = Facturas_Form(request.POST or None, request.FILES or None, instance = factura)
+            if form.is_valid():
+                factura = form.save(commit = False)
+                factura.fecha_subido = date.today()
+                factura.hora_subido = datetime.now().time()
+                factura.hecho = True
+                factura.subido_por = usuario
+                factura.save()
+                form.save()
+                messages.success(request,'Haz registrado tu factura')
+                return HttpResponse(status=204) #No content to render nothing and send a "signal" to javascript in order to close window
+            else:
+                messages.error(request,'No está validando')
+        if "btn_editar" in request.POST:
+            form
 
     context={
-        'pagos':pagos,
+        'form':form,
         'facturas':facturas,
         'compra':compra,
         }
 
     return render(request, 'tesoreria/matriz_facturas.html', context)
 
+@login_required(login_url='user-login')
+def matriz_facturas_nomodal(request, pk):
+    compra = Compra.objects.get(id = pk)
+    facturas = Facturas.objects.filter(oc = compra, hecho=True)
+
+
+    context={
+        'facturas':facturas,
+        'compra':compra,
+        }
+
+    return render(request, 'tesoreria/matriz_factura_no_modal.html', context)
+
+def factura_nueva(request, pk):
+    usuario = Profile.objects.get(staff__id=request.user.id)
+    compra = Compra.objects.get(id = pk)
+    #facturas = Facturas.objects.filter(pago = pago, hecho=True)
+    factura, created = Facturas.objects.get_or_create(oc=compra, hecho=False)
+    form = Facturas_Form()
+
+    if request.method == 'POST':
+        if 'btn_registrar' in request.POST:
+            form = Facturas_Form(request.POST or None, request.FILES or None, instance = factura)
+            if form.is_valid():
+                factura = form.save(commit=False)
+                factura.hecho=True
+                factura.fecha_subido =date.today()
+                factura.hora_subido = datetime.now().time()
+                factura.subido_por =  usuario
+                form.save()
+                factura.save()
+                messages.success(request,'Las factura se registró de manera exitosa')
+            else:
+                messages.error(request,'No se pudo subir tu documento')
+
+
+    context={
+        'form':form,
+        }
+
+    return render(request, 'tesoreria/registrar_nueva_factura.html', context)
+
+def factura_compra_edicion(request, pk):
+    usuario = Profile.objects.get(staff__id=request.user.id)
+    factura = Facturas.objects.get(id = pk)
+    #facturas = Facturas.objects.filter(pago = pago, hecho=True)
+    #factura, created = Facturas.objects.get_or_create(pago=pago, hecho=False)
+    form = Facturas_Form(instance= factura)
+
+    if request.method == 'POST':
+        if 'btn_edicion' in request.POST:
+            form = Facturas_Form(request.POST or None, request.FILES or None, instance = factura)
+            if form.is_valid():
+                factura = form.save(commit = False)
+                factura.subido_por = usuario
+                factura.save()
+                form.save()
+                messages.success(request,'Las facturas se subieron de manera exitosa')
+            else:
+                messages.error(request,'No se pudo subir tu documento')
+
+
+    context={
+        'factura':factura,
+        'form':form,
+        }
+
+    return render(request, 'tesoreria/factura_compra_edicion.html', context)
+
+def factura_eliminar(request, pk):
+    factura = Facturas.objects.get(id = pk)
+    compra = factura.oc
+    messages.success(request,f'La factura {factura.id} ha sido eliminado exitosamente')
+    factura.delete()
+
+    return redirect('matriz-facturas-nomodal',pk= compra.id)

@@ -100,7 +100,7 @@ class Inventario(models.Model):
     distrito = models.ForeignKey(Distrito, on_delete = models.CASCADE, null=True)
     ubicacion = models.CharField(max_length=30, null=True, blank=True)
     estante = models.CharField(max_length=30, null=True, blank=True)
-    marca = models.ManyToManyField(Marca)
+    marca = models.ManyToManyField(Marca, blank=True)
     almacen = models.ForeignKey(Almacen, on_delete = models.CASCADE, null=True)
     cantidad = models.DecimalField(max_digits = 14, decimal_places=2, default=0)
     cantidad_apartada = models.DecimalField(max_digits = 14, decimal_places=2, default=0)

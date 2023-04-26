@@ -9,7 +9,7 @@
 {% block content %}
     <div class="modal-content">
         <div class="modal-header">
-            <h5 class="modal-title" id="compra" value={{compra.id}}>Autorizar Compra: {{compra.folio}}</h5>
+            <h5 class="modal-title" id="compra" value={{compra.id}}>Autorizar Compra: {{compra.get_folio}}</h5>
             <button class="btn-close" type="button" data-bs-dismiss ="modal" aria-label="Close"></button>
         </div>
 
@@ -45,7 +45,7 @@
                         {% if compra.deposito_comprador %}
                         <tr>
                             <th scope="col">Comentario:</th>
-                            <th scope="col" id="subproyecto">Esta OC se depositará a la cuenta del comprador(a): {{compra.deposito_comprador.staff.first_name}} {{compra.deposito_comprador.staff.last_name}}</th>
+                            <th scope="col"  style="color:#3e92cc" id="subproyecto">Esta OC se depositará a la cuenta del colaborador(a): {{compra.deposito_colaborador.staff.first_name}} {{compra.deposito_colaborador.staff.last_name}}</th>
                         </tr>
                         {% endif %}
                         <tr>
@@ -107,7 +107,7 @@
         <div class="modal-footer">
             <form action="{% url 'autorizar-oc2' compra.id %}" method=POST>
                 {% csrf_token %}
-                <h6>¿Autorizar la OC: {{compra.folio}}?</h6>
+                <h6>¿Autorizar la OC: {{compra.get_folio}}?</h6>
                 <button class="btn btn-success" type="submit">Autorizar</button>
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
             </form>

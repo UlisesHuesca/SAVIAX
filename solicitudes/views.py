@@ -3,7 +3,7 @@ from dashboard.models import Inventario, Order, ArticulosOrdenados, Articulospar
 from requisiciones.models import Requis, ArticulosRequisitados, ValeSalidas
 from compras.models import Compra
 from tesoreria.models import Pago
-from solicitudes.models import Subproyecto, Operacion
+from solicitudes.models import Subproyecto, Operacion, Proyecto
 from entradas.models import EntradaArticulo, Entrada
 from .forms import InventarioForm, OrderForm, Inv_UpdateForm, Inv_UpdateForm_almacenista, ArticulosOrdenadosForm
 from dashboard.forms import Inventario_BatchForm
@@ -108,7 +108,7 @@ def product_selection(request):
     tipo = Tipo_Orden.objects.get(tipo ='normal')
     #order, created = Order.objects.get_or_create(staff = usuario, complete = False, tipo = tipo)
     order, created = Order.objects.get_or_create(staff = usuario, complete = False, tipo=tipo, distrito = usuario.distrito)
-    productos = Inventario.objects.all()
+    productos = Inventario.objects.filter()
     cartItems = order.get_cart_quantity
     myfilter=InventoryFilter(request.GET, queryset=productos)
     productos = myfilter.qs
@@ -127,7 +127,6 @@ def product_selection(request):
         }
     return render(request, 'solicitud/product_selection.html', context)
 
-
 #Vista para crear solicitud
 @login_required(login_url='user-login')
 def checkout(request):
@@ -136,6 +135,7 @@ def checkout(request):
     #Tengo que revisar primero si ya existe una orden pendiente del usuario
     orders = Order.objects.filter(staff__distrito = usuario.distrito)
     #consecutivo = orders.count() + 1
+    proyectos = Proyecto.objects.filter(activo=True)
     subproyectos = Subproyecto.objects.all()
     tipo = Tipo_Orden.objects.get(tipo ='normal')
 
@@ -197,6 +197,14 @@ def checkout(request):
                         ordensurtir.surtir = True
                     ordensurtir.requisitar = True
                     order.requisitar = True
+                    if producto.producto.producto.servicio == True:
+                        requi, created = Requis.objects.get_or_create(complete = True, orden = order)
+                        requitem, created = ArticulosRequisitados.objects.get_or_create(req = requi, producto = ordensurtir, cantidad = producto.cantidad)
+                        requi.folio = str(usuario.distrito.abreviado)+str(order.id).zfill(4)
+                        order.requisitar=False
+                        ordensurtir.requisitar=False
+                        requi.save()
+                        requitem.save()
                     prod_inventario.save()
                     ordensurtir.save()
                     order.save()
@@ -207,7 +215,7 @@ def checkout(request):
                 f'Solicitud Autorizada {order.id}',
                 f'Estás recibiendo este correo porque ha sido aprobada la solicitud {order.id}\n Este mensaje ha sido automáticamente generado por SAVIA X',
                 'saviax.vordcab@gmail.com',
-                ['ulises_huesc@hotmail.com'],
+                [order.staff.staff.email],
                 )
             #email.attach(f'OC_folio:{compra.folio}.pdf',archivo_oc,'application/pdf')
             email.send()
@@ -234,6 +242,7 @@ def checkout(request):
         'productosordenados':cartItems,
         'supervisores':supervisores,
         'superintendentes':superintendentes,
+        'proyectos':proyectos,
         'subproyectos':subproyectos,
     }
     return render(request, 'solicitud/checkout.html', context)
@@ -467,7 +476,7 @@ def solicitud_matriz_productos(request):
 @login_required(login_url='user-login')
 def inventario(request):
     perfil = Profile.objects.get(staff=request.user)
-    existencia = Inventario.objects.filter(complete=True, producto__servicio = False).order_by('producto__codigo')
+    existencia = Inventario.objects.filter(complete=True, producto__servicio = False, producto__gasto = False).order_by('producto__codigo')
     entries = EntradaArticulo.objects.all()
     entradas = entries.annotate(Sum('cantidad'))
     for item in existencia:
@@ -804,6 +813,10 @@ def status_sol(request, pk):
 
     if requi != None:
         exist_req = True
+        if not requi.autorizar:
+            requi_cancelada = True
+        else:
+            requi_cancelada = False
         compras = Compra.objects.filter(req=requi)
         product_requis = ArticulosRequisitados.objects.filter(req=requi)
         num_prod_req = product_requis.count()

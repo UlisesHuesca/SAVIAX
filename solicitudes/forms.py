@@ -19,7 +19,7 @@ class InventarioForm(forms.ModelForm):
         existing = Inventario.objects.all().values_list('producto')
 
         # Override the product query set with a list of product excluding those already in the pricelist
-        self.fields['producto'].queryset = Product.objects.filter(completado=True).exclude(id__in=existing)
+        self.fields['producto'].queryset = Product.objects.exclude(id__in=existing)
 
 class ArticulosOrdenadosForm(forms.ModelForm):
 

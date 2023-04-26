@@ -147,7 +147,7 @@ def staff(request):
 
 @login_required(login_url='user-login')
 def product(request):
-    items = Product.objects.filter(completado = True)
+    items = Product.objects.filter(completado = True).order_by('codigo')
 
     myfilter=ProductFilter(request.GET, queryset=items)
     items = myfilter.qs
@@ -373,7 +373,7 @@ def add_product(request):
 
     if request.method =='POST':
         form = AddProduct_Form(request.POST, request.FILES or None, instance = item)
-        form.save(commit=False)
+        #form.save(commit=False)
         item.completado = True
         if form.is_valid():
             form.save()

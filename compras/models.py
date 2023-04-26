@@ -4,6 +4,7 @@ from requisiciones.models import Requis, ArticulosRequisitados
 from user.models import Profile, Distrito, Banco
 from simple_history.models import HistoricalRecords
 from django.core.validators import FileExtensionValidator
+import decimal
 # Create your models here.
 
 
@@ -98,7 +99,7 @@ class Compra(models.Model):
     autorizado_hora2 = models.TimeField(null=True, blank=True)
     autorizado2 = models.BooleanField(null=True, default=None)
     proveedor = models.ForeignKey(Proveedor_direcciones, on_delete = models.CASCADE, null=True)
-    deposito_comprador = models.ForeignKey(Profile, on_delete = models.CASCADE, null=True, blank=True, related_name='Comprador')
+    deposito_comprador = models.ForeignKey(Profile, on_delete = models.CASCADE, null=True, blank=True, related_name='Colaborador')
     referencia = models.CharField(max_length=20, null=True, blank=True)
     cond_de_pago = models.ForeignKey(Cond_credito, on_delete = models.CASCADE, null=True)
     uso_del_cfdi = models.ForeignKey(Uso_cfdi, on_delete = models.CASCADE, null=True)
@@ -116,7 +117,7 @@ class Compra(models.Model):
     tesoreria_matriz = models.BooleanField(default=False)
     opciones_condiciones = models.CharField(max_length=250, null=True, blank=True)
     history = HistoricalRecords(history_change_reason_field=models.TextField(null=True))
-    #factura_pdf = models.FileField(blank=True, null=True, upload_to='facturas',validators=[FileExtensionValidator(['pdf'])])
+    comparativo = models.FileField(blank=True, null=True, upload_to='facturas',validators=[FileExtensionValidator(['pdf'])])
     #factura_xml = models.FileField(blank=True, null=True, upload_to='xml', validators=[FileExtensionValidator(['xml'])])
     costo_oc = models.DecimalField(max_digits=14,decimal_places=2, null=True, blank=True)
     costo_iva = models.DecimalField(max_digits=14,decimal_places=2, null=True, blank=True)
@@ -129,8 +130,12 @@ class Compra(models.Model):
         pagos = self.pago_set.all()
         return pagos
 
+    @property
+    def get_folio(self):
+        return f'OC{self.id}'
+
     def __str__(self):
-        return f'oc:{self.folio} - {self.id} - req:{self.req.folio} - sol:{self.req.orden.folio}'
+        return f'oc:{self.get_folio} - {self.id} - req:{self.req.folio} - sol:{self.req.orden.folio}'
 
 
 class ArticuloComprado(models.Model):
@@ -140,23 +145,29 @@ class ArticuloComprado(models.Model):
     cantidad_pendiente = models.PositiveIntegerField(null=True, blank=True)
     entrada_completa = models.BooleanField(default=False)
     seleccionado = models.BooleanField(default=False)
-    precio_unitario = models.DecimalField(max_digits=14, decimal_places=2, null=True, blank=True)
+    precio_unitario = models.DecimalField(max_digits=14, decimal_places=4, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     history = HistoricalRecords(history_change_reason_field=models.TextField(null=True))
+
+    @property
+    def subtotal_parcial(self):
+        total = self.cantidad * self.precio_unitario
+        return total
+
+    @property
+    def iva_parcial(self):
+        iva = 0
+        if self.producto.producto.articulos.producto.producto.iva:
+            iva = self.subtotal_parcial * decimal.Decimal(str(0.16))
+        return iva
+
+    @property
+    def total(self):
+        total = self.subtotal_parcial + self.iva_parcial
+        return total
+
+
+
     def __str__(self):
         return f'{self.id} - {self.producto.producto.articulos.producto.producto} - {self.oc.id} - {self.cantidad} - {self.precio_unitario}'
-
-
-class Facturas(models.Model):
-    oc = models.ForeignKey(Compra, on_delete = models.CASCADE, null=True)
-    fecha_subido = models.DateField(null=True, blank=True)
-    hora_subido = models.TimeField(null=True, blank=True)
-    comentario = models.CharField(max_length=100, null=True)
-    hecho = models.BooleanField(default=False)
-    factura_pdf = models.FileField(blank=True, null=True, upload_to='facturas',validators=[FileExtensionValidator(['pdf'])])
-    factura_xml = models.FileField(blank=True, null=True, upload_to='xml', validators=[FileExtensionValidator(['xml'])])
-
-    def __str__(self):
-        return f'id:{self.id} oc:{self.oc}'
-
 

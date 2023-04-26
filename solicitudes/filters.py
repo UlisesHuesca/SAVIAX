@@ -8,6 +8,7 @@ class InventoryFilter(django_filters.FilterSet):
     producto = CharFilter(field_name='producto__nombre', lookup_expr='icontains')
     codigo = CharFilter(field_name='producto__codigo', lookup_expr='icontains')
 
+
     class Meta:
         model = Inventario
         fields = ['producto','codigo',]
@@ -16,10 +17,11 @@ class InventoryFilter(django_filters.FilterSet):
 class InventarioFilter(django_filters.FilterSet):
     codigo = CharFilter(field_name='producto__codigo', lookup_expr='icontains')
     producto = CharFilter(field_name='producto__nombre', lookup_expr='icontains')
+    familia = CharFilter(field_name='producto__familia__nombre', lookup_expr='icontains')
 
     class Meta:
         model = Inventario
-        fields = ['producto','codigo',]
+        fields = ['producto','codigo','familia',]
 
 class SolicitudesFilter(django_filters.FilterSet):
     #staff = CharFilter(field_name='staff__staff', lookup_expr='icontains')

@@ -129,7 +129,7 @@
             <tbody>
                 {% for compra in compras %}
                 <tr>
-                    <th scope="row">{{compra.folio}}</th>
+                    <th scope="row">{{compra.get_folio}}</th>
                     <td>{{compra.req.orden.staff.staff.first_name}} {{compra.req.orden.staff.staff.last_name}}</td>
                     <td>{{compra.req.orden.proyecto.nombre}}</td>
                     <td>{{compra.req.orden.subproyecto.nombre}}</td>
@@ -142,17 +142,14 @@
                     <td>
                         <ul class="nav nav-pills">
                             <li class="nav-item mx-1">
+                                <a id="myBtn" type="button" class="btn btn-outline-info" data-bs-toggle="modal" data-bs-target='#dialog' hx-target="#document" hx-get="{% url 'productos-oc' compra.id %}">Productos</a>
+                            </li>
+                            <li class="nav-item mx-1">
                                 <button id="myBtn" type="button" class="btn btn-outline-info" data-bs-toggle="modal" data-bs-target='#dialog' hx-target="#document" hx-get="{% url 'compras-pagos' compra.id %}">Detalle</button>
                             </li>
-                            {% if compra.get_pagos %}
                             <li class="nav-item mx-1">
-                                <a type="button" class="btn btn-outline-light" style="background-color:#990f0f" href="{% url 'matriz-facturas' compra.id %}"><i class="fa-solid fa-cloud-arrow-up"></i></a>
+                                <button id="myBtn2" type="button" class="btn btn-outline-light" style="background-color:#990f0f" data-bs-toggle="modal" data-bs-target="#dialog" hx-target="#document" hx-get="{% url 'matriz-facturas' compra.id %}"><i class="fa-solid fa-cloud-arrow-up"></i></button>
                             </li>
-                            {% else %}
-                            <li class="nav-item mx-1">
-                                <a type="button" class="btn btn-outline-danger" href="{{compra.factura_pdf.url}}" download><i class="fa-solid fa-file-pdf"></i></a>
-                            </li>
-                            {% endif %}
                         </ul>
                     </td>
                 </tr>

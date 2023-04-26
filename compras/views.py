@@ -149,10 +149,10 @@ def oc_modal(request, pk):
     req = Requis.objects.get(id = pk)
     proveedores = Proveedor_direcciones.objects.filter(estatus__nombre='APROBADO')
     usuario = Profile.objects.get(staff__id=request.user.id)
-    comprador_sel = Profile.objects.filter(tipo__comprador = True)
+    colaborador_sel = Profile.objects.all()
     compras = Compra.objects.all()
     oc, created = Compra.objects.get_or_create(complete = False, req = req, creada_por = usuario)
-    consecutivo = compras.count() + 1
+    #consecutivo = compras.count() + 1
     productos_comp = ArticuloComprado.objects.filter(oc=oc)
     form_product = ArticuloCompradoForm()
     form = CompraForm(instance=oc)
@@ -161,7 +161,7 @@ def oc_modal(request, pk):
     iva = 0
     total = 0
     dif_cant = 0
-    form.fields['deposito_comprador'].queryset = comprador_sel
+    form.fields['deposito_comprador'].queryset = colaborador_sel
     for item in productos_comp:
         subtotal = decimal.Decimal(subtotal + item.cantidad * item.precio_unitario)
         if item.producto.producto.articulos.producto.producto.iva == True:
@@ -196,7 +196,7 @@ def oc_modal(request, pk):
             oc.costo_oc = decimal.Decimal(costo_oc + costo_iva)
         if form.is_valid():
             abrev= usuario.distrito.abreviado
-            oc.folio = str(abrev) + str(consecutivo).zfill(4)
+            #oc.folio = str(abrev) + str(consecutivo).zfill(4)
             form.save()
             oc.save()
             req.save()
@@ -216,7 +216,7 @@ def oc_modal(request, pk):
         'subtotal':subtotal,
         'iva':iva,
         'total':total,
-        'comprador_sel':comprador_sel,
+        'colaborador_sel':colaborador_sel,
         }
     return render(request, 'compras/oc.html',context)
 
@@ -237,6 +237,19 @@ def matriz_oc(request):
         }
 
     return render(request, 'compras/matriz_compras.html',context)
+
+@login_required(login_url='user-login')
+def productos_oc(request, pk):
+    compra = Compra.objects.get(id=pk)
+    productos = ArticuloComprado.objects.filter(oc=compra)
+
+
+    context = {
+        'compra':compra,
+        'productos':productos,
+    }
+
+    return render(request,'compras/oc_producto.html',context)
 
 @login_required(login_url='user-login')
 def upload_facturas(request, pk):
@@ -334,7 +347,7 @@ def cancelar_oc1(request, pk):
         compra.autorizado_date1 = date.today()
         compra.autorizado_hora1 = datetime.now().time()
         compra.save()
-        messages.error(request,f'Has cancelado la compra con FOLIO: {compra.folio}')
+        messages.error(request,f'Has cancelado la compra con FOLIO: {compra.get_folio}')
         return redirect('autorizacion-oc1')
 
     context = {
@@ -379,7 +392,7 @@ def cancelar_oc2(request, pk):
         compra.autorizado_date2 = date.today()
         compra.autorizado_hora2 = datetime.now().time()
         compra.save()
-        messages.error(request,f'Has cancelado la compra con FOLIO: {compra.folio}')
+        messages.error(request,f'Has cancelado la compra con FOLIO: {compra.get_folio}')
         return redirect('autorizacion-oc2')
 
     context = {
@@ -436,7 +449,7 @@ def back_oc(request, pk):
         requi.colocada = False
         compra.save()
         requi.save()
-        messages.error(request,f'Has regresado la compra con FOLIO: {compra.folio} y ahora podrás encontrar esos productos en la requisición {requi.folio}')
+        messages.error(request,f'Has regresado la compra con FOLIO: {compra.get_folio} y ahora podrás encontrar esos productos en la requisición {requi.folio}')
         return redirect('requisicion-autorizada')
 
     context = {
@@ -484,7 +497,7 @@ def autorizar_oc1(request, pk):
         compra.autorizado_date1 = date.today()
         compra.autorizado_hora1 = datetime.now().time()
         compra.save()
-        messages.success(request, f'{usuario.staff.first_name} has autorizado la solicitud {compra.folio}')
+        messages.success(request, f'{usuario.staff.first_name} has autorizado la solicitud {compra.get_folio}')
         return redirect('autorizacion-oc1')
 
     context={
@@ -502,11 +515,11 @@ def autorizar_oc1(request, pk):
 @login_required(login_url='user-login')
 def autorizacion_oc2(request):
     usuario = Profile.objects.get(staff__id=request.user.id)
-    if usuario.tipo.oc_gerencia == True:
-        compras = Compra.objects.filter(complete = True, autorizado1 = True, autorizado2= None).order_by('-folio')
-    else:
-        compras = Compra.objects.filter(flete=True,costo_fletes='1')
-    #compras = Compra.objects.filter(complete = True, autorizado1 = True, autorizado2= None).order_by('-folio')
+    #if usuario.tipo.oc_gerencia == True:
+    #    compras = Compra.objects.filter(complete = True, autorizado1 = True, autorizado2= None).order_by('-folio')
+    #else:
+    #    compras = Compra.objects.filter(flete=True,costo_fletes='1')
+    compras = Compra.objects.filter(complete = True, autorizado1 = True, autorizado2= None).order_by('-folio')
 
     context= {
         'compras':compras,
@@ -546,25 +559,25 @@ def autorizar_oc2(request, pk):
         if compra.cond_de_pago.nombre == "CREDITO":
             archivo_oc = attach_oc_pdf(request, compra.id)
             email = EmailMessage(
-                f'Compra Autorizada {compra.folio}',
-                f'Estimado proveedor,\n Estás recibiendo este correo porque has sido seleccionado para surtirnos la compra con folio: {compra.folio}.\n Este mensaje ha sido automáticamente generado por SAVIA X',
+                f'Compra Autorizada {compra.get_folio}',
+                f'Estimado proveedor,\n Estás recibiendo este correo porque has sido seleccionado para surtirnos la compra con folio: {compra.get_folio}.\n Este mensaje ha sido automáticamente generado por SAVIA X',
                 'saviax.vordcab@gmail.com',
                 [compra.proveedor.email],
                 )
-            email.attach(f'OC_folio:{compra.folio}.pdf',archivo_oc,'application/pdf')
+            email.attach(f'folio:{compra.get_folio}.pdf',archivo_oc,'application/pdf')
             email.send()
             for producto in productos:
                 if producto.producto.producto.articulos.producto.producto.especialista == True:
                     archivo_oc = attach_oc_pdf(request, compra.id)
                     email = EmailMessage(
-                        f'Compra Autorizada {compra.folio}',
+                        f'Compra Autorizada {compra.get_folio}',
                         f'Estimado proveedor,\n Estás recibiendo este correo porque ha sido aprobada una OC que contiene el producto código:{producto.producto.producto.articulos.producto.producto.codigo} descripción:{producto.producto.producto.articulos.producto.producto.nombre} el cual requiere la liberación de calidad\n Este mensaje ha sido automáticamente generado por SAVIA X',
                         'saviax.vordcab@gmail.com',
                         ['ulises_huesc@hotmail.com'],
                         )
-                    email.attach(f'OC_folio:{compra.folio}.pdf',archivo_oc,'application/pdf')
+                    email.attach(f'folio:{compra.get_folio}.pdf',archivo_oc,'application/pdf')
                     email.send()
-        messages.success(request, f'{usuario.staff.first_name} has autorizado la solicitud {compra.folio}')
+        messages.success(request, f'{usuario.staff.first_name} has autorizado la solicitud {compra.get_folio}')
 
         return redirect('autorizacion-oc2')
 
@@ -804,25 +817,25 @@ def render_oc_pdf(request, pk):
     #c.drawCentredString(550,34,'001')
 
     width, height = letter
-    table = Table(data, colWidths=[2.8 * cm, 6 * cm, 2.8 * cm, 2.8 * cm, 2.8 * cm, 2.8 * cm])
+    table = Table(data, colWidths=[1.2 * cm, 13 * cm, 1.5 * cm, 1.2 * cm, 1.5 * cm, 1.5 * cm])
     table.setStyle(TableStyle([ #estilos de la tabla
         ('INNERGRID',(0,0),(-1,-1), 0.25, colors.white),
         ('BOX',(0,0),(-1,-1), 0.25, colors.black),
         ('VALIGN',(0,0),(-1,-1),'MIDDLE'),
         #ENCABEZADO
         ('TEXTCOLOR',(0,0),(-1,0), white),
-        ('FONTSIZE',(0,0),(-1,0), 12),
+        ('FONTSIZE',(0,0),(-1,0), 8),
         ('BACKGROUND',(0,0),(-1,0), prussian_blue),
         #CUERPO
         ('TEXTCOLOR',(0,1),(-1,-1), colors.black),
-        ('FONTSIZE',(0,1),(-1,-1), 8),
+        ('FONTSIZE',(0,1),(-1,-1), 6),
         ]))
     table.wrapOn(c, width, height)
     table.drawOn(c, 20, high)
     c.save()
     c.showPage()
     buf.seek(0)
-    return FileResponse(buf, as_attachment=True, filename='oc_'+str(compra.id) +'.pdf')
+    return FileResponse(buf, as_attachment=True, filename='oc_'+str(compra.get_folio) +'.pdf')
 
 def attach_oc_pdf(request, pk):
     #Configuration of the PDF object
@@ -1048,18 +1061,18 @@ def attach_oc_pdf(request, pk):
     #c.drawCentredString(550,34,'001')
 
     width, height = letter
-    table = Table(data, colWidths=[2.8 * cm, 6 * cm, 2.8 * cm, 2.8 * cm, 2.8 * cm, 2.8 * cm])
+    table = Table(data, colWidths=[1.2 * cm, 13 * cm, 1.5 * cm, 1.2 * cm, 1.5 * cm, 1.5 * cm])
     table.setStyle(TableStyle([ #estilos de la tabla
         ('INNERGRID',(0,0),(-1,-1), 0.25, colors.white),
         ('BOX',(0,0),(-1,-1), 0.25, colors.black),
         ('VALIGN',(0,0),(-1,-1),'MIDDLE'),
         #ENCABEZADO
         ('TEXTCOLOR',(0,0),(-1,0), white),
-        ('FONTSIZE',(0,0),(-1,0), 12),
+        ('FONTSIZE',(0,0),(-1,0), 8),
         ('BACKGROUND',(0,0),(-1,0), prussian_blue),
         #CUERPO
         ('TEXTCOLOR',(0,1),(-1,-1), colors.black),
-        ('FONTSIZE',(0,1),(-1,-1), 8),
+        ('FONTSIZE',(0,1),(-1,-1), 6),
         ]))
     table.wrapOn(c, width, height)
     table.drawOn(c, 20, high)

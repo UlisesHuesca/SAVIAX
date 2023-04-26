@@ -125,7 +125,7 @@
             <tbody>
                 {% for compra in compras %}
                 <tr>
-                    <th scope="row">{{compra.folio}}</th>
+                    <th scope="row">{{compra.get_folio}}</th>
                     <th scope="row">{{compra.req.folio}}</th>
                     <th scope="row">{{compra.req.orden.folio}}</th>
                     <td>{{compra.req.orden.staff.staff.first_name}} {{compra.req.orden.staff.staff.last_name}}</td>
@@ -143,13 +143,10 @@
                     <td>
                         <ul class="nav nav-pills">
                             <li class="nav-item mx-1">
-                                <a id="myBtn" type="button" class="btn btn-outline-info" data-bs-toggle="modal" data-bs-target='#dialog' hx-target="#document" hx-get="">Productos</a>
+                                <a id="myBtn" type="button" class="btn btn-outline-info" data-bs-toggle="modal" data-bs-target='#dialog' hx-target="#document" hx-get="{% url 'productos-oc' compra.id %}">Productos</a>
                             </li>
                             <li class="nav-item mx-1">
-                                <a type="button" class="btn btn-outline-light" style="background-color:#980f0f" data-bs-toggle="modal" data-bs-target='#dialog' hx-target="#document" hx-get="{% url 'upload-facturas' compra.id %}"><i class="fa-solid fa-cloud-arrow-up"></i><i class="fa-solid fa-file-pdf"></i></a>
-                            </li>
-                            <li class="nav-item mx-1">
-                                <a type="button" class="btn btn-outline-light" style="background-color:#9a9b9d" data-bs-toggle="modal" data-bs-target='#dialog' hx-target="#document" hx-get="{% url 'upload-xml' compra.id %}"><i class="fa-solid fa-cloud-arrow-up"></i><i class="fa-solid fa-file-code"></i></i></a>
+                                <a type="button" class="btn btn-outline-danger" href="{% url 'matriz-facturas-nomodal' compra.id %}"><i class="fa-solid fa-file-pdf"></i></a>
                             </li>
                             <li class="nav-item mx-2">
                                 <a type="button" class="btn btn-outline-info" href="{% url 'oc-pdf' compra.id%}"><i class="fa-solid fa-file-pdf fa-2xl"></i></a>

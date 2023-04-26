@@ -14,10 +14,10 @@
 <hr>
 <div class="row">
     <div class="col-lg-6">
-        <div class="box-element" id="form-wrapper">
+        <div class="card card-body" id="form-wrapper">
             <div class="card-header mt-3 mb-4">
             <!-- Aqui es el encabezado de los filtros -->
-                <h5 id="oc" target={{oc.id}}>ORDEN DE COMPRA: {{oc.id}}</h5>
+                <h5 id="oc" target={{oc.id}}>ORDEN DE COMPRA: {{oc.get_folio}}</h5>
             </div>
             <form method="POST">
             <div>
@@ -32,9 +32,16 @@
 
                     <datalist id="proveedor" name='proveedor'>
                         {% for item in proveedores %}
-                        <option valor="{{item.id}}" value="{{item.nombre.razon_social}}"></option>
+                        <option status="{{item.estatus}}" valor="{{item.id}}" value="{{item.nombre.razon_social}}"></option>
                         {% endfor %}
                     </datalist>
+                    </div>
+                </div>
+
+                <div id="comparativo" class="row my-2 d-none">
+                    <label for="form.comparativo" class="col-auto col-form-label my-1"><strong>Comparativo:</strong></label>
+                    <div class="col-6">
+                        {{ form.comparativo|add_class:"form-control" }}
                     </div>
                 </div>
                 <div class="row my-2">
@@ -43,12 +50,21 @@
                         {{ form.cond_de_pago|add_class:"form-select my-1" }}
                     </div>
                 </div>
-                <div id="comprador" class="row my-2 d-none">
-                 <label for="form.cond_de_pago" class="col-auto col-form-label my-1"><strong>Comprador:</strong></label>
+                <div id="colaborador" class="row my-2 d-none">
+                <label for="form.cond_de_pago" class="col-auto col-form-label my-1"><strong>Colaborador:</strong></label>
                     <div class="col-sm-6">
-                    {{ form.deposito_comprador|add_class:"form-select my-1" }}
+                            {{form.deposito_comprador|add_class:"form-select d-none"}}
+                            <input type="text" list="colaborador_sel" id="txt_colaborador" valor="{{colaborador_sel.id}}" placeholder="Colaboradores..." class="form-control">
+
+                            <datalist id="colaborador_sel" name='colaborador_sel'>
+                                {% for item in colaborador_sel %}
+                                <option status="" valor="{{item.id}}" value="{{item.staff.first_name}} {{item.staff.last_name}}"></option>
+                                {% endfor %}
+                            </datalist>
+                            </div>
+
+
                     </div>
-                </div>
                 <div class="row my-2">
                     <label for="form.moneda" class="col-auto col-form-label my-1"><strong>Moneda:</strong></label>
                     <div class="col-2">
@@ -259,21 +275,40 @@ document.getElementById("txt_proveedor").addEventListener("change", (event)=>{
     //var browserChildren = document.getElementById('proveedor')
     //var dataList = document.getElementById(browserChildren.getAttribute("valor"))
     var other_select = document.getElementById('id_proveedor');
-
-
+    var status_txt = document.getElementById('comparativo')
+    var colaborador = document.getElementById("colaborador")
+    var lbl_colaborador = document.getElementById("lbl_colaborador")
     cont = 0
 
     for(let i = 0; i < browserChildren.length; i++){
-        console.log(browserChildren[i].value)
+        //console.log(browserChildren[i].value)
 
         if (browserChildren[i].value === select.value) {
-            console.log(browserChildren[i])
-            console.log(select.value)
+            //console.log(browserChildren[i])
+            //console.log(select.value)
             let id = browserChildren[i].getAttribute('valor');
-            console.log(id)
+            //console.log(id)
+            let status = browserChildren[i].getAttribute('status')
+            console.log(status)
+            if (status=="NUEVO"){
+                status_txt.setAttribute("class","row my-2")
+            }
+
             other_select.value = id;
             cont = 1
-            } //else {
+            }
+            if (select.value == "COLABORADOR"){
+                colaborador.setAttribute("class", "row my-2")
+                Swal.fire({
+                "title":"Success",
+                "text":"Al seleccionar el proveedor 'COLABORADOR', se debe seleccionar uno del campo correspondiente para depositarle",
+                "icon":"success",
+            })
+            } else {
+                colaborador.setAttribute("class", "row my-2 d-none")
+            }
+
+        //else {
             //    console.log(browserChildren[i].value)
               //  console.log(select)
            // }
@@ -282,10 +317,43 @@ document.getElementById("txt_proveedor").addEventListener("change", (event)=>{
     //El cont = 0 es un indicador/bandera si encuentra al menos una similitud en el for no se activa
     if ((!select.value) || (cont = 0)){
         other_select.value = 0
+        status_txt.setAttribute("class","row my-2 d-none")
     }
 });
 
+document.getElementById("txt_colaborador").addEventListener("change", (event)=>{
+    var select = document.getElementById("txt_colaborador");
+    var browserChildren = document.getElementById('colaborador_sel').children;
+    //var browserChildren = document.getElementById('proveedor')
+    //var dataList = document.getElementById(browserChildren.getAttribute("valor"))
+    var other_select = document.getElementById('id_deposito_comprador');
+    //var status_txt = document.getElementById('comparativo')
 
+    //cont = 0
+
+    for(let i = 0; i < browserChildren.length; i++){
+        console.log(browserChildren[i].value)
+
+        if (browserChildren[i].value == select.value) {
+            //console.log(browserChildren[i])
+            //console.log(select.value)
+            let id = browserChildren[i].getAttribute('valor');
+            //console.log(id)
+            let status = browserChildren[i].getAttribute('status')
+            console.log(id)
+
+
+            other_select.value = id;
+            cont = 1
+            }
+        }
+
+    //El cont = 0 es un indicador/bandera si encuentra al menos una similitud en el for no se activa
+    if ((!select.value) || (cont = 0)){
+        other_select.value = 0
+        status_txt.setAttribute("class","row my-2 d-none")
+    }
+});
 
 
 document.getElementById("crear").addEventListener("click", function(element){
@@ -400,25 +468,7 @@ document.getElementById("crear").addEventListener("click", function(element){
             }
 });
 
-//Esta es la rutina para ejecutar lo de mercado libre
-//document.getElementById("id_proveedor").addEventListener("change", function(element){
-//   var select = document.getElementById("id_proveedor")
-//   var current_option = select.options[select.selectedIndex]
-//   var comprador = document.getElementById("comprador")
-//   var lbl_comprador = document.getElementById("lbl_comprador")
 
-//   id = current_option.getAttribute('value')
-//   if (id == 2){
- //      comprador.setAttribute("class", "row my-2")
-  //     Swal.fire({
-//                "title":"Success",
- //               "text":"Al seleccionar el proveedor Mercado Libre, se debe seleccionar un comprador para depositarle",
-  //              "icon":"success",
-//            })
- //  } else {
-  //      comprador.setAttribute("class", "row my-2 d-none")
-   //}
-//});
 
 
 

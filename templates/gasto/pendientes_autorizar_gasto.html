@@ -89,8 +89,7 @@
                     <th scope="col">Solicitado por</th>
                     <th scope="col">Autorización N1</th>
                     <th scope="col">Proyecto</th>
-                    <th scope="col">Área</th>
-                    <th scope="col">Operación</th>
+                    <th scope="col">Subproyecto</th>
                     <th scope="col">Creado</th>
                     <th scope="col">Total</th>
                     <th scope="col">Acción</th>
@@ -104,7 +103,6 @@
                     <td>{{orden.superintendente}}</td>
                     <td>{{orden.proyecto.nombre}}</td>
                     <td>{{orden.subproyecto.nombre}}</td>
-                    <td>{{orden.area}}</td>
                     <td>{{orden.created_at}}</td>
                     <td>${{orden.get_total_solicitud}}</td>
                     <td><a id="myBtn" type="button" class="btn btn-outline-info" data-bs-toggle="modal" data-bs-target='#dialog' hx-target="#document" hx-get="{% url 'detalle-gastos' orden.id %}">Productos</a>

@@ -1,5 +1,6 @@
 {% extends 'partials/base_w_nav.html' %}
 {% load static %}
+{% load humanize %}
 
 <html>
 <head>
@@ -31,9 +32,9 @@
                     <div style="flex:1"><img class='row-image' src="{{producto.producto.producto.imageURL}}"></div>
                     <div style="flex:1">{{producto.producto.producto.codigo}}</div>
                     <div style="flex:4">{{producto.producto.producto.nombre}}</div>
-                    <div style="flex:1"><p class='quantity' id='prod_quantity'>{{producto.cantidad}}</p></div>
-                    <div style="flex:2">{{producto.precio_unitario}}</div>
-                    <div style="flex:2">{{producto.total_parcial}}</div>
+                    <div style="flex:1"><p class='quantity' id='prod_quantity'>{{producto.cantidad|floatformat:2}}</p></div>
+                    <div style="flex:2">${{producto.precio_unitario|floatformat:2}}</div>
+                    <div style="flex:2">${{producto.total_parcial}}</div>
                 </div>
                 {% endfor %}
             </div>

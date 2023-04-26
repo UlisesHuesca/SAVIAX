@@ -19,9 +19,9 @@
             <div>
                 {% csrf_token %}
                     <label for="form.producto" class="col-auto col-form-label my-1"><strong>Productos:</strong></label>
-                            <div class="col-8">
-                              {{form.producto|add_class:"form-control"}}
-                            </div>
+                    <div class="col-8">
+                        {{form.producto|add_class:"form-control"}}
+                    </div>
                     <label for="form.cantidad" class="col-auto col-form-label my-1"><strong>Cantidad:</strong></label>
                     <div class="col-4">
                         {{ form.cantidad|add_class:"form-control"}}

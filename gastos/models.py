@@ -16,36 +16,41 @@ class Tipo_Gasto(models.Model):
 class Solicitud_Gasto(models.Model):
     folio = models.CharField(max_length=6, null=True, unique=True)
     staff = models.ForeignKey(Profile, on_delete = models.CASCADE, null=True, related_name='Crea_gasto')
+    colaborador = models.ForeignKey(Profile, on_delete=models.CASCADE,null=True, related_name='Asignado_gasto', blank=True)
     proyecto = models.ForeignKey(Proyecto, on_delete = models.CASCADE, null=True)
     subproyecto = models.ForeignKey(Subproyecto, on_delete = models.CASCADE, null=True)
-    area = models.ForeignKey(Operacion, on_delete = models.CASCADE, null=True)
+    area = models.ForeignKey(Operacion, on_delete = models.CASCADE, null=True, blank=True)
     superintendente = models.ForeignKey(Profile, on_delete = models.CASCADE, null=True, related_name='superintendente')
     complete = models.BooleanField(null=True)
     tipo = models.ForeignKey(Tipo_Gasto, on_delete=models.CASCADE, null=True)
     pagada = models.BooleanField(default=False)
     autorizar = models.BooleanField(null=True, default=None)
+    autorizar2 = models.BooleanField(null=True, default=None)
     created_at = models.DateField(null=True)
     created_at_time = models.TimeField(null=True)
     approved_at = models.DateField(null=True)
-    approbado_fecha2 = models.DateField(null=True)
     approved_at_time = models.TimeField(null=True)
-    aprobado_hora2 = models.TimeField(null=True)
+    approbado_fecha2 = models.DateField(null=True)
+    approved_at_time2 = models.TimeField(null=True)
 
     @property
     def get_subtotal_solicitud(self):
         productos = self.articulo_gasto_set.all()
+        productos = productos.filter(completo=True)
         total = sum([producto.get_subtotal for producto in productos])
         return total
 
     @property
     def get_total_impuesto(self):
         productos = self.articulo_gasto_set.all()
+        productos = productos.filter(completo=True)
         suma = round(sum([(producto.get_iva + producto.get_otros_impuestos) for producto in productos]),2)
         return suma
 
     @property
     def get_total_solicitud(self):
         productos = self.articulo_gasto_set.all()
+        productos = productos.filter(completo=True)
         total = sum([producto.total_parcial for producto in productos])
         return total
 
@@ -53,6 +58,7 @@ class Solicitud_Gasto(models.Model):
         return f'{self.id}'
 
 class Articulo_Gasto(models.Model):
+    staff = models.ForeignKey(Profile, on_delete = models.CASCADE, null=True)
     clase = models.BooleanField(null=True, default=False)   #Se refiere a si el producto es del True == almacén o entrara al almacén o si va por fuera
     producto = models.ForeignKey(Inventario, on_delete = models.CASCADE, null=True, blank=True)
     comentario = models.CharField(max_length=75, null=True)
@@ -65,6 +71,7 @@ class Articulo_Gasto(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     factura_pdf = models.FileField(blank=True, null=True, upload_to='facturas',validators=[FileExtensionValidator(['pdf'])])
     factura_xml = models.FileField(blank=True, null=True, upload_to='xml', validators=[FileExtensionValidator(['xml'])])
+    completo = models.BooleanField(default=False)
 
 
     def __str__(self):

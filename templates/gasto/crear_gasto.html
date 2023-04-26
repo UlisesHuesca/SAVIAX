@@ -8,7 +8,33 @@
 </head>
 <body>
 {% block content %}
-<hr>
+<!-- Esta es la zona donde se crean los mensajes excitantes con sweet alert -->
+<div class="row my-4">
+    <div class="col-md-4">
+    <script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+        {% if messages %}
+            {% for message in messages %}
+                {% if message.tags == "error" %}
+                <script>
+                Swal.fire({
+                    "title":"Error",
+                    "text":"{{message}}",
+                    "icon":"error",
+                })
+                </script>
+                {% else %}
+                <script>
+                Swal.fire({
+                    "title":"Excelente",
+                    "text":"{{message}}",
+                    "icon":"success",
+                })
+                </script>
+                {% endif %}
+            {% endfor %}
+        {% endif %}
+    </div>
+</div>
 <hr>
 <hr>
 <hr>
@@ -26,29 +52,43 @@
                                 <div class="col-4">
                                     <div class="input-group">
                                     <!--    <span class="input-group-text" id="basic-addon1"><i class="fa-solid fa-industry"></i></span>-->
-                                    {{form.proyecto|add_class:"form-select"}}
+                                    {{form.proyecto|add_class:"form-select d-none"}}
                                     </div>
                                 </div>
+                            </div>
+                            <div class="col-sm-12">
+                                <input type="text" list="proyectos" id="txt_proyectos" valor="{{proyectos.id}}" placeholder="Proyecto..." class="form-control">
+                
+                                <datalist id="proyectos" name='proyectos'>
+                                {% for item in proyectos %}
+                                 <option valor="{{item.id}}" value="{{item.nombre}} {{item.descripcion}}"></option>
+                                 {% endfor %}
+                                </datalist>
                             </div>
                             <div class="row my-2">
                                 <label for="form.subproyecto" class="col-auto col-form-label my-1"><strong>Subproyecto*</strong></label>
+                                <div class="col-8">
+                                    <div class="input-group">
+                                    <div class="selector">
+                                        <select class="form-select form-select-sm my-1 d-none" style="height:35px" id="subproyecto">
+                                            <option id="default_sel">      </option>
+                                            {% for subproyecto in subproyectos %}
+                                            <option id="js" target="{{subproyecto.proyecto.id}}" sub="{{subproyecto.id}}">
+                                            {{subproyecto.nombre}}
+                                            </option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    </div>
+                                </div>
                                 <div class="col-4">
                                     <div class="input-group">
                                     <!--    <span class="input-group-text" id="basic-addon1"><i class="fa-solid fa-industry"></i></span>-->
-                                    {{form.subproyecto|add_class:"form-select"}}
+                                    {{form.subproyecto|add_class:"form-select d-none"}}
                                     </div>
                                 </div>
                             </div>
-                            <div class="row my-2">
-                                <label for="form.operacion" class="col-auto col-form-label my-1"><strong>Área*</strong></label>
-                                <div class="col-4">
-                                    <div class="input-group">
-                                    <!--    <span class="input-group-text" id="basic-addon1"><i class="fa-solid fa-industry"></i></span>-->
-                                    {{form.area|add_class:"form-select"}}
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="row my-2">
+                            <div class="row my-2 d-none">
                                 <label for="form.subproyecto" class="col-auto col-form-label my-1"><strong>Tipo*</strong></label>
                                 <div class="col-4">
                                     <div class="input-group">
@@ -56,6 +96,31 @@
                                     {{form.tipo|add_class:"form-select"}}
                                     </div>
                                 </div>
+                            </div>
+
+                            <div class="form-check form-switch col-auto mx-4" id="Otro_Colaborador">
+                                <input class="form-check-input" type="checkbox" role="switch" id="SwitchColaborador">
+                                <label class="form-check-label" for="flexSwitchCheckDefault" id="LabelColaborador">Otro Colaborador</label>
+                            </div>
+
+                            <div class="row my-2 d-none">
+                                
+                                <div class="col-4">
+                                    <div class="input-group">
+                                    {{form.colaborador|add_class:"form-select"}}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-sm-12 d-none" id="colaborador_parrafo">
+                                <label for="form.proyecto" class="col-auto col-form-label my-1"><strong>Colaborador*</strong></label>
+                                <input type="text" list="colaborador" id="txt_colaborador" placeholder="Colaboradores..." class="form-control">
+                
+                                <datalist id="colaborador" name='colaborador'>
+                                {% for item in colaborador %}
+                                 <option valor="{{item.id}}" value="{{item.staff.first_name}} {{item.staff.last_name}}"></option>
+                                 {% endfor %}
+                                </datalist>
                             </div>
 
                             <div class="row my-2">
@@ -84,7 +149,8 @@
                                     {{form.superintendente|add_class:"form-control"}}
                                 </div>
                             </div>
-                        <input class="btn btn-outline-info btn-block my-2" name="agregar" type="submit" value="Agregar Solicitud">
+
+                        <input class="btn btn-outline-info btn-block my-2" name="btn_agregar" id="btn_agregar" type="submit" value="Agregar Solicitud">
                     </form>
             </div>
             <hr>
@@ -93,10 +159,10 @@
 
     <div class="col-lg-7">
         <div class="box-element">
-             <form method="post" enctype="multipart/form-data">
+            <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
             <div class="row">
                 <label class="col-auto col-form-label my-2"><strong>Productos:</strong></label>
-
                 <div class="col-sm-6 my-2">
                     <input type="text" list='articulos' id="txt_articulos" valor="{{articulos.id}}" placeholder="Artículos..." class="form-control d-none">
 
@@ -113,7 +179,7 @@
                         {% endfor %}
                     </datalist>
                 </div>
-                <div class="form-check form-switch col-auto mx-4" id="Gasto" gasto ="{{gasto.id}}">
+                <div class="form-check form-switch col-auto mx-4 d-none" id="Gasto" gasto ="{{gasto.id}}">
                         <input class="form-check-input" type="checkbox" role="switch" id="SwitchGasto">
                         <label class="form-check-label" for="flexSwitchCheckDefault" id="LabelAlmacén">Almacén</label>
                 </div>
@@ -141,7 +207,7 @@
                     {{form_product.cantidad|add_class:"form-control"}}
                 </div>
             </div>
-            <div id="factura_pdf" class="row d-none">
+            <div id="factura_pdf" class="row">
                 <div class="col-sm-6">
                     {{form_product.factura_pdf|add_class:"form-control my-2"}}
                 </div>
@@ -150,7 +216,7 @@
                 </div>
 
             </div>
-            <div id="factura_xml" class="row d-none">
+            <div id="factura_xml" class="row">
                 <div class="col-sm-6">
                     {{form_product.factura_xml|add_class:"form-control my-2"}}
                 </div>
@@ -187,12 +253,11 @@
 
             <div  class="row">
                 <div class="col-sm-1">
-                    <a class="btn btn-success update-gasto" id="update-gasto" name="gasto">
-                        <i class="fa-solid fa-circle-plus"></i>
-                    </a>
+                    <input class="btn btn-outline-info btn-block my-2" name="btn_producto" type="submit"> 
                 </div>
             </div>
-            </form>
+            
+        </form>
             <hr>
             <table class="table table-light table-striped table-hover mx-2">
             <thead>
@@ -203,11 +268,13 @@
                     <th scope="col">P.U.</th>
                     <th scope="col">Subtotal</th>
                     <th scope="col">Total</th>
+                    <th scope="col">Facturas</th>
                     <th scope="col" class="col-sm-2">Acción</th>
                 </tr>
             </thead>
             <tbody id="mytbl">
                 {% for producto in productos%}
+            
                 <tr>
                     <td scope="col">{{producto.producto.producto.codigo}}</td>
                     <td scope="col">{{producto.producto.producto.nombre}}</td>
@@ -215,9 +282,22 @@
                     <td scope="col">${{producto.precio_unitario}}</td>
                     <td scope="col">${{producto.get_subtotal}}</td></td>
                     <td scope="col">${{producto.total_parcial}}</td>
-                    <td scope="col"><button type="button" class="btn btn-danger" value="Delete" onclick="deleteRow(this)" id="delete" producto="{{producto.id}}" aria-label="Close"><i class="fa-solid fa-trash-can"></i></button>
-                    <a class="btn btn-outline-info" id="btnActualizar" type="button" data-bs-toggle="modal" data-bs-target="#dialog" hx-target="#document" hx-get="{% url 'editar-gasto' producto.id %}">
-                                    <i class="fa-solid fa-pen-to-square"></i></td>
+                    <td>
+                        {% if producto.factura_pdf %}
+                        <a class="btn btn-outline-danger" href="{{producto.factura_pdf.url}}" download class="btn btn-outline-info">
+                            <i class="fa-solid fa-file-pdf"></i>
+                        </a>
+                        {% endif %}
+
+                        {% if producto.factura_xml %}
+                        <a class="btn btn-outline-light" style="background-color:#9a9b9d" href="{{producto.factura_xml.url}}" download class="btn btn-outline-light">
+                            <i class="fa-solid fa-file-code"></i>
+                        </a>
+                        {% endif %}
+                    </td>
+                    <td scope="col"><a type="button" class="btn btn-danger" value="Delete" name="btn_delete" id="delete" href="{% url 'delete-gasto' producto.id %}" aria-label="Close"><i class="fa-solid fa-trash-can"></i></a>
+                    <!--<a class="btn btn-outline-info" id="btnActualizar" type="button" data-bs-toggle="modal" data-bs-target="#dialog" hx-target="#document" hx-get="{% url 'editar-gasto' producto.id %}">
+                                    <i class="fa-solid fa-pen-to-square"></i></td>-->
                 </tr>
                 {% endfor %}
             </tbody>
@@ -256,7 +336,7 @@
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
- $("#id_proyecto").change(function () {
+ /*$("#id_proyecto").change(function () {
       const url = $("#OrderForm").attr("data-subproyecto-url");  // get the url of the `load_subproyectos` view
       const proyectoId = $(this).val();  // get the selected proyecto ID from the HTML input
 
@@ -270,7 +350,78 @@
         }
       });
 
+    });*/
+    document.getElementById('btn_agregar').addEventListener('submit', (event)=>{
+        
+    if ((check_colaborador.checked) &&  (!txt_colaborador.value)) {
+       
+        Swal.fire({
+                "title":"Error",
+                "text":"Favor de agregar un colaborador",
+                "icon":"error",
+            })
+        event.preventDefault
+    }
+     
     });
+
+
+
+    document.getElementById("txt_proyectos").addEventListener("change", (event)=>{
+    var select = document.getElementById("txt_proyectos");
+    console.log(select.value)
+    var browserChildren = document.getElementById('proyectos').children;
+    //var browserChildren = document.getElementById('proveedor')
+    //var dataList = document.getElementById(browserChildren.getAttribute("valor"))
+    var other_select = document.getElementById('id_proyecto');
+
+
+    cont = 0
+
+    for(let i = 0; i < browserChildren.length; i++){
+        console.log(browserChildren[i].value)
+
+        if (browserChildren[i].value === select.value) {
+            console.log(browserChildren[i])
+            console.log(select.value)
+            let id = browserChildren[i].getAttribute('valor');
+            console.log(id)
+            other_select.value = id;
+            var target = id;
+            cont = 1
+            } //else {
+            //    console.log(browserChildren[i].value)
+            //  console.log(select)
+           // }
+    }
+    //console.log(select.value)
+    //El cont = 0 es un indicador/bandera si encuentra al menos una similitud en el for no se activa
+    if ((!select.value) || (cont = 0)){
+        other_select.value = 0
+    }
+    //var select2 = document.getElementById("id_proyecto");
+    var text_subproyectos = document.getElementById("subproyecto")
+    var subproyectos = text_subproyectos.children;
+    //var current_option2 = select2.options[select.selectedIndex];
+    
+    var sub = document.getElementById('id_subproyecto')
+    console.log(target)
+    text_subproyectos.setAttribute('class','form-select form-select-sm my-1')
+
+
+    text_subproyectos.value = ""
+    sub.value =""
+
+
+     for(let i = 0; i < subproyectos.length; i++){
+        proyecto_num  = subproyectos[i].getAttribute('target')
+        if (proyecto_num === target) {
+            subproyectos[i].setAttribute('class','')
+        } else {
+            subproyectos[i].setAttribute('class','d-none')
+     }
+     }
+});
 
 
 document.getElementById("superintendentes").addEventListener("change", function(event){
@@ -345,124 +496,49 @@ document.getElementById("txt_articulos_gasto").addEventListener("change", (event
     }
 });
 
-var updateBtn = document.getElementById('update-gasto')
-let count=0;
-let suma = 0;
-let suma_iva = 0;
+document.getElementById("txt_colaborador").addEventListener("change", (event)=>{
+    var select = document.getElementById("txt_colaborador");
+    var browserChildren = document.getElementById('colaborador').children;
+    var other_select = document.getElementById('id_colaborador');
+    cont = 0
 
-updateBtn.addEventListener('click',function(){
-        let gasto  = document.getElementById('Gasto');
-        let gasto_id = gasto.getAttribute('gasto')
-        let producto = document.getElementById('id_producto');
-        let producto_id = producto.value;
+    for(let i = 0; i < browserChildren.length; i++){
+        //console.log(browserChildren[i].value)
 
-        let check_entrada_salida = document.getElementById('SwitchEntrada_Salida')
-        console.log(producto_id)
-        let descripcion = document.getElementById('id_comentario').value;
-        let cantidad = document.getElementById('id_cantidad');
-        let precio = document.getElementById('id_precio_unitario')
-        var val_cantidad = cantidad.value;
-        var val_precio = precio.value;
-
-        var action = "add";
-        //var iva = current_option.getAttribute('iva');
-        //Esta es la cantidad realmente pedida en la OC
-        if (check_gasto.checked){
-            check = true
-        } else {
-            check = false
-        }
-        if (check_entrada_salida.checked){
-            check_express = true
-            } else {
-                check_express= false
-            }
-
-        console.log('gasto_id',gasto_id)
-        console.log('producto id:',producto_id)
-        console.log('descripción:', descripcion)
-
-        console.log('val_cantidad:',val_cantidad)
-
-        console.log('val_precio:',val_precio)
+        if (browserChildren[i].value === select.value) {
+          //  console.log(browserChildren[i])
+          // console.log(select.value)
+            let id = browserChildren[i].getAttribute('valor');
+            console.log(id)
+            other_select.value = id;
+            cont = 1
+            } //else {
+            //    console.log(browserChildren[i].value)
+              //  console.log(select)
+           // }
+    }
+    //console.log(select.value)
+    //El cont = 0 es un indicador/bandera si encuentra al menos una similitud en el for no se activa
+    if ((!select.value) || (cont = 0)){
+        other_select.value = 0
+    }
+});
 
 
-        if (!producto_id) {
-            Swal.fire({
-                    "title":"Error",
-                    "text":"Favor de seleccionar algún valor de la lista",
-                    "icon":"error",
-                })
-        //Si "la cantidad comprada" es menor que cero
-        } else if (val_cantidad <=0 ) {
-            Swal.fire({
-                    "title":"Error",
-                    "text":"La cantidad ingresada debe ser mayor que 0",
-                    "icon":"error",
-                })
-        } else if (val_precio <=0) {
-            Swal.fire({
-                    "title":"Error",
-                    "text":"El precio ingresado debe ser mayor que 0",
-                    "icon":"error",
-            })
-        } else {
-            ActualizarArticulos(gasto_id, producto_id, descripcion, val_cantidad, val_precio, action, check, check_express);
-            document.getElementById('id_cantidad').value= null;
-            document.getElementById('id_precio_unitario').value= null;
-            document.getElementById('id_producto').value=null;
-            document.getElementById('Gasto').value=null;
-            document.getElementById('id_comentario').value = null;
-            document.getElementById("txt_articulos_gasto").value=null;
-            document.getElementById("txt_articulos").value=null;
+var check_colaborador = document.getElementById("SwitchColaborador");
 
 
-        }
-})
+document.getElementById("SwitchColaborador").addEventListener("change", function(element){
+	let colaboradores = document.getElementById('colaborador_parrafo');
 
-//ActualizarArticulos(array_id_prod)
-
-function ActualizarArticulos(gasto_id, producto_id, descripcion,val_cantidad,val_precio,action,check, check_express){
-    console.log('User is logged in, sending data...' )
-
-    var url = '/gastos/update_gasto/'
-
-    fetch( url, {
-        method:'POST',
-        headers:{
-            'Content-Type':'application/json',
-            'X-CSRFToken': csrftoken,
-        },
-        body:JSON.stringify({'gasto_id':gasto_id, 'producto_id':producto_id, 'descripcion':descripcion, 'val_cantidad':val_cantidad, 'val_precio':val_precio, 'action':action,'check':check, 'check_express':check_express})
-    })
-    .then((response)=>{
-        return response.json()
-    })
-    .then((data)=>{
-        console.log('data:', data)
-        location.reload()
-    })
-}
-
-//This is the function that remove any product from render product table and remove the specific element from the array
-function deleteRow(element) {
-    let btn_delete = document.getElementById('delete');
-    producto_id = btn_delete.getAttribute('producto')
-    gasto_id = ""
-    descripcion = ""
-    val_cantidad = 0
-    val_precio = 0
-    check = false
-    check_express = false
-    console.log(producto_id)
-    var action = "remove";
-    ActualizarArticulos(gasto_id, producto_id, descripcion,val_cantidad,val_precio,action,check,check_express);
-
-    var select = document.getElementById('producto');
-
-    var rows = document.getElementById("mytbl").rows.length;
-}
-
+	if (check_colaborador.checked){
+	    colaboradores.setAttribute('class','col-sm-12')
+	    
+	} else {
+	    colaboradores.setAttribute('class','col-sm-12 d-none')
+	    
+	}
+});
 
 
 var check_gasto = document.getElementById("SwitchGasto");
@@ -521,9 +597,16 @@ check_impuestos_retenidos.addEventListener("change", function(element){
 
 });
 
+document.getElementById("subproyecto").addEventListener("change", function(event){
+        var select = document.getElementById("subproyecto");
+        var current_option = select.options[select.selectedIndex];
+        var target = current_option.getAttribute('sub')
+        console.log(target)
+        var other_select = document.getElementById('id_subproyecto')
+        other_select.value = target
+    });
 
-
-document.getElementById("id_tipo").addEventListener("change", function(element){
+/*document.getElementById("id_tipo").addEventListener("change", function(element){
 	let articulos = document.getElementById('id_tipo');
 	let value = articulos.value;
 	let factura_pdf = document.getElementById('factura_pdf')
@@ -542,7 +625,8 @@ document.getElementById("id_tipo").addEventListener("change", function(element){
 	  factura_xml.setAttribute('class','row d-none')
 	}
 
-});
+});*/
+
 ;(function(){
     const modal = new bootstrap.Modal(document.getElementById('dialog'))
 

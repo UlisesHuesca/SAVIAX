@@ -121,18 +121,15 @@
                     <td>{{gasto.staff.staff.first_name}} {{gasto.staff.staff.last_name}}</td>
                     <td>{{gasto.proyecto.nombre}}</td>
                     <td>{{gasto.subproyecto.nombre}}</td>
-                    <td>{{gasto.approved_at}} </td>
+                    <td>{{gasto.approbado_fecha2}} </td>
                     <td>${{gasto.get_total_solicitud}}</td>
                     <td>
                         <ul class="nav nav-pills">
                             <li class="nav-item mx-1">
-                                <button id="myBtn" type="button" class="btn btn-outline-info" data-bs-toggle="modal" data-bs-target='#dialog' hx-target="#document" hx-get="{% url 'pago-gasto' gasto.id %}">Detalle</button>
+                                <button id="myBtn" type="button" class="btn btn-outline-info" data-bs-toggle="modal" data-bs-target='#dialog' hx-target="#document" hx-get="{% url 'pago-gasto' gasto.id %}">Pago</button>
                             </li>
                             <li class="nav-item mx-1">
-                                <a type="button" class="btn btn-outline-light" style="background-color:#990f0f" data-bs-toggle="modal" data-bs-target='#dialog' hx-target="#document" hx-get=#><i class="fa-solid fa-cloud-arrow-up"></i><i class="fa-solid fa-file-pdf"></i></a>
-                            </li>
-                            <li class="nav-item mx-1">
-                                <a type="button" class="btn btn-outline-light" style="background-color:#9a9b9d" data-bs-toggle="modal" data-bs-target='#dialog' hx-target="#document" hx-get=#><i class="fa-solid fa-cloud-arrow-up"></i><i class="fa-solid fa-file-code"></i></i></a>
+                                <a type="button" class="btn btn-outline-light" style="background-color:#9a9b9d" href="{% url 'matriz-facturas-gasto' gasto.id %}">Comprobación</a>
                             </li>
                         </ul>
                     </td>

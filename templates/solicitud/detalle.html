@@ -53,11 +53,11 @@
                                 {% if exist_req == False %}
                                 <button class="accordion-button collapsed btn-danger" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="false" aria-controls="collapseOne">
                                 Requisición No Creada<i class="fa-solid fa-circle-xmark"></i>
-                                {% elif requi.autorizar == True or exist_oc == True %}
+                                {% elif requi.autorizar == True %}
                                 <button class="accordion-button collapsed btn-success" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="false" aria-controls="collapseOne">
-                                Requisición Autorizada&nbsp<strong>{{requi.folio}}</strong><i class="fa-solid fa-circle-check"></i>
+                                Requisición Autorizada&nbsp<strong>{{requi.folio}} {{requi.autorizar}}</strong><i class="fa-solid fa-circle-check"></i>
                                 {% else %}
-                                <button class="accordion-button collapsed btn-success" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="false" aria-controls="collapseOne">
+                                <button class="accordion-button collapsed btn-danger" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="false" aria-controls="collapseOne">
                                 Requisición No Autorizada {{requi.folio}}<i class="fa-solid fa-circle-check"></i>
                                 {% endif %}
                                 </button>

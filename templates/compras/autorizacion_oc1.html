@@ -13,7 +13,7 @@
 <hr>
 <hr>
 <div class = "row mt-2 bg-white">
-    <ul class="nav nav-pills" >
+    <!--<ul class="nav nav-pills" >
         <li class="nav-item mx-2 pl-5">
             <button type="submit" class="btn btn-outline-success" value='Reporte Excel'>
                 <i class="fa-solid fa-file-excel fa-2xl"></i>
@@ -24,7 +24,7 @@
                 <i class="fa-solid fa-file-pdf fa-2xl"></i>
             </button>
         </li>
-    </ul>
+    </ul>-->
 </div>
 
 <!-- Esta es la zona donde se crean los mensajes perrones con sweet alert -->
@@ -76,7 +76,7 @@
             <tbody>
                 {% for compra in compras %}
                 <tr>
-                    <th scope="row">{{compra.folio}}</th>
+                    <th scope="row">{{compra.get_folio}}</th>
                     <td>{{compra.req.orden.staff.staff.first_name}} {{compra.req.orden.staff.staff.last_name}}</td>
                     <td>{{compra.req.orden.proyecto.nombre}}</td>
                     <td>{{compra.req.orden.subproyecto.nombre}}</td>

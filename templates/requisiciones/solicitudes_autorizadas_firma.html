@@ -119,7 +119,6 @@
                     <th scope="col-sm">Artículo</th>
                     <th scope="col-sm">Cantidad</th>
                     <th scope="col-sm">Fecha</th>
-                    <th scope="col-sm">Acción</th>
                 </tr>
             </thead>
             <tbody>
@@ -132,23 +131,6 @@
                     <td>{{producto.producto.articulos.producto.producto.codigo}} - {{producto.producto.articulos.producto.producto.nombre}}</td>
                     <td>{{producto.cantidad}}</td>
                     <td>{{producto.created_at}}</td>
-                    <td>
-                        <ul class="nav nav-pills">
-                            <li class="nav-item mr-2">
-                                {% if producto.salida_firmada == False %}
-                                <div class='visible' >
-                                {% else %}
-                                <div class='invisible'>
-                                {% endif %}
-
-                                    <a type="button" class="btn btn-outline-info" data-bs-toggle="modal" data-bs-target='#dialog' hx-target="#document" hx-get="{% url 'salida-material-usuario' producto.id %}">
-                                        <i class="fa-solid fa-signature"></i>
-                                    </a>
-                                </div>
-                            </li>
-                        </ul>
-                    </td>
-
                     <!--<td><a id="myBtn" type="button" class="btn btn-outline-info" data-toggle="modal" data-target='#dialog' hx-target="#document" hx-get=""></a>
                     <a type="button" class="btn btn-outline-success" data-toggle="modal" data-target="#dialog" hx-target="#document" hx-get="" >Autorizar</a>
                     <a type="button" class="btn btn-outline-danger" data-toggle="modal" data-target="#dialog" hx-target="#document" hx-get="">Cancelar</a></td>-->

@@ -8,7 +8,7 @@ from entradas.models import Entrada, EntradaArticulo
 from requisiciones.models import Salidas, ValeSalidas
 from django.contrib.auth.decorators import login_required
 from .filters import ArticulosparaSurtirFilter, SalidasFilter, EntradasFilter
-from .forms import SalidasForm, ArticulosRequisitadosForm, ValeSalidasForm, ValeSalidasProyForm, RequisForm
+from .forms import SalidasForm, ArticulosRequisitadosForm, ValeSalidasForm, ValeSalidasProyForm, RequisForm, Rechazo_Requi_Form
 from django.http import HttpResponse
 from openpyxl import Workbook
 from openpyxl.styles import NamedStyle, Font, PatternFill
@@ -19,6 +19,7 @@ from django.db.models.functions import Concat
 from django.db.models import Value, Sum
 from django.contrib import messages
 from django.http import JsonResponse
+from django.core.mail import EmailMessage
 import json
 import csv
 import ast # Para leer el csr many to many
@@ -29,8 +30,8 @@ from reportlab.pdfgen import canvas
 from reportlab.lib import colors
 from reportlab.lib.colors import Color, black, blue, red, white
 from reportlab.lib.units import cm
-from reportlab.lib.pagesizes import letter
 from django.http import FileResponse
+from reportlab.lib.pagesizes import letter, landscape, portrait
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib.enums import TA_CENTER
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
@@ -123,6 +124,12 @@ def update_salida(request):
     producto = ArticulosparaSurtir.objects.get(id = producto_id)
     vale_salida = ValeSalidas.objects.get(id = salida)
     inv_del_producto = Inventario.objects.get(producto = producto.articulos.producto.producto)
+    entradas = EntradaArticulo.objects.filter(articulo_comprado__producto__producto = producto, agotado=False, entrada__oc__req__orden= producto.articulos.orden).aggregate(cantidad_surtir=Sum('cantidad_por_surtir'))
+    suma_entradas = entradas['cantidad_surtir']
+    #Si no existen entradas la suma_entradas es igual a None, lo convierto en 0 para que pueda pasar la condicional #Definitoria
+    if suma_entradas == None:
+        suma_entradas = 0
+
     if action == "add":
         cantidad_total = producto.cantidad - cantidad
         if cantidad_total < 0 and inv_del_producto.cantidad > 0:
@@ -132,8 +139,7 @@ def update_salida(request):
         else:
             salida, created = Salidas.objects.get_or_create(producto=producto, vale_salida = vale_salida, complete=False)
             producto.seleccionado = True
-            if inv_del_producto.cantidad_apartada > inv_del_producto.cantidad_entradas or inv_del_producto.cantidad_apartada >0:
-
+            if inv_del_producto.cantidad_apartada > inv_del_producto.cantidad_entradas and suma_entradas <= 0: #Definitoria or inv_del_producto.cantidad_apartada >0:
                 #Voy a crear un vale de salida con producto salida desde al apartado, lo voy a mandar a llamar aqui, si existe, entonces no hay ni resurtimiento ni salidas derivadas de entradas, solo salidas derivadas de inventario
                 try:
                     EntradaArticulo.objects.get(articulo_comprado__producto__producto__articulos__producto = inv_del_producto, articulo_comprado__producto__producto__articulos__orden__tipo__tipo = 'resurtimiento')
@@ -144,13 +150,9 @@ def update_salida(request):
 
                 salida.cantidad = cantidad #Lo que se surte es la cantidad pedida
                 producto.cantidad = producto.cantidad - salida.cantidad   #se le resta a los articulos por surtir la cantidad que sale
-
-
-
                 if entrada_res:   #si hay resurtimiento
                     #inv_del_producto.cantidad = inv_del_producto.cantidad - salida.cantidad #    Este falló ya con el nuevo método salida.precio = entrada_res.articulo_comprado.precio_unitario
                     entrada_res.cantidad_por_surtir = entrada_res.cantidad_por_surtir - salida.cantidad
-                    inv_del_producto.cantidad_apartada = inv_del_producto.cantidad_apartada - salida.cantidad
                     #producto.cantidad_apartada = producto.cantidad_apartada - salida.cantidad
                     salida.entrada = entrada_res.id
                     if producto.cantidad_requisitar == 0:
@@ -163,7 +165,8 @@ def update_salida(request):
                 else:    #si no hay resurtimiento
                     salida.entrada = 0
                     salida.precio = inv_del_producto.price
-
+                    #inv_del_producto.cantidad = inv_del_producto.cantidad - salida.cantidad
+                inv_del_producto.cantidad_apartada = inv_del_producto.cantidad_apartada - salida.cantidad
                 producto.save()
                 inv_del_producto.save()
                 salida.save()
@@ -206,13 +209,15 @@ def update_salida(request):
         item = Salidas.objects.get(vale_salida = vale_salida, id = id_salida)
         if item.entrada != 0:
             entrada = EntradaArticulo.objects.get(id=item.entrada)
-            if entrada.entrada.oc.req.orden.tipo.tipo == "normal":
-                inv_del_producto.cantidad_apartada = inv_del_producto.cantidad_apartada + item.cantidad
             inv_del_producto.cantidad_entradas = inv_del_producto.cantidad_entradas + item.cantidad
             entrada.cantidad_por_surtir = entrada.cantidad_por_surtir + item.cantidad
             entrada.agotado = False
             entrada.save()
-        inv_del_producto.cantidad = inv_del_producto.cantidad + item.cantidad
+            #if entrada.entrada.oc.req.orden.tipo.tipo == "normal":
+            #    inv_del_producto.cantidad_apartada = inv_del_producto.cantidad_apartada + item.cantidad
+        if vale_salida.solicitud.tipo.tipo == "normal":
+            inv_del_producto.cantidad_apartada = inv_del_producto.cantidad_apartada + item.cantidad
+        #inv_del_producto.cantidad = inv_del_producto.cantidad + item.cantidad
         producto.seleccionado = False
         producto.salida= False
         producto.cantidad = producto.cantidad + item.cantidad
@@ -240,8 +245,6 @@ def salida_material(request, pk):
 
     if request.method == 'POST':
         formVale = ValeSalidasForm(request.POST, instance=vale_salida)
-        vale = formVale.save(commit=False)
-        vale.complete = True
         cantidad_salidas = 0
         cantidad_productos = productos.count()
         for producto in productos:
@@ -252,12 +255,16 @@ def salida_material(request, pk):
                 cantidad_salidas = cantidad_salidas + 1
             producto.save()
         if cantidad_productos == cantidad_salidas:
-            orden.requisitado == True
+            orden.requisitado == True #Esta variable creo que podría ser una variable estúpida
             orden.save()
         if formVale.is_valid():
             formVale.save()
+            vale = formVale.save(commit=False)
+            vale.complete = True
             messages.success(request,'La salida se ha generado de manera exitosa')
             return redirect('reporte-salidas')
+        if not formVale.is_valid():
+            messages.error(request,'No capturaste el usuario')
 
     context= {
         'productos':productos,
@@ -463,7 +470,7 @@ def requisicion_detalle(request, pk):
 
 def requisicion_autorizar(request, pk):
     usuario = request.user.id
-    perfil = Profile.objects.get(id=usuario)
+    perfil = Profile.objects.get(staff__id=usuario)
     requi = Requis.objects.get(id = pk)
     productos = ArticulosRequisitados.objects.filter(req = pk)
     costo_aprox = 0
@@ -494,23 +501,35 @@ def requisicion_autorizar(request, pk):
 
 def requisicion_cancelar(request, pk):
     usuario = request.user.id
-    perfil = Profile.objects.get(id=usuario)
+    perfil = Profile.objects.get(staff=usuario)
     requis = Requis.objects.get(id = pk)
     productos = ArticulosRequisitados.objects.filter(req = pk)
 
     if request.method == 'POST':
-        requis.autorizada_por = perfil
-        requis.autorizar = False
-        requis.save()
-        messages.error(request,f'Has cancelado la requisición {requis.folio}')
-        return redirect('requisicion-autorizacion')
+        form= Rechazo_Requi_Form(request.POST,instance=requis)
+        if form.is_valid():
+            requis.autorizada_por = perfil
+            requis.autorizar = False
+            requis.save()
+            email = EmailMessage(
+                f'Requisición Rechazada {requis.folio}',
+                f'Estimado {requis.orden.staff.staff.first_name} {requis.orden.staff.staff.last_name},\n Estás recibiendo este correo porque tu solicitud: {requis.orden.folio}| Req: {requis.folio} ha sido rechazada,\n por {requis.autorizada_por.staff.first_name} {requis.autorizada_por.staff.last_name} por el siguiente motivo: \n " {requis.comentario_comprador} ".\n\n Este mensaje ha sido automáticamente generado por SAVIA X',
+                'saviax.vordcab@gmail.com',
+                [requis.orden.staff.staff.email],
+                )
+            email.send()
+            messages.error(request,f'Has cancelado la requisición {requis.folio}')
+            return redirect('requisicion-autorizacion')
+    else:
+        form = Rechazo_Requi_Form(instance=requis)
+
 
     context = {
         'productos': productos,
         'requis': requis,
+        'form':form,
      }
     return render(request,'requisiciones/requisiciones_cancelar.html', context)
-
 
 def render_pdf_view(request, pk):
     #Configuration of the PDF object
@@ -933,7 +952,7 @@ def convert_salidas_to_xls(salidas):
 def render_salida_pdf(request, pk):
     #Configuration of the PDF object
     buf = io.BytesIO()
-    c = canvas.Canvas(buf, pagesize=(595.27, 420))
+    c = canvas.Canvas(buf, pagesize=portrait(letter))
     #Here ends conf.
     articulo = Salidas.objects.get(id=pk)
     vale = ValeSalidas.objects.get(id = articulo.vale_salida.id)
@@ -947,7 +966,7 @@ def render_salida_pdf(request, pk):
     c.setFillColor(black)
     c.setLineWidth(.2)
     c.setFont('Helvetica',8)
-    caja_iso = 408
+    caja_iso = 770
     #Elaborar caja
     #c.line(caja_iso,500,caja_iso,720)
 
@@ -989,7 +1008,7 @@ def render_salida_pdf(request, pk):
 
 
     data =[]
-    high = 310
+    high = 670
     data.append(['''Código''','''Producto''', '''Cantidad''', '''Unidad''','''P.Unitario''', '''Importe'''])
     for producto in productos:
         data.append([producto.producto.articulos.producto.producto.codigo, producto.producto.articulos.producto.producto.nombre,producto.cantidad, producto.producto.articulos.producto.producto.unidad, producto.precio, producto.precio * producto.cantidad])
@@ -1001,7 +1020,7 @@ def render_salida_pdf(request, pk):
 
     c.setFillColor(prussian_blue)
     # REC (Dist del eje Y, Dist del eje X, LARGO DEL RECT, ANCHO DEL RECT)
-    c.rect(20,high-125,250,20, fill=True, stroke=False) #3ra linea azul
+    c.rect(20,480,250,20, fill=True, stroke=False) #3ra linea azul
     c.setFillColor(black)
     c.setFont('Helvetica',7)
 
@@ -1009,31 +1028,29 @@ def render_salida_pdf(request, pk):
     c.setFillColor(white)
     c.setLineWidth(.1)
     c.setFont('Helvetica-Bold',10)
-    c.drawCentredString(70,high-120,'Proyecto')
-    c.drawCentredString(165,high-120,'Subproyecto')
+    c.drawCentredString(70,485,'Proyecto')
+    c.drawCentredString(165,485,'Subproyecto')
 
     c.setFont('Helvetica',8)
     c.setFillColor(black)
-    c.drawCentredString(70,high-135, str(vale.solicitud.proyecto.nombre))
-    c.drawCentredString(165,high-135, str(vale.solicitud.subproyecto.nombre))
+    c.drawCentredString(70,470, str(vale.solicitud.proyecto.nombre))
+    c.drawCentredString(165,470, str(vale.solicitud.subproyecto.nombre))
 
 
     c.setFillColor(black)
     c.setFont('Helvetica',8)
     #c.line(135,high-200,215, high-200) #Linea de Autorizacion
-    c.drawCentredString(180,high-210,'Entregó')
-    c.drawCentredString(180,high-220, vale.almacenista.staff.first_name +' '+vale.almacenista.staff.last_name)
+    c.drawCentredString(150,455,'Entregó')
+    c.drawCentredString(150,445, vale.almacenista.staff.first_name +' '+vale.almacenista.staff.last_name)
 
-    c.line(370,high-200,430, high-200)
-    c.drawCentredString(400,high-210,'Recibió')
-    c.drawCentredString(400,high-220, vale.material_recibido_por.staff.first_name +' '+vale.material_recibido_por.staff.last_name)
+    c.line(370,465,430, 465)
+    c.drawCentredString(400,455,'Recibió')
+    c.drawCentredString(400,445, vale.material_recibido_por.staff.first_name +' '+vale.material_recibido_por.staff.last_name)
 
 
     #c.line(240, high-200, 310, high-200)
-    c.drawCentredString(280,high-210,'Autorizó')
-    c.drawCentredString(280,high-220, vale.solicitud.staff.staff.first_name + ' ' + vale.solicitud.staff.staff.last_name)
-
-
+    c.drawCentredString(280,455,'Autorizó')
+    c.drawCentredString(280,445, vale.solicitud.staff.staff.first_name + ' ' + vale.solicitud.staff.staff.last_name)
 
     c.setFont('Helvetica',10)
     c.setFillColor(prussian_blue)
@@ -1041,7 +1058,7 @@ def render_salida_pdf(request, pk):
     c.setFillColor(black)
 
     c.setFillColor(prussian_blue)
-    c.rect(20,20,565,20, fill=True, stroke=False)
+    c.rect(20,420,565,20, fill=True, stroke=False)
     c.setFillColor(white)
 
     width, height = letter

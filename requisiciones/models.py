@@ -15,6 +15,7 @@ class Requis(models.Model):
     requi_autorizada_por = models.ForeignKey(Profile, on_delete = models.CASCADE, null=True)
     comentario_super = models.CharField(max_length=200, null=True, blank= True)
     comentario_compras = models.CharField(max_length=200, null=True, blank= True)
+    comentario_rechazo = models.TextField(max_length=200, null=True, blank= True)
     autorizar = models.BooleanField(null=True, default=None)
     approved_at = models.DateField(null=True)
     approved_at_time = models.TimeField(null=True)

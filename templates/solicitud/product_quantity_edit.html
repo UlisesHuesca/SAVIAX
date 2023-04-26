@@ -50,11 +50,6 @@
                                     {{form.cantidad|add_class:"form-control"}}
                                 </div>
                             </th>
-                            <th scope="col">
-                                <div class="col-20">
-                                    {{form.comentario|add_class:"form-control"}}
-                                </div>
-                            </th>
                         </tr>
                     </tbody>
                 </table>
@@ -94,9 +89,8 @@ cant.addEventListener('change', function(){
                     "text":"El valor debe ser mayor que 0",
                     "icon":"error",
                 })
-
     }
-    if (cant.value >0 ) ({
+    if (cant.value >0 ) {
         btn.removeAttribute('class');
         btn.setAttribute('class','btn btn-outline-info col-2');
     }

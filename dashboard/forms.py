@@ -57,7 +57,7 @@ class Proveedores_Direcciones_BatchForm(forms.ModelForm):
 class AddProduct_Form(forms.ModelForm):
     class Meta:
         model = Product
-        fields = ['codigo','nombre','unidad','familia','subfamilia','especialista','iva','activo','servicio','image',]
+        fields = ['codigo','nombre','unidad','familia','subfamilia','especialista','iva','activo','servicio','image','gasto']
 
 #Sobreescribiendo el método __init__ y configurando el queryset para que esté vacío
     def __init__(self, *args, **kwargs):
@@ -76,9 +76,9 @@ class AddProduct_Form(forms.ModelForm):
 class Proyectos_Form(forms.ModelForm):
     class Meta:
         model = Proyecto
-        fields = ['descripcion','nombre','cliente','activo','factura','fecha_factura','folio_cotizacion','oc_cliente','status_de_entrega','monto_total',]
+        fields = ['descripcion','nombre','cliente','activo','factura','fecha_factura','folio_cotizacion','oc_cliente','status_de_entrega','monto_total','activo']
 
 class Proyectos_Add_Form(forms.ModelForm):
     class Meta:
         model = Proyecto
-        fields = ['descripcion','nombre','cliente','activo','factura','fecha_factura','folio_cotizacion','oc_cliente','status_de_entrega','monto_total',]
+        fields = ['descripcion','nombre','cliente','activo','factura','fecha_factura','folio_cotizacion','oc_cliente','status_de_entrega','monto_total','activo','distrito']

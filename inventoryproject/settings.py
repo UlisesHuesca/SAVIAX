@@ -61,6 +61,7 @@ INSTALLED_APPS = [
     'djmoney',
     'widget_tweaks',
     'simple_history',
+    'django.contrib.humanize'
 ]
 
 MIDDLEWARE = [
@@ -183,3 +184,5 @@ EMAIL_HOST_USER = 'saviax.vordcab@gmail.com'
 EMAIL_HOST_PASSWORD = 'yzhzxcdkmmamxchq'
 EMAIL_USE_TLS = True
 #EMAIL_USE_SSL = False
+
+USE_THOUSAND_SEPARATOR = True

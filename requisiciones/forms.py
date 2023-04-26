@@ -25,3 +25,8 @@ class RequisForm(forms.ModelForm):
     class Meta:
         model = Requis
         fields = ['comentario_super', 'comentario_compras']
+
+class Rechazo_Requi_Form(forms.ModelForm):
+    class Meta:
+        model = Requis
+        fields = ['comentario_rechazo']

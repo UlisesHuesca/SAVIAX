@@ -14,7 +14,7 @@
     <div class="row mt-5">
         <div class="col-md-6 offset-md-3">
             <div class="border bg-white p-3">
-                <h3>Actualizar Artículo</h3>
+                <h3>Editar Proyectos</h3>
                 <hr>
                 <form method="POST">
                     {% csrf_token %}
@@ -29,6 +29,10 @@
                     <label for="form.descripcion" class="col-auto col-form-label my-1"><strong>Descripción:</strong></label>
                     <div class="col-12">
                         {{ form.descripcion|add_class:"form-control"}}
+                    </div>
+                    <label for="form.descripcion" class="col-auto col-form-label my-1"><strong>Activo:</strong></label>
+                    <div class="col-12">
+                        {{ form.activo|add_class:"form-check-input"}}
                     </div>
                     <label for="form.factura" class="col-auto col-form-label my-1"><strong>Factura:</strong></label>
                     <div class="col-6">

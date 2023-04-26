@@ -1,8 +1,15 @@
 from django.contrib import admin
 from .models import Profile, Distrito, Tipo_perfil, Banco, Almacen
+# Register your classes here
+
+class ProfileAdmin(admin.ModelAdmin):
+    list_display = ('staff', 'tipo')
+    search_fields = ('staff__username',)
 
 # Register your models here.
-admin.site.register(Profile)
+
+
+admin.site.register(Profile, ProfileAdmin)
 
 admin.site.register(Distrito)
 
