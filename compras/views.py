@@ -660,14 +660,23 @@ def render_oc_pdf(request, pk):
     c.line(inicio_central,caja_proveedor-25,inicio_central,520) #Linea Central de caja Proveedor | Detalle
     c.setFillColor(black)
     c.setFont('Helvetica',9)
-    c.drawString(30,caja_proveedor-15,'Nombre:')
-    c.drawString(30,caja_proveedor-35,'RFC:')
-    c.drawString(30,caja_proveedor-55,'Uso del CFDI:')
-    c.drawString(30,caja_proveedor-75,'Solicitó:')
-    c.drawString(30,caja_proveedor-95,'Fecha:')
-    c.drawString(30,caja_proveedor-115,'Proveedor Calif:')
+    c.drawString(30,caja_proveedor-20,'Nombre:')
+    c.drawString(30,caja_proveedor-40,'RFC:')
+    c.drawString(30,caja_proveedor-60,'Uso del CFDI:')
+    c.drawString(30,caja_proveedor-80,'Solicitó:')
+    c.drawString(30,caja_proveedor-100,'Fecha:')
+    c.drawString(30,caja_proveedor-120,'Proveedor Calif:')
+    c.drawString(30,caja_proveedor-140,'Tiempo de Entrega:')
 
+    c.setFont('Helvetica-Bold',12)
+    c.drawString(500,caja_proveedor-20,'FOLIO:')
 
+    c.setFillColor(rojo)
+    c.setFont('Helvetica-Bold',12)
+    c.drawString(540,caja_proveedor-20, compra.get_folio)
+
+    c.setFillColor(black)
+    c.setFont('Helvetica',9)
     c.drawString(inicio_central + 10,caja_proveedor-35,'No. Requisición:')
     c.drawString(inicio_central + 10,caja_proveedor-55,'Método de pago:')
     c.drawString(inicio_central + 10,caja_proveedor-75,'Condiciones de pago:')
@@ -680,27 +689,36 @@ def render_oc_pdf(request, pk):
     #c.drawString(inicio_central + 10,600,'Anticipo:')
 
 
-
     #c.setFont('Helvetica',12) ## FECHA DE LA SOLICITUD 505,735
     #c.setFillColor(rojo) ## NUMERO DEL FOLIO
     #c.drawString(495,735, str(compra.id))
 
     c.setFillColor(black)
     c.setFont('Helvetica',9)
-    c.drawString(100,caja_proveedor-15, compra.proveedor.nombre.razon_social)
+    if compra.proveedor.nombre.razon_social == 'COLABORADOR':
+        c.drawString(100,caja_proveedor-15, compra.deposito_comprador.staff.first_name+' '+compra.deposito_comprador.staff.last_name)
+    else:
+        c.drawString(100,caja_proveedor-15, compra.proveedor.nombre.razon_social)
     c.drawString(100,caja_proveedor-35, compra.proveedor.nombre.rfc)
     c.drawString(100,caja_proveedor-55, compra.uso_del_cfdi.descripcion)
     c.drawString(100,caja_proveedor-75, compra.req.orden.staff.staff.first_name +' '+ compra.req.orden.staff.staff.last_name)
     c.drawString(100,caja_proveedor-95, compra.created_at.strftime("%d/%m/%Y"))
     c.drawString(100,caja_proveedor-115, compra.proveedor.estatus.nombre)
+    if compra.dias_de_entrega:
+        c.drawString(110,caja_proveedor-140, str(compra.dias_de_entrega)+' '+'días hábiles')
 
 
 
     c.drawString(inicio_central + 90,caja_proveedor-35, str(compra.req.id))
     c.drawString(inicio_central + 90,caja_proveedor-95, 'tesoreria.planta@vordtec.com')
-    c.drawString(inicio_central + 90,caja_proveedor-115, compra.proveedor.banco.nombre)
-    c.drawString(inicio_central + 90,caja_proveedor-135, compra.proveedor.cuenta)
-    c.drawString(inicio_central + 90,caja_proveedor-155, compra.proveedor.clabe)
+    if compra.proveedor.nombre.razon_social == 'COLABORADOR':
+        c.drawString(inicio_central + 90,caja_proveedor-115, compra.deposito_comprador.banco.nombre)
+        c.drawString(inicio_central + 90,caja_proveedor-135, compra.deposito_comprador.cuenta_bancaria)
+        c.drawString(inicio_central + 90,caja_proveedor-155, compra.deposito_comprador.clabe)
+    else:
+        c.drawString(inicio_central + 90,caja_proveedor-115, compra.proveedor.banco.nombre)
+        c.drawString(inicio_central + 90,caja_proveedor-135, compra.proveedor.cuenta)
+        c.drawString(inicio_central + 90,caja_proveedor-155, compra.proveedor.clabe)
 
 
 
@@ -737,17 +755,16 @@ def render_oc_pdf(request, pk):
     c.setFillColor(white)
     c.setLineWidth(.1)
     c.setFont('Helvetica-Bold',10)
-    c.drawCentredString(70,high-120,'Proyecto')
-    c.drawCentredString(165,high-120,'Subproyecto')
-    c.drawCentredString(240,high-120,'Elaboró')
-    c.drawCentredString(315,high-120,'Moneda')
+    c.drawCentredString(50,high-120,'Proyecto')
+    c.drawCentredString(110,high-120,'Subproyecto')
+    c.drawCentredString(230,high-120,'Elaboró')
+    c.drawCentredString(325,high-120,'Moneda')
     c.setFont('Helvetica',8)
     c.setFillColor(black)
-    c.drawCentredString(70,high-140,compra.req.orden.proyecto.nombre)
-    c.drawCentredString(165,high-140,compra.req.orden.subproyecto.nombre)
-    c.drawCentredString(240,high-140,compra.creada_por.staff.first_name + ' ' +compra.creada_por.staff.last_name)
-    c.drawCentredString(315,high-140,compra.moneda.nombre)
-
+    c.drawCentredString(50,high-140,compra.req.orden.proyecto.nombre)
+    c.drawCentredString(110,high-140,compra.req.orden.subproyecto.nombre)
+    c.drawCentredString(230,high-140,compra.creada_por.staff.first_name + ' ' +compra.creada_por.staff.last_name)
+    c.drawCentredString(325,high-140,compra.moneda.nombre)
 
     c.setLineWidth(.3)
     c.line(370,high-95,370,high-160) #Eje Y donde empieza, Eje X donde empieza, donde termina eje y,donde termina eje x (LINEA 1 contorno)
@@ -766,7 +783,7 @@ def render_oc_pdf(request, pk):
     c.setFillColor(black)
     c.drawString(35,high-200,'Opciones y condiciones:')
     c.setFont('Helvetica',8)
-    letras = 350
+    letras = 320
     c.drawString(letras-90,high-175,'Total con letra:')
     c.line(135,high-240,215, high-240) #Linea de Autorizacion
     c.line(350,high-240,430, high-240)
@@ -835,7 +852,7 @@ def render_oc_pdf(request, pk):
     c.save()
     c.showPage()
     buf.seek(0)
-    return FileResponse(buf, as_attachment=True, filename='oc_'+str(compra.get_folio) +'.pdf')
+    return FileResponse(buf, as_attachment=True, filename='oc_'+str(compra.id) +'.pdf')
 
 def attach_oc_pdf(request, pk):
     #Configuration of the PDF object
@@ -904,13 +921,23 @@ def attach_oc_pdf(request, pk):
     c.line(inicio_central,caja_proveedor-25,inicio_central,520) #Linea Central de caja Proveedor | Detalle
     c.setFillColor(black)
     c.setFont('Helvetica',9)
-    c.drawString(30,caja_proveedor-15,'Nombre:')
-    c.drawString(30,caja_proveedor-35,'RFC:')
-    c.drawString(30,caja_proveedor-55,'Uso del CFDI:')
-    c.drawString(30,caja_proveedor-75,'Solicitó:')
-    c.drawString(30,caja_proveedor-95,'Fecha:')
-    c.drawString(30,caja_proveedor-115,'Proveedor Calif:')
+    c.drawString(30,caja_proveedor-20,'Nombre:')
+    c.drawString(30,caja_proveedor-40,'RFC:')
+    c.drawString(30,caja_proveedor-60,'Uso del CFDI:')
+    c.drawString(30,caja_proveedor-80,'Solicitó:')
+    c.drawString(30,caja_proveedor-100,'Fecha:')
+    c.drawString(30,caja_proveedor-120,'Proveedor Calif:')
+    c.drawString(30,caja_proveedor-140,'Tiempo de Entrega:')
 
+    c.setFont('Helvetica-Bold',12)
+    c.drawString(500,caja_proveedor-20,'FOLIO:')
+
+    c.setFillColor(rojo)
+    c.setFont('Helvetica-Bold',12)
+    c.drawString(540,caja_proveedor-20, compra.get_folio)
+
+    c.setFillColor(black)
+    c.setFont('Helvetica',9)
 
     c.drawString(inicio_central + 10,caja_proveedor-35,'No. Requisición:')
     c.drawString(inicio_central + 10,caja_proveedor-55,'Método de pago:')
@@ -931,21 +958,29 @@ def attach_oc_pdf(request, pk):
 
     c.setFillColor(black)
     c.setFont('Helvetica',9)
-    c.drawString(100,caja_proveedor-15, compra.proveedor.nombre.razon_social)
-    c.drawString(100,caja_proveedor-35, compra.proveedor.nombre.rfc)
-    c.drawString(100,caja_proveedor-55, compra.uso_del_cfdi.descripcion)
-    c.drawString(100,caja_proveedor-75, compra.req.orden.staff.staff.first_name +' '+ compra.req.orden.staff.staff.last_name)
-    c.drawString(100,caja_proveedor-95, compra.created_at.strftime("%d/%m/%Y"))
-    c.drawString(100,caja_proveedor-115, compra.proveedor.estatus.nombre)
-
+    if compra.proveedor.nombre.razon_social == 'COLABORADOR':
+        c.drawString(100,caja_proveedor-20, compra.deposito_comprador.staff.first_name+' '+compra.deposito_comprador.staff.last_name)
+    else:
+        c.drawString(100,caja_proveedor-20, compra.proveedor.nombre.razon_social)
+    c.drawString(100,caja_proveedor-40, compra.proveedor.nombre.rfc)
+    c.drawString(100,caja_proveedor-60, compra.uso_del_cfdi.descripcion)
+    c.drawString(100,caja_proveedor-80, compra.req.orden.staff.staff.first_name +' '+ compra.req.orden.staff.staff.last_name)
+    c.drawString(100,caja_proveedor-100, compra.created_at.strftime("%d/%m/%Y"))
+    c.drawString(100,caja_proveedor-120, compra.proveedor.estatus.nombre)
+    if compra.dias_de_entrega:
+        c.drawString(110,caja_proveedor-140, str(compra.dias_de_entrega)+' '+'días hábiles')
 
 
     c.drawString(inicio_central + 90,caja_proveedor-35, str(compra.req.id))
     c.drawString(inicio_central + 90,caja_proveedor-95, 'tesoreria.planta@vordtec.com')
-    c.drawString(inicio_central + 90,caja_proveedor-115, compra.proveedor.banco.nombre)
-    c.drawString(inicio_central + 90,caja_proveedor-135, compra.proveedor.cuenta)
-    c.drawString(inicio_central + 90,caja_proveedor-155, compra.proveedor.clabe)
-
+    if compra.proveedor.nombre.razon_social == 'COLABORADOR':
+        c.drawString(inicio_central + 90,caja_proveedor-115, compra.deposito_comprador.banco.nombre)
+        c.drawString(inicio_central + 90,caja_proveedor-135, compra.deposito_comprador.cuenta_bancaria)
+        c.drawString(inicio_central + 90,caja_proveedor-155, compra.deposito_comprador.clabe)
+    else:
+        c.drawString(inicio_central + 90,caja_proveedor-115, compra.proveedor.banco.nombre)
+        c.drawString(inicio_central + 90,caja_proveedor-135, compra.proveedor.cuenta)
+        c.drawString(inicio_central + 90,caja_proveedor-155, compra.proveedor.clabe)
 
 
 
@@ -981,16 +1016,16 @@ def attach_oc_pdf(request, pk):
     c.setFillColor(white)
     c.setLineWidth(.1)
     c.setFont('Helvetica-Bold',10)
-    c.drawCentredString(70,high-120,'Proyecto')
-    c.drawCentredString(165,high-120,'Subproyecto')
-    c.drawCentredString(240,high-120,'Elaboró')
-    c.drawCentredString(315,high-120,'Moneda')
+    c.drawCentredString(50,high-120,'Proyecto')
+    c.drawCentredString(110,high-120,'Subproyecto')
+    c.drawCentredString(230,high-120,'Elaboró')
+    c.drawCentredString(325,high-120,'Moneda')
     c.setFont('Helvetica',8)
     c.setFillColor(black)
-    c.drawCentredString(70,high-140,compra.req.orden.proyecto.nombre)
-    c.drawCentredString(165,high-140,compra.req.orden.subproyecto.nombre)
-    c.drawCentredString(240,high-140,compra.creada_por.staff.first_name + ' ' +compra.creada_por.staff.last_name)
-    c.drawCentredString(315,high-140,compra.moneda.nombre)
+    c.drawCentredString(50,high-140,compra.req.orden.proyecto.nombre)
+    c.drawCentredString(110,high-140,compra.req.orden.subproyecto.nombre)
+    c.drawCentredString(230,high-140,compra.creada_por.staff.first_name + ' ' +compra.creada_por.staff.last_name)
+    c.drawCentredString(325,high-140,compra.moneda.nombre)
 
 
     c.setLineWidth(.3)

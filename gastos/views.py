@@ -57,7 +57,7 @@ def crear_gasto(request):
                 articulo.gasto = gasto
                 articulo.completo = True
                 articulo.save()
-                messages.success(request, f'La solicitud de creacion de articulo funciona')
+                messages.success(request, 'La solicitud de creacion de articulo funciona')
                 return redirect('crear-gasto')
 
 
@@ -162,7 +162,7 @@ def gastos_pendientes_autorizar(request):
     #elif perfil.tipo.supervisor == True:
     #    solicitudes = Solicitud_Gasto.objects.filter(complete=True, staff__distrito=perfil.distrito, supervisor=perfil).order_by('-folio')
     #else:
-    solicitudes = Solicitud_Gasto.objects.filter(complete=True, autorizar = None).order_by('-folio')
+    solicitudes = Solicitud_Gasto.objects.filter(complete=True, autorizar = None, superintendente = perfil).order_by('-folio')
 
     myfilter=Solicitud_Gasto_Filter(request.GET, queryset=solicitudes)
     solicitudes = myfilter.qs
@@ -333,79 +333,53 @@ def pago_gastos_autorizados(request):
 def pago_gasto(request, pk):
     usuario = Profile.objects.get(staff__id=request.user.id)
     gasto = Solicitud_Gasto.objects.get(id=pk)
-    pagos = Pago.objects.filter(gasto=gasto, hecho=True).aggregate(Sum('monto'))
-    sub = Subproyecto.objects.get(id=gasto.subproyecto.id)
     pagos_alt = Pago.objects.filter(gasto=gasto, hecho=True)
-
-    if pagos['monto__sum'] == None:
-        monto_anterior = 0
-    else:
-        monto_anterior = pagos['monto__sum']
-
     cuentas = Cuenta.objects.filter(moneda__nombre = 'PESOS')
 
     pago, created = Pago.objects.get_or_create(tesorero = usuario, distrito = usuario.distrito, gasto=gasto, hecho=False, monto=0)
     form = Pago_Gasto_Form()
-    remanente = gasto.get_total_solicitud - monto_anterior
-
+    remanente = gasto.get_total_solicitud - gasto.monto_pagado
 
 
     if request.method == 'POST':
         form = Pago_Gasto_Form(request.POST or None, request.FILES or None, instance = pago)
-        pago = form.save(commit = False)
-        pago.pagado_date = date.today()
-        pago.pagado_hora = datetime.now().time()
-        pago.hecho = True
-        #Traigo la cuenta que se capturo en el form
-        cuenta = Cuenta.objects.get(cuenta = pago.cuenta.cuenta)
-        #La utilizo para sacar la información de todos los pagos relacionados con esa cuenta y sumarlos
-        cuenta_pagos = Pago.objects.filter(cuenta = pago.cuenta).aggregate(Sum('monto'))
-        if cuenta_pagos['monto__sum'] == None:
-            cuenta_pagos['monto__sum']=0
-
-        # Actualizo el saldo de la cuenta
-        monto_actual = decimal.Decimal(pago.monto) #request.POST['monto_0']
-        sub.gastado = sub.gastado + monto_actual
-        cuenta.saldo = cuenta_pagos['monto__sum'] + monto_actual
-        monto_total= monto_actual + monto_anterior
-        if monto_actual <= 0:
-            messages.error(request,f'El pago {monto_actual} debe ser mayor a 0')
-        elif monto_total <= gasto.get_total_solicitud:
-            if form.is_valid():
-                if monto_total == gasto.get_total_solicitud:
+        if form.is_valid():
+            pago = form.save(commit = False)
+            pago.pagado_date = date.today()
+            pago.pagado_hora = datetime.now().time()
+            pago.hecho = True
+            total_pagado = gasto.monto_pagado  + pago.monto
+            if total_pagado > gasto.get_total_solicitud:
+                messages.error(request,f'{usuario.staff.first_name}, el monto introducido más los pagos anteriores superan el monto total del viático')
+            else:
+                pago.save()
+                if gasto.monto_pagado == gasto.get_total_solicitud:
                     gasto.pagada = True
                     pagos = Pago.objects.filter(gasto=gasto, hecho=True)
                     #archivo_oc = attach_oc_pdf(request, gasto.id)
                     email = EmailMessage(
                         f'Gasto Autorizado {gasto.id}',
-                        f'Estimado(a) {gasto.staff.staff}:\n\nEstás recibiendo este correo porque ha sido pagada el gasto con folio: {gasto.id}.\n\n\nGrupo Vordcab S.A. de C.V.\n\n Este mensaje ha sido automáticamente generado por SAVIA VORDTEC',
+                        f'Estimado(a) {gasto.staff.staff}:\n\nEstás recibiendo este correo porque ha sido pagada el gasto con folio: {gasto.id}.\n\n\nVordtec de México S.A. de C.V.\n\n Este mensaje ha sido automáticamente generado por SAVIA VORDTEC',
                         'saviax.vordcab@gmail.com',
                         ['ulises_huesc@hotmail.com'],#[compra.proveedor.email],
                         )
                     #email.attach(f'OC_folio_{gasto.id}.pdf',archivo_oc,'application/pdf')
-                    email.attach('Pago.pdf',request.FILES['comprobante_pago'].read(),'application/pdf')
+                    #email.attach('Pago.pdf',request.FILES['comprobante_pago'].read(),'application/pdf')
                     if pagos.count() > 0:
                         for pago in pagos:
                             email.attach(f'Pago_folio_{pago.id}.pdf',pago.comprobante_pago.path,'application/pdf')
                     email.send()
-                pago.save()
-                gasto.save()
-                form.save()
-                sub.save()
-                cuenta.save()
+                    gasto.save()
                 messages.success(request,f'Gracias por registrar tu pago, {usuario.staff.first_name}')
                 return HttpResponse(status=204) #No content to render nothing and send a "signal" to javascript in order to close window
-            else:
-                form = Pago_Gasto_Form()
-                messages.error(request,f'{usuario.staff.first_name}, No se pudo subir tu documento')
         else:
-            messages.error(request,f'{usuario.staff.first_name}, el monto introducido más los pagos anteriores {monto_total} superan el monto total del gasto')
+            form = Pago_Gasto_Form()
+            messages.error(request,f'{usuario.staff.first_name}, No se pudo subir tu documento')
 
     context= {
         'gasto':gasto,
         'pago':pago,
         'form':form,
-        'suma_pagos': monto_anterior,
         'pagos_alt':pagos_alt,
         'cuentas':cuentas,
         'remanente':remanente,

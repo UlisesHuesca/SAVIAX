@@ -29,15 +29,14 @@ class Proyecto(models.Model):
     status_de_entrega = models.ForeignKey(St_Entrega, on_delete=models.CASCADE, null=True)
     created_at = models.DateField(auto_now_add=True)
     updated_at = models.DateField(auto_now=True)
-    monto_total = models.DecimalField(max_digits=19, null=True, decimal_places=2)
 
     class Meta:
         unique_together = ('nombre', 'distrito',)
 
-
+    @property
     def get_projects_total(self):
         subproyectos = self.subproyecto_set.all()
-        total = sum([subproyecto.presupueto for subproyecto in subproyectos])
+        total = sum([subproyecto.presupuesto for subproyecto in subproyectos])
         return total
 
     @property
@@ -49,8 +48,8 @@ class Proyecto(models.Model):
     @property
     def get_saldo(self):
         pagos = self.cobranza_set.all()
-        if self.monto_total:
-            total = self.monto_total - sum([pago.monto_abono for pago in pagos])
+        if self.get_projects_total:
+            total = self.get_projects_total - sum([pago.monto_abono for pago in pagos])
         else:
             total=0
         return total
@@ -64,6 +63,7 @@ class Proyecto(models.Model):
 class Subproyecto(models.Model):
     proyecto = models.ForeignKey(Proyecto, on_delete = models.CASCADE, null=True)
     nombre = models.CharField(max_length=50, null=True, unique=True)
+    descripcion = models.CharField(max_length=50, null=True, blank=True)
     presupuesto = models.DecimalField(max_digits=14, decimal_places=2, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

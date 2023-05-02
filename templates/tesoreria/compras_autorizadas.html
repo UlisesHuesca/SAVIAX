@@ -58,7 +58,7 @@
                 <form method=POST>
                     {% csrf_token %}
                     <ul class="nav nav-pills">
-                        <li class="nav-item mx-2">
+                        <!--<li class="nav-item mx-2">
                             <button type="submit" class="btn btn-outline-success" value='Reporte Excel'>
                                 <i class="fa-solid fa-file-excel fa-2xl"></i>
                             </button>
@@ -67,11 +67,13 @@
                             <button type="button" class="btn btn-outline-danger">
                                <i class="fa-solid fa-file-pdf fa-2xl"></i>
                             </button>
-                        </li>
+                        </li>-->
                         <li class="nav-item mx-2">
-                            <a type="button" class="btn btn-outline-success" href="{% url 'pago-gastos-autorizados' %}">
-                                Gastos
-                            </a>
+                            <div class="btn-group btn-group" role="group" aria-label="Large button group">
+                                <a type="button" class="btn btn-outline-info active" style="color:#F5F5F5; background:#3E92CC; border-color: #3E92CC;" href="{% url 'compras-autorizadas' %}">Compras</a>
+                                <a type="button" class="btn btn-outline-info" href="{% url 'pago-gastos-autorizados' %}">Gastos</a>
+                                <a type="button" class="btn btn-outline-info" href="{% url 'viaticos-autorizados-pago' %}">Viaticos</a>
+                              </div>
                         </li>
                     </ul>
                 </form>

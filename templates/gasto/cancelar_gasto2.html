@@ -23,7 +23,7 @@
                     <div style="flex:4">Artículo</div>
                     <div style="flex:2">Cantidad</div>
                     <div style="flex:2">Total</div>
-                 
+                    <div style="flex:6">Comentario</div>
                 </div>
                 {% for producto in productos %}
                 <div class='cart-row'>
@@ -32,6 +32,7 @@
                     <div style="flex:4">{{producto.producto.producto.nombre}}</div>
                     <div style="flex:2"><p class='quantity'>{{producto.cantidad|floatformat:2}}</p></div>
                     <div style="flex:2">${{producto.total_parcial}}</div>
+                    <div style="flex:6">{{producto.comentario}}</div>
                 </div>
                 {% endfor %}
             </div>

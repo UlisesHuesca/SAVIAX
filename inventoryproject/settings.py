@@ -52,6 +52,7 @@ INSTALLED_APPS = [
     'user.apps.UserConfig',
     'cobranza.apps.CobranzaConfig',
     'gastos.apps.GastosConfig',
+    'viaticos.apps.ViaticosConfig',
 
 
 

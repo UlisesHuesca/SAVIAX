@@ -34,6 +34,13 @@ class Solicitud_Gasto(models.Model):
     approved_at_time2 = models.TimeField(null=True)
 
     @property
+    def monto_pagado(self):
+        pagado = self.pago_set.all()
+        pagado.filter(hecho=True)
+        total = sum([pago.monto for pago in pagado])
+        return total
+
+    @property
     def get_subtotal_solicitud(self):
         productos = self.articulo_gasto_set.all()
         productos = productos.filter(completo=True)
@@ -62,8 +69,8 @@ class Articulo_Gasto(models.Model):
     clase = models.BooleanField(null=True, default=False)   #Se refiere a si el producto es del True == almacén o entrara al almacén o si va por fuera
     producto = models.ForeignKey(Inventario, on_delete = models.CASCADE, null=True, blank=True)
     comentario = models.CharField(max_length=75, null=True)
-    otros_impuestos = models.DecimalField(default=0,max_digits=14, decimal_places=2, null=True, blank=True)
-    impuestos_retenidos = models.DecimalField(default=0, max_digits=14, decimal_places=2, null=True, blank=True)
+    otros_impuestos = models.DecimalField(default=0,max_digits=14, decimal_places=4, null=True, blank=True)
+    impuestos_retenidos = models.DecimalField(default=0, max_digits=14, decimal_places=4, null=True, blank=True)
     gasto = models.ForeignKey(Solicitud_Gasto, on_delete = models.CASCADE, null=True)
     cantidad = models.DecimalField(max_digits=10, decimal_places=6, null=True)
     precio_unitario = models.DecimalField(max_digits=14, decimal_places=6, null=True)
@@ -97,5 +104,5 @@ class Articulo_Gasto(models.Model):
     @property
     def total_parcial(self):
         impuesto = self.get_iva
-        total = round(self.get_subtotal + impuesto + self.get_otros_impuestos, 2)
+        total = round(self.get_subtotal + impuesto + self.get_otros_impuestos)
         return total

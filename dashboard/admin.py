@@ -11,10 +11,12 @@ class ProductAdmin(admin.ModelAdmin):
     list_display = ('nombre','familia', 'codigo')
     list_filter = ('familia',)
 
+
 class InventarioAdmin(SimpleHistoryAdmin):
     list_display = ('id','producto','cantidad','cantidad_apartada','price','minimo')
     list_filter = ('producto',)
     history_list_display = ('status')
+    search_fields = ['producto__nombre']
 
 class ArticulosOrdenadosAdmin(admin.ModelAdmin):
     list_display = ('id','orden','producto','cantidad')

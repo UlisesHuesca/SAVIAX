@@ -46,7 +46,7 @@
         </div>
 
         <div class="card-body">
-                <table class='table table striped'>
+                <table class='table table-striped'>
                     <thead>
                         <tr>
                         <th scope="col">Proveedor:</th>
@@ -55,7 +55,7 @@
                     </thead>
                 </table>
                 <hr>
-                <table class='table table striped'>
+                <table class='table table-striped'>
                     <thead>
                         <tr>
                         <th scope="col">Importe Compra</th>
@@ -102,6 +102,7 @@
                             {% else %}
                             <td> </td>
                             {% endif %}
+                            
                             <td>           
                                 <a type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target='#dialog' hx-target="#document" hx-get="{% url 'factura-compra-edicion' p.id %}">               
                                     <i class="fa-solid fa-cloud-arrow-up"></i>
@@ -117,16 +118,24 @@
                    </tbody>
                 </table>
         </div>
-            
+        <form method="post">
+            {% csrf_token %}
+            <div class="row ms-3 my-2">
+                <div class="form-check form-switch col-sm">
+                <label for="form.tesoreria_local" class="form-check-label"><strong>Facturas Completas</strong></label>
+                {{form.facturas_completas|add_class:"form-check-input"}}
+                </div>
+                <hr>
             <h6>Nueva factura</h6>
             <ul class="nav">
                 <li class="nav-item">
                     <a type="button" class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target='#dialog' hx-target="#document" hx-get="{% url 'factura-nueva' compra.id %}" >Registrar</a>
                 </li>
                 <li class="nav-item ms-4">
-                    <a type="button" class="btn btn-secondary" href="{% url 'matriz-pagos' %}">Cerrar</a>
+                    <button type="submit" name="btn_factura_completa" class="btn btn-secondary">Cerrar</button>
                 </li>
             </ul>
+        </form>
     </div>   
 </div>
 <!--Este es el modal-->

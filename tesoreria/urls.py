@@ -13,4 +13,6 @@ urlpatterns = [
     path('tesoreria/factura_compra_edicion/<int:pk>',views.factura_compra_edicion,name='factura-compra-edicion' ),
     path('tesoreria/factura_nueva/<int:pk>', views.factura_nueva, name='factura-nueva'),
     path('tesoreria/factura_eliminar/<int:pk>', views.factura_eliminar, name='factura-eliminar'),
+    path('tesoreria/matriz_mis_gastos/', views.mis_gastos, name='mis-gastos'),
+    path('tesoreria/matriz_mis_viaticos/', views.mis_viaticos, name='mis-viaticos'),
     ]

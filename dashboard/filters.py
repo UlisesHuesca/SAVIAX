@@ -1,5 +1,5 @@
 import django_filters
-from .models import Product, Proyecto
+from .models import Product, Proyecto, Subproyecto
 from compras.models import Proveedor
 from django_filters import CharFilter, DateTimeFilter
 
@@ -25,6 +25,15 @@ class ProyectoFilter(django_filters.FilterSet):
     class Meta:
         model = Proyecto
         fields = ['id','nombre','cliente','folio_cotizacion', 'status_entrega','fecha']
+
+class SubproyectoFilter(django_filters.FilterSet):
+    id = CharFilter(field_name='id', lookup_expr='icontains')
+    nombre = CharFilter(field_name='nombre', lookup_expr='icontains')
+    fecha = DateTimeFilter(field_name='created_at', lookup_expr='gte')
+
+    class Meta:
+        model = Subproyecto
+        fields = ['id','nombre','fecha']
 
 
 class ProveedorFilter(django_filters.FilterSet):

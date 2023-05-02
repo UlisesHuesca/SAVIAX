@@ -19,10 +19,23 @@
                     {% csrf_token %}
                     <ul class="nav nav-pills">
                         <li class="nav-item mx-1">
-                            <a href="{% url 'pago-gastos-autorizados' %}" class="btn btn-outline-info">
+                            <a href="{% url 'mis-gastos' %}" class="btn btn-outline-info"}">
                                 <i class="fa-solid fa-backward"></i>
+                            </a>
+                        </li>
+                        {% if usuario.tipo.tesoreria == True %}
+                        <li class="nav-item mx-1">
+                            <a href="{% url 'pago-gastos-autorizados' %}" class="btn btn-outline-info">
+                                <i class="fa-solid fa-backward"> GASTOS</i>
                             </a>                 
                         </li>
+                        <li class="nav-item mx-2">
+                            <a href="{% url 'matriz-pagos' %}" class="btn btn-outline-info">
+                                <i class="fa-solid fa-backward"> MATRIZ PAGOS</i>
+                            </a>
+                        </li>
+                        {% endif %}
+                        
                         <!--<li class="nav-item mx-2">
                             <button type="submit" class="btn btn-outline-success" value='Reporte Excel'>
                                 <i class="fa-solid fa-file-excel fa-2xl"></i>

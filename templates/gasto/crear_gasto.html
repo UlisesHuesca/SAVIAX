@@ -150,7 +150,10 @@
                                 </div>
                             </div>
 
+                        {% if productos %}
                         <input class="btn btn-outline-info btn-block my-2" name="btn_agregar" id="btn_agregar" type="submit" value="Agregar Solicitud">
+                        {% endif %}
+                        
                     </form>
             </div>
             <hr>
@@ -168,14 +171,14 @@
 
                     <datalist id="articulos" name='articulos'>
                         {% for item in articulos %}
-                        <option gasto={{item.producto.gasto}} valor="{{item.id}}" value="{{item}}"></option>
+                        <option iva="{{item.producto.iva}}" gasto={{item.producto.gasto}} valor="{{item.id}}" value="{{item}}"></option>
                         {% endfor %}
                     </datalist>
                     <input type="text" list='articulos_gasto' id="txt_articulos_gasto" valor="{{articulos_gasto.id}}" placeholder="Artículos..." class="form-control">
 
                     <datalist id="articulos_gasto" name='articulos_gasto'>
                         {% for item in articulos_gasto %}
-                        <option gasto={{item.producto.gasto}} valor="{{item.id}}" value="{{item}}"></option>
+                        <option iva="{{item.producto.iva}}" gasto={{item.producto.gasto}} valor="{{item.id}}" value="{{item}}"></option>
                         {% endfor %}
                     </datalist>
                 </div>
@@ -206,7 +209,12 @@
                 <div class="col-sm-2">
                     {{form_product.cantidad|add_class:"form-control"}}
                 </div>
+                <label for="form_product.precio_unitario" class="col-sm-2 col-form-label"><strong>Cálculo previo:</strong></label>
+                <div id="calculo_previo" class="col-sm-2">
+
+                </div>
             </div>
+            
             <div id="factura_pdf" class="row">
                 <div class="col-sm-6">
                     {{form_product.factura_pdf|add_class:"form-control my-2"}}
@@ -249,8 +257,6 @@
                         <input class="form-check-input" type="checkbox" role="switch" id="SwitchEntrada_Salida">
                         <label class="form-check-label" for="flexSwitchCheckDefault" id="LabelAlmacén">Entrada-Salida Express</label>
                 </div>
-
-
             <div  class="row">
                 <div class="col-sm-1">
                     <input class="btn btn-outline-info btn-block my-2" name="btn_producto" type="submit"> 
@@ -278,10 +284,10 @@
                 <tr>
                     <td scope="col">{{producto.producto.producto.codigo}}</td>
                     <td scope="col">{{producto.producto.producto.nombre}}</td>
-                    <td scope="col">{{producto.cantidad}}</td>
-                    <td scope="col">${{producto.precio_unitario}}</td>
-                    <td scope="col">${{producto.get_subtotal}}</td></td>
-                    <td scope="col">${{producto.total_parcial}}</td>
+                    <td scope="col">{{producto.cantidad|floatformat:2}}</td>
+                    <td scope="col">${{producto.precio_unitario|floatformat:4}}</td>
+                    <td scope="col">${{producto.get_subtotal|floatformat:2}}</td></td>
+                    <td scope="col">${{producto.total_parcial|floatformat:2}}</td>
                     <td>
                         {% if producto.factura_pdf %}
                         <a class="btn btn-outline-danger" href="{{producto.factura_pdf.url}}" download class="btn btn-outline-info">
@@ -336,21 +342,138 @@
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
- /*$("#id_proyecto").change(function () {
-      const url = $("#OrderForm").attr("data-subproyecto-url");  // get the url of the `load_subproyectos` view
-      const proyectoId = $(this).val();  // get the selected proyecto ID from the HTML input
 
-      $.ajax({                       // initialize an AJAX request
-        url: url,                    // set the url of the request (= localhost:8000/hr/ajax/load-cities/)
-        data: {
-          'proyecto_id': proyectoId       // add the proyecto id to the GET parameters
-        },
-        success: function (data) {   // `data` is the return of the `load_subproyectos` view function
-          $("#id_subproyecto").html(data);  // replace the contents of the subproyectos input with the data that came from the server
-        }
-      });
+    document.getElementById('id_precio_unitario').addEventListener('change',(event)=>{
+    cantidad = document.getElementById('id_cantidad').value;
+    precio = document.getElementById('id_precio_unitario').value;
+    otros_impuestos = document.getElementById('id_otros_impuestos').value
+    retenidos = document.getElementById('id_impuestos_retenidos').value
+    calculo_previo = document.getElementById('calculo_previo')
+    var other_select = document.getElementById('id_producto')
+    var value = other_select.options[other_select.selectedIndex].value
+    var browserChildren = document.getElementById('articulos_gasto').children;
+    
+    
 
-    });*/
+    for(let i = 0; i < browserChildren.length; i++){
+        //console.log(browserChildren[i].getAttribute('valor'))
+        valor = browserChildren[i].getAttribute('valor')
+
+        if (valor === value) {
+            console.log(browserChildren[i])
+            let iva = browserChildren[i].getAttribute('iva');
+            console.log(iva)
+            if (iva){
+                subtotal = (precio * cantidad * 1.16) + (otros_impuestos - retenidos)
+                calculo_previo.innerHTML = parseFloat(subtotal).toFixed(4)
+            } else {
+                subtotal = precio * cantidad + otros_impuestos - retenidos
+                calculo_previo.innerHTML = parseFloat(subtotal).toFixed(4)
+            }
+            } 
+    }
+    })
+
+    document.getElementById('id_cantidad').addEventListener('change',(event)=>{
+        cantidad = document.getElementById('id_cantidad').value
+        precio = document.getElementById('id_precio_unitario').value
+        calculo_previo = document.getElementById('calculo_previo')
+        otros_impuestos = document.getElementById('id_otros_impuestos').value
+        retenidos = document.getElementById('id_impuestos_retenidos').value
+        var other_select = document.getElementById('id_producto')
+        var value = other_select.options[other_select.selectedIndex].value
+        var browserChildren = document.getElementById('articulos_gasto').children;
+    
+    
+
+        for(let i = 0; i < browserChildren.length; i++){
+        //console.log(browserChildren[i].getAttribute('valor'))
+        valor = browserChildren[i].getAttribute('valor')
+
+            if (valor === value) {
+                console.log(browserChildren[i])
+                let iva = browserChildren[i].getAttribute('iva');
+                console.log(iva)
+                    if (iva){
+                        subtotal = (precio * cantidad * 1.16) + (otros_impuestos - retenidos)
+                        calculo_previo.innerHTML = parseFloat(subtotal).toFixed(4)
+                    } else {
+                        subtotal = precio * cantidad + otros_impuestos - retenidos
+                        calculo_previo.innerHTML = parseFloat(subtotal).toFixed(4)
+                   } 
+        }}
+
+    })
+
+    document.getElementById('id_otros_impuestos').addEventListener('change',(event)=>{
+        cantidad = document.getElementById('id_cantidad').value
+        precio = document.getElementById('id_precio_unitario').value
+        otros_impuestos = document.getElementById('id_otros_impuestos').value
+        retenidos = document.getElementById('id_impuestos_retenidos').value
+        console.log(otros_impuestos)
+
+        calculo_previo = document.getElementById('calculo_previo')
+        var other_select = document.getElementById('id_producto')
+        var value = other_select.options[other_select.selectedIndex].value
+        var browserChildren = document.getElementById('articulos_gasto').children;
+    
+    
+
+        for(let i = 0; i < browserChildren.length; i++){
+        //console.log(browserChildren[i].getAttribute('valor'))
+        valor = browserChildren[i].getAttribute('valor')
+
+            if (valor === value) {
+                console.log(browserChildren[i])
+                let iva = browserChildren[i].getAttribute('iva');
+                console.log(iva)
+                    if (iva){
+                        subtotal = (precio * cantidad * 1.16) + (otros_impuestos - retenidos)
+                        calculo_previo.innerHTML = parseFloat(subtotal).toFixed(4)
+                    } else {
+                        subtotal = precio * cantidad + otros_impuestos - retenidos
+                        calculo_previo.innerHTML = parseFloat(subtotal).toFixed(4)
+                   } 
+        }}
+
+    })
+    document.getElementById('id_impuestos_retenidos').addEventListener('change',(event)=>{
+        cantidad = document.getElementById('id_cantidad').value
+        precio = document.getElementById('id_precio_unitario').value
+        otros_impuestos = document.getElementById('id_otros_impuestos').value
+        retenidos = document.getElementById('id_impuestos_retenidos').value
+
+        calculo_previo = document.getElementById('calculo_previo')
+        var other_select = document.getElementById('id_producto')
+        var value = other_select.options[other_select.selectedIndex].value
+        var browserChildren = document.getElementById('articulos_gasto').children;
+    
+    
+
+        for(let i = 0; i < browserChildren.length; i++){
+        //console.log(browserChildren[i].getAttribute('valor'))
+        valor = browserChildren[i].getAttribute('valor')
+
+            if (valor === value) {
+                console.log(browserChildren[i])
+                let iva = browserChildren[i].getAttribute('iva');
+                console.log(iva)
+                    if (iva){
+                        subtotal = (precio * cantidad * 1.16) + (otros_impuestos - retenidos)
+                        calculo_previo.innerHTML = parseFloat(subtotal).toFixed(4)
+                    } else {
+                        subtotal = precio * cantidad + otros_impuestos - retenidos
+                        calculo_previo.innerHTML = parseFloat(subtotal).toFixed(4)
+                   } 
+        }}
+
+    })
+    
+
+
+
+
+    if (document.getElementById('btn_agregar')){
     document.getElementById('btn_agregar').addEventListener('submit', (event)=>{
         
     if ((check_colaborador.checked) &&  (!txt_colaborador.value)) {
@@ -364,7 +487,7 @@
     }
      
     });
-
+    }
 
 
     document.getElementById("txt_proyectos").addEventListener("change", (event)=>{

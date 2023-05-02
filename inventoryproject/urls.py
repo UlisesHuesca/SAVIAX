@@ -32,6 +32,7 @@ urlpatterns = [
     path('entradas/', include('entradas.urls')),
     path('tesoreria/', include('tesoreria.urls')),
     path('cobranza/', include('cobranza.urls')),
+    path('viaticos/', include('viaticos.urls')),
     path('gastos/', include('gastos.urls')),
     path('register/', user_view.register, name='user-register'),
     path('profile/', user_view.profile, name='user-profile'),

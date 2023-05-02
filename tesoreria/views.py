@@ -7,6 +7,8 @@ from compras.filters import CompraFilter
 from compras.views import dof, attach_oc_pdf
 from dashboard.models import Subproyecto
 from .models import Pago, Cuenta, Facturas
+from gastos.models import Solicitud_Gasto
+from viaticos.models import Solicitud_Viatico
 from .forms import PagoForm, Facturas_Form
 from .filters import PagoFilter
 from user.models import Profile
@@ -112,19 +114,19 @@ def compras_pagos(request, pk):
                         archivo_oc = attach_oc_pdf(request, compra.id)
                         if compra.referencia:
                             email = EmailMessage(
-                                f'Compra Autorizada {compra.folio}',
-                                f'Estimado(a) {compra.proveedor.contacto} | Proveedor {compra.proveedor.nombre}:\n\nEstás recibiendo este correo porque has sido seleccionado para surtirnos la OC adjunta con folio: {compra.folio} y referencia: {compra.referencia}.\n\n Atte. {compra.creada_por.staff.first_name} {compra.creada_por.staff.last_name} \nGrupo Vordcab S.A. de C.V.\n\n Este mensaje ha sido automáticamente generado por SAVIA VORDTEC',
+                                f'Compra Autorizada {compra.get_folio}',
+                                f'Estimado(a) {compra.proveedor.contacto} | Proveedor {compra.proveedor.nombre}:\n\nEstás recibiendo este correo porque has sido seleccionado para surtirnos la OC adjunta con folio: {compra.get_folio} y referencia: {compra.referencia}.\n\n Atte. {compra.creada_por.staff.first_name} {compra.creada_por.staff.last_name} \nGrupo Vordcab S.A. de C.V.\n\n Este mensaje ha sido automáticamente generado por SAVIA VORDTEC',
                                 'saviax.vordcab@gmail.com',
                                 ['ulises_huesc@hotmail.com'],[compra.proveedor.email],
                                 )
                         else:
                             email = EmailMessage(
-                                f'Compra Autorizada {compra.folio}',
-                                f'Estimado(a) {compra.proveedor.contacto} | Proveedor {compra.proveedor.nombre}:\n\nEstás recibiendo este correo porque has sido seleccionado para surtirnos la OC adjunta con folio: {compra.folio}.\n\n Atte. {compra.creada_por.staff.first_name} {compra.creada_por.staff.last_name} \nGrupo Vordcab S.A. de C.V.\n\n Este mensaje ha sido automáticamente generado por SAVIA VORDTEC',
+                                f'Compra Autorizada {compra.get_folio}',
+                                f'Estimado(a) {compra.proveedor.contacto} | Proveedor {compra.proveedor.nombre}:\n\nEstás recibiendo este correo porque has sido seleccionado para surtirnos la OC adjunta con folio: {compra.get_folio}.\n\n Atte. {compra.creada_por.staff.first_name} {compra.creada_por.staff.last_name} \nGrupo Vordcab S.A. de C.V.\n\n Este mensaje ha sido automáticamente generado por SAVIA VORDTEC',
                                 'saviax.vordcab@gmail.com',
                                 ['ulises_huesc@hotmail.com'],[compra.proveedor.email],
                                 )
-                        email.attach(f'OC_folio_{compra.folio}.pdf',archivo_oc,'application/pdf')
+                        email.attach(f'OC_folio_{compra.get_folio}.pdf',archivo_oc,'application/pdf')
                         email.attach('Pago.pdf',request.FILES['comprobante_pago'].read(),'application/pdf')
                         if pagos.count() > 0:
                             for pago in pagos:
@@ -134,12 +136,12 @@ def compras_pagos(request, pk):
                             if producto.producto.producto.articulos.producto.producto.especialista == True:
                                 archivo_oc = attach_oc_pdf(request, compra.id)
                                 email = EmailMessage(
-                                f'Compra Autorizada {compra.folio}',
-                                f'Estimado proveedor,\n Estás recibiendo este correo porque ha sido pagada una OC que contiene el producto código:{producto.producto.producto.articulos.producto.producto.codigo} descripción:{producto.producto.producto.articulos.producto.producto.codigo} el cual requiere la liberación de calidad\n Este mensaje ha sido automáticamente generado por SAVIA X',
+                                f'Compra Autorizada {compra.get_folio}',
+                                f'Estimado Especialista,\n Estás recibiendo este correo porque ha sido pagada una OC que contiene el producto código:{producto.producto.producto.articulos.producto.producto.codigo} descripción:{producto.producto.producto.articulos.producto.producto.codigo} el cual requiere la liberación de calidad\n Este mensaje ha sido automáticamente generado por SAVIA X',
                                 'saviax.vordcab@gmail.com',
                                 ['ulises_huesc@hotmail.com'],
                                 )
-                                email.attach(f'OC_folio:{compra.folio}.pdf',archivo_oc,'application/pdf')
+                                email.attach(f'OC_folio:{compra.get_folio}.pdf',archivo_oc,'application/pdf')
                                 email.send()
                 pago.save()
                 compra.save()
@@ -294,3 +296,30 @@ def factura_eliminar(request, pk):
     factura.delete()
 
     return redirect('matriz-facturas-nomodal',pk= compra.id)
+
+def mis_gastos(request):
+    usuario = Profile.objects.get(staff__id=request.user.id)
+    gastos = Solicitud_Gasto.objects.filter(complete=True, staff = usuario)
+    myfilter = PagoFilter(request.GET, queryset=gastos)
+    gastos = myfilter.qs
+
+    context= {
+        'gastos':gastos,
+        'myfilter':myfilter,
+        }
+
+    return render(request, 'tesoreria/mis_gastos.html',context)
+
+def mis_viaticos(request):
+    usuario = Profile.objects.get(staff__id=request.user.id)
+    viaticos = Solicitud_Viatico.objects.filter(complete=True, staff = usuario)
+    myfilter = PagoFilter(request.GET, queryset=viaticos)
+    viaticos = myfilter.qs
+
+    context= {
+        'viaticos':viaticos,
+        'myfilter':myfilter,
+        }
+
+    return render(request, 'tesoreria/mis_viaticos.html',context)
+    return render(request, 'tesoreria/mis_viaticos.html',context)

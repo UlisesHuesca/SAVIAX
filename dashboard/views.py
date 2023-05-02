@@ -6,9 +6,9 @@ from compras.models import Proveedor, Proveedor_Batch, Proveedor_Direcciones_Bat
 from solicitudes.models import Subproyecto, Proyecto
 from requisiciones.models import Salidas, ValeSalidas
 from user.models import Profile, Distrito, Banco
-from .forms import ProductForm, Products_BatchForm, AddProduct_Form, Proyectos_Form, ProveedoresForm, Proyectos_Add_Form, Proveedores_BatchForm, ProveedoresDireccionesForm, Proveedores_Direcciones_BatchForm
+from .forms import ProductForm, Products_BatchForm, AddProduct_Form, Proyectos_Form, ProveedoresForm, Proyectos_Add_Form, Proveedores_BatchForm, ProveedoresDireccionesForm, Proveedores_Direcciones_BatchForm, Subproyectos_Add_Form
 from django.contrib.auth.models import User
-from .filters import ProductFilter, ProyectoFilter, ProveedorFilter
+from .filters import ProductFilter, ProyectoFilter, ProveedorFilter, SubproyectoFilter
 from django.contrib import messages
 import csv
 from django.core.paginator import Paginator
@@ -74,6 +74,30 @@ def proyectos(request):
     return render(request,'dashboard/proyectos.html',context)
 
 @login_required(login_url='user-login')
+def subproyectos(request, pk):
+    proyecto = Proyecto.objects.get(id=pk)
+    subproyectos = Subproyecto.objects.filter(proyecto=proyecto)
+
+    myfilter=SubproyectoFilter(request.GET, queryset=subproyectos)
+    subproyectos = myfilter.qs
+
+    #Set up pagination
+    p = Paginator(subproyectos, 50)
+    page = request.GET.get('page')
+    subproyectos_list = p.get_page(page)
+
+    context = {
+        'proyecto':proyecto,
+        'subproyectos':subproyectos,
+        'subproyectos_list':subproyectos_list,
+        'myfilter':myfilter,
+        }
+
+    return render(request,'dashboard/subproyectos.html',context)
+
+
+
+@login_required(login_url='user-login')
 def proyectos_edit(request, pk):
 
     proyecto = Proyecto.objects.get(id=pk)
@@ -135,6 +159,51 @@ def proyectos_add(request):
         }
 
     return render(request,'dashboard/proyectos_add.html',context)
+
+@login_required(login_url='user-login')
+def subproyectos_add(request, pk):
+    proyecto = Proyecto.objects.get(id=pk)
+    form = Subproyectos_Add_Form()
+
+    if request.method =='POST':
+        form = Subproyectos_Add_Form(request.POST)
+        if form.is_valid():
+            subproyecto = form.save(commit=False)
+            subproyecto.proyecto = proyecto
+            subproyecto.save()
+            messages.success(request,'Has agregado correctamente el subproyecto')
+            return redirect('subproyectos', pk=proyecto.id)
+    else:
+        form = Subproyectos_Add_Form()
+
+    context = {
+        'form': form,
+        'proyecto':proyecto,
+        }
+
+    return render(request,'dashboard/subproyectos_add.html',context)
+
+@login_required(login_url='user-login')
+def subproyectos_edit(request, pk):
+    subproyecto = Subproyecto.objects.get(id=pk)
+    proyecto = Proyecto.objects.get(id=subproyecto.proyecto.id)
+    form = Subproyectos_Add_Form(instance=subproyecto)
+
+    if request.method =='POST':
+        form = Subproyectos_Add_Form(request.POST, instance=subproyecto)
+        if form.is_valid():
+            form.save()
+            messages.success(request,'Has editado correctamente el subproyecto')
+            return redirect('subproyectos', pk=subproyecto.proyecto.id)
+    else:
+        form = Subproyectos_Add_Form(instance=subproyecto)
+
+    context = {
+        'form': form,
+        'proyecto':proyecto,
+        }
+
+    return render(request,'dashboard/subproyectos_add.html',context)
 
 
 @login_required(login_url='user-login')

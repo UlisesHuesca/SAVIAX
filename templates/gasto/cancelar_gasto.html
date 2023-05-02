@@ -1,5 +1,6 @@
 {% extends 'partials/base_w_nav.html' %}
 {% load crispy_forms_tags %}
+{% load humanize %}
 {% load static %}
 <html>
 <head>
@@ -22,18 +23,17 @@
                     <div style="flex:4">Artículo</div>
                     <div style="flex:2">Cantidad</div>
                     <div style="flex:2">Total</div>
-                    <div style="flex:2">Entrada-Salida</div>
+                    <div style="flex:6">Comentario</div>
+                 
                 </div>
                 {% for producto in productos %}
                 <div class='cart-row'>
                     <div style="flex:1"><img class='row-image' src="{{producto.producto.producto.imageURL}}"></div>
                     <div style="flex:2">{{producto.producto.producto.codigo}}</div>
                     <div style="flex:4">{{producto.producto.producto.nombre}}</div>
-                    <div style="flex:2"><p class='quantity'>{{producto.cantidad}}</p></div>
-                    <div style="flex:2">{{producto.total_parcial}}</div>
-                    {% if producto.entrada_salida_express == True %}
-                    <div style="flex:2; color:#f2d13d;">Este producto fue marcado para realizar una entrada-salida express</div>
-                    {% endif %}
+                    <div style="flex:2"><p class='quantity'>{{producto.cantidad|floatformat:2}}</p></div>
+                    <div style="flex:2">${{producto.total_parcial}}</div>
+                    <div style="flex:6">{{producto.comentario}}</div>
                 </div>
                 {% endfor %}
             </div>
@@ -42,7 +42,7 @@
         <div class="modal-footer">
             <form action="{% url 'cancelar-gasto' gasto.id %}" method=POST>
                 {% csrf_token %}
-                <button id="approve-btn" class="btn btn-danger" type="submit">Cancelar</button>
+                <button id="approve-btn" name='btn_cancelar' class="btn btn-danger" type="submit">Cancelar</button>
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
             </form>
         </div>

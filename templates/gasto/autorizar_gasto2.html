@@ -24,6 +24,7 @@
                     <div style="flex:2">Cantidad</div>
                     <div style="flex:2">Total</div>
                     <div style="flex:2">Facturas</div>
+                    <div style="flex:6">Comentario</div>
                     <!--<div style="flex:2">Entrada-Salida</div>-->
                 </div>
                 {% for producto in productos %}
@@ -40,9 +41,10 @@
                                 </a>
                             </div>
                     {% else %}
-                            <div style="flex:2"> 
+                            <div style="flex:2">
                             </div>
                     {% endif %}
+                    <div style="flex:6">{{producto.comentario}}</div>
                     {% if producto.entrada_salida_express == True %}
                     <div style="flex:2; color:#f2d13d;">Este producto fue marcado para realizar una entrada-salida express</div>
                     {% endif %}

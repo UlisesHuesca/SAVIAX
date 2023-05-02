@@ -18,7 +18,7 @@ class Estatus_proveedor(models.Model):
 
 class Proveedor(models.Model):
     razon_social = models.CharField(max_length=100, null=True, unique=True)
-    nombre_comercial = models.CharField(max_length=100, null=True)
+    nombre_comercial = models.CharField(max_length=100, null=True, blank=True)
     rfc = models.CharField(max_length=13, null=True, unique=True)
 
 
@@ -118,7 +118,7 @@ class Compra(models.Model):
     opciones_condiciones = models.CharField(max_length=250, null=True, blank=True)
     history = HistoricalRecords(history_change_reason_field=models.TextField(null=True))
     comparativo = models.FileField(blank=True, null=True, upload_to='facturas',validators=[FileExtensionValidator(['pdf'])])
-    #factura_xml = models.FileField(blank=True, null=True, upload_to='xml', validators=[FileExtensionValidator(['xml'])])
+    facturas_completas = models.BooleanField(default=False)
     costo_oc = models.DecimalField(max_digits=14,decimal_places=2, null=True, blank=True)
     costo_iva = models.DecimalField(max_digits=14,decimal_places=2, null=True, blank=True)
     pagada = models.BooleanField(default=False)

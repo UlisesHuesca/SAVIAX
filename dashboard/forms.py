@@ -1,7 +1,7 @@
 from django import forms
 from .models import Product, Subfamilia, Products_Batch, Inventario_Batch
 from compras.models import Proveedor_Batch, Proveedor, Proveedor_direcciones, Proveedor_Direcciones_Batch
-from solicitudes.models import Proyecto
+from solicitudes.models import Proyecto, Subproyecto
 
 
 class ProductForm(forms.ModelForm):
@@ -76,9 +76,14 @@ class AddProduct_Form(forms.ModelForm):
 class Proyectos_Form(forms.ModelForm):
     class Meta:
         model = Proyecto
-        fields = ['descripcion','nombre','cliente','activo','factura','fecha_factura','folio_cotizacion','oc_cliente','status_de_entrega','monto_total','activo']
+        fields = ['descripcion','nombre','cliente','activo','factura','fecha_factura','folio_cotizacion','oc_cliente','status_de_entrega',]
 
 class Proyectos_Add_Form(forms.ModelForm):
     class Meta:
         model = Proyecto
-        fields = ['descripcion','nombre','cliente','activo','factura','fecha_factura','folio_cotizacion','oc_cliente','status_de_entrega','monto_total','activo','distrito']
+        fields = ['descripcion','nombre','cliente','activo','factura','fecha_factura','folio_cotizacion','oc_cliente','status_de_entrega',]
+
+class Subproyectos_Add_Form(forms.ModelForm):
+    class Meta:
+        model = Subproyecto
+        fields = ['nombre','descripcion','presupuesto']
