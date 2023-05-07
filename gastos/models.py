@@ -33,10 +33,12 @@ class Solicitud_Gasto(models.Model):
     approbado_fecha2 = models.DateField(null=True)
     approved_at_time2 = models.TimeField(null=True)
 
+
+
     @property
     def monto_pagado(self):
         pagado = self.pago_set.all()
-        pagado.filter(hecho=True)
+        pagado= pagado.filter(hecho=True)
         total = sum([pago.monto for pago in pagado])
         return total
 
@@ -72,8 +74,8 @@ class Articulo_Gasto(models.Model):
     otros_impuestos = models.DecimalField(default=0,max_digits=14, decimal_places=4, null=True, blank=True)
     impuestos_retenidos = models.DecimalField(default=0, max_digits=14, decimal_places=4, null=True, blank=True)
     gasto = models.ForeignKey(Solicitud_Gasto, on_delete = models.CASCADE, null=True)
-    cantidad = models.DecimalField(max_digits=10, decimal_places=6, null=True)
-    precio_unitario = models.DecimalField(max_digits=14, decimal_places=6, null=True)
+    cantidad = models.DecimalField(max_digits=10, decimal_places=6, null=True, blank=True)
+    precio_unitario = models.DecimalField(max_digits=14, decimal_places=6, null=True, blank=True)
     entrada_salida_express = models.BooleanField(null=True, default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     factura_pdf = models.FileField(blank=True, null=True, upload_to='facturas',validators=[FileExtensionValidator(['pdf'])])
@@ -86,14 +88,19 @@ class Articulo_Gasto(models.Model):
 
     @property
     def get_subtotal(self):
-        subtotal = round(self.precio_unitario * self.cantidad, 2)
+        subtotal = 0
+        if self.precio_unitario and self.cantidad:
+            subtotal = round(self.precio_unitario * self.cantidad, 2)
         return subtotal
 
     @property
     def get_iva(self):
         iva = 0
-        if self.producto.producto.iva:
+
+        if self.precio_unitario and self.cantidad:
             iva = self.precio_unitario * decimal.Decimal(str(0.16))*self.cantidad
+        else:
+            iva = 0
         return iva
 
     @property

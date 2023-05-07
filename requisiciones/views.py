@@ -22,6 +22,7 @@ from django.http import JsonResponse
 from django.core.mail import EmailMessage
 import json
 import csv
+from django.core.paginator import Paginator
 import ast # Para leer el csr many to many
 
 #PDF generator
@@ -93,14 +94,21 @@ def solicitud_autorizada(request):
 
     #if usuario.tipo.superintendente == True:
         #productos= Requis.objects.filter(complete=True, autorizar=None, orden__superintendente=usuario)
-    if usuario.tipo.almacenista == True:
+    if usuario.tipo.almacen == True:
         #productos= ArticulosparaSurtir.objects.filter(Q(salida=False) | Q(surtir=True), articulos__orden__autorizar = True)
-        productos= ArticulosparaSurtir.objects.filter(Q(salida=False) | Q(surtir=True), articulos__orden__autorizar = True, articulos__orden__tipo__tipo = "normal")
+        #productos= ArticulosparaSurtir.objects.filter(Q(salida=False) | Q(surtir=True), articulos__orden__autorizar = True, articulos__orden__tipo__tipo = "normal")
+        productos= ArticulosparaSurtir.objects.filter(surtir=True, articulos__orden__autorizar = True, articulos__orden__tipo__tipo = "normal")
     #else:
         #productos = Requis.objects.filter(complete=None)
     myfilter = ArticulosparaSurtirFilter(request.GET, queryset=productos)
     productos = myfilter.qs
     #Here is where call a function to generate XLSX, using Openpyxl library
+
+    #Set up pagination
+    p = Paginator(productos, 20)
+    page = request.GET.get('page')
+    productos_list = p.get_page(page)
+
 
     if request.method == 'POST' and 'btnExcel' in request.POST:
         return convert_solicitud_autorizada_to_xls(productos)
@@ -108,10 +116,49 @@ def solicitud_autorizada(request):
 
     context= {
         'productos':productos,
+        'productos_list':productos_list,
         'myfilter':myfilter,
         'usuario':usuario,
         }
     return render(request, 'requisiciones/solicitudes_autorizadas.html',context)
+
+@login_required(login_url='user-login')
+def solicitudes_autorizadas_pendientes(request):
+    usuario = Profile.objects.get(staff__id=request.user.id)
+    #productos= Requis.objects.filter(complete=True, autorizar=None)
+    #Aquí aparecen todas las ordenes, es decir sería el filtro para administrador, el objeto Q no tiene propiedad conmutativa
+    #productos= ArticulosparaSurtir.objects.filter(Q(salida=False) | Q(requisitar=True), articulos__orden__autorizar = True )
+
+    #if usuario.tipo.superintendente == True:
+        #productos= Requis.objects.filter(complete=True, autorizar=None, orden__superintendente=usuario)
+    if usuario.tipo.almacenista == True:
+        #productos= ArticulosparaSurtir.objects.filter(Q(salida=False) | Q(surtir=True), articulos__orden__autorizar = True)
+        #productos= ArticulosparaSurtir.objects.filter(Q(salida=False) | Q(surtir=True), articulos__orden__autorizar = True, articulos__orden__tipo__tipo = "normal")
+        productos= ArticulosparaSurtir.objects.filter(salida=False, surtir=False, articulos__orden__autorizar = True, articulos__orden__tipo__tipo = "normal")
+
+    #else:
+        #productos = Requis.objects.filter(complete=None)
+    myfilter = ArticulosparaSurtirFilter(request.GET, queryset=productos)
+    productos = myfilter.qs
+
+    #Set up pagination
+    p = Paginator(productos, 20)
+    page = request.GET.get('page')
+    productos_list = p.get_page(page)
+
+    #Here is where call a function to generate XLSX, using Openpyxl library
+
+    if request.method == 'POST' and 'btnExcel' in request.POST:
+        return convert_solicitud_autorizada_to_xls(productos)
+
+
+    context= {
+        'productos_list':productos_list,
+        'productos':productos,
+        'myfilter':myfilter,
+        'usuario':usuario,
+        }
+    return render(request, 'requisiciones/solicitudes_autorizadas_no_surtidas.html',context)
 
 
 def update_salida(request):
@@ -411,8 +458,8 @@ def update_requisicion(request):
         producto.save()
         item.save()
     if action == "remove":
-        item = ArticulosRequisitados.objects.get(req = requi, producto__articulos = producto)
-        articulo_requisitado = ArticulosparaSurtir.objects.get(articulos =producto_id)
+        item = ArticulosRequisitados.objects.get(req = requi, producto = producto)
+        articulo_requisitado = ArticulosparaSurtir.objects.get(id =producto_id)
         articulo_requisitado.requisitar = True
         articulo_requisitado.seleccionado = False
         articulo_requisitado.save()
@@ -471,6 +518,7 @@ def requisicion_detalle(request, pk):
 def requisicion_autorizar(request, pk):
     usuario = request.user.id
     perfil = Profile.objects.get(staff__id=usuario)
+    #perfil = Profile.objects.get(id=usuario)
     requi = Requis.objects.get(id = pk)
     productos = ArticulosRequisitados.objects.filter(req = pk)
     costo_aprox = 0
@@ -486,6 +534,13 @@ def requisicion_autorizar(request, pk):
         requi.approved_at = date.today()
         requi.autorizar = True
         requi.save()
+        email = EmailMessage(
+                f'Requisición Autorizada {requi.folio}',
+                f'Estimado {requi.orden.staff.staff.first_name} {requi.orden.staff.staff.last_name},\n Estás recibiendo este correo porque tu solicitud: {requi.orden.folio}| Req: {requi.folio} ha sido autorizada,\n por {requi.requi_autorizada_por.staff.first_name} {requi.requi_autorizada_por.staff.last_name}.\n El siguiente paso del sistema: Generación de OC \n\n Este mensaje ha sido automáticamente generado por SAVIA VORDTEC',
+                'savia@vordtec.com',
+                ['ulises_huesc@hotmail.com'],[requi.orden.staff.staff.email],
+                )
+        email.send()
         messages.success(request,f'Has autorizado la requisición {requi.folio} con éxito')
         return redirect('requisicion-autorizacion')
 
@@ -514,8 +569,8 @@ def requisicion_cancelar(request, pk):
             email = EmailMessage(
                 f'Requisición Rechazada {requis.folio}',
                 f'Estimado {requis.orden.staff.staff.first_name} {requis.orden.staff.staff.last_name},\n Estás recibiendo este correo porque tu solicitud: {requis.orden.folio}| Req: {requis.folio} ha sido rechazada,\n por {requis.autorizada_por.staff.first_name} {requis.autorizada_por.staff.last_name} por el siguiente motivo: \n " {requis.comentario_comprador} ".\n\n Este mensaje ha sido automáticamente generado por SAVIA X',
-                'saviax.vordcab@gmail.com',
-                [requis.orden.staff.staff.email],
+                'savia@vordtec.com',
+                ['ulises_huesc@hotmail.com'],[requis.orden.staff.staff.email],
                 )
             email.send()
             messages.error(request,f'Has cancelado la requisición {requis.folio}')

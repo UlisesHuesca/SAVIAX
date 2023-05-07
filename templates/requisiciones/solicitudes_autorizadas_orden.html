@@ -27,10 +27,12 @@
                 <i class="fa-solid fa-file-pdf fa-2xl"></i>
             </button>
         </li>
-        <li class="nav-item mx-2 my-1">
-            <a type="button" class="btn btn-outline-info" href="{% url 'solicitud-autorizada' %}">
-                Solicitud por producto
-            </a>
+        <li class="nav-item mx-2">
+            <div class="btn-group btn-group" role="group" aria-label="Large button group">
+                <a type="button" class="btn btn-outline-info" href="{% url 'solicitud-autorizada' %}">Surtir</a>
+                <a type="button" class="btn btn-outline-info" href="{% url 'solicitudes-auotorizadas-pendientes' %}">Pendientes</a>
+                <a type="button" class="btn btn-outline-info active" style="color:#F5F5F5; background:#3E92CC; border-color: #3E92CC;" href="{% url 'solicitud-autorizada-orden' %}">Requisitar</a>
+              </div>
         </li>
     </ul>
     </form>

@@ -58,7 +58,7 @@
                             </div>
                             <div class="col-sm-12">
                                 <input type="text" list="proyectos" id="txt_proyectos" valor="{{proyectos.id}}" placeholder="Proyecto..." class="form-control">
-                
+
                                 <datalist id="proyectos" name='proyectos'>
                                 {% for item in proyectos %}
                                  <option valor="{{item.id}}" value="{{item.nombre}} {{item.descripcion}}"></option>
@@ -104,7 +104,7 @@
                             </div>
 
                             <div class="row my-2 d-none">
-                                
+
                                 <div class="col-4">
                                     <div class="input-group">
                                     {{form.colaborador|add_class:"form-select"}}
@@ -115,7 +115,7 @@
                             <div class="col-sm-12 d-none" id="colaborador_parrafo">
                                 <label for="form.proyecto" class="col-auto col-form-label my-1"><strong>Colaborador*</strong></label>
                                 <input type="text" list="colaborador" id="txt_colaborador" placeholder="Colaboradores..." class="form-control">
-                
+
                                 <datalist id="colaborador" name='colaborador'>
                                 {% for item in colaborador %}
                                  <option valor="{{item.id}}" value="{{item.staff.first_name}} {{item.staff.last_name}}"></option>
@@ -153,7 +153,7 @@
                         {% if productos %}
                         <input class="btn btn-outline-info btn-block my-2" name="btn_agregar" id="btn_agregar" type="submit" value="Agregar Solicitud">
                         {% endif %}
-                        
+
                     </form>
             </div>
             <hr>
@@ -214,7 +214,7 @@
 
                 </div>
             </div>
-            
+
             <div id="factura_pdf" class="row">
                 <div class="col-sm-6">
                     {{form_product.factura_pdf|add_class:"form-control my-2"}}
@@ -259,10 +259,10 @@
                 </div>
             <div  class="row">
                 <div class="col-sm-1">
-                    <input class="btn btn-outline-info btn-block my-2" name="btn_producto" type="submit"> 
+                    <input class="btn btn-outline-info btn-block my-2" name="btn_producto" id="btn_producto" type="submit">
                 </div>
             </div>
-            
+
         </form>
             <hr>
             <table class="table table-light table-striped table-hover mx-2">
@@ -280,7 +280,7 @@
             </thead>
             <tbody id="mytbl">
                 {% for producto in productos%}
-            
+
                 <tr>
                     <td scope="col">{{producto.producto.producto.codigo}}</td>
                     <td scope="col">{{producto.producto.producto.nombre}}</td>
@@ -343,6 +343,7 @@
 <script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
 
+
     document.getElementById('id_precio_unitario').addEventListener('change',(event)=>{
     cantidad = document.getElementById('id_cantidad').value;
     precio = document.getElementById('id_precio_unitario').value;
@@ -352,8 +353,14 @@
     var other_select = document.getElementById('id_producto')
     var value = other_select.options[other_select.selectedIndex].value
     var browserChildren = document.getElementById('articulos_gasto').children;
-    
-    
+    var producto = document.getElementById('btn_producto')
+    if (precio <= 0 || cantidad <= 0){
+            producto.setAttribute('class','btn btn-outline-info btn-block my-2 d-none')
+        } else {
+            producto.setAttribute('class','btn btn-outline-info btn-block my-2')
+        }
+
+
 
     for(let i = 0; i < browserChildren.length; i++){
         //console.log(browserChildren[i].getAttribute('valor'))
@@ -370,7 +377,7 @@
                 subtotal = precio * cantidad + otros_impuestos - retenidos
                 calculo_previo.innerHTML = parseFloat(subtotal).toFixed(4)
             }
-            } 
+            }
     }
     })
 
@@ -382,9 +389,15 @@
         retenidos = document.getElementById('id_impuestos_retenidos').value
         var other_select = document.getElementById('id_producto')
         var value = other_select.options[other_select.selectedIndex].value
+        var producto = document.getElementById('btn_producto')
         var browserChildren = document.getElementById('articulos_gasto').children;
-    
-    
+        if (precio <= 0 || cantidad <= 0){
+            producto.setAttribute('class','btn btn-outline-info btn-block my-2 d-none')
+        } else {
+            producto.setAttribute('class','btn btn-outline-info btn-block my-2')
+        }
+
+
 
         for(let i = 0; i < browserChildren.length; i++){
         //console.log(browserChildren[i].getAttribute('valor'))
@@ -400,7 +413,7 @@
                     } else {
                         subtotal = precio * cantidad + otros_impuestos - retenidos
                         calculo_previo.innerHTML = parseFloat(subtotal).toFixed(4)
-                   } 
+                   }
         }}
 
     })
@@ -416,8 +429,8 @@
         var other_select = document.getElementById('id_producto')
         var value = other_select.options[other_select.selectedIndex].value
         var browserChildren = document.getElementById('articulos_gasto').children;
-    
-    
+
+
 
         for(let i = 0; i < browserChildren.length; i++){
         //console.log(browserChildren[i].getAttribute('valor'))
@@ -433,7 +446,7 @@
                     } else {
                         subtotal = precio * cantidad + otros_impuestos - retenidos
                         calculo_previo.innerHTML = parseFloat(subtotal).toFixed(4)
-                   } 
+                   }
         }}
 
     })
@@ -447,8 +460,8 @@
         var other_select = document.getElementById('id_producto')
         var value = other_select.options[other_select.selectedIndex].value
         var browserChildren = document.getElementById('articulos_gasto').children;
-    
-    
+
+
 
         for(let i = 0; i < browserChildren.length; i++){
         //console.log(browserChildren[i].getAttribute('valor'))
@@ -464,28 +477,24 @@
                     } else {
                         subtotal = precio * cantidad + otros_impuestos - retenidos
                         calculo_previo.innerHTML = parseFloat(subtotal).toFixed(4)
-                   } 
+                   }
         }}
 
     })
-    
-
-
-
 
     if (document.getElementById('btn_agregar')){
     document.getElementById('btn_agregar').addEventListener('submit', (event)=>{
-        
+
     if ((check_colaborador.checked) &&  (!txt_colaborador.value)) {
-       
+
         Swal.fire({
                 "title":"Error",
                 "text":"Favor de agregar un colaborador",
                 "icon":"error",
             })
-        event.preventDefault
+        event.preventDefault()
     }
-     
+
     });
     }
 
@@ -526,7 +535,7 @@
     var text_subproyectos = document.getElementById("subproyecto")
     var subproyectos = text_subproyectos.children;
     //var current_option2 = select2.options[select.selectedIndex];
-    
+
     var sub = document.getElementById('id_subproyecto')
     console.log(target)
     text_subproyectos.setAttribute('class','form-select form-select-sm my-1')
@@ -656,10 +665,10 @@ document.getElementById("SwitchColaborador").addEventListener("change", function
 
 	if (check_colaborador.checked){
 	    colaboradores.setAttribute('class','col-sm-12')
-	    
+
 	} else {
 	    colaboradores.setAttribute('class','col-sm-12 d-none')
-	    
+
 	}
 });
 

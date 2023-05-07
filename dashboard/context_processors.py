@@ -6,6 +6,7 @@ from tesoreria.models import Pago
 from compras.models import Compra
 from requisiciones.models import Requis, ValeSalidas
 from compras.models import Compra
+from viaticos.models import Solicitud_Viatico
 from user.models import Profile, Tipo_perfil
 from django.db.models import Q
 
@@ -24,6 +25,14 @@ def contadores_processor(request):
     conteo_entradas = 0
     conteo_gastos_pendientes = 0
     conteo_gastos_gerencia = 0
+    conteo_viaticos = 0
+    conteo_viaticos_gerencia = 0
+    conteo_asignar_montos = 0
+    conteo_viaticos_pagar= 0
+    conteo_gastos_pagar= 0 
+    conteo_asignar_montos = 0
+    conteo_viaticos=0
+
 
 
     if not usuario:
@@ -51,25 +60,43 @@ def contadores_processor(request):
         if usuario.tipo.oc_gerencia == True:
             oc = Compra.objects.filter(autorizado1= True, autorizado2 = None)
             gastos_gerencia = Solicitud_Gasto.objects.filter(complete=True, autorizar=True, autorizar2=None)
+            viaticos_gerencia = Solicitud_Viatico.objects.filter(complete = True, autorizar=True, autorizar2=None, montos_asignados=True)
             conteo_oc = oc.count()
+            conteo_viaticos_gerencia = viaticos_gerencia.count()
             conteo_gastos_gerencia = gastos_gerencia.count()
         if usuario.tipo.tesoreria == True:
             oc_pendientes = Compra.objects.filter(pagada=False, autorizado2=True)
+            viaticos_por_asignar = Solicitud_Viatico.objects.filter(complete = True, autorizar=True, montos_asignados=False)
+            gastos_por_pagar = Solicitud_Gasto.objects.filter(complete=True, autorizar2= True, pagada=False )
+            viaticos_por_pagar = Solicitud_Viatico.objects.filter(complete = True, autorizar2=True, pagada=False)
+            conteo_viaticos_pagar = viaticos_por_pagar.count()
+            conteo_gastos_pagar = gastos_por_pagar.count()
             conteo_pagos = oc_pendientes.count()
+            conteo_asignar_montos = viaticos_por_asignar.count()
         if usuario.tipo.supervisor == True:
             solicitudes_pendientes = Order.objects.filter(autorizar = None, complete = True)
             conteo_solicitudes = solicitudes_pendientes.count()
         if usuario.tipo.superintendente == True:
             requisiciones_pendientes = Requis.objects.filter(complete=True, autorizar=None, orden__superintendente = usuario)
             gastos_pendientes = Solicitud_Gasto.objects.filter(complete=True, autorizar=None, superintendente = usuario)
+            viaticos_pendientes = Solicitud_Viatico.objects.filter(complete =True, autorizar = None, superintendente = usuario)
             conteo_requis_pendientes = requisiciones_pendientes.count()
             conteo_gastos_pendientes = gastos_pendientes.count()
+            conteo_viaticos = viaticos_pendientes.count()
         if usuario.tipo.almacen == True:
-            entradas = Compra.objects.filter(pagada = True, entrada_completa = False)
+            entradas = Compra.objects.filter(Q(cond_de_pago__nombre ='CREDITO') | Q(pagada = True), solo_servicios= False, entrada_completa = False, autorizado2= True).order_by('-folio')
+            conteo_entradas = entradas.count()
+        else:
+            entradas = Compra.objects.filter(Q(cond_de_pago__nombre ='CREDITO') | Q(pagada = True), solo_servicios= True, entrada_completa = False, autorizado2= True, req__orden__staff = usuario).order_by('-folio')
             conteo_entradas = entradas.count()
 
 
     return {
+    'conteo_viaticos_pagar':conteo_viaticos_pagar,
+    'conteo_gastos_pagar':conteo_gastos_pagar,
+    'conteo_asignar_montos':conteo_asignar_montos,
+    'conteo_viaticos': conteo_viaticos,
+    'conteo_viaticos_gerencia':conteo_viaticos_gerencia,
     'conteo_requis_pendientes':conteo_requis_pendientes,
     'conteo_entradas':conteo_entradas,
     'conteo_gastos_gerencia':conteo_gastos_gerencia,

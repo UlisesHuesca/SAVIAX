@@ -46,7 +46,7 @@ def updateItem(request):
     usuario = Profile.objects.get(staff__id=request.user.id)
     producto = Inventario.objects.get(id=productId)
     tipo = Tipo_Orden.objects.get(tipo ='normal')
-    order, created = Order.objects.get_or_create(staff=usuario, complete=False, tipo = tipo)
+    order, created = Order.objects.get_or_create(staff=usuario, complete=False, tipo = tipo, distrito = usuario.distrito)
 
     orderItem, created = ArticulosOrdenados.objects.get_or_create(orden = order, producto= producto)
 
@@ -108,7 +108,7 @@ def product_selection(request):
     tipo = Tipo_Orden.objects.get(tipo ='normal')
     #order, created = Order.objects.get_or_create(staff = usuario, complete = False, tipo = tipo)
     order, created = Order.objects.get_or_create(staff = usuario, complete = False, tipo=tipo, distrito = usuario.distrito)
-    productos = Inventario.objects.filter()
+    productos = Inventario.objects.filter(complete=True)
     cartItems = order.get_cart_quantity
     myfilter=InventoryFilter(request.GET, queryset=productos)
     productos = myfilter.qs
@@ -214,7 +214,7 @@ def checkout(request):
             email = EmailMessage(
                 f'Solicitud Autorizada {order.id}',
                 f'Estás recibiendo este correo porque ha sido aprobada la solicitud {order.id}\n Este mensaje ha sido automáticamente generado por SAVIA X',
-                'saviax.vordcab@gmail.com',
+                'savia@vordtec.com',
                 [order.staff.staff.email],
                 )
             #email.attach(f'OC_folio:{compra.folio}.pdf',archivo_oc,'application/pdf')

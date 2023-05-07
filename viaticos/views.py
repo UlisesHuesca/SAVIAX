@@ -92,7 +92,7 @@ def viaticos_pendientes_autorizar2(request):
     #obtengo el id de usuario, lo paso como argumento a id de profiles para obtener el objeto profile que coindice con ese usuario_id
     perfil = Profile.objects.get(staff__id=request.user.id)
 
-    viaticos = Solicitud_Viatico.objects.filter(complete=True, autorizar = True, montos_asignados=True, autorizar2 = False).order_by('-folio')
+    viaticos = Solicitud_Viatico.objects.filter(complete=True, autorizar = True, montos_asignados=True, autorizar2 = None).order_by('-folio')
 
     myfilter=Solicitud_Viatico_Filter(request.GET, queryset=viaticos)
     viaticos = myfilter.qs
@@ -164,7 +164,7 @@ def autorizar_viaticos2(request, pk):
 
     if request.method =='POST' and 'btn_autorizar' in request.POST:
         viatico.autorizar2 = True
-        viatico.approbado_fecha2 = date.today()
+        viatico.approved_at2 = date.today()
         viatico.approved_at_time2 = datetime.now().time()
         viatico.save()
         messages.success(request, f'{perfil.staff.first_name} {perfil.staff.last_name} has autorizado la solicitud {viatico.id}')
@@ -346,7 +346,7 @@ def viaticos_autorizados_pago(request):
     #elif perfil.tipo.supervisor == True:
     #    solicitudes = Solicitud_Gasto.objects.filter(complete=True, staff__distrito=perfil.distrito, supervisor=perfil).order_by('-folio')
     #else:
-    viaticos = Solicitud_Viatico.objects.filter(complete=True, autorizar = True, autorizar2=True).order_by('-folio')
+    viaticos = Solicitud_Viatico.objects.filter(complete=True, autorizar = True, autorizar2 = True, pagada=False).order_by('-folio')
 
     myfilter=Solicitud_Viatico_Filter(request.GET, queryset=viaticos)
     viaticos = myfilter.qs
@@ -374,7 +374,7 @@ def viaticos_pagos(request, pk):
     conceptos = Concepto_Viatico.objects.filter(viatico=viatico)
     pagos = Pago.objects.filter(viatico=viatico, hecho=True)
     cuentas = Cuenta.objects.filter(moneda__nombre = 'PESOS')
-    pago, created = Pago.objects.get_or_create(tesorero = usuario, distrito = usuario.distrito, viatico=viatico, hecho=False, monto=0)
+    pago, created = Pago.objects.get_or_create(tesorero = usuario, distrito = usuario.distrito, hecho=False)
     form = Pago_Viatico_Form()
     remanente = viatico.get_total - viatico.monto_pagado
 
@@ -383,6 +383,7 @@ def viaticos_pagos(request, pk):
 
         if form.is_valid():
             pago = form.save(commit = False)
+            pago.viatico = viatico
             pago.pagado_date = date.today()
             pago.pagado_hora = datetime.now().time()
             pago.hecho = True
@@ -390,21 +391,21 @@ def viaticos_pagos(request, pk):
             if total_pagado > viatico.get_total:
                 messages.error(request,f'{usuario.staff.first_name}, el monto introducido más los pagos anteriores superan el monto total del viático')
             else:
-                pago.save()
                 if viatico.monto_pagado == viatico.get_total:
                     viatico.pagada = True
-                    pagos = Pago.objects.filter(viatico=viatico, hecho=True)
-                    email = EmailMessage(
-                        f'Viatico Autorizado {viatico.id}',
-                        f'Estimado(a) {viatico.staff.staff}:\n\nEstás recibiendo este correo porque ha sido pagado el viatico con folio: {viatico.id}.\n\n\nVordtec de México S.A. de C.V.\n\n Este mensaje ha sido automáticamente generado por SAVIA VORDTEC',
-                        'saviax.vordcab@gmail.com',
-                        ['ulises_huesc@hotmail.com'],#[compra.proveedor.email],
-                        )
-                    if pagos.count() > 0:
-                        for pago in pagos:
-                            email.attach(f'Pago_folio_{pago.id}.pdf',pago.comprobante_pago.path,'application/pdf')
-                    email.send()
                     viatico.save()
+                pago.save()
+                pagos = Pago.objects.filter(viatico=viatico, hecho=True)
+                email = EmailMessage(
+                    f'Viatico Autorizado {viatico.id}',
+                    f'Estimado(a) {viatico.staff.staff}:\n\nEstás recibiendo este correo porque ha sido pagado el viatico con folio: {viatico.id}.\n\n\nVordtec de México S.A. de C.V.\n\n Este mensaje ha sido automáticamente generado por SAVIA VORDTEC',
+                    'savia@vordtec.com',
+                    ['ulises_huesc@hotmail.com'],[viatico.staff.staff.email],
+                    )
+                if pagos.count() > 0:
+                    for pago in pagos:
+                        email.attach(f'Pago_folio_{pago.id}.pdf',pago.comprobante_pago.path,'application/pdf')
+                email.send()
                 messages.success(request,f'Gracias por registrar tu pago, {usuario.staff.first_name}')
                 return HttpResponse(status=204) #No content to render nothing and send a "signal" to javascript in order to close window
         else:

@@ -560,11 +560,11 @@ def autorizar_oc2(request, pk):
             archivo_oc = attach_oc_pdf(request, compra.id)
             email = EmailMessage(
                 f'Compra Autorizada {compra.get_folio}',
-                f'Estimado proveedor,\n Estás recibiendo este correo porque has sido seleccionado para surtirnos la compra con folio: {compra.get_folio}.\n Este mensaje ha sido automáticamente generado por SAVIA X',
-                'saviax.vordcab@gmail.com',
-                [compra.proveedor.email],
+                f'Estimado(a) {compra.proveedor.contacto} | Proveedor {compra.proveedor.nombre}:\n\nEstás recibiendo este correo porque has sido seleccionado para surtirnos la OC adjunta con folio: {compra.get_folio}.\n\n Atte. {compra.creada_por.staff.first_name} {compra.creada_por.staff.last_name} \nVORDTEC DE MÉXICO S.A. de C.V.\n\n Este mensaje ha sido automáticamente generado por SAVIA VORDTEC',
+                'savia@vordtec.com',
+                ['ulises_huesc@hotmail.com'],[compra.proveedor.email],
                 )
-            email.attach(f'folio:{compra.get_folio}.pdf',archivo_oc,'application/pdf')
+            email.attach(f'OC_folio_{compra.get_folio}.pdf',archivo_oc,'application/pdf')
             email.send()
             for producto in productos:
                 if producto.producto.producto.articulos.producto.producto.especialista == True:
@@ -572,10 +572,10 @@ def autorizar_oc2(request, pk):
                     email = EmailMessage(
                         f'Compra Autorizada {compra.get_folio}',
                         f'Estimado proveedor,\n Estás recibiendo este correo porque ha sido aprobada una OC que contiene el producto código:{producto.producto.producto.articulos.producto.producto.codigo} descripción:{producto.producto.producto.articulos.producto.producto.nombre} el cual requiere la liberación de calidad\n Este mensaje ha sido automáticamente generado por SAVIA X',
-                        'saviax.vordcab@gmail.com',
+                        'savia@vordtec.com',
                         ['ulises_huesc@hotmail.com'],
                         )
-                    email.attach(f'folio:{compra.get_folio}.pdf',archivo_oc,'application/pdf')
+                    email.attach(f'OC_folio:{compra.get_folio}.pdf',archivo_oc,'application/pdf')
                     email.send()
         messages.success(request, f'{usuario.staff.first_name} has autorizado la solicitud {compra.get_folio}')
 

@@ -20,7 +20,27 @@ from django.core.mail import EmailMessage
 # Create your views here.
 @login_required(login_url='user-login')
 def pendientes_entrada(request):
-    compras = Compra.objects.filter(Q(cond_de_pago = 0) | Q(pagada = True), entrada_completa = False, autorizado2= True).order_by('-folio')
+    usuario = Profile.objects.get(staff=request.user.id)
+
+
+    if usuario.tipo.almacen == True:
+        compras = Compra.objects.filter(Q(cond_de_pago__nombre ='CREDITO') | Q(pagada = True), solo_servicios= False, entrada_completa = False, autorizado2= True).order_by('-folio')
+        for compra in compras:
+            articulos_entrada  = ArticuloComprado.objects.filter(oc=compra, entrada_completa = False)
+            servicios_pendientes = articulos_entrada.filter(producto__producto__articulos__producto__producto__servicio=True)
+            cant_entradas = articulos_entrada.count()
+            cant_servicios = servicios_pendientes.count()
+
+            if  cant_entradas == cant_servicios:
+                compra.solo_servicios = True
+                compra.save()
+        compras = Compra.objects.filter(Q(cond_de_pago__nombre ='CREDITO') | Q(pagada = True), solo_servicios= False, entrada_completa = False, autorizado2= True).order_by('-folio')
+    else:
+        compras = Compra.objects.filter(Q(cond_de_pago__nombre ='CREDITO') | Q(pagada = True), solo_servicios= True, entrada_completa = False, autorizado2= True, req__orden__staff = usuario).order_by('-folio')
+
+
+
+
     myfilter = CompraFilter(request.GET, queryset=compras)
     compras = myfilter.qs
 
@@ -54,9 +74,18 @@ def devolucion_a_proveedor(request):
 
 @login_required(login_url='user-login')
 def articulos_entrada(request, pk):
-    usuario = Profile.objects.get(id=request.user.id)
-    articulos = ArticuloComprado.objects.filter(oc=pk, entrada_completa = False, seleccionado = False)
+
+    usuario = Profile.objects.get(staff=request.user.id)
+    if usuario.tipo.almacen == True:
+        articulos = ArticuloComprado.objects.filter(oc=pk, entrada_completa = False, seleccionado = False, producto__producto__articulos__producto__producto__servicio = False)
+    else:
+        articulos = ArticuloComprado.objects.filter(oc=pk, entrada_completa = False, seleccionado = False, producto__producto__articulos__producto__producto__servicio = True)
+
+
     compra = Compra.objects.get(id=pk)
+    conteo_de_articulos = articulos.count()
+
+
     entrada, created = Entrada.objects.get_or_create(oc=compra, almacenista= usuario, completo = False)
     articulos_entrada = EntradaArticulo.objects.filter(entrada = entrada)
     form = EntradaArticuloForm()
@@ -64,6 +93,7 @@ def articulos_entrada(request, pk):
     for articulo in articulos:
         if articulo.cantidad_pendiente == None:
             articulo.cantidad_pendiente = articulo.cantidad
+
 
     if request.method == 'POST' and 'entrada' in request.POST:
         num_art_comprados = ArticuloComprado.objects.filter(oc=compra).count()
@@ -86,9 +116,9 @@ def articulos_entrada(request, pk):
                 articulo.liberado = False
                 archivo_oc = attach_oc_pdf(request, articulo.articulo_comprado.oc.id)
                 email = EmailMessage(
-                        f'Compra Autorizada {compra.folio}',
-                        f'Estimado *Inserte nombre de especialista*,\n Estás recibiendo este correo porque se ha recibido en almacén el producto código:{producto_surtir.articulos.producto.producto.codigo} descripción:{producto_surtir.articulos.producto.producto.nombre} el cual requiere la liberación de calidad\n Este mensaje ha sido automáticamente generado por SAVIA X',
-                        'saviax.vordcab@gmail.com',
+                        f'Compra Autorizada {compra.get_folio}',
+                        f'Estimado *Inserte nombre de especialista*,\n Estás recibiendo este correo porque se ha recibido en almacén el producto código:{producto_surtir.articulos.producto.producto.codigo} descripción:{producto_surtir.articulos.producto.producto.nombre} el cual requiere la liberación de calidad\n Este mensaje ha sido automáticamente generado por SAVIA VORDTEC',
+                        'savia@vordcab.com',
                         ['ulises_huesc@hotmail.com'],
                         )
                 email.attach(f'OC_folio:{articulo.articulo_comprado.oc.folio}.pdf',archivo_oc,'application/pdf')
@@ -114,7 +144,10 @@ def articulos_entrada(request, pk):
                             producto_surtir.save()
                             inv_de_producto.save()
             if entrada.oc.req.orden.tipo.tipo == 'normal':
-                producto_surtir.surtir = True
+                if articulo.articulo_comprado.producto.producto.articulos.producto.producto.servicio == True:
+                    producto_surtir.surtir = False
+                else:
+                    producto_surtir.surtir = True
             producto_surtir.save()
         for articulo in articulos_comprados:
             articulo.seleccionado = False
@@ -166,13 +199,14 @@ def update_entrada(request):
     else:
         producto_surtir = ArticulosparaSurtir.objects.get(articulos = producto_comprado.producto.producto.articulos)
 
-    monto_inventario = producto_inv.cantidad * producto_inv.price + producto_inv.cantidad_apartada * producto_inv.price
+    if producto_inv.producto.servicio == False:
+        monto_inventario = producto_inv.cantidad * producto_inv.price + producto_inv.cantidad_apartada * producto_inv.price
 
-    cantidad_inventario = producto_inv.cantidad + producto_inv.cantidad_apartada
+        cantidad_inventario = producto_inv.cantidad + producto_inv.cantidad_apartada
 
-    monto_total = monto_inventario + entrada_item.cantidad * producto_comprado.precio_unitario
+        monto_total = monto_inventario + entrada_item.cantidad * producto_comprado.precio_unitario
 
-    nueva_cantidad_inventario =  cantidad_inventario + entrada_item.cantidad
+        nueva_cantidad_inventario =  cantidad_inventario + entrada_item.cantidad
     if suma_entradas is None:
         suma_entradas = 0
 
@@ -187,13 +221,13 @@ def update_entrada(request):
             producto_comprado.cantidad_pendiente = producto_comprado.cantidad - total_entradas
             #Cree una variable booleana temporal para quitarlo del seleccionable
             producto_comprado.seleccionado = True
+            if producto_inv.producto.servicio == False:
+                if cantidad_inventario == 0:
+                    precio_unit_promedio = producto_comprado.precio_unitario
+                else:
+                    precio_unit_promedio = monto_total/nueva_cantidad_inventario
 
-            if cantidad_inventario == 0:
-                precio_unit_promedio = producto_comprado.precio_unitario
-            else:
-                precio_unit_promedio = monto_total/nueva_cantidad_inventario
-
-            producto_inv.price = precio_unit_promedio
+                producto_inv.price = precio_unit_promedio
             #Esta parte determina el comportamiento de todos las solicitudes que se tienen que activar cuando la entrada es de resurtimiento
             if entrada.oc.req.orden.tipo.tipo == 'resurtimiento':
                 if producto_surtir:
@@ -231,7 +265,6 @@ def update_entrada(request):
             if producto_comprado.producto.producto.articulos.producto.producto.servicio == True:
                 salida, created = Salidas.objects.get_or_create(producto = producto_surtir, salida_firmada=True, cantidad = entrada_item.cantidad)
                 salida.comentario = 'Esta salida es un  servicio por lo tanto no pasa por almacén y no existe registro de la salida del mismo'
-                producto_inv.cantidad_apartada = 0
                 producto_surtir.surtir = False
                 salida.save()
             entrada_item.save()
@@ -277,6 +310,7 @@ def update_entrada(request):
         producto_comprado.save()
         entrada_item.delete()
     return JsonResponse('Item was '+action, safe=False)
+
 
 
 def reporte_calidad(request, pk):

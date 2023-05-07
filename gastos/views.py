@@ -315,7 +315,7 @@ def pago_gastos_autorizados(request):
     usuario = Profile.objects.get(staff__id=request.user.id)
 
     if usuario.tipo.tesoreria == True:
-        gastos = Solicitud_Gasto.objects.filter(autorizar=True, pagada=False).order_by('-folio')
+        gastos = Solicitud_Gasto.objects.filter(autorizar=True, pagada=False, autorizar2=True).order_by('-folio')
 
 
     myfilter = Solicitud_Gasto_Filter(request.GET, queryset=gastos)
@@ -336,7 +336,7 @@ def pago_gasto(request, pk):
     pagos_alt = Pago.objects.filter(gasto=gasto, hecho=True)
     cuentas = Cuenta.objects.filter(moneda__nombre = 'PESOS')
 
-    pago, created = Pago.objects.get_or_create(tesorero = usuario, distrito = usuario.distrito, gasto=gasto, hecho=False, monto=0)
+    pago, created = Pago.objects.get_or_create(tesorero = usuario, distrito = usuario.distrito, hecho=False, gasto=gasto)
     form = Pago_Gasto_Form()
     remanente = gasto.get_total_solicitud - gasto.monto_pagado
 
@@ -345,6 +345,7 @@ def pago_gasto(request, pk):
         form = Pago_Gasto_Form(request.POST or None, request.FILES or None, instance = pago)
         if form.is_valid():
             pago = form.save(commit = False)
+            #pago.gasto = gasto
             pago.pagado_date = date.today()
             pago.pagado_hora = datetime.now().time()
             pago.hecho = True
@@ -352,24 +353,25 @@ def pago_gasto(request, pk):
             if total_pagado > gasto.get_total_solicitud:
                 messages.error(request,f'{usuario.staff.first_name}, el monto introducido más los pagos anteriores superan el monto total del viático')
             else:
-                pago.save()
-                if gasto.monto_pagado == gasto.get_total_solicitud:
+                if round(gasto.monto_pagado,1) == round(gasto.get_total_solicitud,1):
                     gasto.pagada = True
-                    pagos = Pago.objects.filter(gasto=gasto, hecho=True)
-                    #archivo_oc = attach_oc_pdf(request, gasto.id)
-                    email = EmailMessage(
-                        f'Gasto Autorizado {gasto.id}',
-                        f'Estimado(a) {gasto.staff.staff}:\n\nEstás recibiendo este correo porque ha sido pagada el gasto con folio: {gasto.id}.\n\n\nVordtec de México S.A. de C.V.\n\n Este mensaje ha sido automáticamente generado por SAVIA VORDTEC',
-                        'saviax.vordcab@gmail.com',
-                        ['ulises_huesc@hotmail.com'],#[compra.proveedor.email],
-                        )
-                    #email.attach(f'OC_folio_{gasto.id}.pdf',archivo_oc,'application/pdf')
-                    #email.attach('Pago.pdf',request.FILES['comprobante_pago'].read(),'application/pdf')
-                    if pagos.count() > 0:
-                        for pago in pagos:
-                            email.attach(f'Pago_folio_{pago.id}.pdf',pago.comprobante_pago.path,'application/pdf')
-                    email.send()
                     gasto.save()
+                pago.save()
+                pagos = Pago.objects.filter(gasto=gasto, hecho=True)
+                #archivo_oc = attach_oc_pdf(request, gasto.id)
+                email = EmailMessage(
+                    f'Gasto Autorizado {gasto.id}',
+                    f'Estimado(a) {gasto.staff.staff}:\n\nEstás recibiendo este correo porque ha sido pagada el gasto con folio: {gasto.id}.\n\n\nVordtec de México S.A. de C.V.\n\n Este mensaje ha sido automáticamente generado por SAVIA VORDTEC',
+                    'savia@vordtec.com',
+                    ['ulises_huesc@hotmail.com'],[gasto.staff.staff.email],
+                    )
+                #email.attach(f'OC_folio_{gasto.id}.pdf',archivo_oc,'application/pdf')
+                email.attach('Pago.pdf',request.FILES['comprobante_pago'].read(),'application/pdf')
+                if pagos.count() > 0:
+                    for item in pagos:
+                        email.attach(f'Gasto{gasto.id}_P{item.id}.pdf',item.comprobante_pago.read(),'application/pdf')
+                email.send()
+
                 messages.success(request,f'Gracias por registrar tu pago, {usuario.staff.first_name}')
                 return HttpResponse(status=204) #No content to render nothing and send a "signal" to javascript in order to close window
         else:

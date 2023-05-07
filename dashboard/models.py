@@ -42,6 +42,7 @@ class Product(models.Model):
     activo = models.BooleanField(default=False)
     servicio = models.BooleanField(default=False)
     gasto = models.BooleanField(default=False)
+    viatico = models.BooleanField(default=False)
     baja_item = models.BooleanField(default=False)
     image = models.ImageField(null=True, blank=True, upload_to='product_images')
     completado = models.BooleanField(default = False)

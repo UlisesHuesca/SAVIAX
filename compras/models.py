@@ -124,6 +124,7 @@ class Compra(models.Model):
     pagada = models.BooleanField(default=False)
     monto_pagado = models.DecimalField(max_digits=14,decimal_places=2, default=0)
     entrada_completa = models.BooleanField(default=False)
+    solo_servicios = models.BooleanField(default=False)
 
     @property
     def get_pagos(self):

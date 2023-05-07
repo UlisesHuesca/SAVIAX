@@ -5,7 +5,7 @@
 {% load widget_tweaks %}
 <html>
 <head>
-{% block title %}Autorización OC{% endblock %}
+{% block title %}Entrada de Artículos{% endblock %}
 </head>
 <body>
 {% block content %}
@@ -42,7 +42,7 @@
         <div class="box-element" id="form-wrapper">
             <div class="card-header mt-3 mb-4">
             <form method="POST">
-            <h5 class="modal-title" id="entrada" value="{{entrada.id}}">Entrada: {{entrada.id}}&ensp;&ensp; Compra: {{compra.folio}}</h5>
+            <h5 class="modal-title" id="entrada" value="{{entrada.id}}">Entrada: {{entrada.id}}&ensp;&ensp; Compra: {{compra.get_folio}}</h5>
         </div>
 
 
@@ -169,10 +169,7 @@ document.getElementById("producto").addEventListener("change", function(element)
     //console.log(other_select);
 });
 
-var updateBtn = document.getElementById('update-entrada')
-    let count=0;
-    let suma=0;
-    let array_id_prod=[];
+
 
 
 var rows = document.getElementById("mytbl").rows.length
@@ -194,6 +191,11 @@ CrearBtn.addEventListener('click',function(){
         }
 
 })
+
+var updateBtn = document.getElementById('update-entrada')
+    let count=0;
+    let suma=0;
+    let array_id_prod=[];
 
 
 updateBtn.addEventListener('click',function(){
