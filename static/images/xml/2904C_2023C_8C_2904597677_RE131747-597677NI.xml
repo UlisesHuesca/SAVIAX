@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<cfdi:Comprobante Certificado="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" CondicionesDePago="Contado" Exportacion="01" Fecha="2023-08-14T13:19:40" Folio="131747" FormaPago="03" LugarExpedicion="91067" MetodoPago="PUE" Moneda="MXN" NoCertificado="00001000000507265734" Sello="WyIJjfSTG6b2wHUiBqagnxcLuIOV/XT1sdZH/6PAxsvW0gGoMfQBSmK9nigjO7B6qz7zQhXctuli0Bo4grSGTluJ7XTsow1JH8XrtkN3P+/dDUSjO0fqypegRyfxQ/FjBr0FQbJ6VmKtZ86zFZvpeRkx6LaZ4/sQaiA+KcXJVykHbY9SiFTaxyyNDrSFcB7fhXQODMcpiG4Um4yJzrUAG+MJGN/7DGpIRMUy/bswBVef8tkEzYxZ3pkjP4AF2bGgs8U/70FdlKI9kl0aJtSVhzNXeHO9VXe0pDvcBMy2fETlS+3zcO9Ah36Q0c0dyRCa2ONytepTcj3bmYSe1wK/Iw==" Serie="RE" SubTotal="770.83" TipoDeComprobante="I" Total="894.16" Version="4.0" xmlns:cfdi="http://www.sat.gob.mx/cfd/4" xmlns:mgns1="http://www.sat.gob.mx/cfd/3" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.sat.gob.mx/cfd/4 http://www.sat.gob.mx/sitio_internet/cfd/4/cfdv40.xsd">
+
+  <cfdi:Emisor Nombre="DISTRIBUIDORA VOLKSWAGEN DE XALAPA" RegimenFiscal="623" Rfc="DVX660101TM9"/>
+
+  <cfdi:Receptor DomicilioFiscalReceptor="91633" Nombre="VORDTEC DE MEXICO" RegimenFiscalReceptor="601" Rfc="VME121113PI3" UsoCFDI="G01"/>
+
+  <cfdi:Conceptos>
+    <cfdi:Concepto Cantidad="1.0000" ClaveProdServ="25191700" ClaveUnidad="H87" Descripcion="1 JUEGO MUELLES" Importe="770.8300" NoIdentificacion="5Z0698545B" ObjetoImp="02" Unidad="H87" ValorUnitario="770.8300">
+      <cfdi:Impuestos>
+        <cfdi:Traslados>
+          <cfdi:Traslado Base="770.8300" Importe="123.3328" Impuesto="002" TasaOCuota="0.160000" TipoFactor="Tasa"/>
+        </cfdi:Traslados>
+      </cfdi:Impuestos>
+    </cfdi:Concepto>
+  </cfdi:Conceptos>
+
+  <cfdi:Impuestos TotalImpuestosTrasladados="123.33">
+    <cfdi:Traslados>
+      <cfdi:Traslado Base="770.83" Importe="123.33" Impuesto="002" TasaOCuota="0.160000" TipoFactor="Tasa"/>
+    </cfdi:Traslados>
+  </cfdi:Impuestos>
+
+  <cfdi:Complemento>
+    <tfd:TimbreFiscalDigital FechaTimbrado="2023-08-14T13:17:46" NoCertificadoSAT="00001000000503726510" RfcProvCertif="VSI850514HX4" SelloCFD="WyIJjfSTG6b2wHUiBqagnxcLuIOV/XT1sdZH/6PAxsvW0gGoMfQBSmK9nigjO7B6qz7zQhXctuli0Bo4grSGTluJ7XTsow1JH8XrtkN3P+/dDUSjO0fqypegRyfxQ/FjBr0FQbJ6VmKtZ86zFZvpeRkx6LaZ4/sQaiA+KcXJVykHbY9SiFTaxyyNDrSFcB7fhXQODMcpiG4Um4yJzrUAG+MJGN/7DGpIRMUy/bswBVef8tkEzYxZ3pkjP4AF2bGgs8U/70FdlKI9kl0aJtSVhzNXeHO9VXe0pDvcBMy2fETlS+3zcO9Ah36Q0c0dyRCa2ONytepTcj3bmYSe1wK/Iw==" SelloSAT="STbEvoZecehohpMEafrhuQO3iAYgUFMT51wmix6jsOZgniXWbKOAuz8ikvIsfTCura/nHd07PliL9e4hEv+UJeXLfA5J+5BN0bfQHD4ZVo6KspXBxHFR3NaJ/s7wMj5QeAzixyOuIf/WbN4bqgMa8ZSv1YO0+yWUoTJV6Dhm5Wz3pZl+KxbFISghw5u+rhFsKWLHKXMQOTSzRKeRn/lE/+37kePA1jg/zqI4tveNxN48ln9v4IQjI/OCRiOWmus19vPcfYa+VaPfEMGz246zMCmj0eLPzw8+Qjw+JFs91blAPg6AttIl24Cja1/xufXXnrj4Q8zDUpOBHmgqnp1deQ==" UUID="437228D9-8455-437E-8A38-1905C44B9FCD" Version="1.1" xmlns:tfd="http://www.sat.gob.mx/TimbreFiscalDigital" xsi:schemaLocation="http://www.sat.gob.mx/TimbreFiscalDigital http://www.sat.gob.mx/sitio_internet/cfd/TimbreFiscalDigital/TimbreFiscalDigitalv11.xsd"/>
+  </cfdi:Complemento>
+
+  <mgns1:Addenda>
+<mgns1:AddendaWegon xmlns:mgns1="http://www.Wegon.com/ns/addenda/bf/2">
+
+  <mgns1:Emisor GLN="" camcom="414-2" emailComercial="" emailNotificaciones="" fax="2288 41-6250" regedo="08010892829" telefono="2288416250" web=""/>
+
+  <mgns1:Remitente calle="AV LAZARO CARDENAS ESQ.AV.ARAUCARIAS" ciudad="XALAPA" claveIdentificacion="" codigoPostal="91067" colonia="XALAPA" estado="VERACRUZ" municipio="XALAPA" nombre="DISTRIBUIDORA VOLKSWAGEN DE XALAPA S.A. DE C.V." numero="4101" pais="Mexico" referencia="" rfc="DVX660101TM9"/>
+
+  <mgns1:ExpedidoEn GLN="" alias="" email="" fax="" telefono=""/>
+
+  <mgns1:Receptor GLN="" email="ricardo.romero@vordtec.com" fax="" noCliente="424976" noProveedor="" telefono="" web=""/>
+
+  <mgns1:Destino calle="CARR.XALAPA,VERACRUZ KM 298 INT A" ciudad="EMILIANO ZAPATA" claveIdentificacion="" codigoPostal="91633" colonia="PALO GACHO" estado="VERACRUZ" municipio="EMILIANO ZAPATA" nombre="VORDTEC DE MEXICO" numero="" pais="Mexico" referencia="" rfc="VME121113PI3"/>
+
+  <mgns1:TipoDocumento descripcion="FACTURA DE REFACCIONES" nombreCorto=""/>
+
+  <mgns1:CFD agenteVentas="MERCED GUADAL" cargos="" comprador="" fechaCancelacion="" fechaEnvio="08/14/23" fechaTipoCambio="" fechaValidacion="" ivaLetra="IVA (OCHOCIENTOS NOVENTA Y CUATRO PESOS 16/100 M.N.)" noOrden="597677" observaciones="Cuidamos el ambiente, manejamos adecuadamente los residuos contaminantes. GARANTIA REFACCIONES: Venta Mostrador Publico un año o 30,000 kms. Refacciones instaladas por taller dos años o 60,000 kms. Lo que ocurra primero. Excepto pieza de desgaste como son: platinos, focos, bujías, bandas, balatas, pastillas de frenos, fusibles, llantas, plumas limpiaparabrisas, amortiguadores, elementos de embrague y filtros (aceite, polen, gasolina y aire). REQUISITOS INDISPENSABLES PARA HACER EFECTIVA LA GARANTIA ES: debe tener realizados los servicios de mantenimiento con la periodicidad señalada en el plan de asistencia técnica, además de que toda refacción o accesorio reclamado beberá venir instalado en el auto.&#xD;&#xA;Pieza NO ORIGINAL tiene garantía por 30 días. •&#x9;TODA PIEZA COMPRADA POR MOSTRADOR PUBLICO SOLO TIENE GARANTIA LA PIEZA Y NO LA MANO DE OBRA  IdCaja: moralesa   Descarga tu factura desde www.wegon.com.mx" porcentajeDescuento="0.00" razonNoValido="" refID="RE2904597677BB6D" tipoCambio="0.00" tipoMoneda="MXN" totalConLetra="(OCHOCIENTOS NOVENTA Y CUATRO PESOS 16/100 M.N.)"/>
+
+  <mgns1:Auto Ano="" Autoriza="" Chasis="" ChasisDes="" Color="" Cotizacion="" Familia="" Kilometraje="" Marca="" Modelo="" MotorDes="" NuevoUsado="" NumMotor="" NumPlacas="" OperacionVta="Contado" Piramide="" Transmision="" Version="" comentarios=" | Poliza:                          | Siniestro: |" cveauto=""/>
+
+  <mgns1:Retenciones/>
+
+</mgns1:AddendaWegon>
+</mgns1:Addenda>
+
+</cfdi:Comprobante>
