@@ -77,7 +77,6 @@
                     <th scope="col">Proyecto</th>
                     <th scope="col">Subproyecto</th>
                     <th scope="col">Monto</th>
-                    <th scope="col">XML</th>
                     <th scope="col">Acción</th>
                 </tr>
             </thead>
@@ -89,22 +88,9 @@
                     <td scope="col">{{gasto.staff.staff.first_name}} {{gasto.staff.staff.last_name}}</td>
                     <td scope="col">{{gasto.producto.producto.nombre}}</td>
                     <td scope="col">{{gasto.comentario}}</td>
-                    <td>{{gasto.gasto.proyecto.nombre}}</td>
-                    <td>{{gasto.gasto.subproyecto.nombre}}</td>
+                    <td>{{gasto.proyecto.nombre}}</td>
+                    <td>{{gasto.subproyecto.nombre}}</td>
                     <td>${{gasto.total_parcial|floatformat:2}} </td>
-                    {% if gasto.factura_xml %}
-                    <td>
-                        <ul class="nav nav-pills">
-                            <li class="nav-item mx-1">
-                                <a href="{{gasto.factura_xml.url}}" download class="btn btn-outline-secondary">
-                                    <i class="fa-solid fa-file-code fa-2xl"></i>
-                                </a>                 
-                            </li>
-                        </ul>
-                    </td>
-                    {% else %}
-                    <td></td>
-                    {% endif %}
                     <td>
                         <ul class="nav nav-pills">
                             <li class="nav-item mx-1">

@@ -13,6 +13,7 @@ urlpatterns = [
     path('gasto/autorizar_gasto/<int:pk>/', views.autorizar_gasto, name = 'autorizar-gasto'),
     path('gasto/autorizar_gasto2/<int:pk>/', views.autorizar_gasto2, name = 'autorizar-gasto2'),
     path('gasto/cancelar_gasto/<int:pk>/', views.cancelar_gasto, name='cancelar-gasto'),
+    path('gasto/eliminar_factura/<int:pk>/', views.eliminar_factura, name='eliminar-factura'),
     path('gasto/cancelar_gasto2/<int:pk>/', views.cancelar_gasto2, name='cancelar-gasto2'),
     path('gasto/pago_gastos_autorizados/', views.pago_gastos_autorizados, name='pago-gastos-autorizados'),
     path('gasto/pago_gasto/<int:pk>/', views.pago_gasto, name='pago-gasto'),

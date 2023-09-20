@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<cfdi:Comprobante Certificado="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" Exportacion="01" Fecha="2023-09-15T09:31:43" Folio="537252" FormaPago="03" LugarExpedicion="91637" MetodoPago="PUE" Moneda="MXN" NoCertificado="00001000000518610822" Sello="WpQBkf+E5XP0a3vb9R73jYx1L/P3nGpSplN05jAug1oea9QHFcFTPDrvY44dY0DgCDj8xUPKFSLPlyXf0mO4qMztgBdHwcwQ3yK9dGx0OqyKUj2AkVU+lejJVNPCUszD03zqvWyMFJN2+BCQj5jmb3r2v4/fKzQ2E9WsQL3MI3ZnEjEx2P0h+K6uLCAlmWt3GAVbgXuv+SoWYUwUOLJENhfNjgmalk1bDDOTfoT5N5h5vyp6xm1JeDeWiQXJhGEwYtp5gyKF2SR2TkItyshAI5KOusul7axcv+JnwRX3yfN1hvPx4KpoEhhgZCScmQvQiTp90jhZHBQ6asR2o9vAMg==" Serie="7794" SubTotal="4266.37" TipoDeComprobante="I" Total="4948.99" Version="4.0" xmlns:cfdi="http://www.sat.gob.mx/cfd/4" xmlns:dvz="http://www.diverza.com/ns/addenda/diverza/1" xmlns:fm="http://facturame.mx/ns/addenda/1" xmlns:pago20="http://www.sat.gob.mx/Pagos20" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.sat.gob.mx/cfd/4 http://www.sat.gob.mx/sitio_internet/cfd/4/cfdv40.xsd">
+    <cfdi:Emisor Nombre="AUTOZONE DE MEXICO" RegimenFiscal="601" Rfc="AME970109GW0"/><cfdi:Receptor DomicilioFiscalReceptor="91633" Nombre="VORDTEC DE MEXICO" RegimenFiscalReceptor="601" Rfc="VME121113PI3" UsoCFDI="G01" xmlns:cfdi="http://www.sat.gob.mx/cfd/4"/>
+    <cfdi:Conceptos>
+        <cfdi:Concepto Cantidad="8.000000" ClaveProdServ="26101732" ClaveUnidad="H87" Descripcion="4164  BUJIA NGK COBRE" Importe="265.38" NoIdentificacion="267838" ObjetoImp="02" ValorUnitario="33.172500">
+            <cfdi:Impuestos>
+                <cfdi:Traslados>
+                    <cfdi:Traslado Base="265.380000" Importe="42.46" Impuesto="002" TasaOCuota="0.160000" TipoFactor="Tasa"/>
+                </cfdi:Traslados>
+            </cfdi:Impuestos>
+        </cfdi:Concepto>
+        <cfdi:Concepto Cantidad="1.000000" ClaveProdServ="31171804" ClaveUnidad="H87" Descripcion="P GM262A Polea Damper" Importe="940.99" NoIdentificacion="393575" ObjetoImp="02" ValorUnitario="940.990000">
+            <cfdi:Impuestos>
+                <cfdi:Traslados>
+                    <cfdi:Traslado Base="940.990000" Importe="150.56" Impuesto="002" TasaOCuota="0.160000" TipoFactor="Tasa"/>
+                </cfdi:Traslados>
+            </cfdi:Impuestos>
+        </cfdi:Concepto>
+        <cfdi:Concepto Cantidad="1.000000" ClaveProdServ="40151510" ClaveUnidad="H87" Descripcion="CWP 9020  Bomba de Agua" Importe="875.47" NoIdentificacion="230387" ObjetoImp="02" ValorUnitario="875.470000">
+            <cfdi:Impuestos>
+                <cfdi:Traslados>
+                    <cfdi:Traslado Base="875.470000" Importe="140.08" Impuesto="002" TasaOCuota="0.160000" TipoFactor="Tasa"/>
+                </cfdi:Traslados>
+            </cfdi:Impuestos>
+        </cfdi:Concepto>
+        <cfdi:Concepto Cantidad="1.000000" ClaveProdServ="25173902" ClaveUnidad="H87" Descripcion="DL8206 5  alternador CORE" Importe="474.14" NoIdentificacion="297850" ObjetoImp="02" ValorUnitario="474.140000">
+            <cfdi:Impuestos>
+                <cfdi:Traslados>
+                    <cfdi:Traslado Base="474.140000" Importe="75.86" Impuesto="002" TasaOCuota="0.160000" TipoFactor="Tasa"/>
+                </cfdi:Traslados>
+            </cfdi:Impuestos>
+        </cfdi:Concepto>
+        <cfdi:Concepto Cantidad="1.000000" ClaveProdServ="25173902" ClaveUnidad="H87" Descripcion="DL8206 5  alternador" Importe="1637.11" NoIdentificacion="297850" ObjetoImp="02" ValorUnitario="1637.110000">
+            <cfdi:Impuestos>
+                <cfdi:Traslados>
+                    <cfdi:Traslado Base="1637.110000" Importe="261.94" Impuesto="002" TasaOCuota="0.160000" TipoFactor="Tasa"/>
+                </cfdi:Traslados>
+            </cfdi:Impuestos>
+        </cfdi:Concepto>
+        <cfdi:Concepto Cantidad="1.000000" ClaveProdServ="26101725" ClaveUnidad="H87" Descripcion="65116  varilla p Aceite" Importe="73.28" NoIdentificacion="721365" ObjetoImp="02" ValorUnitario="73.280000">
+            <cfdi:Impuestos>
+                <cfdi:Traslados>
+                    <cfdi:Traslado Base="73.280000" Importe="11.72" Impuesto="002" TasaOCuota="0.160000" TipoFactor="Tasa"/>
+                </cfdi:Traslados>
+            </cfdi:Impuestos>
+        </cfdi:Concepto>
+    </cfdi:Conceptos>
+    <cfdi:Impuestos TotalImpuestosTrasladados="682.62">
+        <cfdi:Traslados>
+            <cfdi:Traslado Base="4266.37" Importe="682.62" Impuesto="002" TasaOCuota="0.160000" TipoFactor="Tasa"/>
+        </cfdi:Traslados>
+    </cfdi:Impuestos>
+<cfdi:Complemento>
+        <tfd:TimbreFiscalDigital xmlns:tfd="http://www.sat.gob.mx/TimbreFiscalDigital" xsi:schemaLocation="http://www.sat.gob.mx/TimbreFiscalDigital http://www.sat.gob.mx/sitio_internet/cfd/TimbreFiscalDigital/TimbreFiscalDigitalv11.xsd" Version="1.1" UUID="8ed40b1c-7dc9-4c60-bf82-51d9a2a81801" RfcProvCertif="SNF171020F3A" FechaTimbrado="2023-09-15T09:31:44" SelloCFD="WpQBkf+E5XP0a3vb9R73jYx1L/P3nGpSplN05jAug1oea9QHFcFTPDrvY44dY0DgCDj8xUPKFSLPlyXf0mO4qMztgBdHwcwQ3yK9dGx0OqyKUj2AkVU+lejJVNPCUszD03zqvWyMFJN2+BCQj5jmb3r2v4/fKzQ2E9WsQL3MI3ZnEjEx2P0h+K6uLCAlmWt3GAVbgXuv+SoWYUwUOLJENhfNjgmalk1bDDOTfoT5N5h5vyp6xm1JeDeWiQXJhGEwYtp5gyKF2SR2TkItyshAI5KOusul7axcv+JnwRX3yfN1hvPx4KpoEhhgZCScmQvQiTp90jhZHBQ6asR2o9vAMg==" NoCertificadoSAT="00001000000518812364" SelloSAT="d/VtNLx79KK17tdqM8e4ryktSVs1pC6pTnDGVHFV24Srg9OeMtMuA/hvrCYtji7+ScdX3xhy5FfiSMSBE3Ah8U+ObZOtq/lxJA5BrBgN4vuAGFUVtOujdVdhTy1mwjn3VIHL1wArPBOHJY+324dihmSNhyOmkOBbkBDUjbnNoWM86eOTVZHlIRHs2R+eiadJ3QlGtOGZ0gXn63nwBWjTkV1fD8n0HwiM3lPu+PRtkmYLi8o/pqIhre01p24vNlNt+u2Xg9yVs50HIlWaUgeZk66bOJ/OtXNFXATfsFhngvvVtVctOEe8OEdPzqd7EcWV7yvFaHn0QZJIiwh9e8iDFw=="/>
+    </cfdi:Complemento><cfdi:Addenda xmlns:cfdi="http://www.sat.gob.mx/cfd/4"><fm:AddendaFacturame version="1.0" xmlns:fm="http://facturame.mx/ns/addenda/1"><Ticket number="7794537252091323"/></fm:AddendaFacturame></cfdi:Addenda></cfdi:Comprobante>

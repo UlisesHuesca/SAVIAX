@@ -81,7 +81,12 @@
                     <th scope="col">Elaborado por</th>
                     <th scope="col">Fecha</th>
                     <th scope="col">Comentarios</th>
+                    <th>Cotización 1</th>
+                    <th>Cotización 2</th>
+                    <th>Cotización 3</th>
+                    <th>Editar</th>
                     <th scope="col">Acción</th>
+                    
                 </tr>
             </thead>
             <tbody>
@@ -92,6 +97,32 @@
                     <th scope="row">{{item.creada_por.staff.first_name}} {{item.creada_por.staff.last_name}}</th>
                     <td>{{item.created_at.date}}</td>
                     <td>{{item.comentarios}}</td>
+                    <td>  
+                        {% if item.cotizacion %}
+                        <a href="{{item.cotizacion.url}}" download class="btn btn-outline-danger">
+                            <i class="fa-solid fa-file-invoice-dollar"></i>
+                        </a>
+                        {% endif %}
+                    </td>
+                    <td>  
+                        {% if item.cotizacion2 %}
+                        <a href="{{item.cotizacion2.url}}" download class="btn btn-outline-danger">
+                            <i class="fa-solid fa-file-invoice-dollar"></i>
+                        </a>
+                        {% endif %}
+                    </td>
+                    <td>  
+                        {% if item.cotizacion3 %}
+                        <a href="{{item.cotizacion3.url}}" download class="btn btn-outline-danger">
+                            <i class="fa-solid fa-file-invoice-dollar"></i>
+                        </a>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a class="btn btn-outline-info" id="btnActualizar" href="{% url 'editar-comparativo' item.id %}" type="button">
+                            <i class="fa-solid fa-pen-to-square"></i>
+                        </a>
+                    </td>
                     <td>
                         <ul class="nav nav-pills">
                             <li class="nav-item mx-1">

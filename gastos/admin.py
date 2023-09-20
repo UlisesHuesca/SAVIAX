@@ -7,7 +7,7 @@ class Solicitud_Gasto_Admin(admin.ModelAdmin):
     search_fields = ('colaborador',)
 
 class Articulo_Gasto_Admin(admin.ModelAdmin):
-    list_display =('id','staff','producto','comentario', 'gasto', 'created_at', 'validacion')
+    list_display =('id','staff','proyecto', 'subproyecto','producto','comentario', 'gasto', 'created_at', 'validacion')
 
 class Entrada_Gasto_Ajuste_Admin(admin.ModelAdmin):
     list_display =('id','gasto','almacenista','completo')

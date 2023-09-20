@@ -108,7 +108,7 @@ class Comparativo(models.Model):
     creada_por = models.ForeignKey(Profile, on_delete = models.CASCADE, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     completo = models.BooleanField(default=False)
-    comentarios = models.TextField(max_length=100, null=True)
+    comentarios = models.TextField(max_length=200, null=True)
 
     def __str__(self):
         return f'{self.nombre}'
@@ -186,6 +186,8 @@ class Compra(models.Model):
             total = self.costo_oc
             if self.impuestos_adicionales:
                 total = total + self.impuestos_adicionales
+            if self.flete:
+                total = total + self.costo_fletes
         return total
 
 

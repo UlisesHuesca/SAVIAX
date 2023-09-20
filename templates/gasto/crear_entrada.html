@@ -46,33 +46,12 @@
            <div class="card-header"> 
                 <h2>Entrada Gasto</h2>
             </div>
-			<div class="card-body"  id="Solicitud-info">		
+			<div class="card-body"  id="Solicitud-info">
 					<form method="POST" id='OrderForm'>
                         {% csrf_token %}
                             <div class="row my-2">
                                 <label for="form.subproyecto" class="col-auto col-form-label my-1"><strong>Artículo Gasto: {{articulo_gasto.id}}</strong></label>
-                                {% if articulo_gasto.factura_xml %}
-                                <table class="table table-striped table-hover">
-                                    <thead>
-                                        <tr>
-                                            <th scope="col">Producto [XML]</th>
-                                            <th scope="col">Cantidad [XML]</th>
-                                            <th scope="col">P.U. [XML]</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="mytbl">
-                                        {% for elem in articulo_gasto.emisor.resultados %}
-                                        <tr>
-                                        
-                                            {% for item in elem %}
-                                            <td><label>{{item}}</label></td>
-                                            {% endfor %}
-                                        
-                                        </tr>
-                                        {% endfor %}
-                                    </tbody>
-                                </table>
-                                {% else %}
+                                <h4><strong style="color:#2a628F">Producto para Ingresar Almacén.</strong></h4>
                                 <table class="table table-striped table-hover">
                                     <thead>
                                         <tr>
@@ -91,9 +70,31 @@
                                         </tr>
                                     </tbody>
                                 </table>
-                                <strong>Este tabla fue generada sin la presencia de un XML.</strong>
+                            <h4><strong style="color:#2a628F">Conceptos disponibles en XML.</strong></h4>   
+                            {% for factura in facturas %}  
+                                {% if factura.archivo_xml %}
+                                <table class="table table-striped table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th scope="col">Producto [XML]</th>
+                                            <th scope="col">Cantidad [XML]</th>
+                                            <th scope="col">P.U. [XML]</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="mytbl">
+                                        {% for elem in factura.emisor.resultados %}
+                                        <tr>
+                                        
+                                            {% for item in elem %}
+                                            <td><label>{{item}}</label></td>
+                                            {% endfor %}
+                                        
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
                                 {% endif %}
-                               
+                            {% endfor %}
                                 <label for="form.subproyecto" class="col-auto col-form-label my-1"><strong>Comentario*</strong></label>
                                 <div class="col-4">
                                     <div class="input-group">
@@ -103,8 +104,6 @@
                                 </div>
                             </div>
                         {% if productos %}
-
-
                         <input class="btn btn-outline-info btn-block my-2" name="btn_agregar" id="btn_agregar" type="submit" value="Agregar Entrada">
                         {% endif %}
                     </form>

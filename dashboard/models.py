@@ -14,7 +14,7 @@ from django.core.validators import FileExtensionValidator
 
 
 class Familia(models.Model):
-    nombre = models.CharField(max_length=20, null=True, unique=True)
+    nombre = models.CharField(max_length=40, null=True, unique=True)
 
     def __str__(self):
         return f'{self.nombre}'
@@ -26,7 +26,7 @@ class Unidad(models.Model):
         return f'{self.nombre}'
 
 class Subfamilia(models.Model):
-    nombre = models.CharField(max_length=15, null=True)
+    nombre = models.CharField(max_length=30, null=True)
     familia = models.ForeignKey(Familia, on_delete = models.CASCADE, null=True)
 
     def __str__(self):
@@ -157,6 +157,27 @@ class Tipo_Orden(models.Model):
 
     def __str__(self):
         return f'{self.id}:{self.tipo}'
+    
+class Plantilla(models.Model):
+    nombre = models.CharField(max_length=100)
+    descripcion = models.TextField(blank=True, null=True)
+    comentario = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    creador = models.ForeignKey(Profile, on_delete = models.CASCADE, null=True, related_name='Creador')
+    modified_at = models.DateField(auto_now=True)
+    modified_by = models.ForeignKey(Profile, on_delete = models.CASCADE, null=True)
+    complete = models.BooleanField(default=False)
+    # otros campos que consideres necesarios
+
+class ArticuloPlantilla(models.Model):
+    plantilla = models.ForeignKey(Plantilla, on_delete=models.CASCADE, null=True)
+    producto = models.ForeignKey(Inventario, on_delete=models.CASCADE, null=True)
+    cantidad = models.DecimalField(max_digits = 14, decimal_places=2, default=0)
+    comentario_articulo = models.TextField(blank=True, null=True)
+    comentario_plantilla = models.TextField(blank=True, null=True)
+    modified_at = models.DateField(auto_now=True)
+    modified_by = models.ForeignKey(Profile, on_delete = models.CASCADE, null=True)
+    # otros campos que consideres necesarios
 
 class Order(models.Model):
     folio = models.CharField(max_length=6, null=True, unique=True)

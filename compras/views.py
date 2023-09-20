@@ -896,6 +896,51 @@ def crear_comparativo(request):
 
     return render(request, 'compras/crear_comparativo.html', context)
 
+@login_required(login_url='user-login')
+def editar_comparativo(request, pk):
+    usuario = Profile.objects.get(staff__id=request.user.id)
+    comparativo =Comparativo.objects.get(id = pk)
+    productos = Item_Comparativo.objects.filter(comparativo = comparativo, completo = True)
+    proveedores = Proveedor_direcciones.objects.all()
+    articulos = Inventario.objects.all()
+    form_item = Item_ComparativoForm()
+    form = ComparativoForm(instance = comparativo)
+
+    if request.method =='POST':
+        if "btn_agregar" in request.POST:
+            form = ComparativoForm(request.POST, request.FILES, instance = comparativo)
+            #abrev= usuario.distrito.abreviado
+            if form.is_valid():
+                comparativo = form.save(commit=False)
+                comparativo.completo = True
+                comparativo.created_at = date.today()
+                #comparativo.created_at_time = datetime.now().time()
+                comparativo.creado_por =  usuario
+                comparativo.save()
+                #form.save()
+                messages.success(request, f'El comparativo {comparativo.id} ha sido modificado')
+                return redirect('comparativos')
+        if "btn_producto" in request.POST:
+            articulo, created = Item_Comparativo.objects.get_or_create(completo = False, comparativo = comparativo)
+            form_item = Item_ComparativoForm(request.POST, instance=articulo)
+            if form_item.is_valid():
+                articulo = form_item.save(commit=False)
+                articulo.completo = True
+                articulo.save()
+                messages.success(request, 'Se ha agregado el artículo exitosamente')
+                return redirect('editar-comparativo')
+        
+    context= {
+        'productos':productos,
+        'form':form,
+        'form_item':form_item,
+        'articulos':articulos,
+        'comparativo':comparativo,
+        'proveedores':proveedores,
+    }
+
+    return render(request, 'compras/actualizar_comparativo.html', context)
+
 def articulos_comparativo(request, pk):
     articulos = Item_Comparativo.objects.filter(comparativo__id = pk , completo = True)
 
@@ -1163,6 +1208,10 @@ def generar_pdf(compra):
         c.drawRightString(montos_align,170,'Total:')
         c.drawRightString(montos_align + 90,170,'$ ' + str(compra.costo_plus_adicionales))
     c.setFont('Helvetica', 9)
+
+
+
+
     if compra.moneda.nombre == "PESOS":
         c.drawString(80,140, num2words(compra.costo_plus_adicionales, lang='es', to='currency', currency='MXN'))
     if compra.moneda.nombre == "DOLARES":
@@ -1222,6 +1271,10 @@ def generar_pdf(compra):
     total_rows = len(data) - 1  # Excluye el encabezado
     remaining_rows = total_rows - rows_per_page
 
+
+  
+   
+     
     if remaining_rows <= 0:
         # Si no hay suficientes filas para una segunda página, dibujar la tabla completa en la primera página
         table.wrapOn(c, c._pagesize[0], c._pagesize[1])
@@ -1232,7 +1285,8 @@ def generar_pdf(compra):
         first_page_table = Table(first_page_data, colWidths=[1.2 * cm, 13 * cm, 1.5 * cm, 1.2 * cm, 1.5 * cm, 1.5 * cm])
         first_page_table.setStyle(table_style)
         first_page_table.wrapOn(c, c._pagesize[0], c._pagesize[1])
-        first_page_table.drawOn(c, 20, high)  # Posición en la primera página
+        #adjusted_high = c._pagesize[1] - h - 36  # 70 puede ser un margen superior que desees mantener
+        first_page_table.drawOn(c, 20, high + 55)  # Posición en la primera página
 
         # Agregar una nueva página y dibujar las filas restantes en la segunda página
         c.showPage()
@@ -1428,6 +1482,9 @@ def convert_excel_solicitud_matriz_productos(productos):
     date_style = NamedStyle(name='date_style', number_format='DD/MM/YYYY')
     date_style.font = Font(name ='Calibri', size = 10)
     wb.add_named_style(date_style)
+    number_style = NamedStyle(name='number_style', number_format='#,##0.00')
+    number_style.font = Font(name ='Calibri', size = 10)
+    wb.add_named_style(number_style)
     money_style = NamedStyle(name='money_style', number_format='$ #,##0.00')
     money_style.font = Font(name ='Calibri', size = 10)
     wb.add_named_style(money_style)
@@ -1435,7 +1492,7 @@ def convert_excel_solicitud_matriz_productos(productos):
     money_resumen_style.font = Font(name ='Calibri', size = 14, bold = True)
     wb.add_named_style(money_resumen_style)
 
-    columns = ['OC','RQ','Sol','Solicitante','Proyecto','Subproyecto','Fecha','Proveedor','Área','Cantidad','Código', 'Producto','P.U.','Cantidad','Subtotal','IVA','Total']
+    columns = ['OC','RQ','Sol','Solicitante','Proyecto','Subproyecto','Fecha','Proveedor','Área','Cantidad','Código', 'Producto','P.U.','Moneda','Tipo de Cambio','Subtotal','IVA','Total']
 
     for col_num in range(len(columns)):
         (ws.cell(row = row_num, column = col_num+1, value=columns[col_num])).style = head_style
@@ -1453,23 +1510,57 @@ def convert_excel_solicitud_matriz_productos(productos):
     (ws.cell(column = columna_max, row = 2, value='{Software desarrollado por Vordcab S.A. de C.V.}')).style = messages_style
     ws.column_dimensions[get_column_letter(columna_max)].width = 20
 
-    rows = productos.values_list('oc','oc__req__folio','oc__req__orden__folio', Concat('oc__req__orden__staff__staff__first_name',Value(' '),'oc__req__orden__staff__staff__last_name'),
-                                'oc__req__orden__proyecto__nombre','oc__req__orden__subproyecto__nombre','oc__created_at','oc__proveedor__nombre__razon_social', 'oc__req__orden__area__nombre','cantidad','producto__producto__articulos__producto__producto__codigo',
-                                'producto__producto__articulos__producto__producto__nombre','precio_unitario','cantidad')
+    rows = []
 
-    subtotales = [producto.subtotal_parcial for producto in productos]
-    ivas = [producto.iva_parcial for producto in productos]
-    totales = [producto.total for producto in productos]
+    for producto in productos:
+        # Extract the needed attributes
+        compra_id = producto.oc.id
+        req_folio = producto.oc.req.folio
+        orden_folio = producto.oc.req.orden.folio
+        staff_name = f"{producto.oc.req.orden.staff.staff.first_name} {producto.oc.req.orden.staff.staff.last_name}"
+        proyecto_nombre = producto.oc.req.orden.proyecto.nombre
+        subproyecto_nombre = producto.oc.req.orden.subproyecto.nombre
+        created_at = producto.oc.created_at
+        proveedor_nombre = producto.oc.proveedor.nombre.razon_social
+        area_nombre = producto.oc.req.orden.area.nombre
+        cantidad = producto.cantidad
+        codigo = producto.producto.producto.articulos.producto.producto.codigo
+        producto_nombre = producto.producto.producto.articulos.producto.producto.nombre
+        precio_unitario = producto.precio_unitario
+        moneda_nombre = producto.oc.moneda.nombre
 
-    for row, subtotal, iva, total in zip(rows,subtotales, ivas, totales):
+        # Calculate total, subtotal, and IVA using attributes from producto
+        subtotal = producto.subtotal_parcial
+        iva = producto.iva_parcial
+        total = producto.total
+
+        # Handling the currency conversion logic
+        pagos = Pago.objects.filter(oc_id=compra_id)
+        tipo_de_cambio_promedio_pagos = pagos.aggregate(Avg('tipo_de_cambio'))['tipo_de_cambio__avg']
+        tipo_de_cambio = tipo_de_cambio_promedio_pagos or producto.oc.tipo_de_cambio
+
+        if moneda_nombre == "DOLARES" and tipo_de_cambio:
+            total = total * tipo_de_cambio
+
+        # Constructing the row
+        row = [compra_id, req_folio, orden_folio, staff_name, proyecto_nombre, subproyecto_nombre, created_at,
+               proveedor_nombre, area_nombre, cantidad, codigo, producto_nombre, precio_unitario,
+               moneda_nombre, tipo_de_cambio, subtotal, iva, total]
+
+        rows.append(row)
+
+    # Building the Excel sheet with rows
+    for row in rows:
         row_num += 1
-        row_with_additional_columns = list(row) + [subtotal, iva, total]  # Agrega el subtotal a la fila existente
-        for col_num in range(len(row_with_additional_columns)):
-            (ws.cell(row = row_num, column = col_num+1, value=str(row_with_additional_columns[col_num]))).style = body_style
+        for col_num, cell_value in enumerate(row):
+            ws.cell(row=row_num, column=col_num + 1, value=str(cell_value)).style = body_style
             if col_num == 5:
-                (ws.cell(row = row_num, column = col_num+1, value=row_with_additional_columns[col_num])).style = body_style
-            if col_num == 10 or col_num == 12 or col_num == 13 or col_num == 14:
-                (ws.cell(row = row_num, column = col_num+1, value=row_with_additional_columns[col_num])).style = money_style
+                ws.cell(row=row_num, column=col_num + 1, value=cell_value).style = body_style
+            if col_num == 9:
+                ws.cell(row=row_num, column=col_num + 1, value=cell_value).style = number_style
+            if col_num in [12, 13, 15, 16, 17]:
+                ws.cell(row=row_num, column=col_num + 1, value=cell_value).style = money_style
+
     sheet = wb['Sheet']
     wb.remove(sheet)
     wb.save(response)

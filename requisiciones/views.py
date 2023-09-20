@@ -533,7 +533,7 @@ def update_salida(request):
                     salida, created = Salidas.objects.get_or_create(producto=producto, vale_salida = vale_salida, complete=False)
                     salida.precio = entrada.articulo_comprado.precio_unitario
                     if entrada.cantidad_por_surtir >= cantidad:
-                        salida.cantidad = cantidad
+                        salida.cantidad = cantidad 
                         producto.cantidad = producto.cantidad - salida.cantidad
                         salida.entrada = entrada.id
                         entrada.cantidad_por_surtir = entrada.cantidad_por_surtir - salida.cantidad
@@ -561,23 +561,24 @@ def update_salida(request):
                     inv_del_producto.save()
         elif entrada_res:   #si hay resurtimiento
             for entrada in entrada_res:
-                salida, created = Salidas.objects.get_or_create(producto=producto, vale_salida = vale_salida, complete=False)
-                salida.cantidad = cantidad
-                #inv_del_producto.cantidad = inv_del_producto.cantidad - salida.cantidad #    Este falló ya con el nuevo método salida.precio = entrada_res.articulo_comprado.precio_unitario
-                entrada.cantidad_por_surtir = entrada.cantidad_por_surtir - salida.cantidad
-                producto.cantidad = producto.cantidad - salida.cantidad
-                #producto.cantidad_requisitar = producto.cantidad_requisitar + salida.cantidad
-                salida.entrada = entrada.id
-                salida.complete = True
-                if producto.cantidad_requisitar == 0:
-                    producto.requisitar = False
-                if entrada.cantidad_por_surtir == 0:
-                    entrada.agotado = True
-                entrada.save()
-                inv_del_producto.cantidad_entradas = inv_del_producto.cantidad_entradas - salida.cantidad
-                inv_del_producto._change_reason = f'Esta es la salida de un artículo desde un resurtimiento de inventario {salida.id}'
-                salida.precio = entrada.articulo_comprado.precio_unitario
-                salida.save()
+                if producto.cantidad > 0:
+                    salida, created = Salidas.objects.get_or_create(producto=producto, vale_salida = vale_salida, complete=False)
+                    salida.cantidad = cantidad
+                    #inv_del_producto.cantidad = inv_del_producto.cantidad - salida.cantidad #    Este falló ya con el nuevo método salida.precio = entrada_res.articulo_comprado.precio_unitario
+                    entrada.cantidad_por_surtir = entrada.cantidad_por_surtir - salida.cantidad
+                    producto.cantidad = producto.cantidad - salida.cantidad
+                    #producto.cantidad_requisitar = producto.cantidad_requisitar + salida.cantidad
+                    salida.entrada = entrada.id
+                    salida.complete = True
+                    if producto.cantidad_requisitar == 0:
+                        producto.requisitar = False
+                    if entrada.cantidad_por_surtir == 0:
+                        entrada.agotado = True
+                    entrada.save()
+                    inv_del_producto.cantidad_entradas = inv_del_producto.cantidad_entradas - salida.cantidad
+                    inv_del_producto._change_reason = f'Esta es la salida de un artículo desde un resurtimiento de inventario {salida.id}'
+                    salida.precio = entrada.articulo_comprado.precio_unitario
+                    salida.save()
         else:    #si no hay resurtimiento
             salida, created = Salidas.objects.get_or_create(producto=producto, vale_salida = vale_salida, complete=False)
             salida.cantidad = cantidad
@@ -757,15 +758,30 @@ def update_requisicion(request):
 
     return JsonResponse('Item updated, action executed: '+data["action"], safe=False)
 
+def obtener_consecutivo(distrito, requis):
+    # Obtener la última requisición del distrito basado en la fecha de creación
+    ultima_requisicion = requis.filter(orden__staff__distrito=distrito, complete=True).order_by('-created_at').first()
+
+    if not ultima_requisicion:
+        # Si no hay ninguna requisición previa, devolver 1 (será el primer folio)
+        return 1
+
+    # Extraer el número de folio (después de la abreviatura del distrito)
+    ultimo_numero_folio = int(ultima_requisicion.folio.replace(distrito.abreviado, ''))
+
+    # Devolver el siguiente número
+    return ultimo_numero_folio + 1
+
+
 
 def requisicion_detalle(request, pk):
     #Vista de creación de requisición
     productos = ArticulosparaSurtir.objects.filter(articulos__orden__id = pk, requisitar= True)
     orden = Order.objects.get(id = pk)
     usuario = Profile.objects.get(staff__id=request.user.id)
-    requi, created = Requis.objects.get_or_create(complete=False, orden=orden)
-    requis = Requis.objects.filter(orden__staff__distrito = usuario.distrito, complete = True)
-    consecutivo = requis.count() + 1
+    requisiciones = Requis.objects.all()
+    requi, created = requisiciones.get_or_create(complete=False, orden=orden)
+    requis = requisiciones.filter(orden__staff__distrito = usuario.distrito, complete = True)
 
     #for producto in productos:
     productos_requisitados = ArticulosRequisitados.objects.filter(req = requi)
@@ -777,15 +793,21 @@ def requisicion_detalle(request, pk):
         form = RequisForm(request.POST, instance=requi)
         requi.complete = True
         orden.requisitado = True
+        conteo_pendientes_requisitar = productos.filter(requisitar = True).count()
+        if conteo_pendientes_requisitar > 0: #cuento cuantos productos están pendientes por requisitar 
+            orden.requisitado = False
+        else:
+            orden.requisitado = True
         for producto in productos:
             #Vuelve false para que desaparezca de la vista pero creo que debo evaluar si es la mejor manera lo mismo para orden.requisitar = False, esto me está causando problemas en la vista
             producto.seleccionado = False
             producto.save()
-            if producto.requisitar == False:
-                orden.requisitado = False
-                orden.save()
+            #if producto.requisitar == False:
+            #    orden.requisitado = False
+            #    orden.save()
         if productos_requisitados:
-            requi.folio = str(usuario.distrito.abreviado)+str(requi.id).zfill(4)
+            folio_consecutivo = obtener_consecutivo(usuario.distrito, requisiciones)
+            requi.folio = str(usuario.distrito.abreviado) + str(folio_consecutivo).zfill(4)
             requi.save()
             form.save()
             orden.save()
@@ -793,6 +815,8 @@ def requisicion_detalle(request, pk):
             return redirect('solicitud-autorizada-orden')
         else:
              messages.error(request,'No se puede crear la requisición debido a que no hay productos agregados')
+    else:
+        messages.error(request,'El formulario no es válido')
 
 
     context = {

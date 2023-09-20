@@ -17,6 +17,7 @@ urlpatterns = [
     path('product/update/<int:pk>/', views.product_update, name='dashboard-product-update'),
     path('product/add/', views.add_product, name='add-product'),
     path('proveedores/', views.proveedores, name='dashboard-proveedores'),
+    path('proveeedores/matriz_comparativo', views.matriz_proveedores_comparativo, name='matriz-proveedores-comparativo'),
     path('proveedores/add/', views.add_proveedores, name='add_proveedores'),
     path('proveedores/add_nuevo/', views.add_proveedores2, name='add_proveedores2'),
     path('proveedores/add_proveedor_comparativo/', views.add_proveedores_comparativo, name='add_proveedores_comparativo'),

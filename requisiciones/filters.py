@@ -45,7 +45,7 @@ class SalidasFilter(django_filters.FilterSet):
 class EntradasFilter(django_filters.FilterSet):
     producto = CharFilter(field_name='articulo_comprado__producto__producto__articulos__producto__producto__nombre', lookup_expr='icontains')
     codigo = CharFilter(field_name='articulo_comprado__producto__producto__articulos__producto__producto__codigo', lookup_expr='icontains')
-    nombre = CharFilter(field_name='articulo_comprado__producto__articulos__orden__staff', lookup_expr='icontains')
+    nombre = CharFilter(method ='my_custom_filter', label="Search")
     proyecto = CharFilter(field_name='articulo_comprado__producto__producto__articulos__orden__proyecto__nombre', lookup_expr='icontains')
     subproyecto = CharFilter(field_name='articulo_comprado__producto__producto__articulos__orden__subproyecto__nombre', lookup_expr='icontains')
     start_date = DateFilter(field_name = 'created_at', lookup_expr='gte')
@@ -54,6 +54,9 @@ class EntradasFilter(django_filters.FilterSet):
     class Meta:
         model = EntradaArticulo
         fields = ['producto','codigo','nombre','proyecto','subproyecto','start_date','end_date',]
+
+    def my_custom_filter(self, queryset, name, value):
+        return queryset.filter(Q(articulo_comprado__producto__producto__articulos__orden__staff__staff__first_name__icontains = value) | Q(articulo_comprado__producto__producto__articulos__orden__staff__staff__last_name__icontains=value))
 
 class DevolucionFilter(django_filters.FilterSet):
     solicitud = CharFilter(field_name='solicitud__nombre', lookup_expr='icontains')

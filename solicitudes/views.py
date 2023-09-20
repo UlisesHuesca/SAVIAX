@@ -1,12 +1,12 @@
 from django.shortcuts import render, redirect
-from dashboard.models import Inventario, Order, ArticulosOrdenados, ArticulosparaSurtir, Inventario_Batch, Marca, Product, Tipo_Orden
+from dashboard.models import Inventario, Order, ArticulosOrdenados, ArticulosparaSurtir, Inventario_Batch, Marca, Product, Tipo_Orden, Plantilla, ArticuloPlantilla
 from requisiciones.models import Requis, ArticulosRequisitados, ValeSalidas
 from compras.models import Compra
 from tesoreria.models import Pago
 from solicitudes.models import Subproyecto, Operacion, Proyecto
 from entradas.models import EntradaArticulo, Entrada
 from gastos.models import Entrada_Gasto_Ajuste, Conceptos_Entradas
-from .forms import InventarioForm, OrderForm, Inv_UpdateForm, Inv_UpdateForm_almacenista, ArticulosOrdenadosForm, Conceptos_EntradasForm, Entrada_Gasto_AjusteForm, Order_Resurtimiento_Form, ArticulosOrdenadosComentForm
+from .forms import InventarioForm, OrderForm, Inv_UpdateForm, Inv_UpdateForm_almacenista, ArticulosOrdenadosForm, Conceptos_EntradasForm, Entrada_Gasto_AjusteForm, Order_Resurtimiento_Form, ArticulosOrdenadosComentForm, Plantilla_Form, ArticuloPlantilla_Form
 from dashboard.forms import Inventario_BatchForm
 from user.models import Profile, Distrito, Almacen
 from django.contrib.auth.decorators import login_required
@@ -92,6 +92,80 @@ def product_selection_resurtimiento(request):
         'productosordenadosres':cartItems,
         }
     return render(request, 'solicitud/product_selection_resurtimiento.html', context)
+
+@login_required(login_url='user-login')
+def crear_plantilla(request):
+    usuarios = Profile.objects.all()
+    creador = usuarios.get(staff__id=request.user.id)
+    productos = Inventario.objects.filter(distrito = creador.distrito)
+    
+    plantilla, created = Plantilla.objects.get_or_create(creador = creador, complete = False)
+    productos_plantilla = ArticuloPlantilla.objects.filter(plantilla = plantilla)
+    form = Plantilla_Form()
+    form_producto = ArticuloPlantilla_Form()
+
+    if request.method =='POST' and "CrearBtn" in request.POST:
+        form = Plantilla_Form(request.POST, instance=plantilla)
+        if form.is_valid():
+            plantilla = form.save(commit=False)
+            plantilla.complete = True
+            plantilla.save()
+            messages.success(request, 'Has creado exitósamente la plantilla')
+            return redirect('matriz-plantillas')
+        else:
+            messages.error(request, 'No está entrando')
+    else:
+        errores = form.errors.as_data()  # Esto te da un diccionario ordenado con los errores
+        for campo, errores_campo in errores.items():
+            for error in errores_campo:
+                # Aquí, error es una instancia de ValidationError
+                # Puedes acceder al mensaje de error con error.message
+                print(f"Error en el campo {campo}: {error.message}")
+                # Si quisieras hacer algo más con cada error, este es el lugar
+           
+
+
+    context = {
+        'plantilla':plantilla,
+        'productos':productos,
+        'form':form,
+        'form_producto':form_producto,
+        'productos_plantilla':productos_plantilla,
+    }
+
+    return render(request, 'solicitud/crear_plantilla.html', context)
+
+def update_item_plantilla(request):
+    data= json.loads(request.body)
+    plantilla_id = int(data['plantilla_id'])
+    id_producto = int(data['id_producto'])
+    cantidad = decimal.Decimal(data['cantidad'])
+    comentario = str(data['comentario'])
+    comentario_plantilla = str(data['comentario_plantilla'])
+    print(comentario)
+    action = data['action']
+
+    usuario = Profile.objects.get(staff__id=request.user.id)
+    producto = Inventario.objects.get(id=id_producto)
+    
+    plantilla = Plantilla.objects.get(id=plantilla_id)
+
+    item, created = ArticuloPlantilla.objects.get_or_create(plantilla = plantilla, producto= producto)
+
+    if action == 'add':
+        item.cantidad = cantidad
+        item.modified_at = date.today()
+        item.modified_by = usuario
+        item.comentario_articulo = comentario
+        item.comentario_plantilla = comentario_plantilla
+        messages.success(request, f'El producto {item.producto.producto.nombre} ha sido creado')
+        item.save()
+    elif action == 'remove':
+        messages.success(request, f'El producto {item.producto.producto.nombre} ha sido eliminado')
+        item.delete()
+        
+
+    return JsonResponse('Item updated, action executed: '+data["action"], safe=False)
 
 
 #Vista de seleccion de productos, requiere login
@@ -213,9 +287,10 @@ def checkout(request):
                         if producto.producto.producto.servicio == True:
                             requi, created = Requis.objects.get_or_create(complete = True, orden = order)
                             requitem, created = ArticulosRequisitados.objects.get_or_create(req = requi, producto= ordensurtir, cantidad = producto.cantidad, almacenista = usuario)
-                            requi.folio = str(usuario.distrito.abreviado)+str(requi.id).zfill(4)
-                            order.requisitar=False
-                            order.requisitado = True
+                            requi.folio = str(abrev) + str(folio_number).zfill(4)
+                            if productos.count() == 1: 
+                                order.requisitar=False
+                                order.requisitado = True
                             ordensurtir.requisitar=False
                             requi.save()
                             requitem.save()
@@ -476,6 +551,108 @@ def solicitud_matriz(request):
         }
 
     return render(request, 'solicitud/solicitudes_creadas.html',context)
+
+@login_required(login_url='user-login')
+def matriz_plantillas(request):
+    #obtengo el id de usuario, lo paso como argumento a id de profiles para obtener el objeto profile que coindice con ese usuario_id
+    perfil = Profile.objects.get(staff__id=request.user.id)
+    plantillas_list= Plantilla.objects.filter(complete=True)
+
+    #myfilter=SolicitudesFilter(request.GET, queryset=ordenes)
+    #ordenes = myfilter.qs
+
+    #Set up pagination
+    #p = Paginator(ordenes, 10)
+    #page = request.GET.get('page')
+    #ordenes_list = p.get_page(page)
+
+    #if request.method =='POST' and 'btnExcel' in request.POST:
+
+    #    return convert_excel_solicitud_matriz(ordenes)
+
+    context= {
+        'plantillas_list':plantillas_list,
+        #'myfilter':myfilter,
+        }
+
+    return render(request, 'solicitud/matriz_plantillas.html',context)
+
+@login_required(login_url='user-login')
+def productos_plantilla(request, pk):
+    plantilla = Plantilla.objects.get(id=pk)
+    productos = ArticuloPlantilla.objects.filter(plantilla=plantilla)
+
+    context = {
+        'productos':productos,
+    }
+
+    return render(request,'solicitud/productos_plantilla.html', context)
+
+@login_required(login_url='user-login')
+def editar_plantilla(request, pk):
+    plantilla = Plantilla.objects.get(id=pk)
+    usuarios = Profile.objects.all()
+    usuario = usuarios.get(staff__id=request.user.id)
+    productos = Inventario.objects.filter(distrito = usuario.distrito)
+    
+    productos_plantilla = ArticuloPlantilla.objects.filter(plantilla = plantilla)
+    form = Plantilla_Form(instance = plantilla)
+    form_producto = ArticuloPlantilla_Form()
+
+    if request.method =='POST' and "CrearBtn" in request.POST:
+        form = Plantilla_Form(request.POST, instance=plantilla)
+        if form.is_valid():
+            plantilla = form.save(commit=False)
+            plantilla.complete = True
+            plantilla.modified_at = date.today()
+            plantilla.modified_by = usuario
+            plantilla.save()
+            messages.success(request, 'Has modificado exitósamente la plantilla')
+            return redirect('matriz-plantillas')
+        else:
+            messages.error(request, 'No está entrando')
+    else:
+        errores = form.errors.as_data()  # Esto te da un diccionario ordenado con los errores
+        for campo, errores_campo in errores.items():
+            for error in errores_campo:
+                # Aquí, error es una instancia de ValidationError
+                # Puedes acceder al mensaje de error con error.message
+                print(f"Error en el campo {campo}: {error.message}")
+                # Si quisieras hacer algo más con cada error, este es el lugar
+           
+
+
+    context = {
+        'plantilla':plantilla,
+        'productos':productos,
+        'form':form,
+        'form_producto':form_producto,
+        'productos_plantilla':productos_plantilla,
+    }
+    
+    return render(request, 'solicitud/editar_plantilla.html', context)
+
+@login_required(login_url='user-login')
+def crear_solicitud_plantilla(request, pk):
+    usuario = Profile.objects.get(staff__id=request.user.id)
+    tipo = Tipo_Orden.objects.get(tipo ='normal')
+    order, created = Order.objects.get_or_create(staff = usuario, complete = False, tipo=tipo, distrito = usuario.distrito)
+    
+    # Obtiene la plantilla por su ID
+    plantilla = Plantilla.objects.get(id=pk)
+    
+    # Añade productos de la plantilla a la orden
+    for articulo in plantilla.articuloplantilla_set.all():
+        # Aquí asumo que tienes un modelo que conecta un producto con una orden (quizás se llame "ArticulosOrdenados" o algo similar).
+        # Si ese modelo no existe, deberás adaptar este código.
+        articulo_orden, created = ArticulosOrdenados.objects.get_or_create(orden=order, producto=articulo.producto)
+        articulo_orden.cantidad += articulo.cantidad  # Aumenta la cantidad basada en la plantilla
+         # Copia el comentario del artículo de la plantilla al artículo ordenado.
+        articulo_orden.comentario = articulo.comentario_articulo
+
+        articulo_orden.save()
+
+    return redirect('solicitud-checkout')  # Redirige al usuario a la selección de productos, donde ahora verá los productos de la plantilla añadidos
 
 
 @login_required(login_url='user-login')

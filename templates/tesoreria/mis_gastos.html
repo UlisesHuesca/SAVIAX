@@ -29,24 +29,6 @@
                     </div>
                     <div class="col-lg-4">
                         <div class="input-group mb-3">
-                            <span class="input-group-text" id="basic-addon1"><i class="fa-solid fa-gear"></i></span>
-                            <div class="form-floating form-floating-group flex-grow-1">   
-                                {{myfilter.form.proyecto|add_class:"form-control"|append_attr:"placeholder=Proyecto"}}
-                                <label for="id_lugar_partida">Proyecto</label>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-lg-4">
-                        <div class="input-group mb-3">
-                            <span class="input-group-text" id="basic-addon1"><i class="fa-solid fa-gear"></i></span>
-                            <div class="form-floating form-floating-group flex-grow-1">   
-                                {{myfilter.form.subproyecto|add_class:"form-control"|append_attr:"placeholder=Subproyecto"}}
-                                <label for="id_lugar_partida">Subproyecto</label>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-lg-4">
-                        <div class="input-group mb-3">
                         <span class="input-group-text" id="basic-addon1"><i class="fa-regular fa-calendar"></i></span>
                             <div class="form-floating form-floating-group flex-grow-1">   
                                 {% render_field myfilter.form.start_date type="date" class="form-control" %}
@@ -125,12 +107,11 @@
                 <tr>
                     <th scope="col">Gasto</th>
                     <th class="d-none d-lg-table-cell">Solicitado</th>
-                    <th scope="col">Proyecto</th>
-                    <th class="d-none d-lg-table-cell">Subproyecto</th>
                     <th scope="col">Autorizado</th>
                     <th class="d-none d-lg-table-cell">Colaborador</th>
                     <th scope="col">Importe</th>
                     <th scope="col">Autorización Gerencia</th>
+                    <th>Detalles</th>
                     <th scope="col">Acción</th>
                 </tr>
             </thead>
@@ -139,8 +120,6 @@
                 <tr>
                     <th>G{{gasto.id}}</th>
                     <td class="d-none d-lg-table-cell">{{gasto.staff.staff.first_name}} {{gasto.staff.staff.last_name}}</td>
-                    <td>{{gasto.proyecto.nombre}}</td>
-                    <td class="d-none d-lg-table-cell">{{gasto.subproyecto.nombre}}</td>
                     {% if gasto.autorizar == True %}
                     <td>Autorizado|{{gasto.superintendente.staff.last_name}}</td>
                     {% elif gasto.autorizar == False %}
@@ -161,6 +140,11 @@
                     {% else %}
                     <td>Pendiente Autorización</td>
                     {% endif %}
+                    <td>
+                        <a id="myBtn" type="button" class="btn btn-outline-info" data-bs-toggle="modal" data-bs-target='#dialog' hx-target="#document" hx-get="{% url 'detalle-gastos' gasto.id %}">
+                            Conceptos
+                        </a>
+                    </td>
                     <td>
                         {% if gasto.autorizar2 == True %}
                         <a type="button" class="btn btn-outline-danger" href="{% url 'matriz-facturas-gasto' gasto.id %}">

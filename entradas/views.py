@@ -183,6 +183,8 @@ def articulos_entrada(request, pk):
             articulo.seleccionado = False
             articulo.save()
         #Se compara los articulos comprados contra los articulos que han entrado y que están totalmente entregados
+        #En el bucle de arriba se redefine si la entrada de un articulo está completa o no por lo tanto debería de volver a calcular los artículos completos
+        articulos_entregados = articulos_comprados.filter(entrada_completa=True)
         if num_art_comprados == num_art_entregados:
             compra.entrada_completa = True
         compra.save()
@@ -228,15 +230,26 @@ def update_entrada(request):
     producto_inv = Inventario.objects.get(producto = producto_comprado.producto.producto.articulos.producto.producto)
 
     if entrada.oc.req.orden.tipo.tipo == 'resurtimiento': #si es resurtimiento
-        producto_surtir = ArticulosparaSurtir.objects.get(articulos = producto_comprado.producto.producto.articulos, surtir=False, articulos__orden__tipo__tipo = 'resurtimiento')
+        try:
+            producto_surtir = ArticulosparaSurtir.objects.get(articulos=producto_comprado.producto.producto.articulos, surtir=False, articulos__orden__tipo__tipo='resurtimiento')
+            print(producto_surtir)
+            # ...
+        except ArticulosparaSurtir.MultipleObjectsReturned:
+            # Maneja el caso en que se devuelven múltiples objetos
+            print("Se encontraron múltiples objetos!")
+        except ArticulosparaSurtir.DoesNotExist:
+            # Maneja el caso en que no se encuentra ningún objeto
+            print("No se encontró ningún objeto!")
     else:
         producto_surtir = ArticulosparaSurtir.objects.get(articulos = producto_comprado.producto.producto.articulos)
 
     if producto_inv.producto.servicio == False:
-        monto_inventario = producto_inv.cantidad * producto_inv.price + producto_inv.apartada_entradas * producto_inv.price
-        cantidad_inventario = producto_inv.cantidad + producto_inv.apartada_entradas
+        monto_inventario = producto_inv.cantidad * producto_inv.price + producto_inv.apartada * producto_inv.price
+        cantidad_inventario = producto_inv.cantidad + producto_inv.apartada
+        #print(cantidad_inventario)
         monto_total = monto_inventario + entrada_item.cantidad * producto_comprado.precio_unitario
         nueva_cantidad_inventario =  cantidad_inventario + entrada_item.cantidad
+        #print(producto_comprado.precio_unitario)
     
 
     if action == "add":
@@ -299,6 +312,7 @@ def update_entrada(request):
             #Cree una variable booleana temporal para quitarlo del seleccionable
             producto_comprado.seleccionado = True
             producto_comprado.save()
+            entrada_item.save()
             producto_inv.save()
     
     elif action == "remove":
@@ -312,20 +326,19 @@ def update_entrada(request):
             producto_inv.price = monto_total/cantidad_inventario
         #cantidad_total = cantidad_inventario - entrada_item.cantidad
         if entrada.oc.req.orden.tipo.tipo == 'resurtimiento':
-            producto_surtir.cantidad = producto_surtir.cantidad - entrada_item.cantidad
-            producto_surtir.cantidad_requisitar = producto_surtir.cantidad_requisitar + entrada_item.cantidad
-            producto_inv.cantidad = producto_inv.cantidad - entrada_item.cantidad
+            #producto_surtir.cantidad = producto_surtir.cantidad - entrada_item.cantidad
+            #producto_surtir.cantidad_requisitar = producto_surtir.cantidad_requisitar + entrada_item.cantidad
+            #producto_inv.cantidad = producto_inv.cantidad - entrada_item.cantidad
             producto_surtir.requisitar = True
+            
+            if producto_surtir.cantidad > entrada_item.cantidad:
+                producto_surtir.cantidad = producto_surtir.cantidad - entrada_item.cantidad
+            if producto_surtir.cantidad <= entrada_item.cantidad:
+                producto_surtir.cantidad_requisitar = producto_surtir.cantidad
+                producto_surtir.cantidad = 0
+                producto_inv.cantidad = producto_inv.cantidad - entrada_item.cantidad + producto_surtir.cantidad
+                producto_inv.cantidad_apartada = producto_inv.cantidad_apartada - producto_surtir.cantidad_requisitar
             producto_surtir.save()
-            #if producto_surtir.cantidad > entrada_item.cantidad:
-            #    producto_surtir.cantidad = producto_surtir.cantidad - entrada_item.cantidad
-            #if producto_surtir.cantidad <= entrada_item.cantidad:
-            #    producto_surtir.cantidad_requisitar = producto_surtir.cantidad
-            #    producto_surtir.cantidad = 0
-            #    producto_inv.cantidad = producto_inv.cantidad - entrada_item.cantidad + producto_surtir.cantidad
-            #    producto_inv.cantidad_apartada = producto_inv.cantidad_apartada - producto_surtir.cantidad_requisitar
-            #    producto_surtir.save()
-
         else:
             #producto_inv.cantidad_apartada = producto_inv.cantidad_apartada - entrada_item.cantidad
             producto_surtir.cantidad_requisitar = producto_surtir.cantidad_requisitar + entrada_item.cantidad

@@ -1,6 +1,6 @@
 from django import forms
 from solicitudes.models import Subproyecto, Proyecto
-from dashboard.models import Inventario, Order, Product, ArticulosOrdenados
+from dashboard.models import Inventario, Order, Product, ArticulosOrdenados, Plantilla, ArticuloPlantilla
 from gastos.models import Entrada_Gasto_Ajuste, Conceptos_Entradas 
 
 class InventarioForm(forms.ModelForm):
@@ -63,3 +63,13 @@ class Conceptos_EntradasForm(forms.ModelForm):
     class Meta:
         model = Conceptos_Entradas
         fields = ['concepto_material','cantidad', 'precio_unitario']
+
+class Plantilla_Form(forms.ModelForm):
+    class Meta:
+        model = Plantilla
+        fields = ['nombre','descripcion','comentario']
+
+class ArticuloPlantilla_Form(forms.ModelForm):
+    class Meta:
+        model = ArticuloPlantilla
+        fields = ['producto','cantidad','comentario_articulo','comentario_plantilla']

@@ -90,7 +90,7 @@ def compras_pagos(request, pk):
 
     pago, created = Pago.objects.get_or_create(tesorero = usuario, distrito = usuario.distrito, oc=compra, hecho=False)
     form = PagoForm(instance=pago)
-    remanente = compra.costo_oc - suma_pago
+    remanente = compra.costo_plus_adicionales - suma_pago
 
 
     if request.method == 'POST':
@@ -121,7 +121,7 @@ def compras_pagos(request, pk):
             #actualizar la cuenta de la que se paga
             monto_total= monto_actual + suma_pago
             compra.monto_pagado = monto_total
-            costo_oc = compra.costo_oc
+            costo_oc = compra.costo_plus_adicionales
             if monto_actual <= 0:
                 messages.error(request,f'El pago {monto_actual} debe ser mayor a 0')
             elif round(monto_total,2) <= round(costo_oc,2):
@@ -168,8 +168,8 @@ def compras_pagos(request, pk):
                 cuenta.save()
 
                 messages.success(request,f'Gracias por registrar tu pago, {usuario.staff.first_name}')
-                return HttpResponse(status=204) #No content to render nothing and send a "signal" to javascript in order to close window
-            elif monto_total > compra.costo_oc:
+                return redirect('compras-autorizadas') 
+            elif monto_total > compra.costo_plus_adicionales:
                 messages.error(request,'El monto total pagado es mayor que el costo de la compra')
             else:
                 form = PagoForm()
@@ -219,7 +219,7 @@ def edit_pago(request, pk):
     if compra.moneda.nombre == 'DOLARES':
         cuentas = Cuenta.objects.all()
 
-    remanente = compra.costo_oc - suma_pago
+    remanente = compra.costo_plus_adicionales - suma_pago
     # Verificar si es un POST para guardar los cambios
     print(pago)
     if request.method == "POST":

@@ -19,8 +19,8 @@ class Solicitud_Gasto(models.Model):
     folio = models.CharField(max_length=6, null=True, unique=True)
     staff = models.ForeignKey(Profile, on_delete = models.CASCADE, null=True, related_name='Crea_gasto')
     colaborador = models.ForeignKey(Profile, on_delete=models.CASCADE,null=True, related_name='Asignado_gasto', blank=True)
-    proyecto = models.ForeignKey(Proyecto, on_delete = models.CASCADE, null=True)
-    subproyecto = models.ForeignKey(Subproyecto, on_delete = models.CASCADE, null=True)
+    #proyecto = models.ForeignKey(Proyecto, on_delete = models.CASCADE, null=True)
+    #subproyecto = models.ForeignKey(Subproyecto, on_delete = models.CASCADE, null=True)
     area = models.ForeignKey(Operacion, on_delete = models.CASCADE, null=True, blank=True)
     superintendente = models.ForeignKey(Profile, on_delete = models.CASCADE, null=True, related_name='superintendente')
     complete = models.BooleanField(null=True)
@@ -99,6 +99,8 @@ class Articulo_Gasto(models.Model):
     factura_xml = models.FileField(blank=True, null=True, upload_to='xml', validators=[FileExtensionValidator(['xml'])])
     completo = models.BooleanField(default=False)
     validacion = models.BooleanField(default=False)
+    proyecto = models.ForeignKey(Proyecto, on_delete = models.CASCADE, null=True)
+    subproyecto = models.ForeignKey(Subproyecto, on_delete = models.CASCADE, null=True)
 
     def __str__(self):
         return f'{self.producto}'
@@ -171,6 +173,43 @@ class Articulo_Gasto(models.Model):
         total = round(self.get_subtotal + impuesto + self.get_otros_impuestos)
         return total
 
+class Factura(models.Model):
+    solicitud_gasto = models.ForeignKey(Solicitud_Gasto, on_delete=models.CASCADE, related_name='facturas', null=True)
+    archivo_pdf = models.FileField(upload_to='facturas', validators=[FileExtensionValidator(['pdf'])])
+    archivo_xml = models.FileField(blank=True, null=True, upload_to='xml', validators=[FileExtensionValidator(['xml'])])
+    fecha_subida= models.DateTimeField(null=True, blank=True)
+    # Puedes agregar más campos si es necesario, como fecha, descripción, etc.
+
+    @property
+    def emisor(self):
+        #with open(self.factura_xml.path,'r') as file:
+            #data = file.read()
+        tree = ET.parse(self.archivo_xml.path)
+        root = tree.getroot()
+        ns = {'cfdi':'http://www.sat.gob.mx/cfd/4'}
+        #comprobante = root.findall('cfdi:Comprobante')
+        emisor = root.find('cfdi:Emisor', ns)
+        receptor = root.find('cfdi:Receptor', ns)
+        impuestos = root.find('cfdi:Impuestos', ns)
+        conceptos = root.find('cfdi:Conceptos', ns)
+        resultados = []
+        for concepto in conceptos.findall('cfdi:Concepto', ns):
+            descripcion = concepto.get('Descripcion')
+            cantidad = concepto.get('Cantidad')
+            precio = concepto.get('ValorUnitario') 
+            # Aquí agrupamos los valores en una tupla antes de añadirlos a la lista
+            resultados.append((descripcion, cantidad, precio))
+        # Obtener los datos requeridos
+        rfc = emisor.get('Rfc')
+        nombre = emisor.get('Nombre')
+        regimen_fiscal = emisor.get('RegimenFiscal')
+        total = root.get('Total')
+        subtotal = root.get('Subtotal')
+        impuestos = root.get('TotalImpuestosTrasladados')
+
+
+        return {'rfc': rfc, 'nombre': nombre, 'regimen_fiscal': regimen_fiscal,'total':total,'resultados':resultados}
+    
 class Entrada_Gasto_Ajuste(models.Model):
     gasto = models.ForeignKey(Articulo_Gasto, on_delete = models.CASCADE, null=True, blank=True)
     almacenista = models.ForeignKey(Profile, on_delete = models.CASCADE, null=True)

@@ -125,9 +125,9 @@
                     </div>
                        
                     <div class="col-sm-1 mt-3">
-                        <a class="btn btn-success update-salida d-none" id="update-salida" name="salida">
+                        <button type ="button" class="btn btn-success update-salida d-none" id="update-salida" name="salida">
                             <i class="fa-solid fa-circle-plus"></i>
-                        </a>
+                        </button>
                     </div>
                 </div>
                 <hr>
@@ -213,20 +213,27 @@ document.getElementById("submit-button").addEventListener('click',function(){
 document.addEventListener('DOMContentLoaded', function() {
         const form = document.getElementById('myForm');
         const btnSubmit = document.getElementById('submit-button');
+        const form2 = document.getElementById('myForm2');
+        const btn = document.getElementById('update-salida');
+        const btn_delete = document.getElementById('delete')
+
 
         form.addEventListener('submit', function() {
-            setTimeout(function() {
-                btnSubmit.disabled = true;
-            }, 50); // desactivar el botón 50ms después del clic
+            preventDoubleClick(btnSubmit);    
         });
+        btn.addEventListener('click', function(){
+            preventDoubleClick(btn);
+        });
+        btn_delete.addEventListener('click', function(){
+            preventDoubleClick(btn_delete);
+        });    
     });
 
-
-document.getElementById('myForm').addEventListener('submit', function() {
-    // Deshabilita el botón de envío cuando se envía el formulario
-    document.getElementById('update-salida').disabled = true;
-    });
-
+    function preventDoubleClick(button) {
+    setTimeout(function() {
+        button.disabled = true;
+    }, 50);
+    }      
 
 
 document.getElementById("producto").addEventListener("change", function(element){

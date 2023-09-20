@@ -774,20 +774,19 @@ document.getElementById("id_flete").addEventListener("change", function(element)
     
 
 	if (checkflete.checked){
-	    lbl_flete.removeAttribute('class');
-		txt_flete1.removeAttribute('class');
-		lbl_flete.setAttribute("class","col-auto col-form-label");
-		txt_flete1.setAttribute("class","form-control")
+        lbl_flete.classList.remove('d-none')
+		txt_flete1.classList.remove('d-none')
+        valor_flete.classList.remove('d-none')
 	} else {
-	    lbl_flete.removeAttribute("class")
-		txt_flete1.removeAttribute("class")
-		lbl_flete.setAttribute("class","col-auto col-form-label d-none");
-		txt_flete1.setAttribute("class","form-control d-none")
-        let flete = parseFloat(v_flete.innerHTML.slice(1));
+	    lbl_flete.classList.add('d-none')
+		txt_flete1.classList.add('d-none')
+        valor_flete.classList.add('d-none')
+        flete = parseFloat(v_flete.innerHTML.slice(1).replace(/,/g, ''))
+        console.log(flete)
         total_val -= flete;
         total_element.innerHTML = '$' + total_val.toFixed(2);
-        txt_flete1.value=0
-        valor_flete.setAttribute("class", "d-none")
+        txt_flete1.value = 0
+        v_flete.innerHTML = " "
 	}
 });
 
@@ -795,7 +794,7 @@ document.getElementById("id_costo_fletes").addEventListener("change", function(e
     let flete_row = document.getElementById('flete');
     let flete_valor = document.getElementById('valor_flete');
     let total_element = document.getElementById('total');
-    let total_val = parseFloat(total_element.innerHTML.slice(1)); // Quita el signo de dolar y convierte a float
+    let total_val = parseFloat(total_element.innerHTML.slice(1).replace(/,/g, '')); // Quita el signo de dolar y convierte a float
     
 
     // Verificar si el valor de flete ha cambiado
@@ -803,25 +802,28 @@ document.getElementById("id_costo_fletes").addEventListener("change", function(e
         let flete = parseFloat(element.target.value);
         
         // Hacer visible la fila del flete
-        flete_row.setAttribute('class','');
+        flete_row.classList.remove('d-none');
 
         // Asignar valor de flete
         flete_valor.innerHTML = '$' + flete.toFixed(2);
 
         // Suma el valor del flete al total y actualiza el elemento total
+        console.log('1',flete)
         total_val += flete;
+       
         total_element.innerHTML = '$' + total_val.toFixed(2);
     } else {
-        let flete = parseFloat(flete_valor.innerHTML.slice(1)); // Quita el signo de dolar y convierte a float
-
+        let flete = parseFloat(flete_valor.innerHTML.slice(1).replace(/,/g, '')); // Quita el signo de dolar y convierte a float
+        console.log(flete)
         // Si el valor del flete es 0, puedes volver a ocultar la fila y restar el valor de flete del total.
-        flete_row.setAttribute('class','d-none');
+        flete_row.classList.add('d-none');
 
         // Resta el valor del flete del total y actualiza el elemento total
         total_val -= flete;
         total_element.innerHTML = '$' + total_val.toFixed(2);
     }
 });
+
 
 var checkdof = document.getElementById("SwitchDof");
 

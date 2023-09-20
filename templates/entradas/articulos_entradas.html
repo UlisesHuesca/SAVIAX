@@ -111,7 +111,7 @@
                 </div>
                 <div class="row">
                     <div class="col-sm-1">
-                        <button class="btn btn-success d-none" id='update-entrada' type="submit">
+                        <button type="button" class="btn btn-success d-none" id='update' name='update'>
                         Agregar
                         </button>
                     </div>
@@ -167,13 +167,13 @@ document.addEventListener('DOMContentLoaded', function() {
         const form2 = document.getElementById('myForm2');
         const btnCrear = document.getElementById('Btn_Crear');
         const form = document.getElementById('myForm');
-        const btn = document.getElementById('update-entrada');
+        const btn = document.getElementById('update');
 
         form2.addEventListener('submit', function() {
            preventDoubleClick(btnCrear)
         });
-        form.addEventListener('submit', function() {
-            preventDoubleClick(btn)
+        btn.addEventListener('click', function(){
+            preventDoubleClick(btn);
         });
 });
 
@@ -246,7 +246,7 @@ var checkref = document.getElementById("SwitchReferencia");
 var select = document.getElementById('producto');
 var current_option = select.options[select.selectedIndex];
 let solicitado =  current_option.getAttribute('cantidad');
-var boton =document.getElementById('update-entrada');
+var boton =document.getElementById('update');
 
 if (cantidad.value <= solicitado){
     boton.setAttribute('class','btn btn-success')
@@ -268,14 +268,14 @@ if (checkref.checked){
 }
 })
 
-//var updateBtn = document.getElementById('update-entrada')
+//var updateBtn = document.getElementById('update')
 
     let count=0;
     let suma=0;
     let array_id_prod=[];
 
 
-    document.getElementById('update-entrada').addEventListener('click',function(){
+    document.getElementById('update').addEventListener('click',function(){
         let entrada = document.getElementById('entrada')
         entrada_id = entrada.getAttribute('value')
         var select = document.getElementById('producto');

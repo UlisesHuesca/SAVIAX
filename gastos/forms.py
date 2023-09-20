@@ -1,18 +1,18 @@
 from django import forms
-from .models import Solicitud_Gasto, Articulo_Gasto, Entrada_Gasto_Ajuste, Conceptos_Entradas
+from .models import Solicitud_Gasto, Articulo_Gasto, Entrada_Gasto_Ajuste, Conceptos_Entradas, Factura
 from tesoreria.models import Pago
 
 class Solicitud_GastoForm(forms.ModelForm):
     class Meta:
         model = Solicitud_Gasto
-        fields = ['proyecto','subproyecto','superintendente','colaborador','tipo']
+        fields = ['superintendente','colaborador','tipo']
 
 class Articulo_GastoForm(forms.ModelForm):
 
     class Meta:
         model = Articulo_Gasto
-        fields = ['producto','comentario','cantidad','precio_unitario','factura_pdf','factura_xml','otros_impuestos','impuestos_retenidos']
-
+        fields = ['producto','comentario','proyecto','subproyecto','cantidad','precio_unitario','factura_pdf','factura_xml','otros_impuestos','impuestos_retenidos']
+    
 class Articulo_GastoForm2(forms.ModelForm):
 
     class Meta:
@@ -48,3 +48,8 @@ class Conceptos_EntradasForm(forms.ModelForm):
     class Meta:
         model = Conceptos_Entradas
         fields =['concepto_material','cantidad','precio_unitario','comentario']
+
+class FacturaForm(forms.ModelForm):
+    class Meta:
+        model = Factura
+        fields = ['archivo_pdf', 'archivo_xml']

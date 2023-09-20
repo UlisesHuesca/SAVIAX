@@ -116,20 +116,18 @@ def proyectos(request):
     solicitudes_proyecto.nombre AS nombre,
     SUM(
         (gastos_articulo_gasto.cantidad * gastos_articulo_gasto.precio_unitario * 1.16) + 
-			COALESCE(gastos_articulo_gasto.otros_impuestos, 0) - COALESCE(gastos_articulo_gasto.impuestos_retenidos, 0)
+        COALESCE(gastos_articulo_gasto.otros_impuestos, 0) - COALESCE(gastos_articulo_gasto.impuestos_retenidos, 0)
     ) AS total_pagado
     FROM
         solicitudes_proyecto
     JOIN
-        gastos_solicitud_gasto ON solicitudes_proyecto.id = gastos_solicitud_gasto.proyecto_id
-    JOIN
-        gastos_articulo_gasto ON gastos_solicitud_gasto.id = gastos_articulo_gasto.gasto_id
+        gastos_articulo_gasto ON solicitudes_proyecto.id = gastos_articulo_gasto.proyecto_id
     LEFT JOIN
-        tesoreria_pago ON gastos_solicitud_gasto.id = tesoreria_pago.gasto_id
+        tesoreria_pago ON gastos_articulo_gasto.id = tesoreria_pago.gasto_id
     WHERE
-	    tesoreria_pago.hecho = true
+        tesoreria_pago.hecho = true
     GROUP BY
-	    id, nombre
+        id, nombre
     ORDER BY
         id;
 
@@ -444,6 +442,38 @@ def proveedores(request):
     return render(request,'dashboard/proveedores.html', context)
 
 @login_required(login_url='user-login')
+def matriz_proveedores_comparativo(request):
+    usuario = Profile.objects.get(staff=request.user)
+    # Obtén los IDs de los proveedores que cumplan con las condiciones deseadas
+    proveedores_dir = Proveedor_direcciones.objects.filter(estatus__nombre='COTIZACION')
+    proveedores_ids = proveedores_dir.values_list('nombre', flat=True).distinct()
+    proveedores = Proveedor.objects.filter(id__in=proveedores_ids, completo=True)
+
+    total_prov = proveedores.count()
+
+    myfilter=ProveedorFilter(request.GET, queryset=proveedores)
+    proveedores = myfilter.qs
+
+    if request.method == 'POST' and 'btnExcel' in request.POST:
+        return convert_excel_proveedores(proveedores_dir)
+
+    #Set up pagination
+    p = Paginator(proveedores, 50)
+    page = request.GET.get('page')
+    proveedores_list = p.get_page(page)
+
+    context = {
+        'usuario':usuario,
+        'proveedores': proveedores,
+        'myfilter':myfilter,
+        'proveedores_list':proveedores_list,
+        'total_prov':total_prov,
+        }
+
+
+    return render(request,'dashboard/matriz_proveedores_comparativo.html', context)
+
+@login_required(login_url='user-login')
 def matriz_revision_proveedor(request):
     usuario = Profile.objects.get(staff=request.user)
     proveedores = Proveedor_direcciones.objects.filter(estatus__nombre = "REVISION")
@@ -582,9 +612,9 @@ def add_proveedores2(request, pk=None):
             messages.success(request, f'Has agregado correctamente el proveedor {proveedor.razon_social} y sus direcciones')
             return redirect('dashboard-proveedores')
         else:
-            print(form.errors) 
-            print(formset.errors) 
-            messages.success(request, 'No está validando')
+            #print(form.errors) 
+            #print(formset.errors) 
+            messages.success(request, f'No está validando{form.errors}{formset.errors}')
     else:
         form = ProveedoresForm(instance=proveedor)
         formset = ProveedorDireccionesFormSet(instance=proveedor)

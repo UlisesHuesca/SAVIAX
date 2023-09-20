@@ -161,6 +161,8 @@
                     {% endif %}
                             <h6 class="dropdown-header">Solicitudes</h6>
                             <div class="dropdown-divider"></div>
+                                <a class="dropdown-item" href="{% url 'crear-plantilla' %}">Crear Plantilla</a>
+                                <a class="dropdown-item" href="{% url 'matriz-plantillas' %}">Matriz Plantillas</a>
                                 <a class="dropdown-item" href="{% url 'solicitud-product-selection' %}">Crear Solicitud</a>
                                 <a class="dropdown-item" href="{% url 'solicitud-matriz-productos' %}">Solicitudes por producto</a>
                                 <a class="dropdown-item" href="{% url 'solicitudes-pendientes' %}">Solicitudes pendientes</a>
@@ -355,7 +357,7 @@
                     <div>
                     {% endif %}
                         <a class="dropdown-item" href="{% url 'solicitud-matriz' %}">Matriz Solicitudes</a>
-                        {% if usuario.tipo.almacen == True or usuario.tipo.nombre == "Gerente" or usuario.tipo.nombre == "Comprador" or usuario.tipo.nombre == "Tesoreria" %}
+                        {% if usuario.tipo.almacen == True or usuario.tipo.nombre == "Gerente" or usuario.tipo.compras == True %}
                             <div>
                         {% else %}
                             <div class="d-none">

@@ -11,42 +11,54 @@
 <hr>
 <hr>
 <hr>
+<h6>&nbsp;</h6>
 <div class = "row mt-2 bg-white" id="response-div">
         <div class="col-12">
-            <div class="card card-body">
+            <div class="card-header">
                 <h5>Filtro de Gastos Autorizados</h5>
-                <hr>
+            </div>
+            <div class="card-body">
                 {% csrf_token %}
                 <form method="GET">
                 <div class="row g-12">
-                    <label for="myfilter.form.id" class="col-sm-auto col-form-label text-right"><strong>ID:</strong></label>
-                    <div class="col-auto my-2">
-                        {{myfilter.form.id|add_class:'form-control'}}
+                    <div class="col-lg-3 col-sm-12">
+                        <div class="input-group mb-3">
+                        <span class="input-group-text" id="basic-addon1"><i class="fa-solid fa-hashtag"></i></span>
+                            <div class="form-floating form-floating-group flex-grow-1">   
+                                {{myfilter.form.id|add_class:"form-control"|append_attr:"placeholder= Folio"}}
+                                <label style="color: #121212;" for="id_proyecto">Folio</label>
+                            </div>
+                        </div>
                     </div>
-                    <label for="myfilter.form.staff" class="col-sm-auto col-form-label text-right"><strong>Staff:</strong></label>
-                    <div class="col-auto my-2">
-                        {{myfilter.form.staff|add_class:'form-control'}}
+                    <div class="col-lg-3 col-sm-12">
+                        <div class="input-group mb-3">
+                        <span class="input-group-text" id="basic-addon1"><i class="fa-solid fa-user"></i></span>
+                            <div class="form-floating form-floating-group flex-grow-1">   
+                                {{myfilter.form.staff|add_class:"form-control"|append_attr:"placeholder= Solicitado por"}}
+                                <label style="color: #121212;" for="id_staff">Solicitado por</label>
+                            </div>
+                        </div>
                     </div>
-                    <label for="myfilter.form.proyecto" class="col-sm-auto col-form-label text-right"><strong>Proyecto:</strong></label>
-                    <div class="col-auto my-2">
-                        {{myfilter.form.proyecto|add_class:'form-control'}}
-                    </div>
-                    <label for="myfilter.form.subproyecto" class="col-sm-1 col-form-label text-right"><strong>Subproyecto:</strong></label>
-                    <div class="col-2">
-                        {{myfilter.form.subproyecto|add_class:'form-control'}}
+                <div class="col-lg-2 col-sm-12">
+                    <div class="input-group mb-3">
+                    <span class="input-group-text" id="basic-addon1"><i class="fa-regular fa-calendar"></i></span>
+                        <div class="form-floating form-floating-group flex-grow-1">   
+                            {% render_field myfilter.form.start_date type="date" class="form-control" %}
+                        <label style="color: #121212;" for="id_start_date">Desde:</label>
+                        </div>
                     </div>
                 </div>
-                <div class="row">
-                    <label for="myfilter.form.start_date" class="col-sm-1 col-form-label text-right"><strong>Desde:</strong></label>
-                    <div class="col-2">
-                        {% render_field myfilter.form.start_date type="date" class="form-control" %}
+                <div class="col-lg-2 col-sm-12">
+                    <div class="input-group mb-3">
+                    <span class="input-group-text" id="basic-addon1"><i class="fa-regular fa-calendar"></i></span>
+                        <div class="form-floating form-floating-group flex-grow-1">   
+                            {% render_field myfilter.form.end_date type="date" class="form-control" %}
+                        <label style="color: #121212;" for="id_end_date">Hasta:</label>
+                        </div>
                     </div>
-                    <label for="myfilter.form.end_date" class="col-sm-1 col-form-label text-right"><strong>Hasta:</strong></label>
-                    <div class="col-2">
-                        {% render_field myfilter.form.end_date type="date" class="form-control" %}
-                    </div>
+                </div>
                     <div class="col-1">
-                        <button class="btn btn-outline-success btn-block" type="submit" value="Buscar"><i class="fa-solid fa-magnifying-glass"></i></button>
+                        <button class="btn btn-outline-success btn-block m-1" type="submit" value="Buscar"><i class="fa-solid fa-magnifying-glass"></i></button>
                     </div>
                     </row>
                 </div>
@@ -115,8 +127,6 @@
                     <th scope="col">Gasto</th>
                     <th scope="col">Solicitado por</th>
                     <th scope="col">Solicitado para</th>
-                    <th scope="col">Proyecto</th>
-                    <th scope="col">Subproyecto</th>
                     <th scope="col">Autorizado</th>
                     <th scope="col">Importe Gasto</th>
                     <th scope="col">Pagado</th>
@@ -130,8 +140,6 @@
                     <th scope="row">{{gasto.id}}</th>
                     <td>{{gasto.staff.staff.first_name}} {{gasto.staff.staff.last_name}}</td>
                     <td>{{gasto.colaborador.staff.first_name}} {{gasto.colaborador.staff.last_name}}</td>
-                    <td>{{gasto.proyecto.nombre}}</td>
-                    <td>{{gasto.subproyecto.nombre}}</td>
                     <td>{{gasto.approbado_fecha2}} </td>
                     <td>${{gasto.get_total_solicitud|floatformat:2}}</td>
                     <td>${{gasto.monto_pagado|floatformat:2}}</td>

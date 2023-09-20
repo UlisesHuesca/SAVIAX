@@ -38,7 +38,7 @@ class DireccionComparativoForm(forms.ModelForm):
 class ProveedoresDireccionesForm(forms.ModelForm):
     class Meta:
         model = Proveedor_direcciones
-        fields = ['estado','telefono','domicilio','contacto','email','email_opt','banco','swift','clabe','cuenta','financiamiento','dias_credito','estatus','swift']
+        fields = ['estado','telefono','domicilio','contacto','email','email_opt','banco','swift','clabe','cuenta','financiamiento','dias_credito','estatus']
 
 class ProveedoresExistDireccionesForm(forms.ModelForm):
    
@@ -51,7 +51,7 @@ class Add_ProveedoresDireccionesForm(forms.ModelForm):
     class Meta:
         model = Proveedor_direcciones
         fields = ['domicilio','estado','contacto','telefono','email','email_opt','banco','swift','clabe','cuenta','financiamiento','dias_credito','estatus']
-        
+
 class Products_BatchForm(forms.ModelForm):
     class Meta:
         model = Products_Batch

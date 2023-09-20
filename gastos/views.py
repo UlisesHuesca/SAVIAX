@@ -5,8 +5,8 @@ from django.core.mail import EmailMessage
 from dashboard.models import Inventario, Order, ArticulosparaSurtir, ArticulosOrdenados, Tipo_Orden 
 from solicitudes.models import Proyecto, Subproyecto, Operacion
 from tesoreria.models import Pago, Cuenta
-from .models import Solicitud_Gasto, Articulo_Gasto, Entrada_Gasto_Ajuste, Conceptos_Entradas
-from .forms import Solicitud_GastoForm, Articulo_GastoForm, Articulo_Gasto_Edit_Form, Pago_Gasto_Form, Articulo_Gasto_Factura_Form, Entrada_Gasto_AjusteForm, Conceptos_EntradasForm 
+from .models import Solicitud_Gasto, Articulo_Gasto, Entrada_Gasto_Ajuste, Conceptos_Entradas, Factura
+from .forms import Solicitud_GastoForm, Articulo_GastoForm, Articulo_Gasto_Edit_Form, Pago_Gasto_Form, Articulo_Gasto_Factura_Form, Entrada_Gasto_AjusteForm, Conceptos_EntradasForm, FacturaForm 
 from tesoreria.forms import Facturas_Gastos_Form 
 from compras.views import attach_oc_pdf
 from .filters import Solicitud_Gasto_Filter
@@ -41,8 +41,11 @@ def crear_gasto(request):
 
     articulos_gasto = inventario.filter(producto__gasto = True)
     articulos = inventario.filter(producto__gasto = False)
+    facturas = Factura.objects.filter(solicitud_gasto = gasto)
     form_product = Articulo_GastoForm()
     form = Solicitud_GastoForm()
+    factura_form = FacturaForm()
+
     if request.method =='POST':
         if "btn_agregar" in request.POST:
             form = Solicitud_GastoForm(request.POST, instance=gasto)
@@ -66,9 +69,19 @@ def crear_gasto(request):
                 articulo.save()
                 messages.success(request, 'La solicitud de creacion de articulo funciona')
                 return redirect('crear-gasto')
+        if "btn_factura" in request.POST:
+            factura_form = FacturaForm(request.POST, request.FILES)
+            if factura_form.is_valid():
+                factura = factura_form.save(commit=False)
+                factura.solicitud_gasto = gasto  # Asume que ya tienes una instancia de Solicitud_Gasto en 'gasto'
+                factura.fecha_subida = datetime.now()
+                factura.save()
+                messages.success(request, 'Factura agregada correctamente.')
+                return redirect('crear-gasto')
 
 
     context= {
+        'facturas':facturas,
         'productos':productos,
         'colaborador':colaborador,
         'form':form,
@@ -79,12 +92,20 @@ def crear_gasto(request):
         'superintendentes':superintendentes,
         'proyectos':proyectos,
         'subproyectos':subproyectos,
+        'factura_form': factura_form,
     }
     return render(request, 'gasto/crear_gasto.html', context)
 
 def delete_gasto(request, pk):
     articulo = Articulo_Gasto.objects.get(id=pk)
     messages.success(request,f'El articulo {articulo.producto} ha sido eliminado exitosamente')
+    articulo.delete()
+
+    return redirect('crear-gasto')
+
+def eliminar_factura(request, pk):
+    articulo = Factura.objects.get(id=pk)
+    messages.success(request,f'La factura {articulo.id} ha sido eliminada exitosamente')
     articulo.delete()
 
     return redirect('crear-gasto')
@@ -148,9 +169,12 @@ def solicitudes_gasto(request):
 @login_required(login_url='user-login')
 def detalle_gastos(request, pk):
     productos = Articulo_Gasto.objects.filter(gasto__id=pk)
+    facturas = Factura.objects.filter(solicitud_gasto__id = pk)
+
 
     context= {
         'productos':productos,
+        'facturas':facturas,
         'pk':pk,
         }
 
@@ -408,7 +432,9 @@ def pago_gasto(request, pk):
 def matriz_facturas_gasto(request, pk):
     gasto = Solicitud_Gasto.objects.get(id = pk)
     articulos_gasto = Articulo_Gasto.objects.filter(gasto = gasto)
+    facturas = Factura.objects.filter(solicitud_gasto = gasto)
     form =  Facturas_Gastos_Form(instance=gasto)
+    factura_form = FacturaForm()
 
     if request.method == 'POST':
         form = Facturas_Gastos_Form(request.POST, instance=gasto)
@@ -419,11 +445,23 @@ def matriz_facturas_gasto(request, pk):
                 return redirect('matriz-pagos')
             else:
                 messages.error(request,'No está validando')
+        if "btn_factura" in request.POST:
+            factura_form = FacturaForm(request.POST, request.FILES)
+            if factura_form.is_valid():
+                factura = factura_form.save(commit=False)
+                factura.solicitud_gasto = gasto  # Asume que ya tienes una instancia de Solicitud_Gasto en 'gasto'
+                factura.fecha_subida = datetime.now()
+                factura.save()
+                messages.success(request, 'Factura agregada correctamente.')
+                return redirect('matriz-pagos')
+
 
     context={
         'form':form,
+        'factura_form':factura_form,
         'articulos_gasto':articulos_gasto,
         'gasto':gasto,
+        'facturas':facturas,
         }
 
     return render(request, 'gasto/matriz_factura_gasto.html', context)
@@ -510,8 +548,8 @@ def gasto_entrada(request, pk):
                 orden_producto.autorizar = True
                 orden_producto.supervisor = articulo_gasto.staff
                 orden_producto.superintendente = articulo_gasto.gasto.superintendente
-                orden_producto.proyecto = articulo_gasto.gasto.proyecto
-                orden_producto.subproyecto = articulo_gasto.gasto.subproyecto
+                orden_producto.proyecto = articulo_gasto.proyecto
+                orden_producto.subproyecto = articulo_gasto.subproyecto
                 area = Operacion.objects.get(nombre="GASTO")
                 orden_producto.area = area
                 orden_producto.complete = True
