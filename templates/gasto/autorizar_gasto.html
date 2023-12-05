@@ -23,7 +23,6 @@
                     <div style="flex:4">Artículo</div>
                     <div style="flex:2">Cantidad</div>
                     <div style="flex:2">Total</div>
-                    <div style="flex:2">Facturas</div>
                     <div style="flex:6">Comentario</div>
                     <!--<div style="flex:2">Entrada-Salida</div>-->
                 </div>
@@ -34,16 +33,6 @@
                     <div style="flex:4">{{producto.producto.producto.nombre}}</div>
                     <div style="flex:2"><p class='quantity'>{{producto.cantidad|floatformat:2}}</p></div>
                     <div style="flex:2">${{producto.total_parcial}}</div>
-                    {% if producto.factura_pdf %}
-                            <div style="flex:2">
-                                <a href="{{producto.factura_pdf.url}}" download class="btn btn-outline-info">
-                                    <i class="fa-solid fa-file-invoice-dollar"></i>
-                                </a>
-                            </div>
-                    {% else %}
-                            <div style="flex:2"> 
-                            </div>
-                    {% endif %}
                     <div style="flex:6">{{producto.comentario}}</div>
                     {% if producto.entrada_salida_express == True %}
                     <div style="flex:2; color:#f2d13d;">Este producto fue marcado para realizar una entrada-salida express</div>
@@ -51,6 +40,42 @@
                 </div>
                 {% endfor %}
             </div>
+            
+            <h4>Contenido de Facturas</h4>
+                <table class="table" style="color:white">
+                    <thead>
+                    <tr>
+                        <th>Archivo PDF</th>
+                        <th>Archivo XML</th>
+                        <th>Fecha de Subida</th>
+                        <th>Concepto</th>
+                        <th>Total</th>
+                    </tr>
+                    </thead>
+                <tbody>
+                {% for factura in facturas %}
+                <tr>
+                    <td>
+                        {% if factura.archivo_pdf %}
+                        <a class="btn btn-outline-danger" href="{{factura.archivo_pdf.url}}" download class="btn btn-outline-info">
+                            <i class="fa-solid fa-file-pdf"></i>
+                        </a>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if factura.archivo_xml %}
+                        <a class="btn btn-outline-light" style="background-color:#9a9b9d" href="{{factura.archivo_xml.url}}" download class="btn btn-outline-light">
+                            <i class="fa-solid fa-file-code"></i>
+                        </a>
+                        {% endif %}
+                    </td>
+                    <td>{% if factura.archivo_xml %} {{factura.fecha_subida|date:"d-m-Y H:i" }} {% endif %}</td>
+                    <td>{% if factura.archivo_xml %} {{factura.emisor.resultados}} {% endif %}</td>
+                    <td class="factura-total">{% if factura.archivo_xml %} {{factura.emisor.total}} {% endif %}</td>
+                </tr>
+                {% endfor %}
+                </tbody>
+                </table>
         </div>
 
         <div class="modal-footer">

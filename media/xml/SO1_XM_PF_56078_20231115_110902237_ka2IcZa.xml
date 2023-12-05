@@ -1,0 +1,36 @@
+o;?<?xml version="1.0" encoding="UTF-8"?>
+<cfdi:Comprobante xmlns:cfdi="http://www.sat.gob.mx/cfd/4" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.sat.gob.mx/cfd/4 http://www.sat.gob.mx/sitio_internet/cfd/4/cfdv40.xsd" Version="4.0" Serie="PF" Folio="56078" Fecha="2023-11-15T11:08:42" Moneda="MXN" SubTotal="12203.15" Total="14155.65" TipoDeComprobante="I" LugarExpedicion="93230" Sello="QfQ4ccnbi9esdWCzjJYPnNTlT75p1kpJIMZx8cy9pa8j9OvjecCyq8e9EwfRd4LvW+0IU2kxeSFLDcc34VpKbnedWbBNvPCYE9TtjDjGBFwtZy+G90E51agMLUH+JJfuu0JiiFJajJmDGGgjjGguVMe3Gegh2x+Ls63Dany+20k/Cm7DtdWdKCcvO1qauFAYgDf5v97bTKOmqIGjip8XE5eHiErigfWr6IHRMV/ziILZ6W1X/VHOR/FHwcBRgc7QPsynMMnmJFH6NT5cWZxei/AGTgkxTFASMCLi2tcJySH3GfPxObCWawZUCJuYN3lt8NPF+5aFt/QRb+pmD5ntCw==" NoCertificado="00001000000505708907" Certificado="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" Exportacion="01" FormaPago="28" CondicionesDePago="- Contado -" TipoCambio="1" MetodoPago="PUE">
+  <cfdi:Emisor Rfc="ELE781003H71" Nombre="ELECTRICO" RegimenFiscal="601" />
+  <cfdi:Receptor Rfc="VME121113PI3" UsoCFDI="G01" DomicilioFiscalReceptor="91633" RegimenFiscalReceptor="601" Nombre="VORDTEC DE MEXICO" />
+  <cfdi:Conceptos>
+    <cfdi:Concepto ClaveProdServ="39131706" NoIdentificacion="CABCUPARARR28H" Cantidad="40.000000" ClaveUnidad="MTR" Descripcion="CABLE DE COBRE PARARRAYOS TRENZADO 28H (MTO)" ValorUnitario="215.000000" Importe="8600.00" ObjetoImp="02">
+      <cfdi:Impuestos>
+        <cfdi:Traslados>
+          <cfdi:Traslado Base="8600.000000" Impuesto="002" TipoFactor="Tasa" TasaOCuota="0.160000" Importe="1376.000000" />
+        </cfdi:Traslados>
+      </cfdi:Impuestos>
+    </cfdi:Concepto>
+    <cfdi:Concepto ClaveProdServ="39121400" NoIdentificacion="GAR6429" Cantidad="10.000000" ClaveUnidad="H87" Descripcion="CONECTOR PARA TIERRA V.5/8&quot;-3/4&quot;-T-3/8&quot; 2/0-250" ValorUnitario="316.250000" Importe="3162.50" ObjetoImp="02">
+      <cfdi:Impuestos>
+        <cfdi:Traslados>
+          <cfdi:Traslado Base="3162.500000" Impuesto="002" TipoFactor="Tasa" TasaOCuota="0.160000" Importe="506.000000" />
+        </cfdi:Traslados>
+      </cfdi:Impuestos>
+    </cfdi:Concepto>
+    <cfdi:Concepto ClaveProdServ="30102400" NoIdentificacion="VT58-100" Cantidad="5.000000" ClaveUnidad="H87" Descripcion="VARILLA DE TIERRA SEMIBRILLANTE 5/8&quot;X1MTO ECONOMICA S/PROTOCOLO (A)" ValorUnitario="88.130000" Importe="440.65" ObjetoImp="02">
+      <cfdi:Impuestos>
+        <cfdi:Traslados>
+          <cfdi:Traslado Base="440.650000" Impuesto="002" TipoFactor="Tasa" TasaOCuota="0.160000" Importe="70.504000" />
+        </cfdi:Traslados>
+      </cfdi:Impuestos>
+    </cfdi:Concepto>
+  </cfdi:Conceptos>
+  <cfdi:Impuestos TotalImpuestosTrasladados="1952.50">
+    <cfdi:Traslados>
+      <cfdi:Traslado Base="12203.15" Impuesto="002" TipoFactor="Tasa" TasaOCuota="0.160000" Importe="1952.50" />
+    </cfdi:Traslados>
+  </cfdi:Impuestos>
+  <cfdi:Complemento>
+    <tfd:TimbreFiscalDigital xmlns:tfd="http://www.sat.gob.mx/TimbreFiscalDigital" xsi:schemaLocation="http://www.sat.gob.mx/TimbreFiscalDigital http://www.sat.gob.mx/sitio_internet/cfd/TimbreFiscalDigital/TimbreFiscalDigitalv11.xsd" Version="1.1" UUID="4505d05c-2354-4388-8e29-e4638cebc2fc" FechaTimbrado="2023-11-15T11:07:27" RfcProvCertif="LSO1306189R5" SelloCFD="QfQ4ccnbi9esdWCzjJYPnNTlT75p1kpJIMZx8cy9pa8j9OvjecCyq8e9EwfRd4LvW+0IU2kxeSFLDcc34VpKbnedWbBNvPCYE9TtjDjGBFwtZy+G90E51agMLUH+JJfuu0JiiFJajJmDGGgjjGguVMe3Gegh2x+Ls63Dany+20k/Cm7DtdWdKCcvO1qauFAYgDf5v97bTKOmqIGjip8XE5eHiErigfWr6IHRMV/ziILZ6W1X/VHOR/FHwcBRgc7QPsynMMnmJFH6NT5cWZxei/AGTgkxTFASMCLi2tcJySH3GfPxObCWawZUCJuYN3lt8NPF+5aFt/QRb+pmD5ntCw==" NoCertificadoSAT="00001000000509846663" SelloSAT="BQA+E4KUVHSkLmDYstPTUDHRtJjF+v7KEyliD1cL0/wlXSPzxun67Uj6fe9QLqQx0zyqbiXe7PpFHte5TPO1i1s9fjGXa4CZQVql5kfUtvDL49q2yS271ImLPiDXI/F7q3v17ibzHIDZcVrtbb5IzQBejNn0fXUB66wZs2KMhLfDnbCQv7ORW5wqIvv5hUsnVvBwI8eWXW+3Ssds3wSxpYa402gyoLzLwoGGgVC270hBeDR1q3G4AiMHZs3/wCtXhoWcAK0k2VaQERVVwIPoNuxoKp+zXxUPSz3l1yd0ZlADcLtQtUUI886wTNJR981ceCWbYGUWze4K82cGolW0SA==" />
+  </cfdi:Complemento>
+</cfdi:Comprobante>

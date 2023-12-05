@@ -40,7 +40,7 @@
     <div class="row mt-5">
         <div class="col-md-6 offset-md-3">
             <div class="border bg-white p-3">
-                <h3>Agregar Artículo</h3>
+                <h3>Editar proveedor</h3>
                 <hr>
                 <form method="POST">
                     {% csrf_token %}
@@ -83,7 +83,7 @@
                     </div>
                     <hr>
                     <a class="btn btn-outline-secondary" href="{% url 'dashboard-proveedores' %}">Cancelar</a>
-                    <input class="btn btn-outline-info" type='submit' value="Actualizar">
+                    <button class="btn btn-outline-info" type='submit'>Actualizar</button>
                 </form>
             </div>
         </div>

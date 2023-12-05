@@ -3,51 +3,65 @@
 {% load crispy_forms_tags %}
 
 {% block content %}
-<body>
+<h6>&nbsp;</h6>
+<h6>&nbsp;</h6>
+<h6>&nbsp;</h6>
     <div class="container">
-        <div class="row my-4">
-            <div class="col-md-4"></div>
-            <div class="col-md-8">
-                <div class="card">
-                    <div class="card-header text-black" style="background-color: #F5F5F5;">
-                        <strong>
-                            Profile Page
+        <div class="col-md-6 offset-md-3">
+            <div class="card">
+                <div class="card-header">
+                    <strong>
+                        <a class="btn btn-sm btn-outline-info float-left" href="{% url 'dashboard-index' %}">
+                            <i class="fa-solid fa-backward-step"></i>
+                        </a> Información de Perfil
                         </strong>
                     </div>
                     <div class="card-body">
                         <div class="row">
                             <div class="col-md-8">
-                                <span class="h4"> Profile Information</span> <a class="btn btn btn-sm float-right" style="background-color: #F5F5F5;color: black" href="">Edit</a>
+                                
+                                <span>
+                                <strong>{{user.first_name}} {{user.last_name}}</strong>
+                                </span>
+                                &nbsp;<a class="btn btn-sm btn-outline-info float-right" href="{% url 'edit-profile' %}">Edit</a>
                                 <hr>
                                 <table class="table bg-white table-borderless">
                                     <tbody>
-                                        <tr>
-                                            <th scope="row">Name</th>
-                                            <td>{{user.first_name}} {{user.last_name}}</td>
-                                        </tr>
                                         <tr>
                                             <th scope="row">Email</th>
                                             <td>{{user.email}}</td>
                                         </tr>
                                         <tr>
-                                            <th scope="row">Phone</th>
-                                            <td>{{user.profile.phone}}</td>
+                                            <th scope="row">Teléfono</th>
+                                            <td>{{perfil.phone}}</td>
                                         </tr>
                                         <tr>
-                                            <th scope="row">Address</th>
-                                            <td>{{user.profile.address}}</td>
+                                            <th scope="row">Dirección</th>
+                                            <td>{{perfil.address}}</td>
                                         </tr>
+                                        <tr>
+                                            <th scope="row">Teléfono</th>
+                                            <td>{{perfil.banco}}</td>
+                                        </tr>
+                                        <tr>
+                                            <th scope="row">Dirección</th>
+                                            <td>{{perfil.cuenta_bancaria}}</td>
+                                        </tr>
+                                        <tr>
+                                            <th scope="row">Teléfono</th>
+                                            <td>{{perfil.clabe}}</td>
+                                        </tr>     
                                     </tbody>
                                 </table>
 
                             </div>
                             <div class="col-md-4">
-                                <img class="img-thumbnail" src="{{user.profile.imageURL}}" alt="Imagen de Usuario">
+                                <img class="img-thumbnail" src="{{perfil.imageURL}}" alt="Imagen de Usuario">
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
+    
 {% endblock %}

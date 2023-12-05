@@ -3,7 +3,7 @@ from django.contrib.auth.models import User
 # Create your models here.
 
 class Banco(models.Model):
-    nombre = models.CharField(max_length=30, null=True)
+    nombre = models.CharField(max_length=50, null=True)
 
     def __str__(self):
         return f'{self.nombre}'

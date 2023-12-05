@@ -11,10 +11,12 @@ from gastos.models import Solicitud_Gasto
 from viaticos.models import Solicitud_Viatico
 from .forms import PagoForm, Facturas_Form, Facturas_Completas_Form, Saldo_Form
 from .filters import PagoFilter, Matriz_Pago_Filter
+from viaticos.filters import Solicitud_Viatico_Filter
 from gastos.filters import Solicitud_Gasto_Filter
+from gastos.models import Articulo_Gasto
 from user.models import Profile
 from django.contrib import messages
-from django.db.models import Sum
+from django.db.models import Sum, Prefetch
 from datetime import date, datetime
 import decimal
 from django.core.mail import EmailMessage
@@ -265,12 +267,17 @@ def saldo_a_favor(request, pk):
     usuario = Profile.objects.get(staff__id=request.user.id)
     compra = Compra.objects.get(id=pk)
     form = Saldo_Form(instance = compra)
+    total_pagado = Pago.objects.filter(oc=compra).aggregate(Sum('monto'))['monto__sum']
+    total_pagado = total_pagado if total_pagado is not None else 0
+    remanente = compra.costo_plus_adicionales - total_pagado
+
 
     if request.method == 'POST':
         form = Saldo_Form(request.POST, instance = compra)
         if form.is_valid():
-            form.save()
-            if compra.costo_plus_adicionales == compra.saldo_a_favor:
+            compra =form.save()
+            total = total_pagado + compra.saldo_a_favor
+            if compra.costo_plus_adicionales == total:
                 compra.pagada = True
             compra.save()
             messages.success(request,f'El saldo se ha registrado correctamente, {usuario.staff.first_name}')
@@ -279,6 +286,8 @@ def saldo_a_favor(request, pk):
     context= {
         'compra':compra,
         'form':form,
+        'remanente': remanente,
+        'total_pagado': total_pagado,
     }
 
     return render(request, 'tesoreria/saldo_a_favor.html',context)
@@ -287,8 +296,23 @@ def saldo_a_favor(request, pk):
 @login_required(login_url='user-login')
 def matriz_pagos(request):
     pagos = Pago.objects.filter(hecho=True)
-    myfilter = Matriz_Pago_Filter(request.GET, queryset=pagos)
+    myfilter = Matriz_Pago_Filter(request.GET, queryset=pagos) 
+
     pagos = myfilter.qs
+    for pago in pagos:
+        articulos_gasto = Articulo_Gasto.objects.filter(gasto=pago.gasto)
+
+        proyectos = set()
+        subproyectos = set()
+
+        for articulo in articulos_gasto:
+            if articulo.proyecto:
+                proyectos.add(str(articulo.proyecto.nombre))
+            if articulo.subproyecto:
+                subproyectos.add(str(articulo.subproyecto.nombre))
+
+        pago.proyectos = ', '.join(proyectos)
+        pago.subproyectos = ', '.join(subproyectos)
 
     #Set up pagination
     p = Paginator(pagos, 50)
@@ -446,7 +470,7 @@ def mis_gastos(request):
 def mis_viaticos(request):
     usuario = Profile.objects.get(staff__id=request.user.id)
     viaticos = Solicitud_Viatico.objects.filter(complete=True, staff = usuario)
-    myfilter = PagoFilter(request.GET, queryset=viaticos)
+    myfilter = Solicitud_Viatico_Filter(request.GET, queryset=viaticos)
     viaticos = myfilter.qs
 
     context= {

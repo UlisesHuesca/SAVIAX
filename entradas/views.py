@@ -176,15 +176,15 @@ def articulos_entrada(request, pk):
                     producto_surtir.surtir = True
             producto_surtir.save()
         for articulo in articulos_comprados:
-            entradas_producto = EntradaArticulo.objects.filter(articulo_comprado = articulo, entrada__oc = articulo.oc, entrada__completo = True).aggregate(Sum('cantidad'))
-            suma_entradas = entradas_producto['cantidad__sum']
-            if articulo.cantidad == suma_entradas:  #Si la cantidad de la compra es igual a la cantida entonces la entrada está completamente entregada
+            #entradas_producto = EntradaArticulo.objects.filter(articulo_comprado = articulo, entrada__oc = articulo.oc, entrada__completo = True).aggregate(Sum('cantidad'))
+            #suma_entradas = entradas_producto['cantidad__sum']
+            if articulo.cantidad_pendiente == 0:  #Si la cantidad de la compra es igual a la cantida entonces la entrada está completamente entregada
                 articulo.entrada_completa = True
             articulo.seleccionado = False
             articulo.save()
         #Se compara los articulos comprados contra los articulos que han entrado y que están totalmente entregados
         #En el bucle de arriba se redefine si la entrada de un articulo está completa o no por lo tanto debería de volver a calcular los artículos completos
-        articulos_entregados = articulos_comprados.filter(entrada_completa=True)
+        num_art_entregados = articulos_comprados.filter(entrada_completa=True).count()
         if num_art_comprados == num_art_entregados:
             compra.entrada_completa = True
         compra.save()
@@ -215,7 +215,6 @@ def update_entrada(request):
     entrada = Entrada.objects.get(id = pk, completo = False)
     aggregation = EntradaArticulo.objects.filter(
         articulo_comprado = producto_comprado,
-        entrada = entrada, 
         entrada__completo = True
     ).aggregate(
         suma_cantidad = Sum('cantidad'),
@@ -317,7 +316,7 @@ def update_entrada(request):
     
     elif action == "remove":
         if producto_inv.producto.servicio == False:
-            monto_total = monto_inventario - (entrada_item.cantidad * producto_comprado.precio_unitario)
+            monto_total = monto_total - (entrada_item.cantidad * producto_comprado.precio_unitario)
         else:
             monto_total = 0
         if monto_total == 0:

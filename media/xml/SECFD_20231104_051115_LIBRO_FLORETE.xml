@@ -1,0 +1,36 @@
+﻿<?xml version="1.0" encoding="utf-8"?><cfdi:Comprobante xmlns:cfdi="http://www.sat.gob.mx/cfd/4" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.sat.gob.mx/cfd/4 http://www.sat.gob.mx/sitio_internet/cfd/4/cfdv40.xsd http://www.pegasotecnologia.com/secfd/Schemas http://www.pegasotecnologia.com/secfd/Schemas/ADDENDAOFFICEMAXV1CFD.xsd http://www.pegasotecnologia.com/secfd/Schemas/AddendaDomicilioExpedidoEn http://www.pegasotecnologia.com/secfd/schemas/AddendaDomicilioExpedidoEn.xsd http://www.pegasotecnologia.com/secfd/Schemas/AddendaDomicilioReceptor http://www.pegasotecnologia.com/secfd/schemas/AddendaDomicilioReceptor.xsd" Version="4.0" Fecha="2023-11-04T17:11:15" Moneda="MXN" TipoCambio="1" SubTotal="188.79" Total="219.00" FormaPago="04" CondicionesDePago="Inmediato" TipoDeComprobante="I" MetodoPago="PUE" LugarExpedicion="91190" Exportacion="01" NoCertificado="00001000000507140365" Serie="FAOMXPOS" Folio="21848226" Certificado="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" Sello="c6MtcUN3DmKSa65WU8S5E0hoQf15F5TGiuD9pkUWbA4PfNJciqPM3/misAXZ9+gMA+vZ0bFhyCDI20pM/0UGnpUeB2KOyvLjh3kUIRo7moRWBy0KHVnTYpbEYEADaIq+f6HGgAxdP3ojGEGU6XDCgJHLZboHSeIrYu3dmpIglYL1q+qr9y7LWzR90HZPgDj3U871Hh69Z6uBwAph26X1vQhJ1ZoG/j/ikKTZrJwHCr3fwenJltjEy7j4gzvyeaWV8pk4ICDJ1RTRnnGFdrcOAA+RQQ8JoEDcQm0Lz3qZy5Z1apA8fyK49/HfoPW7OeMgbkwr0X6WuaV8fqc54D35+g==" xmlns:OTRO="http://www.pegasotecnologia.com/secfd/Schemas" xmlns:adddomexp="http://www.pegasotecnologia.com/secfd/Schemas/AddendaDomicilioExpedidoEn" xmlns:adddomrec="http://www.pegasotecnologia.com/secfd/Schemas/AddendaDomicilioReceptor">
+  <cfdi:Emisor Rfc="OOM960429832" Nombre="OPERADORA OMX" RegimenFiscal="601" />
+  <cfdi:Receptor Rfc="VME121113PI3" Nombre="VORDTEC DE MEXICO" UsoCFDI="G03" DomicilioFiscalReceptor="91633" RegimenFiscalReceptor="601" />
+  <cfdi:Conceptos>
+    <cfdi:Concepto ClaveProdServ="14111808" NoIdentificacion="500846281" Cantidad="1" ClaveUnidad="H87" Unidad="H87" Descripcion="LIBRO REGISTRO VISITAS 96H" ValorUnitario="188.793103" Importe="188.793103" ObjetoImp="02">
+      <cfdi:Impuestos>
+        <cfdi:Traslados>
+          <cfdi:Traslado Base="188.793103" Impuesto="002" TipoFactor="Tasa" TasaOCuota="0.160000" Importe="30.2069" />
+        </cfdi:Traslados>
+      </cfdi:Impuestos>
+    </cfdi:Concepto>
+  </cfdi:Conceptos>
+  <cfdi:Impuestos TotalImpuestosTrasladados="30.21">
+    <cfdi:Traslados>
+      <cfdi:Traslado Impuesto="002" TipoFactor="Tasa" TasaOCuota="0.160000" Importe="30.21" Base="188.79" />
+    </cfdi:Traslados>
+  </cfdi:Impuestos>
+  <cfdi:Complemento>
+    <tfd:TimbreFiscalDigital xmlns:tfd="http://www.sat.gob.mx/TimbreFiscalDigital" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.sat.gob.mx/TimbreFiscalDigital http://www.sat.gob.mx/sitio_internet/cfd/TimbreFiscalDigital/TimbreFiscalDigitalv11.xsd" Version="1.1" UUID="73EBE4A4-7C54-4345-B65C-1B3850EEB788" FechaTimbrado="2023-11-04T17:11:19" RfcProvCertif="SST060807KU0" SelloCFD="c6MtcUN3DmKSa65WU8S5E0hoQf15F5TGiuD9pkUWbA4PfNJciqPM3/misAXZ9+gMA+vZ0bFhyCDI20pM/0UGnpUeB2KOyvLjh3kUIRo7moRWBy0KHVnTYpbEYEADaIq+f6HGgAxdP3ojGEGU6XDCgJHLZboHSeIrYu3dmpIglYL1q+qr9y7LWzR90HZPgDj3U871Hh69Z6uBwAph26X1vQhJ1ZoG/j/ikKTZrJwHCr3fwenJltjEy7j4gzvyeaWV8pk4ICDJ1RTRnnGFdrcOAA+RQQ8JoEDcQm0Lz3qZy5Z1apA8fyK49/HfoPW7OeMgbkwr0X6WuaV8fqc54D35+g==" NoCertificadoSAT="00001000000506202789" SelloSAT="OkXJJ33XPGwYQuWJcp0AYPuG3vcJ/tX8v5JN3Cf/Qw7jtiTIxv3Q27onKmXdWfwn5shserABkkd5hZlqZ4t3YpSPqZXyDzRGLg2q0LDCZBzn/mQ0XXsO8ThROj5I9/BoErFuV75r4iUQh3GcfV7q5Xq4ZlX0fSLZKTfqbqcK7eO6ZADOR3uqcfgvimYtmYzgtyEh78xnapAquyRdEqGKofEDpC2op8Gp3lxCwpRTmoE0hA/d2h4A0cRPJTwl+9Z/z4vZcG9LcwJTdx9/u/+fnO5qtxcJIIwHCvRikPu/18kowsiE9VSw6pewa29GrUyuNYTtp47r4SFYIBCc79QcCQ==" />
+  </cfdi:Complemento>
+  <cfdi:Addenda>
+    <OTRO:AddendaEmisor>
+      <OTRO:POS>
+        <OTRO:DatosAdicionales referencia="011600236303231104170852" tipoTrans="" leyendaReemision="" />
+        <OTRO:DetalleConceptos>
+          <OTRO:DetalleConcepto noIdentificacion="500846281" marcaIVA="A" />
+        </OTRO:DetalleConceptos>
+        <OTRO:FormasDePago>
+          <OTRO:FormaDePago importe="188.793103" descripcion="Tarjeta de crédito" tipoPago="04" />
+        </OTRO:FormasDePago>
+      </OTRO:POS>
+    </OTRO:AddendaEmisor>
+    <adddomexp:AddendaDomicilioExpedidoEn calle="Av. Lazaro Cardenas No. 2" noExterior="0" colonia="Las Animas" municipio="Xalapa" estado="VER" pais="Mexico" codigoPostal="91190" />
+    <adddomrec:AddendaDomicilioReceptor calle="CARRETERA XALAPA VERACRUZ" noExterior="KM 298" colonia="NO ESPECIFICADA EN EL CATALOGO" municipio="PALO GACHO" estado="VERACRUZ" pais="MEXICO" codigoPostal="91633" />
+  </cfdi:Addenda>
+</cfdi:Comprobante>

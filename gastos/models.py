@@ -182,33 +182,32 @@ class Factura(models.Model):
 
     @property
     def emisor(self):
-        #with open(self.factura_xml.path,'r') as file:
-            #data = file.read()
         tree = ET.parse(self.archivo_xml.path)
         root = tree.getroot()
         ns = {'cfdi':'http://www.sat.gob.mx/cfd/4'}
-        #comprobante = root.findall('cfdi:Comprobante')
         emisor = root.find('cfdi:Emisor', ns)
         receptor = root.find('cfdi:Receptor', ns)
         impuestos = root.find('cfdi:Impuestos', ns)
         conceptos = root.find('cfdi:Conceptos', ns)
         resultados = []
-        for concepto in conceptos.findall('cfdi:Concepto', ns):
-            descripcion = concepto.get('Descripcion')
-            cantidad = concepto.get('Cantidad')
-            precio = concepto.get('ValorUnitario') 
-            # Aquí agrupamos los valores en una tupla antes de añadirlos a la lista
-            resultados.append((descripcion, cantidad, precio))
-        # Obtener los datos requeridos
-        rfc = emisor.get('Rfc')
-        nombre = emisor.get('Nombre')
-        regimen_fiscal = emisor.get('RegimenFiscal')
-        total = root.get('Total')
-        subtotal = root.get('Subtotal')
-        impuestos = root.get('TotalImpuestosTrasladados')
 
+        if conceptos is not None:
+            for concepto in conceptos.findall('cfdi:Concepto', ns):
+                descripcion = concepto.get('Descripcion')
+                cantidad = concepto.get('Cantidad')
+                precio = concepto.get('ValorUnitario') 
+                resultados.append((descripcion, cantidad, precio))
+        else:
+            resultados = "El archivo parace no tener el formato correcto"
 
-        return {'rfc': rfc, 'nombre': nombre, 'regimen_fiscal': regimen_fiscal,'total':total,'resultados':resultados}
+        rfc = emisor.get('Rfc') if emisor is not None else "No disponible"
+        nombre = emisor.get('Nombre') if emisor is not None else "No disponible"
+        regimen_fiscal = emisor.get('RegimenFiscal') if emisor is not None else "No disponible"
+        total = root.get('Total') if root is not None else "No disponible"
+        subtotal = root.get('Subtotal') if root is not None else "No disponible"
+        impuestos = root.get('TotalImpuestosTrasladados') if root is not None else "No disponible"
+
+        return {'rfc': rfc, 'nombre': nombre, 'regimen_fiscal': regimen_fiscal, 'total': total, 'resultados': resultados}
     
 class Entrada_Gasto_Ajuste(models.Model):
     gasto = models.ForeignKey(Articulo_Gasto, on_delete = models.CASCADE, null=True, blank=True)

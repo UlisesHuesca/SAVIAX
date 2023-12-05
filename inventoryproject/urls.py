@@ -47,4 +47,4 @@ urlpatterns = [
         subject_template_name = 'user/password_reset_subject.txt'
     ), name='password-reset'),
     path('logout/', auth_views.LogoutView.as_view(template_name='user/logout.html'), name='user-logout'),
-] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+] # static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

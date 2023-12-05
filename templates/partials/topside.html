@@ -2,7 +2,7 @@
 <html>
 <head>
 
-<link rel="stylesheet" href="./style.css">
+<!--<link rel="stylesheet" href="{% static 'css/style.css' %}"-->
 
 
 {% block title %}
@@ -13,30 +13,46 @@
 <body>
 {% block content %}
 <div class="container">
-    <div class="row mt-4">
-        <div class="col-md-2">
-            <div class="card">
-                <div class="card-header bg-light text-dark">
+    <div class="row m-4">
+        <div class="col-md-12 col-lg-10">
+            <div class="card" style="opacity: 0.8; background: hsla(0, 0%, 100%, 0.55); 
+            backdrop-filter: blur(30px);">
+                <div class="card-header text-center">
                     <strong>
-                        SAVIA VORDTEC
+                        <img class="rounded-circle" src="{% static 'images/SAVIA_Logo.png' %}" id="logo" alt="SAVIA">
+                        <h3>SAVIA VORDTEC</h3>
                     </strong>
                 </div>
                 <div class="card-body">
-                    <img src="{% static 'images/SAVIA_Logo.png' %}" alt="SAVIA" width="160" height="170">
-
-                </div>
-            </div>
-        </div>
-
-        <div class="col-md-8">
-            <div class="card">
-                <div class="card-header bg-light text-dark">
-                    <strong>
-                        Estadísticas
-                    </strong>
-                </div>
-                <div class="card-body">
-                    <div class="row">
+                    {% if usuario.tipo.comprador == True %}
+                    <div class="row mt-1">
+                        <div class="col-md-4">
+                            <a class="text-decoration-none text-dark" href="{% url 'requisicion-autorizada'  %}">
+                                <div class="card my-card shadow text-center p-3">
+                                    <h4>Requisiciones Autorizadas <i class="fa-solid fa-bag-shopping"></i></h4>
+                                    <h3></h3>
+                                </div>
+                            </a>
+                        </div>
+                        <div class="col-md-4">
+                            <a class="text-decoration-none text-dark" href="{% url 'matriz-compras' %}">
+                                <div class="card my-card shadow text-center p-3">
+                                    <h4>Reporte de Compras<i class="fa-solid fa-cart-shopping"></i></h4>
+                                    <h3></h3>
+                                </div>
+                            </a>
+                        </div>
+                        <div class="col-md-4">
+                            <a class="text-decoration-none text-dark" href="{% url 'comparativos' %}">
+                                <div class="card my-card shadow text-center p-3">
+                                    <h4>Comparativos <i class="fa-solid fa-scale-unbalanced-flip"></i></h4>
+                                    <h3></h3>
+                                </div>
+                            </a>
+                        </div>
+                    </div>
+                    {%else%}
+                    <div class="row mt-1">
                         <div class="col-md-4">
                             <a class="text-decoration-none text-dark" href="{% url 'dashboard-staff' %}">
                                 <div class="card my-card shadow text-center p-3">
@@ -61,10 +77,41 @@
                                 </div>
                             </a>
                         </div>
+                        
+                    </div>
+                    {% endif %}
+                    <div class="row mt-2">
+                        <div class="col-md-4">
+                            <a class="text-decoration-none text-dark"  href="{% url 'user-profile' %}">
+                                <div class="card my-card shadow text-center p-3">
+                                    <h4>Perfil <i class="fa-solid fa-user"></i></h4>
+                                    <h3></h3>
+                                </div>
+                            </a>
+                        </div>
+                        <div class="col-md-4">
+                            <a class="text-decoration-none text-dark"  href="{% url 'solicitud-product-selection' %}">
+                                <div class="card my-card shadow text-center p-3">
+                                    <h4>Crear Solicitud <i class="fa-solid fa-pen-to-square"></i></h4>
+                                    <h3></h3>
+                                </div>
+                            </a>
+                        </div>
+                        <div class="col-md-4">
+                            <a class="text-decoration-none text-dark"  href="{% url 'solicitud-matriz' %}">
+                                <div class="card my-card shadow text-center p-3">
+                                    <h4>Solicitud Status <i class="fa-solid fa-shoe-prints"></i></h4>
+                                    <h3></h3>
+                                </div>
+                            </a>
+                        </div>
+                       
                     </div>
                 </div>
             </div>
         </div>
+        
+        
 
     </div>
 </div>

@@ -8,7 +8,7 @@
     {% if user.is_authenticated %}
         <div class="container-fluid">
             <a class="navbar-brand" href="{% url 'dashboard-index' %}">
-            <img src="{% static 'images/SAVIA_Logo.png' %}" alt="SAVIA" width="50" height="50">
+            <img src="{% static 'images/SAVIA_Logo.png' %}" alt="SAVIA" width="50" height="50" class="rounded-circle">
             </a>
             <ul class="nav nav-pills" >
                 <li class="nav-item d-none d-md-table-cell">
@@ -372,7 +372,7 @@
                         {% endif %}
                             <a class="dropdown-item" href="{% url 'matriz-compras' %}">Matriz Compras</a>
                             </div>
-                        {% if usuario.tipo.tesoreria == True or usuario.tipo.nombre == "Gerente" %}
+                        {% if usuario.tipo.tesoreria == True or usuario.tipo.nombre == "Gerente" or usuario.tipo.nombre == "Control" %}
                         <div>
                         {% else %}
                             <div class="d-none">

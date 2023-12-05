@@ -42,7 +42,7 @@
     <div class="col-lg-8 col-sm-12 offset-lg-2">
         <div class="card" id="form-wrapper">
         <div class="card-header"> 
-            <h5 class="modal-title" id="entrada" value="{{entrada.id}}">Entrada: {{entrada.id}}&ensp;&ensp; Compra: {{compra.get_folio}}</h5>
+            <h5 class="modal-title" id="entrada" value="{{entrada.id|unlocalize}}">Entrada: {{entrada.id}}&ensp;&ensp; Compra: {{compra.get_folio}}</h5>
         </div>
         <div class="card-body">
             <table class='table table-striped'>
@@ -238,22 +238,22 @@ document.getElementById("producto").addEventListener("change", function(element)
     //console.log(other_select);
 });
 
-
-
 document.getElementById('id_cantidad').addEventListener('change', function(){
 var cantidad = document.getElementById('id_cantidad');
 var checkref = document.getElementById("SwitchReferencia");
 var select = document.getElementById('producto');
 var current_option = select.options[select.selectedIndex];
-let solicitado =  current_option.getAttribute('cantidad');
+let solicitado_obj =  document.getElementById('solicitado');
+let solicitado = Number(solicitado_obj.innerHTML)
 var boton =document.getElementById('update');
-
+console.log(cantidad.value)
+console.log(solicitado)
 if (cantidad.value <= solicitado){
-    boton.setAttribute('class','btn btn-success')
+    boton.classList.remove('d-none')
 } else if (cantidad.value == 0){
-    boton.setAttribute('class','btn btn-success d-none')
-} else {
-    boton.setAttribute('class','btn btn-success d-none')
+    boton.classList.add('d-none')
+} else if (cantidad.value > solicitado){
+    boton.classList.add('d-none')
 }
 
 if (checkref.checked){
@@ -267,6 +267,8 @@ if (checkref.checked){
     }
 }
 })
+
+
 
 //var updateBtn = document.getElementById('update')
 

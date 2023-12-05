@@ -4,7 +4,8 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.forms import inlineformset_factory
-from django.db.models import Sum, Q, Prefetch, Avg, FloatField, Case, When, F,DecimalField, ExpressionWrapper
+from django.db.models import Sum, Q, Prefetch, Avg, FloatField, Case, When, F,DecimalField, ExpressionWrapper, CharField, Value
+from django.db.models.functions import Concat
 from .models import Product, Subfamilia, Order, Products_Batch, Familia, Unidad, Inventario
 from compras.models import Proveedor, Proveedor_Batch, Proveedor_Direcciones_Batch, Proveedor_direcciones, Estatus_proveedor, Estado
 from solicitudes.models import Subproyecto, Proyecto
@@ -413,9 +414,10 @@ def product(request):
 def proveedores(request):
     usuario = Profile.objects.get(staff=request.user)
     # Obtén los IDs de los proveedores que cumplan con las condiciones deseadas
-    proveedores_dir = Proveedor_direcciones.objects.filter(Q(estatus__nombre='NUEVO') | Q(estatus__nombre='APROBADO'))
+    proveedores_dir = Proveedor_direcciones.objects.all()
+    #proveedores_dir = Proveedor_direcciones.objects.filter(Q(estatus__nombre='NUEVO') | Q(estatus__nombre='APROBADO'))
     proveedores_ids = proveedores_dir.values_list('nombre', flat=True).distinct()
-    proveedores = Proveedor.objects.filter(id__in=proveedores_ids, completo=True)
+    proveedores = Proveedor.objects.filter(completo=True)
 
     total_prov = proveedores.count()
 
@@ -503,20 +505,24 @@ def matriz_revision_proveedor(request):
 @login_required(login_url='user-login')
 def proveedores_update(request, pk):
 
-    proveedores = Proveedor.objects.get(id=pk)
+    proveedor = Proveedor.objects.get(id=pk)
 
     if request.method =='POST':
-        form = ProveedoresForm(request.POST, instance=proveedores)
+        form = ProveedoresForm(request.POST, instance=proveedor,)
         if form.is_valid():
-            form.save()
-            messages.success(request,f'Has actualizado correctamente el proyecto {proveedores.razon_social}')
+            proveedor = form.save()
+            messages.success(request,f'Has actualizado correctamente el proveedor {proveedor.razon_social}')
             return redirect('dashboard-proveedores')
+        else:
+            messages.error(request,f'No está validando {form.errors}')
+
     else:
-        form = ProveedoresForm(instance=proveedores)
+        form = ProveedoresForm(instance=proveedor)
+        #messages.error(request,f'No está entrando al bucle')
 
     context = {
         'form': form,
-        'proveedores':proveedores,
+        'proveedores':proveedor,
         }
 
     return render(request,'dashboard/proveedores_update.html', context)
@@ -716,7 +722,7 @@ def edit_proveedores(request, pk):
     proveedor = Proveedor.objects.get(id = proveedor_direccion.nombre.id)
     #romper
 
-    ProveedorDireccionesFormSet = inlineformset_factory(Proveedor, Proveedor_direcciones, form =Edit_ProveedoresDireccionesForm, extra=0)
+    ProveedorDireccionesFormSet = inlineformset_factory(Proveedor, Proveedor_direcciones, form =ProveedoresDireccionesForm, extra=0)
     form = ProveedoresForm(instance=proveedor)
     formset = ProveedorDireccionesFormSet(instance=proveedor)
 
@@ -865,55 +871,75 @@ def upload_batch_proveedores_direcciones(request):
 def upload_batch_products(request):
 
     form = Products_BatchForm(request.POST or None, request.FILES or None)
-
-
+    
     if form.is_valid():
         form.save()
         form = Products_BatchForm()
-        product_list = Products_Batch.objects.get(activated = False)
+        
+        product_list = Products_Batch.objects.get(activated=False)
+        
+        if not product_list.file_name.name.endswith('.csv'):
+            messages.error(request, 'El formato no es CSV')
+        else:
+            process_csv_file(product_list, request)
+        
+        # Marca el archivo como activado independientemente del resultado
+        product_list.activated = True
+        product_list.save()
 
-        f = open(product_list.file_name.path, 'r', encoding='utf-8')
+    context = {
+        'form': form,
+    }
+    return render(request, 'dashboard/upload_batch_products.html', context)
+
+def process_csv_file(product_list, request):
+    with open(product_list.file_name.path, 'r', encoding='utf-8') as f:
         reader = csv.reader(f)
         next(reader)
 
         for row in reader:
-            if not Product.objects.filter(codigo=row[0]):
-                if Unidad.objects.filter(nombre = row[2]):
-                    unidad = Unidad.objects.get(nombre = row[2])
-                    if Familia.objects.filter(nombre = row[3]):
-                        familia = Familia.objects.get(nombre = row[3])
-                        especialista = True if row[5] == 'SI' else False
-                        iva = True if row[6] == 'SI' else False
-                        activo = True if row[7] == 'SI' else False
-                        servicio = True if row[8] == 'SI' else False
-                        if Subfamilia.objects.filter(nombre = row[4], familia = familia):
-                            subfamilia = Subfamilia.objects.get(nombre = row[4], familia = familia)
-                            
-                            producto = Product(codigo=row[0],nombre=row[1], unidad=unidad, familia=familia, subfamilia=subfamilia,especialista=especialista,iva=iva,activo=activo,servicio=servicio,baja_item=False,completado=True)
-                            producto.save()
-                        else:
-                            producto = Product(codigo=row[0],nombre=row[1], unidad=unidad, familia=familia,especialista=especialista,iva=iva,activo=activo,servicio=servicio,baja_item=False,completado=True)
-                            producto.save()
-                    else:
-                        messages.error(request,f'La familia no existe dentro de la base de datos, producto:{row[0]}')
-                else:
-                    messages.error(request,f'La unidad no existe dentro de la base de datos, producto:{row[0]}')
-            else:
-                messages.error(request,f'El producto código:{row[0]} ya existe dentro de la base de datos')
+            codigo, nombre, unit_name, family_name, subfamily_name, *rest = row
+            
+            if Product.objects.filter(codigo=codigo).exists():
+                messages.error(request, f'El producto código:{codigo} ya existe dentro de la base de datos')
+                print(f'El producto código:{codigo} ya existe dentro de la base de datos')
+                continue
+                
+            unidad = Unidad.objects.filter(nombre=unit_name).first()
+            if not unidad:
+                messages.error(request, f'La unidad no existe dentro de la base de datos, producto:{codigo}')
+                print(f'La unidad no existe dentro de la base de datos, producto:{codigo}')
+                continue
+                
+            familia = Familia.objects.filter(nombre=family_name).first()
+            if not familia:
+                messages.error(request, f'La familia no existe dentro de la base de datos, producto:{codigo}')
+                print(f'La familia no existe dentro de la base de datos, producto:{codigo}')
+                continue
 
-        product_list.activated = True
+            especialista, iva, activo, servicio = map(lambda val: val == 'SI', rest[:4])
+            
+            subfamilia = Subfamilia.objects.filter(nombre=subfamily_name, familia=familia).first()
+
+            Product.objects.create(
+                codigo=codigo,
+                nombre=nombre,
+                unidad=unidad,
+                familia=familia,
+                subfamilia=subfamilia,
+                especialista=especialista,
+                iva=iva,
+                activo=activo,
+                servicio=servicio,
+                baja_item=False,
+                completado=True
+            )
+
+        #product_list.activated = True
         product_list.save()
-    elif request.FILES:
-        messages.error(request,'El formato no es CSV')
 
 
 
-
-    context = {
-        'form': form,
-        }
-
-    return render(request,'dashboard/upload_batch_products.html', context)
 
 
 @login_required(login_url='user-login')
@@ -1122,10 +1148,12 @@ def convert_excel_proveedores(proveedores):
     for col_num in range(len(columns)):
         (ws.cell(row = row_num, column = col_num+1, value=columns[col_num])).style = head_style
         ws.column_dimensions[get_column_letter(col_num + 1)].width = 16
-        if col_num == 4 or col_num == 7:
+        if col_num in [4,7, 10, 11]:
             ws.column_dimensions[get_column_letter(col_num + 1)].width = 25
-        if col_num == 0:
+        if col_num in [0,2,6]:
             ws.column_dimensions[get_column_letter(col_num + 1)].width = 50
+        if col_num in [3]:
+            ws.column_dimensions[get_column_letter(col_num + 1)].width = 100
 
     proveedores_ids = proveedores.values_list('nombre', flat=True).distinct()
     proveedores_unicos = Proveedor.objects.filter(id__in=proveedores_ids, completo=True).count()
@@ -1138,10 +1166,11 @@ def convert_excel_proveedores(proveedores):
     ws.cell(row=3, column= columna_max, value="Número de proveedores:")
     ws.cell(row=3, column = columna_max + 1, value=proveedores_unicos).style = number_style
 
+
     rows = proveedores.values_list('nombre__razon_social','nombre__rfc','nombre__nombre_comercial','domicilio','telefono','estado__nombre',
                                    'contacto','email','email_opt','banco__nombre','clabe','cuenta','financiamiento','dias_credito',
                                    'estatus__nombre'
-                              )
+                                  )
 
     
 

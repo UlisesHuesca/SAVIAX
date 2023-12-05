@@ -5,6 +5,22 @@ body {background-color: #9a9b9d;}
     transition: 0.2s ease-in-out;
 }
 
+.select2-container .select2-selection--single {
+    height: 60px;
+    font-size: 1.2em;
+}
+
+#menu_image{
+    display:block;
+    max-width: 30%;
+    height: auto;
+    margin: auto;
+}
+
+#logo{
+    width: 20%;
+    height: 20%;
+}
 
 
 .col-lg-4, .col-lg-6, .col-lg-8, .col-lg-12{

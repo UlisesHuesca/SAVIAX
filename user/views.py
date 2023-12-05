@@ -1,7 +1,9 @@
 from django.shortcuts import render, redirect
-#Estamos importando la "Form" de default de Django para crear usuarios
-#from django.contrib.auth.forms import UserCreationForm
+from django.contrib import messages
 from .forms import UserForm
+from .models import Profile
+from .forms import Profile_Form
+
 
 # Create your views here.
 def register(request):
@@ -18,4 +20,36 @@ def register(request):
     return render(request, 'user/register.html',ctx)
 
 def profile(request):
-    return render(request, 'user/profile.html')
+    perfil = Profile.objects.get(staff__id=request.user.id)
+
+    context ={
+        'perfil':perfil,
+    }
+
+    return render(request, 'user/profile.html', context)
+
+def edit_profile(request):
+    perfil = Profile.objects.get(staff__id=request.user.id)
+    #perfil = Profile.objects.get(id = pk)
+    #custom_user = CustomUser.objects.get(staff = perfil.staff.staff)
+    form = Profile_Form(instance=perfil)
+    error_messages = {}
+
+    if request.method == "POST":
+        form = Profile_Form(request.POST, request.FILES, instance=perfil)
+        if form.is_valid():
+            custom_user = form.save()
+            messages.success(request,f'Tu perfil se ha actualizado correctamente, {perfil.staff.first_name}')
+            return redirect('user-profile')
+        else:
+            for field, errors in form.errors.items():
+                error_messages[field] = errors.as_text()
+
+
+    context = {
+        'error_messages': error_messages,
+        'form':form,
+        'perfil':perfil,
+    }
+
+    return render(request, 'user/edit_profile.html', context)

@@ -2,6 +2,7 @@ from django import forms
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth import get_user_model, authenticate
+from .models import Profile
 
 
 #Esta "form" fue creada heredando (inherit) las características de la "UserCreationForm" pero agregándole el "email"
@@ -33,3 +34,9 @@ class EmailLoginForm(AuthenticationForm):
                 self.confirm_login_allowed(self.user_cache)
 
         return self.cleaned_data
+
+class Profile_Form(forms.ModelForm):
+
+    class Meta:
+        model = Profile
+        fields = ['banco','cuenta_bancaria','clabe','image','phone','address']

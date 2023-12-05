@@ -295,6 +295,7 @@ def asignar_montos(request, pk):
     viatico = Solicitud_Viatico.objects.get(id = pk)
     viatico_query= Solicitud_Viatico.objects.filter(id = pk)
     concepto, created = Concepto_Viatico.objects.get_or_create(completo = False, staff=usuario)
+    error_messages = {}
 
     conceptos = Concepto_Viatico.objects.filter(viatico = viatico, completo = True)
 
@@ -316,7 +317,9 @@ def asignar_montos(request, pk):
                 messages.success(request,'Se ha agregado un concepto de viático con éxito')
                 return redirect('asignar-montos', pk=viatico.id)
             else:
-                messages.error(request,'Probablemente te falta llenar algún dato o estás repitiendo conceptos')
+                for field, errors in form.errors.items():
+                    error_messages[field] = errors.as_text()
+                #messages.error(request,'Probablemente te falta llenar algún dato o estás repitiendo conceptos')
                 form.fields['producto'].queryset = concepto_viatico
                 form.fields['viatico'].queryset = viatico_query
         if "btn_asignar" in request.POST:
@@ -332,6 +335,7 @@ def asignar_montos(request, pk):
 
 
     context= {
+        'error_messages':error_messages,
         'viatico':viatico,
         'conceptos':conceptos,
         'form':form,

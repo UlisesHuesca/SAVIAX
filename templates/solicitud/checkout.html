@@ -183,7 +183,7 @@
                                 </div>
                             </div>
 
-                            <input id="submit-button" class="btn btn-outline-info btn-block my-2" name="agregar" type="submit" value="Agregar Solicitud">
+                            <input id="submit-button" class="btn btn-outline-info btn-block my-2" name="" type="submit" value="Crear Solicitud">
                     </form>
                 </div>
             </div>
@@ -219,10 +219,21 @@
     location.reload();
     })
 
+    {% if productos %}
     document.getElementById('myForm').addEventListener('submit', function() {
-    // Deshabilita el botón de envío cuando se envía el formulario
-    document.getElementById('submit-button').disabled = true;
+    var submit = document.getElementById('submit-button')
+    submit.setAttribute('name','agregar')
+    setTimeout(function(){
+        document.getElementById('submit-button').disabled = true;
+    }, 50);
     });
+    {% else %}
+    Swal.fire({
+                    "title":"Error",
+                    "text":"No tienes productos seleccionados",
+                    "icon":"error",
+             })
+    {% endif %}
 
     document.getElementById("txt_proyectos").addEventListener("change", (event)=>{
     var select = document.getElementById("txt_proyectos");

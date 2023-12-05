@@ -335,7 +335,7 @@ def oc_modal(request, pk):
     usuario = Profile.objects.get(staff__id=request.user.id)
     colaborador_sel = Profile.objects.all()
     compras = Compra.objects.all()
-    oc, created = Compra.objects.get_or_create(complete = False, req = req, creada_por = usuario)
+    oc, created = Compra.objects.get_or_create(complete = False, req = req, creada_por = usuario, regresar_oc = False)
     #consecutivo = compras.count() + 1
     productos_comp = ArticuloComprado.objects.filter(oc=oc)
     form_product = ArticuloCompradoForm()
@@ -457,9 +457,39 @@ def matriz_oc(request):
 @login_required(login_url='user-login')
 def matriz_oc_productos(request):
     compras = Compra.objects.filter(complete=True)
-    articulos = ArticuloComprado.objects.filter(oc__complete = True)
+    articulos = ArticuloComprado.objects.filter(oc__complete = True).order_by('-oc__created_at')
     myfilter = ArticuloCompradoFilter(request.GET, queryset=articulos)
     articulos = myfilter.qs
+
+    productos_optimized = articulos.select_related(
+        'oc__req__orden__staff__staff',
+        'oc__req__orden',
+        'oc__req__orden__proyecto',
+        'oc__req__orden__subproyecto',
+        'oc__req__orden__area',
+        'oc__proveedor__nombre',
+        'producto__producto__articulos__producto__producto'
+    ).only(
+        'oc__folio',
+        'oc__req__folio',
+        'oc__req__orden__folio',
+        'oc__req__orden__staff__staff__first_name',
+        'oc__req__orden__staff__staff__last_name',
+        'oc__req__orden__proyecto__nombre',
+        'oc__req__orden__subproyecto__nombre',
+        'created_at',
+        'oc__proveedor__nombre__razon_social',
+        'oc__req__orden__area__nombre',
+        'cantidad',
+        'producto__producto__articulos__producto__producto__codigo',
+        'producto__producto__articulos__producto__producto__nombre',
+        'precio_unitario',
+        #'subtotal_parcial',
+        #'iva_parcial',
+        #'total'
+    )
+
+
 
     #Set up pagination
     p = Paginator(articulos, 50)
@@ -467,7 +497,7 @@ def matriz_oc_productos(request):
     articulos_list = p.get_page(page)
 
     if request.method == 'POST' and 'btnExcel' in request.POST:
-        return convert_excel_solicitud_matriz_productos(articulos)
+        return convert_excel_solicitud_matriz_productos(productos_optimized)
 
     context= {
         'articulos_list':articulos_list,
@@ -1459,7 +1489,7 @@ def convert_excel_matriz_compras(compras):
 
 def convert_excel_solicitud_matriz_productos(productos):
     response= HttpResponse(content_type = "application/ms-excel")
-    response['Content-Disposition'] = 'attachment; filename = Solicitudes_por_producto_' + str(dt.date.today())+'.xlsx'
+    response['Content-Disposition'] = 'attachment; filename = OC_por_producto_' + str(dt.date.today())+'.xlsx'
     wb = Workbook()
     ws = wb.create_sheet(title='Compras_Producto')
     #Comenzar en la fila 1
@@ -1543,10 +1573,26 @@ def convert_excel_solicitud_matriz_productos(productos):
             total = total * tipo_de_cambio
 
         # Constructing the row
-        row = [compra_id, req_folio, orden_folio, staff_name, proyecto_nombre, subproyecto_nombre, created_at,
-               proveedor_nombre, area_nombre, cantidad, codigo, producto_nombre, precio_unitario,
-               moneda_nombre, tipo_de_cambio, subtotal, iva, total]
-
+        row = [
+            compra_id,
+            req_folio, 
+            orden_folio, 
+            staff_name, 
+            proyecto_nombre, 
+            subproyecto_nombre, 
+            created_at,
+            proveedor_nombre,
+            area_nombre,
+            cantidad, 
+            codigo, 
+            producto_nombre, 
+            precio_unitario,
+            moneda_nombre, 
+            tipo_de_cambio, 
+            subtotal, 
+            iva, 
+            total
+        ]
         rows.append(row)
 
     # Building the Excel sheet with rows

@@ -1,10 +1,12 @@
 {% extends 'partials/base.html' %}
+{% load static %}
 <html>
 <head>
 {% block title %}Home Page{% endblock %}
 </head>
-<body>
+
 {% block content %}
+<body style="background-image: url('{% static "images/TORRE_ETIC.jpg" %}'); background-repeat: no-repeat; background-size: cover;"></body>
 <hr>
 <hr>
 <hr>
@@ -15,9 +17,9 @@
 <div class="row">
     <div class="col-md-6">
 
-    <div class="card mt-2">
+    <!--<div class="card mt-2">
             <div class="card-header">
-                Actualizaciones<!--Gráfico de proyectos-->
+                Actualizaciones Gráfico de proyectos
             </div>
             <div class="card-body">
                 <ul class="list-group list-group-flush">
@@ -33,10 +35,10 @@
     <div class="col-md-6">
         <div class="card">
             <div class="card-header">
-                <!--Gráfico de inventarios-->
+                Gráfico de inventarios
             </div>
             <div class="card-body">
-                <!--<div>
+                <div>
                     {{ graph_inventarios|safe }}
                 </div>-->
             </div>

@@ -22,10 +22,12 @@ class CompraFilter(django_filters.FilterSet):
 class ArticuloCompradoFilter(django_filters.FilterSet):
     producto = CharFilter(field_name='producto__producto__articulos__producto__producto__nombre', lookup_expr='icontains')
     oc = CharFilter(field_name='oc__id', lookup_expr='icontains')
+    start_date = DateFilter(field_name = 'oc__created_at', lookup_expr='gte')
+    end_date = DateFilter(field_name='oc__created_at',lookup_expr='lte')
 
     class Meta:
         model = ArticuloComprado
-        fields = ['producto','oc']
+        fields = ['producto','oc','start_date','end_date']
 
 class ArticulosRequisitadosFilter(django_filters.FilterSet):
     producto = CharFilter(field_name='producto__articulos__producto__producto__nombre', lookup_expr='icontains')

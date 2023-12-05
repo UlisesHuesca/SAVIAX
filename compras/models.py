@@ -51,7 +51,7 @@ class Proveedor_direcciones(models.Model):
     creado_por = models.ForeignKey(Profile, on_delete = models.CASCADE, null=True)
     distrito = models.ForeignKey(Distrito, on_delete=models.CASCADE, null=True)
     domicilio = models.CharField(max_length=200, null=True)
-    telefono = PhoneField(null=True, help_text='Número de contacto')
+    telefono = models.CharField(max_length=14, null=True)
     estado = models.ForeignKey(Estado, on_delete=models.CASCADE, null=True, blank=True)
     contacto = models.CharField(max_length=50, null=True)
     email = models.EmailField(max_length=254, null=True)

@@ -105,6 +105,11 @@
         <div class="box-element">
             <form method="post" enctype="multipart/form-data">
             {% csrf_token %}
+            {% if error_messages %}
+            <div class="alert alert-danger" role="alert">
+                {{error_messages}}
+            </div>
+            {% endif %}
             <div class="row-3">
                     <label for="form.producto" id="lbl_producto"><strong>Concepto:*</strong></label>
                     {{form.producto|add_class:"form-control"}}

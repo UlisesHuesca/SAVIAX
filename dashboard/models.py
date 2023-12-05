@@ -33,7 +33,7 @@ class Subfamilia(models.Model):
         return f'{self.nombre}'
 
 class Product(models.Model):
-    codigo = models.PositiveSmallIntegerField(null=True, unique=True)
+    codigo = models.CharField(max_length=6, null=True, unique=True)
     nombre = models.CharField(max_length=150, null=True, unique=True)
     unidad = models.ForeignKey(Unidad, on_delete = models.CASCADE, null=True)
     familia = models.ForeignKey(Familia, on_delete = models.CASCADE, null=True)

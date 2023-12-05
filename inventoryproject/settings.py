@@ -32,7 +32,7 @@ SECRET_KEY = 'django-insecure-j%w1sp%wr1q1hpfx4nn)=y0(bl$0=$fuus@y^)p8*9mm(11-4t
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = ['vordtec.cloud','www.vordtec.cloud','localhost']
 
 
 # Application definition
@@ -171,9 +171,8 @@ CRISPY_TEMPLATE_PACK = 'bootstrap4'
 #Manejo de imagenes
 STATIC_URL = '/static/'
 
-MEDIA_ROOT = (BASE_DIR/'static/images')
-
-MEDIA_URL = '/images/'
+MEDIA_ROOT = (BASE_DIR/'media')
+MEDIA_URL = '/media/'
 
 STATICFILES_DIRS = [
     BASE_DIR / 'static'

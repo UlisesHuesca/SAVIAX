@@ -186,13 +186,11 @@ def gastos_pendientes_autorizar(request):
     #obtengo el id de usuario, lo paso como argumento a id de profiles para obtener el objeto profile que coindice con ese usuario_id
     perfil = Profile.objects.get(staff__id=request.user.id)
 
-    #Este es un filtro por perfil supervisor o superintendente, es decir puede ver todo lo del distrito
-    #if perfil.tipo.superintendente == True:
-    #    solicitudes = Solicitud_Gasto.objects.filter(complete=True, staff__distrito=perfil.distrito).order_by('-folio')
-    #elif perfil.tipo.supervisor == True:
-    #    solicitudes = Solicitud_Gasto.objects.filter(complete=True, staff__distrito=perfil.distrito, supervisor=perfil).order_by('-folio')
-    #else:
-    solicitudes = Solicitud_Gasto.objects.filter(complete=True, autorizar = None, superintendente = perfil).order_by('-folio')
+    if perfil.tipo.nombre == "Admin":
+        solicitudes = Solicitud_Gasto.objects.filter(complete=True, autorizar = None).order_by('-folio')
+    else:
+        solicitudes = Solicitud_Gasto.objects.filter(complete=True, autorizar = None, superintendente = perfil).order_by('-folio')
+
     ids_solicitudes_validadas = [solicitud.id for solicitud in solicitudes if solicitud.get_validado]
 
     solicitudes = Solicitud_Gasto.objects.filter(id__in=ids_solicitudes_validadas)
@@ -203,14 +201,14 @@ def gastos_pendientes_autorizar(request):
     #Set up pagination
     p = Paginator(solicitudes, 10)
     page = request.GET.get('page')
-    ordenes_list = p.get_page(page)
+    solicitudes_list = p.get_page(page)
 
     #if request.method =='POST' and 'btnExcel' in request.POST:
 
         #return convert_excel_solicitud_matriz(solicitudes)
 
     context= {
-        'ordenes_list':ordenes_list,
+        'ordenes_list':solicitudes_list,
         'myfilter':myfilter,
         }
 
@@ -254,6 +252,8 @@ def autorizar_gasto(request, pk):
     perfil = Profile.objects.get(staff__id=request.user.id)
     gasto = Solicitud_Gasto.objects.get(id = pk)
     productos = Articulo_Gasto.objects.filter(gasto = gasto)
+    facturas = Factura.objects.filter(solicitud_gasto__id = pk)
+
 
     if request.method =='POST' and 'btn_autorizar' in request.POST:
         gasto.autorizar = True
@@ -266,6 +266,7 @@ def autorizar_gasto(request, pk):
 
 
     context = {
+        'facturas':facturas,
         'gasto': gasto,
         'productos': productos,
     }

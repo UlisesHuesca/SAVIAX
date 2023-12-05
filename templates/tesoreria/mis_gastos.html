@@ -8,13 +8,15 @@
 </head>
 <body>
 {% block content %}
-<div class = "row mt-2 bg-white" id="response-div">
+<h6>&nbsp;</h6>
+<h6>&nbsp;</h6>
+<h6>&nbsp;</h6>
         <div class="col-12">
-            <div class="card card-body">
-                <hr>
-                <hr>
-                <h5>Filtro de Pagos</h5>
-                <hr>
+            <div class="card">
+                <div class="card-header">
+                    <h5>Filtro de Gastos</h5>
+                </div>
+                <div class="card-body">
                 {% csrf_token %}
                 <form method="GET">
                 <div class="row g-12">

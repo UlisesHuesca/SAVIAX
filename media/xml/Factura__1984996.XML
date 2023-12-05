@@ -1,0 +1,134 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<cfdi:Comprobante xsi:schemaLocation="http://www.sat.gob.mx/cfd/4 http://www.sat.gob.mx/sitio_internet/cfd/4/cfdv40.xsd" Version="4.0" Folio="1984996" Fecha="2023-08-27T18:30:01" Sello="FVzuN6VIO3b7xY6NGES7ObVXwNXGmbDgDi7liyU+qlsX+WikfzaOD2snoUqAnKd5hiDgTKJPM7Regb/RWjCZwALgl07NJpe1haTY8saury+r1wuMDhwtNfoPvv2zjrIuodH19oi55ApU4dOFDO3RSBbfLBR4W8+sP8TcwDKlcou+4cFHRx83TJ/y+1fpoHl/0/gomEKZGEHsmHzg3kvGbIBshAz0CIZS7uy2qTrMqvz1AIdytjywvaNUyJLFY17UJ9RBP5ZUrDIae1atkNsvOgk8TckTRed7tZa8WHybg1FKpWdYzz0p83mXicE5iyagvGCm1ykL54CI2Ni8pr+cuw==" FormaPago="01" NoCertificado="00001000000509853035" Certificado="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" SubTotal="850.00" Moneda="MXN" Total="986.00" TipoDeComprobante="I" Exportacion="01" MetodoPago="PUE" LugarExpedicion="91630" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:cfdi="http://www.sat.gob.mx/cfd/4">
+  <cfdi:Emisor Rfc="CPM030614M68" Nombre="CONCESIONES Y PROMOCIONES MALIBRAN" RegimenFiscal="601" />
+  <cfdi:Receptor Rfc="VME121113PI3" Nombre="VORDTEC DE MEXICO" DomicilioFiscalReceptor="91633" RegimenFiscalReceptor="601" UsoCFDI="G03" />
+  <cfdi:Conceptos>
+    <cfdi:Concepto ClaveProdServ="95111603" Cantidad="1" ClaveUnidad="C62" Descripcion="CUOTA DE PEAJE  PLAN DEL RÍO, CARRIL 301 A LAS 08:53:26 HRS. DEL 18 AUG 23; BOLETO N° FOLIO:11625813" ValorUnitario="50.00" Importe="50.00" ObjetoImp="02">
+      <cfdi:Impuestos>
+        <cfdi:Traslados>
+          <cfdi:Traslado Base="50.00" Impuesto="002" TipoFactor="Tasa" TasaOCuota="0.160000" Importe="8.00" />
+        </cfdi:Traslados>
+      </cfdi:Impuestos>
+    </cfdi:Concepto>
+    <cfdi:Concepto ClaveProdServ="95111603" Cantidad="1" ClaveUnidad="C62" Descripcion="CUOTA DE PEAJE  PLAN DEL RÍO, CARRIL 301 A LAS 08:30:08 HRS. DEL 22 AUG 23; BOLETO N° FOLIO:11632238" ValorUnitario="50.00" Importe="50.00" ObjetoImp="02">
+      <cfdi:Impuestos>
+        <cfdi:Traslados>
+          <cfdi:Traslado Base="50.00" Impuesto="002" TipoFactor="Tasa" TasaOCuota="0.160000" Importe="8.00" />
+        </cfdi:Traslados>
+      </cfdi:Impuestos>
+    </cfdi:Concepto>
+    <cfdi:Concepto ClaveProdServ="95111603" Cantidad="1" ClaveUnidad="C62" Descripcion="CUOTA DE PEAJE  PLAN DEL RÍO, CARRIL 301 A LAS 09:12:15 HRS. DEL 26 AUG 23; BOLETO N° FOLIO:11637920" ValorUnitario="50.00" Importe="50.00" ObjetoImp="02">
+      <cfdi:Impuestos>
+        <cfdi:Traslados>
+          <cfdi:Traslado Base="50.00" Impuesto="002" TipoFactor="Tasa" TasaOCuota="0.160000" Importe="8.00" />
+        </cfdi:Traslados>
+      </cfdi:Impuestos>
+    </cfdi:Concepto>
+    <cfdi:Concepto ClaveProdServ="95111603" Cantidad="1" ClaveUnidad="C62" Descripcion="CUOTA DE PEAJE  PLAN DEL RÍO, CARRIL 302 A LAS 09:13:30 HRS. DEL 16 AUG 23; BOLETO N° FOLIO:17003106" ValorUnitario="50.00" Importe="50.00" ObjetoImp="02">
+      <cfdi:Impuestos>
+        <cfdi:Traslados>
+          <cfdi:Traslado Base="50.00" Impuesto="002" TipoFactor="Tasa" TasaOCuota="0.160000" Importe="8.00" />
+        </cfdi:Traslados>
+      </cfdi:Impuestos>
+    </cfdi:Concepto>
+    <cfdi:Concepto ClaveProdServ="95111603" Cantidad="1" ClaveUnidad="C62" Descripcion="CUOTA DE PEAJE  PLAN DEL RÍO, CARRIL 302 A LAS 08:25:16 HRS. DEL 17 AUG 23; BOLETO N° FOLIO:17004852" ValorUnitario="50.00" Importe="50.00" ObjetoImp="02">
+      <cfdi:Impuestos>
+        <cfdi:Traslados>
+          <cfdi:Traslado Base="50.00" Impuesto="002" TipoFactor="Tasa" TasaOCuota="0.160000" Importe="8.00" />
+        </cfdi:Traslados>
+      </cfdi:Impuestos>
+    </cfdi:Concepto>
+    <cfdi:Concepto ClaveProdServ="95111603" Cantidad="1" ClaveUnidad="C62" Descripcion="CUOTA DE PEAJE  PLAN DEL RÍO, CARRIL 302 A LAS 08:56:36 HRS. DEL 21 AUG 23; BOLETO N° FOLIO:17015772" ValorUnitario="50.00" Importe="50.00" ObjetoImp="02">
+      <cfdi:Impuestos>
+        <cfdi:Traslados>
+          <cfdi:Traslado Base="50.00" Impuesto="002" TipoFactor="Tasa" TasaOCuota="0.160000" Importe="8.00" />
+        </cfdi:Traslados>
+      </cfdi:Impuestos>
+    </cfdi:Concepto>
+    <cfdi:Concepto ClaveProdServ="95111603" Cantidad="1" ClaveUnidad="C62" Descripcion="CUOTA DE PEAJE  PLAN DEL RÍO, CARRIL 302 A LAS 08:39:30 HRS. DEL 23 AUG 23; BOLETO N° FOLIO:17020050" ValorUnitario="50.00" Importe="50.00" ObjetoImp="02">
+      <cfdi:Impuestos>
+        <cfdi:Traslados>
+          <cfdi:Traslado Base="50.00" Impuesto="002" TipoFactor="Tasa" TasaOCuota="0.160000" Importe="8.00" />
+        </cfdi:Traslados>
+      </cfdi:Impuestos>
+    </cfdi:Concepto>
+    <cfdi:Concepto ClaveProdServ="95111603" Cantidad="1" ClaveUnidad="C62" Descripcion="CUOTA DE PEAJE  PLAN DEL RÍO, CARRIL 302 A LAS 09:01:30 HRS. DEL 24 AUG 23; BOLETO N° FOLIO:17022445" ValorUnitario="50.00" Importe="50.00" ObjetoImp="02">
+      <cfdi:Impuestos>
+        <cfdi:Traslados>
+          <cfdi:Traslado Base="50.00" Impuesto="002" TipoFactor="Tasa" TasaOCuota="0.160000" Importe="8.00" />
+        </cfdi:Traslados>
+      </cfdi:Impuestos>
+    </cfdi:Concepto>
+    <cfdi:Concepto ClaveProdServ="95111603" Cantidad="1" ClaveUnidad="C62" Descripcion="CUOTA DE PEAJE  PLAN DEL RÍO, CARRIL 302 A LAS 08:56:13 HRS. DEL 25 AUG 23; BOLETO N° FOLIO:17024264" ValorUnitario="50.00" Importe="50.00" ObjetoImp="02">
+      <cfdi:Impuestos>
+        <cfdi:Traslados>
+          <cfdi:Traslado Base="50.00" Impuesto="002" TipoFactor="Tasa" TasaOCuota="0.160000" Importe="8.00" />
+        </cfdi:Traslados>
+      </cfdi:Impuestos>
+    </cfdi:Concepto>
+    <cfdi:Concepto ClaveProdServ="95111603" Cantidad="1" ClaveUnidad="C62" Descripcion="CUOTA DE PEAJE  PLAN DEL RÍO, CARRIL 304 A LAS 19:21:23 HRS. DEL 23 AUG 23; BOLETO N° FOLIO:4819724" ValorUnitario="50.00" Importe="50.00" ObjetoImp="02">
+      <cfdi:Impuestos>
+        <cfdi:Traslados>
+          <cfdi:Traslado Base="50.00" Impuesto="002" TipoFactor="Tasa" TasaOCuota="0.160000" Importe="8.00" />
+        </cfdi:Traslados>
+      </cfdi:Impuestos>
+    </cfdi:Concepto>
+    <cfdi:Concepto ClaveProdServ="95111603" Cantidad="1" ClaveUnidad="C62" Descripcion="CUOTA DE PEAJE  PLAN DEL RÍO, CARRIL 304 A LAS 10:48:31 HRS. DEL 25 AUG 23; BOLETO N° FOLIO:4822320" ValorUnitario="50.00" Importe="50.00" ObjetoImp="02">
+      <cfdi:Impuestos>
+        <cfdi:Traslados>
+          <cfdi:Traslado Base="50.00" Impuesto="002" TipoFactor="Tasa" TasaOCuota="0.160000" Importe="8.00" />
+        </cfdi:Traslados>
+      </cfdi:Impuestos>
+    </cfdi:Concepto>
+    <cfdi:Concepto ClaveProdServ="95111603" Cantidad="1" ClaveUnidad="C62" Descripcion="CUOTA DE PEAJE  PLAN DEL RÍO, CARRIL 305 A LAS 16:42:06 HRS. DEL 15 AUG 23; BOLETO N° FOLIO:17545013" ValorUnitario="50.00" Importe="50.00" ObjetoImp="02">
+      <cfdi:Impuestos>
+        <cfdi:Traslados>
+          <cfdi:Traslado Base="50.00" Impuesto="002" TipoFactor="Tasa" TasaOCuota="0.160000" Importe="8.00" />
+        </cfdi:Traslados>
+      </cfdi:Impuestos>
+    </cfdi:Concepto>
+    <cfdi:Concepto ClaveProdServ="95111603" Cantidad="1" ClaveUnidad="C62" Descripcion="CUOTA DE PEAJE  PLAN DEL RÍO, CARRIL 305 A LAS 20:04:41 HRS. DEL 24 AUG 23; BOLETO N° FOLIO:17564111" ValorUnitario="50.00" Importe="50.00" ObjetoImp="02">
+      <cfdi:Impuestos>
+        <cfdi:Traslados>
+          <cfdi:Traslado Base="50.00" Impuesto="002" TipoFactor="Tasa" TasaOCuota="0.160000" Importe="8.00" />
+        </cfdi:Traslados>
+      </cfdi:Impuestos>
+    </cfdi:Concepto>
+    <cfdi:Concepto ClaveProdServ="95111603" Cantidad="1" ClaveUnidad="C62" Descripcion="CUOTA DE PEAJE  PLAN DEL RÍO, CARRIL 305 A LAS 13:55:44 HRS. DEL 26 AUG 23; BOLETO N° FOLIO:17567785" ValorUnitario="50.00" Importe="50.00" ObjetoImp="02">
+      <cfdi:Impuestos>
+        <cfdi:Traslados>
+          <cfdi:Traslado Base="50.00" Impuesto="002" TipoFactor="Tasa" TasaOCuota="0.160000" Importe="8.00" />
+        </cfdi:Traslados>
+      </cfdi:Impuestos>
+    </cfdi:Concepto>
+    <cfdi:Concepto ClaveProdServ="95111603" Cantidad="1" ClaveUnidad="C62" Descripcion="CUOTA DE PEAJE  PLAN DEL RÍO, CARRIL 306 A LAS 19:47:12 HRS. DEL 16 AUG 23; BOLETO N° FOLIO:12573085" ValorUnitario="50.00" Importe="50.00" ObjetoImp="02">
+      <cfdi:Impuestos>
+        <cfdi:Traslados>
+          <cfdi:Traslado Base="50.00" Impuesto="002" TipoFactor="Tasa" TasaOCuota="0.160000" Importe="8.00" />
+        </cfdi:Traslados>
+      </cfdi:Impuestos>
+    </cfdi:Concepto>
+    <cfdi:Concepto ClaveProdServ="95111603" Cantidad="1" ClaveUnidad="C62" Descripcion="CUOTA DE PEAJE  PLAN DEL RÍO, CARRIL 306 A LAS 17:57:32 HRS. DEL 21 AUG 23; BOLETO N° FOLIO:12580822" ValorUnitario="50.00" Importe="50.00" ObjetoImp="02">
+      <cfdi:Impuestos>
+        <cfdi:Traslados>
+          <cfdi:Traslado Base="50.00" Impuesto="002" TipoFactor="Tasa" TasaOCuota="0.160000" Importe="8.00" />
+        </cfdi:Traslados>
+      </cfdi:Impuestos>
+    </cfdi:Concepto>
+    <cfdi:Concepto ClaveProdServ="95111603" Cantidad="1" ClaveUnidad="C62" Descripcion="CUOTA DE PEAJE  PLAN DEL RÍO, CARRIL 306 A LAS 18:43:04 HRS. DEL 22 AUG 23; BOLETO N° FOLIO:12582202" ValorUnitario="50.00" Importe="50.00" ObjetoImp="02">
+      <cfdi:Impuestos>
+        <cfdi:Traslados>
+          <cfdi:Traslado Base="50.00" Impuesto="002" TipoFactor="Tasa" TasaOCuota="0.160000" Importe="8.00" />
+        </cfdi:Traslados>
+      </cfdi:Impuestos>
+    </cfdi:Concepto>
+  </cfdi:Conceptos>
+  <cfdi:Impuestos TotalImpuestosTrasladados="136.00">
+    <cfdi:Traslados>
+      <cfdi:Traslado Base="850.00" Impuesto="002" TipoFactor="Tasa" TasaOCuota="0.160000" Importe="136.00" />
+    </cfdi:Traslados>
+  </cfdi:Impuestos>
+  <cfdi:Complemento>
+    <tfd:TimbreFiscalDigital Version="1.1" UUID="62CD7A95-A7AD-4B92-A191-DAA8A7FA4381" FechaTimbrado="2023-08-27T19:41:05" RfcProvCertif="STA0903206B9" SelloCFD="FVzuN6VIO3b7xY6NGES7ObVXwNXGmbDgDi7liyU+qlsX+WikfzaOD2snoUqAnKd5hiDgTKJPM7Regb/RWjCZwALgl07NJpe1haTY8saury+r1wuMDhwtNfoPvv2zjrIuodH19oi55ApU4dOFDO3RSBbfLBR4W8+sP8TcwDKlcou+4cFHRx83TJ/y+1fpoHl/0/gomEKZGEHsmHzg3kvGbIBshAz0CIZS7uy2qTrMqvz1AIdytjywvaNUyJLFY17UJ9RBP5ZUrDIae1atkNsvOgk8TckTRed7tZa8WHybg1FKpWdYzz0p83mXicE5iyagvGCm1ykL54CI2Ni8pr+cuw==" NoCertificadoSAT="00001000000506204896" SelloSAT="SE/y7ejvD9/Lg+N6QMoR02WxNWBgHLKpKwpSpsE+udENUAxlS3PNImHLPnUAYfkG0vAYflDdxvcd/i/6+50QzeUlo2qK/6dqSh3ftrCgPM8d1BTvPmwHgoC8ysf0hbgPocA38zQxrCqZdwd/mpaYliitv9Nq7kJ0VAOZ6YpOMoouQ+cf+XQPgUY/oju6zZU+Z9T0yL2YabA10kOXcyVdZd5RnTk/2fqnzKvq+RBcxZKB2+Zib8Op/zTCFqaOi9dqW3Eh6w6/eG7N3aIF8CnmJDsSuDLM1uYOh1r1jPaw3ibMm0o4CID99yp1nLhrh98RQ49w4nE2D4X00pZp6XeMLg==" xmlns:xsi="http://www.sat.gob.mx/TimbreFiscalDigital http://www.sat.gob.mx/sitio_internet/cfd/TimbreFiscalDigital/TimbreFiscalDigitalv11.xsd" xmlns:tfd="http://www.sat.gob.mx/TimbreFiscalDigital" />
+  </cfdi:Complemento>
+</cfdi:Comprobante>

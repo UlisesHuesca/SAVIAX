@@ -236,7 +236,7 @@ def checkout(request):
         productos = order.articulosordenados_set.all()
         cartItems = order.get_cart_quantity
 
-    if request.method =='POST':
+    if request.method =='POST' and 'agregar' in request.POST:
         form = OrderForm(request.POST, instance=order)
         if form.is_valid():
             order = form.save(commit=False)

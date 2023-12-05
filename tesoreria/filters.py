@@ -7,7 +7,7 @@ class PagoFilter(django_filters.FilterSet):
     oc = CharFilter(field_name='oc__id', lookup_expr='icontains')
     proveedor = CharFilter(field_name='oc__proveedor',lookup_expr='icontains')
     monto_pagado = CharFilter(field_name='monto_pagado', lookup_expr='icontains')
-    proyecto = CharFilter(field_name='oc__req__orden__proyecto',lookup_expr='icontains')
+    proyecto = CharFilter(field_name='oc__req__orden__proyecto__nombre',lookup_expr='icontains')
     subproyecto = CharFilter(field_name='oc__req__orden__subproyecto', lookup_expr='icontains')
     solicitada_por = CharFilter(field_name='oc__req__orden__staff__staff', lookup_expr='icontains')
     start_date = DateFilter(field_name = 'pagado_date', lookup_expr='gte')
@@ -28,7 +28,7 @@ class Matriz_Pago_Filter(django_filters.FilterSet):
     ]
 
     oc = CharFilter(method='my_filter', label='Search')
-    proyecto = CharFilter(method ='my_proyecto', label="Search")
+    proyecto = CharFilter(method ='my_proyecto', label='Search')
     tipo = ChoiceFilter(choices=TIPO_CHOICES, method='filter_by_tipo', label='Tipo') # Changed filter
     facturas_completas = BooleanFilter(method='filter_by_facturas_completas', label='Facturas Completas') # New filter
     #folio = CharFilter(field_name='folio', lookup_expr='icontains')
@@ -44,7 +44,7 @@ class Matriz_Pago_Filter(django_filters.FilterSet):
         return queryset.filter(Q(oc__id__icontains = value) | Q(gasto__id__icontains = value)| Q(viatico__id__icontains = value))
 
     def my_proyecto(self, queryset, name, value):
-        return queryset.filter(Q(oc__req__orden__proyecto__nombre__icontains = value) | Q(gasto__proyecto__nombre__icontains = value) | Q(viatico__proyecto__nombre__icontains = value))
+        return queryset.filter(Q(oc__req__orden__proyecto__nombre__icontains = value) | Q(viatico__proyecto__nombre__icontains = value))
     
     def filter_by_tipo(self, queryset, name, value):  # new method
         if value.lower() == 'compra':

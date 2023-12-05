@@ -130,6 +130,7 @@
                     <th scope="col">Autorizado</th>
                     <th scope="col">Importe Gasto</th>
                     <th scope="col">Pagado</th>
+                    <th>Detalle</th>
                     <th scope="col">Acción</th>
                     <th scope="col">Comprobación</th>
                 </tr>
@@ -143,6 +144,7 @@
                     <td>{{gasto.approbado_fecha2}} </td>
                     <td>${{gasto.get_total_solicitud|floatformat:2}}</td>
                     <td>${{gasto.monto_pagado|floatformat:2}}</td>
+                    <td><button type="button" class="btn btn-outline-info" data-bs-toggle="modal" data-bs-target='#dialog' hx-target="#document" hx-get="{% url 'detalle-gastos' gasto.id %}">Productos</button></td>
                     <td>
                         <ul class="nav nav-pills">
                             <li class="nav-item mx-1">

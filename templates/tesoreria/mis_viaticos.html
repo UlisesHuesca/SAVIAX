@@ -8,51 +8,68 @@
 </head>
 <body>
 {% block content %}
-<div class = "row mt-2 bg-white" id="response-div">
+<h6>&nbsp;</h6>
+<h6>&nbsp;</h6>
+<h6>&nbsp;</h6>
         <div class="col-12">
-            <div class="card card-body">
-                <hr>
-                <hr>
-                <h5>Filtro de Pagos</h5>
-                <hr>
-                {% csrf_token %}
+            <div class="card">
+                <div class="card-header">
+                <h5>Filtro de Viáticos</h5>
+                </div>
+                <div class="card-body">
+               
                 <form method="GET">
+                    {% csrf_token %}
                 <div class="row g-12">
-                    <label for="myfilter.form.id" class="col-sm-auto col-form-label text-right my-2"><strong>Folio:</strong></label>
-                    <div class="col-auto my-2">
-                        {{myfilter.form.id|add_class:'form-control'}}
+                    <div class="col-lg-4">
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1"><i class="fa-solid fa-gear"></i></span>
+                            <div class="form-floating form-floating-group flex-grow-1">   
+                                {{myfilter.form.id|add_class:"form-control"|append_attr:"placeholder=Folio"}}
+                                <label for="id_lugar_partida">Folio</label>
+                            </div>
+                        </div>
                     </div>
-                    <label for="myfilter.form.proveedor" class="col-sm-auto col-form-label text-right my-2"><strong>Proveedor:</strong></label>
-                    <div class="col-auto my-2">
-                        {{myfilter.form.proveedor|add_class:'form-control'}}
+                    <div class="col-lg-4">
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1"><i class="fa-solid fa-gear"></i></span>
+                            <div class="form-floating form-floating-group flex-grow-1">   
+                                {{myfilter.form.proyecto|add_class:"form-control"|append_attr:"placeholder=Proyecto"}}
+                                <label for="id_proyecto">Proyecto</label>
+                            </div>
+                        </div>
                     </div>
-                    <label for="myfilter.form.monto_pagadp" class="col-sm-auto col-form-label text-right my-2"><strong>Requisición:</strong></label>
-                    <div class="col-auto my-2">
-                        {{myfilter.form.monto_pagado|add_class:'form-control'}}
+                    <div class="col-lg-4">
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1"><i class="fa-solid fa-gear"></i></span>
+                            <div class="form-floating form-floating-group flex-grow-1">   
+                                {{myfilter.form.proyecto|add_class:"form-control"|append_attr:"placeholder=Subproyecto"}}
+                                <label for="id_subproyecto">Subproyecto</label>
+                            </div>
+                        </div>
                     </div>
-                    <label for="myfilter.form.proyecto" class="col-sm-auto col-form-label text-right"><strong>Proyecto:</strong></label>
-                    <div class="col-auto my-2">
-                        {{myfilter.form.proyecto|add_class:'form-control'}}
+                    <div class="col-lg-4">
+                        <div class="input-group mb-3">
+                        <span class="input-group-text" id="basic-addon1"><i class="fa-regular fa-calendar"></i></span>
+                            <div class="form-floating form-floating-group flex-grow-1">   
+                                {% render_field myfilter.form.start_date type="date" class="form-control" %}
+                            <label style="color: #121212;" for="id_subproyecto">Desde:</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-4">
+                        <div class="input-group mb-3">
+                        <span class="input-group-text" id="basic-addon1"><i class="fa-regular fa-calendar"></i></span>
+                            <div class="form-floating form-floating-group flex-grow-1">   
+                                {% render_field myfilter.form.end_date type="date" class="form-control" %}
+                            <label style="color: #121212;" for="id_subproyecto">Hasta:</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-2">
+                        <button class="btn btn-outline-success btn-block m-3" type="submit" value="Buscar"><i class="fa-solid fa-magnifying-glass"></i></button>
                     </div>
                 </div>
-                <div class="row g-12">
-                    <label for="myfilter.form.subproyecto" class="col-sm-1 col-form-label text-right"><strong>Subproyecto:</strong></label>
-                    <div class="col-2">
-                        {{myfilter.form.subproyecto|add_class:'form-control'}}
-                    </div>
-                    <label for="myfilter.form.start_date" class="col-sm-1 col-form-label text-right"><strong>Desde:</strong></label>
-                    <div class="col-2">
-                        {% render_field myfilter.form.start_date type="date" class="form-control" %}
-                    </div>
-                    <label for="myfilter.form.end_date" class="col-sm-1 col-form-label text-right"><strong>Hasta:</strong></label>
-                    <div class="col-2">
-                        {% render_field myfilter.form.end_date type="date" class="form-control" %}
-                    </div>
-                    <div class="col-2">
-                        <button class="btn btn-outline-success btn-block" type="submit" value="Buscar"><i class="fa-solid fa-magnifying-glass"></i></button>
-                    </div>
-                </div>
-                <hr>
                 </form>
                 <form method=POST>
                     {% csrf_token %}
