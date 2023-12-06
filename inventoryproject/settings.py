@@ -11,9 +11,12 @@ https://docs.djangoproject.com/en/3.2/ref/settings/
 """
 #import os
 from pathlib import Path
+from dotenv import load_dotenv
+import os 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 import moneyed
+load_dotenv()
 
 MXN = moneyed.add_currency(
     code='MXN',
@@ -27,7 +30,7 @@ CURRENCIES =('USD','MXN')
 # See https://docs.djangoproject.com/en/3.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-j%w1sp%wr1q1hpfx4nn)=y0(bl$0=$fuus@y^)p8*9mm(11-4t'
+SECRET_KEY = os.getenv('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -118,8 +121,8 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'UlisesHuesca$default',
-	'USER': 'root',
-        'PASSWORD': '*$HbAq*/4528*',
+	    'USER': os.getenv('DATABASE_USER'),
+        'PASSWORD': os.getenv('DATABASE_PASSWORD'),
         'HOST': 'localhost',
         'PORT': '3306',
 	}
