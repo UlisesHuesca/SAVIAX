@@ -198,14 +198,14 @@ EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 #EMAIL_HOST = 'smtp.gmail.com'
 #EMAIL_PORT = '587'
 #EMAIL_HOST_USER = 'saviax.vordcab@gmail.com'
-#EMAIL_HOST_PASSWORD = 'yzhzxcdkmmamxchq'
+#EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')
 #EMAIL_USE_TLS = True
 #EMAIL_USE_SSL = False
 
 EMAIL_HOST = 'mail.vordtec.com'
-EMAIL_PORT = '26'
-EMAIL_HOST_USER = 'savia@vordtec.com'
-EMAIL_HOST_PASSWORD = 'MjUaQ*46852'
+EMAIL_PORT = os.getenv('EMAIL_PORT')
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')
 EMAIL_USE_TLS = True
 
 USE_THOUSAND_SEPARATOR = True
