@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<cfdi:Comprobante Certificado="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" Exportacion="01" Fecha="2023-11-14T10:24:55" Folio="1912" FormaPago="03" LugarExpedicion="93320" MetodoPago="PUE" Moneda="MXN" NoCertificado="00001000000514514761" Sello="JlsU4QnHPhV1z818VY92taFW18fxyj5sAIdhioTOdd4mDJ0uR/7Rcp6j1Orlk5MadpmI7zaBftz2ezit8o8fEmDxUv9r3s2VhdgIXM1cQSrAd6h2i+/hy+PLQUwbIO3LGihNTR3Y2eJsloimnZZ3UqG9fJ3WDKiwMx19c8SNLaogo7lZje3OqxcbaNlyir1hZ68nj13uy4FLnxH4mWJVSUGuV7bpMm7/zH1C+SP5Skyg6lUxhiyruZSGa9JwzUygv36nm+ejRClq4F1QjkllnfyqMHwwf1O6TzVBQSYWLMcOW/C2KlIm1BZoY0jwlND60R97IECvuaX4wm1AcLbxwQ==" SubTotal="13600.00" TipoCambio="1" TipoDeComprobante="I" Total="15232.00" Version="4.0" xmlns:cartaporte20="http://www.sat.gob.mx/CartaPorte20" xmlns:cfdi="http://www.sat.gob.mx/cfd/4" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.sat.gob.mx/cfd/4 http://www.sat.gob.mx/sitio_internet/cfd/4/cfdv40.xsd  http://www.sat.gob.mx/CartaPorte20 http://www.sat.gob.mx/sitio_internet/cfd/CartaPorte/CartaPorte20.xsd">
+    <cfdi:Emisor Nombre="OSCAR JAVIER PARRA GONZALEZ" RegimenFiscal="612" Rfc="PAGO931021ST9"/>
+    <cfdi:Receptor DomicilioFiscalReceptor="91633" Nombre="VORDTEC DE MEXICO" RegimenFiscalReceptor="601" Rfc="VME121113PI3" UsoCFDI="G03"/>
+    <cfdi:Conceptos>
+        <cfdi:Concepto Cantidad="1" ClaveProdServ="78101800" ClaveUnidad="E48" Descripcion="TRACTOCAMIÓN CON WINCH Y LOWBOY EN SERVICIO DE TRANSPORTE DE PRESA METÁLICA DE POZO AMATITLÁN 1469 A POZO AMATITLÁN 1716. 14-NOV.-23" Importe="13600.00" ObjetoImp="02" ValorUnitario="13600">
+            <cfdi:Impuestos>
+                <cfdi:Traslados>
+                    <cfdi:Traslado Base="13600.00" Importe="2176.00" Impuesto="002" TasaOCuota="0.160000" TipoFactor="Tasa"/>
+                </cfdi:Traslados>
+                <cfdi:Retenciones>
+                    <cfdi:Retencion Base="13600.000000" Importe="544.00" Impuesto="002" TasaOCuota="0.040000" TipoFactor="Tasa"/>
+                </cfdi:Retenciones>
+            </cfdi:Impuestos>
+        </cfdi:Concepto>
+    </cfdi:Conceptos>
+    <cfdi:Impuestos TotalImpuestosRetenidos="544.00" TotalImpuestosTrasladados="2176.00">
+        <cfdi:Retenciones>
+            <cfdi:Retencion Importe="544.00" Impuesto="002"/>
+        </cfdi:Retenciones>
+        <cfdi:Traslados>
+            <cfdi:Traslado Base="13600.00" Importe="2176.00" Impuesto="002" TasaOCuota="0.160000" TipoFactor="Tasa"/>
+        </cfdi:Traslados>
+    </cfdi:Impuestos>
+    <cfdi:Complemento>
+        <cartaporte20:CartaPorte TotalDistRec="100" TranspInternac="No" Version="2.0">
+            <cartaporte20:Ubicaciones>
+                <cartaporte20:Ubicacion FechaHoraSalidaLlegada="2023-11-14T06:00:00" RFCRemitenteDestinatario="VME121113PI3" TipoUbicacion="Origen">
+                    <cartaporte20:Domicilio CodigoPostal="92917" Estado="VER" Municipio="175" Pais="MEX"/>
+                </cartaporte20:Ubicacion>
+                <cartaporte20:Ubicacion DistanciaRecorrida="100" FechaHoraSalidaLlegada="2023-11-14T13:00:00" RFCRemitenteDestinatario="VME121113PI3" TipoUbicacion="Destino">
+                    <cartaporte20:Domicilio CodigoPostal="92727" Estado="VER" Municipio="058" Pais="MEX"/>
+                </cartaporte20:Ubicacion>
+            </cartaporte20:Ubicaciones>
+            <cartaporte20:Mercancias NumTotalMercancias="1" PesoBrutoTotal="2800" UnidadPeso="KGM">
+                <cartaporte20:Mercancia BienesTransp="24111803" Cantidad="1" ClaveUnidad="H87" Descripcion="PRESA METÁLICA" PesoEnKg="2800"/>
+                <cartaporte20:Autotransporte NumPermisoSCT="3065PAGO10082022230908000" PermSCT="TPAF01">
+                    <cartaporte20:IdentificacionVehicular AnioModeloVM="2012" ConfigVehicular="C3R3" PlacaVM="32AS2T"/>
+                    <cartaporte20:Seguros AseguraRespCivil="AXA SEGUROS" PolizaRespCivil="150241334300"/>
+                    <cartaporte20:Remolques>
+                        <cartaporte20:Remolque Placa="72UL1D" SubTipoRem="CTR009"/>
+                    </cartaporte20:Remolques>
+                </cartaporte20:Autotransporte>
+            </cartaporte20:Mercancias>
+            <cartaporte20:FiguraTransporte>
+                <cartaporte20:TiposFigura NombreFigura="CRISTIAN SOLIS RAMIREZ" NumLicencia="LFD00028508" RFCFigura="SORC921012DF7" TipoFigura="01">
+                    <cartaporte20:Domicilio CodigoPostal="92900" Estado="VER" Municipio="175" Pais="MEX"/>
+                </cartaporte20:TiposFigura>
+            </cartaporte20:FiguraTransporte>
+        </cartaporte20:CartaPorte>
+    <tfd:TimbreFiscalDigital FechaTimbrado="2023-11-14T10:24:55" NoCertificadoSAT="00001000000506403528" RfcProvCertif="CCC1007293K0" SelloCFD="JlsU4QnHPhV1z818VY92taFW18fxyj5sAIdhioTOdd4mDJ0uR/7Rcp6j1Orlk5MadpmI7zaBftz2ezit8o8fEmDxUv9r3s2VhdgIXM1cQSrAd6h2i+/hy+PLQUwbIO3LGihNTR3Y2eJsloimnZZ3UqG9fJ3WDKiwMx19c8SNLaogo7lZje3OqxcbaNlyir1hZ68nj13uy4FLnxH4mWJVSUGuV7bpMm7/zH1C+SP5Skyg6lUxhiyruZSGa9JwzUygv36nm+ejRClq4F1QjkllnfyqMHwwf1O6TzVBQSYWLMcOW/C2KlIm1BZoY0jwlND60R97IECvuaX4wm1AcLbxwQ==" SelloSAT="Ts0BJFzvjf99vY5bTqsHOMcBwpw/DGx/LJzbMMG2AFzOvbXWaMczey7Ax93w5LG+zN+f4fn4cqE/24heEroNEUBf9aFncrRlI8k5VfW692OCaTFXa+r9LRgGIAwi3IwAjytrEYmgQhh9N877P11qoq54OH9UYsVZqRyuJun63Gzqt3jFiefT3Wj5xvUH5Q4w9uBUBQBOverkcUIbAE/PX/+WrIndyULao3f/Kqtp6c1s+IJ2+/RdgrygQzHd7uNhcyzAB+4eKEd7FbqteadlcQzPO0nZSFx1Gq8DLUgkHI7GkJaTxCX6acJnTQOqwuP5+GZS2oEW2X3WZ1vJuKVWqQ==" UUID="a634bd7a-8ed8-47ad-8f7b-22b88129f028" Version="1.1" xmlns:tfd="http://www.sat.gob.mx/TimbreFiscalDigital" xsi:schemaLocation="http://www.sat.gob.mx/TimbreFiscalDigital http://www.sat.gob.mx/sitio_internet/cfd/TimbreFiscalDigital/TimbreFiscalDigitalv11.xsd"/></cfdi:Complemento>
+</cfdi:Comprobante>

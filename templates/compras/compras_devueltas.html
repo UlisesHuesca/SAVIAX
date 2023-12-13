@@ -211,9 +211,11 @@
                             <li class="nav-item mx-1">
                                 <a id="myBtn" type="button" class="btn btn-outline-info" data-bs-toggle="modal" data-bs-target='#dialog' hx-target="#document" hx-get="{% url 'productos-oc' compra.id %}">Productos</a>
                             </li>
+                            {% if usuario.tipo.comprador == True %}
                             <li class="nav-item mx-1">
                                 <a type="button" class="btn btn-outline-info" href="{% url 'compra-edicion' compra.id %}"><i class="fa-solid fa-pen-to-square"></i></a>
                             </li>
+                            {% endif %}
                         </ul>
                     </td>
                 </tr>

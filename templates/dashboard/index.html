@@ -10,7 +10,6 @@
 <hr>
 <hr>
 <hr>
-{% if user.is_staff or usuario.tipo.nombre == "Gerente" %}
 {% include 'partials/topside.html' %}
 
 <!-- Graphs -->
@@ -46,9 +45,7 @@
     </div>
 </div>
 <!-- End Graphs -->
-{% else %}
-    {% include 'dashboard/staff_index.html' %}
-{% endif %}
+
 {% endblock %}
 </body>
 </html>

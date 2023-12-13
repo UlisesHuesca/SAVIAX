@@ -1,0 +1,41 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<cfdi:Comprobante xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.sat.gob.mx/cfd/4 http://www.sat.gob.mx/sitio_internet/cfd/4/cfdv40.xsd" xmlns:cfdi="http://www.sat.gob.mx/cfd/4" Version="4.0" Serie="F" Folio="5709" Fecha="2023-12-09T10:39:48" Sello="NSTwFXf+qDHrLn899XTaOij0to1OO+NPsIwilcUrBnWJpGz+w101xft0C//ty+VzArNG73AVMxoKl++Y/J2vetWt1vmnU6OuvCzoqmUzy6xbtQmp+iWw5c07JJdYDjg1oLsNBykvMRdBVSELq03XFzuhKB824CzpkWeN/EHA5fWoOy/7r6/An9kwc9vWjFSJsU7F+6zSEeVaye3Xe2DR/eRBPoO2/W1maGdTUm0tcoNUeoK1HvBatJvUTHSuqKbsoEoi1eP+MM109XUnkHOKlnXjzP08Zdy74GMWiDwsr9qEehTp5BoEMvcanLHsPDEGToWNv2W8BS408e4S817SMQ==" FormaPago="03" NoCertificado="00001000000507501314" Certificado="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" SubTotal="3122.45" Moneda="MXN" Total="3622.04" TipoDeComprobante="I" Exportacion="01" MetodoPago="PUE" LugarExpedicion="72000">
+  <cfdi:Emisor Rfc="EAB1206053V0" Nombre="ELECTROMECANICA AUTOMATIZACION Y BOMBAS" RegimenFiscal="601" />
+  <cfdi:Receptor Rfc="VME121113PI3" Nombre="VORDTEC DE MEXICO" DomicilioFiscalReceptor="91633" RegimenFiscalReceptor="601" UsoCFDI="G01" />
+  <cfdi:Conceptos>
+    <cfdi:Concepto ClaveProdServ="39122200" NoIdentificacion="ABB-2CDS253001R0404" Cantidad="1" ClaveUnidad="H87" Unidad="Pieza" Descripcion="MINI INTERRUPTOR TERMOMAGNETICO MARCA: ABB DE 3 POLOS 40 AMP. CURVA C TIPO: S203-C40 CODIGO: 2CDS253001R0404" ValorUnitario="628.11" Importe="628.11" ObjetoImp="02">
+      <cfdi:Impuestos>
+        <cfdi:Traslados>
+          <cfdi:Traslado Base="628.11" Impuesto="002" TipoFactor="Tasa" TasaOCuota="0.160000" Importe="100.4976" />
+        </cfdi:Traslados>
+      </cfdi:Impuestos>
+    </cfdi:Concepto>
+    <cfdi:Concepto ClaveProdServ="39121529" NoIdentificacion="AWCWB40C220V" Cantidad="1" ClaveUnidad="H87" Unidad="Pieza" Descripcion="CONTACTOR DE 3 POLOS MARCA: WEG, CORRIENTE EN AC-3: 40 AMP., BOBINA: 220 VCA @ 50/60 Hz, CONTACTOS AUXILIARES: 1 NA + 1NC, CODIGO: CWB40-11-30D23 (AZUL) SAP: 13539284" ValorUnitario="1319.56" Importe="1319.56" ObjetoImp="02">
+      <cfdi:Impuestos>
+        <cfdi:Traslados>
+          <cfdi:Traslado Base="1319.56" Impuesto="002" TipoFactor="Tasa" TasaOCuota="0.160000" Importe="211.1296" />
+        </cfdi:Traslados>
+      </cfdi:Impuestos>
+    </cfdi:Concepto>
+    <cfdi:Concepto ClaveProdServ="39121500" NoIdentificacion="AWB-RW67A50.0" Cantidad="1" ClaveUnidad="H87" Unidad="Pieza" Descripcion="RELE DE SOBRECARGA MARCA: WEG MONTAJE DIRECTO A CONTACTOR CWB40…80 AJUSTE: 32.00 - 50.00 AMP. CODIGO: RW67-5D3-U050 (AZUL) SAP: 13368961" ValorUnitario="918.93" Importe="918.93" ObjetoImp="02">
+      <cfdi:Impuestos>
+        <cfdi:Traslados>
+          <cfdi:Traslado Base="918.93" Impuesto="002" TipoFactor="Tasa" TasaOCuota="0.160000" Importe="147.0288" />
+        </cfdi:Traslados>
+      </cfdi:Impuestos>
+    </cfdi:Concepto>
+    <cfdi:Concepto ClaveProdServ="39121500" NoIdentificacion="AW-CSW2-BDF21IO" Cantidad="1" ClaveUnidad="H87" Unidad="Pieza" Descripcion="BOTON PULSADOR DOBLE NO ILUMINADO MARCA: WEG COLOR: VERDE-ROJO CONTACTOS AUXILIARES:1 NA + 1 NC (CONJUNTO ARMADO) IP66 CODIGO: CSW2-BDF21IO-11000000-3VF SAP: 12756198" ValorUnitario="255.85" Importe="255.85" ObjetoImp="02">
+      <cfdi:Impuestos>
+        <cfdi:Traslados>
+          <cfdi:Traslado Base="255.85" Impuesto="002" TipoFactor="Tasa" TasaOCuota="0.160000" Importe="40.936" />
+        </cfdi:Traslados>
+      </cfdi:Impuestos>
+    </cfdi:Concepto>
+  </cfdi:Conceptos>
+  <cfdi:Impuestos TotalImpuestosTrasladados="499.59">
+    <cfdi:Traslados>
+      <cfdi:Traslado Base="3122.45" Impuesto="002" TipoFactor="Tasa" TasaOCuota="0.160000" Importe="499.59" />
+    </cfdi:Traslados>
+  </cfdi:Impuestos>
+<cfdi:Complemento><tfd:TimbreFiscalDigital xmlns:tfd="http://www.sat.gob.mx/TimbreFiscalDigital" xsi:schemaLocation="http://www.sat.gob.mx/TimbreFiscalDigital http://www.sat.gob.mx/sitio_internet/cfd/TimbreFiscalDigital/TimbreFiscalDigitalv11.xsd" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" Version="1.1" UUID="4F40DD92-A46B-1645-B456-D1AFFC675D88" FechaTimbrado="2023-12-09T10:39:52" RfcProvCertif="SCD110105654" SelloCFD="NSTwFXf+qDHrLn899XTaOij0to1OO+NPsIwilcUrBnWJpGz+w101xft0C//ty+VzArNG73AVMxoKl++Y/J2vetWt1vmnU6OuvCzoqmUzy6xbtQmp+iWw5c07JJdYDjg1oLsNBykvMRdBVSELq03XFzuhKB824CzpkWeN/EHA5fWoOy/7r6/An9kwc9vWjFSJsU7F+6zSEeVaye3Xe2DR/eRBPoO2/W1maGdTUm0tcoNUeoK1HvBatJvUTHSuqKbsoEoi1eP+MM109XUnkHOKlnXjzP08Zdy74GMWiDwsr9qEehTp5BoEMvcanLHsPDEGToWNv2W8BS408e4S817SMQ==" NoCertificadoSAT="00001000000702501858" SelloSAT="PBmU2cI9DfNFRIgTF5OPXy5/FMFHKGX0oiGmqLMXcIah7q3AhPV0SqqBMvIxIyja6M8MGJkI/NoNQo1N8TQF5fPo7QcZEv5sQxdF6X9uK71+McvNTtXVhc7RO6B0GrvGMEVX7rjPsKYiOBGV3WFv68zX16VpLpqu4rqD9HjU/BrAMF/+LZeezY1+rwwGMCTvEy71Vzxf1ZBGo/1P0x/ue3JGX+v1M+/C36GbkjtGdihphpsYGSFm7z2xhZOcdijJX/xsNziUpIyEhZkxlDrJ5jBYCNP+iim2QzeGBcSwreeX59CDRs5kxaKsDoul6zIvE2Cs49GBkpqEBTspn1qKpw==" />
+</cfdi:Complemento></cfdi:Comprobante>

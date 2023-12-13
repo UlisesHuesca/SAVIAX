@@ -749,10 +749,11 @@ def autorizar_oc1(request, pk):
     compra = Compra.objects.get(id = pk)
     productos = ArticuloComprado.objects.filter(oc=pk)
 
-    if compra.costo_fletes == None:
-        costo_fletes = 0
+   
+    costo_fletes = 0
     #Si hay tipo de cambio es porque la compra fue en dólares entonces multiplico por tipo de cambio la cantidad
     #Escenario con dólares
+    
     if compra.tipo_de_cambio:
         costo_oc = compra.costo_oc * compra.tipo_de_cambio
         if compra.costo_fletes:
@@ -809,8 +810,7 @@ def autorizar_oc2(request, pk):
     compra = Compra.objects.get(id = pk)
     productos = ArticuloComprado.objects.filter(oc=pk)
 
-    if compra.costo_fletes == None:
-        costo_fletes = 0
+    costo_fletes = 0
     #Si hay tipo de cambio es porque la compra fue en dólares entonces multiplico por tipo de cambio la cantidad
     #Escenario con dólares
     if compra.tipo_de_cambio:
@@ -838,7 +838,7 @@ def autorizar_oc2(request, pk):
                 f'Compra Autorizada {compra.get_folio}',
                 f'Estimado(a) {compra.proveedor.contacto} | Proveedor {compra.proveedor.nombre}:\n\nEstás recibiendo este correo porque has sido seleccionado para surtirnos la OC adjunta con folio: {compra.get_folio}.\n\n Atte. {compra.creada_por.staff.first_name} {compra.creada_por.staff.last_name} \nVORDTEC DE MÉXICO S.A. de C.V.\n\n Este mensaje ha sido automáticamente generado por SAVIA VORDTEC',
                 'savia@vordtec.com',
-                ['ulises_huesc@hotmail.com','lizeth.ojeda@vordtec.com','osiris.bautista@vordtec.com',compra.proveedor.email,'ulises_huesc@hotmail.com'],  #compra.proveedor.email,
+                ['ulises_huesc@hotmail.com','lizeth.ojeda@vordtec.com','carlos.ramon@vordtec.com',compra.proveedor.email,],  #compra.proveedor.email,
                 )
             email.attach(f'folio:{compra.get_folio}.pdf',archivo_oc,'application/pdf')
             email.send()
@@ -1173,16 +1173,17 @@ def generar_pdf(compra):
     c.setFillColor(white)
     c.setLineWidth(.1)
     c.setFont('Helvetica-Bold',10)
-    c.drawCentredString(50,205,'Proyecto')
-    c.drawCentredString(110,205,'Subproyecto')
-    c.drawCentredString(230,205,'Elaboró')
-    c.drawCentredString(325,205,'Moneda')
-    c.setFont('Helvetica',8)
+    c.drawString(25,205,'Proyecto')
+    c.drawString(100,205,compra.req.orden.proyecto.nombre)
     c.setFillColor(black)
-    c.drawCentredString(50,190,compra.req.orden.proyecto.nombre)
-    c.drawCentredString(110,190,compra.req.orden.subproyecto.nombre)
-    c.drawCentredString(230,190,compra.creada_por.staff.first_name + ' ' +compra.creada_por.staff.last_name)
-    c.drawCentredString(325,190,compra.moneda.nombre)
+    c.drawString(25,190,'Subproyecto')
+    c.drawString(25,175,'Elaboró')
+    c.drawString(25,160,'Moneda')
+    c.setFont('Helvetica',8)
+
+    c.drawString(100,190,compra.req.orden.subproyecto.nombre)
+    c.drawString(100,175,compra.creada_por.staff.first_name + ' ' +compra.creada_por.staff.last_name)
+    c.drawString(100,160,compra.moneda.nombre)
 
     c.setLineWidth(.3)
     c.line(370,220,370,160) #Eje Y donde empieza, Eje X donde empieza, donde termina eje y,donde termina eje x (LINEA 1 contorno)
@@ -1202,13 +1203,14 @@ def generar_pdf(compra):
     c.setFont('Helvetica',8)
     letras = 320
     c.drawString(20,140,'Total con letra:')
-    c.line(135,90,215,90 ) #Linea de Autorizacion
-    c.line(350,90,430,90)
+    #c.line(135,90,215,90 ) #Linea de Autorizacion
+    #c.line(350,90,430,90)
     c.drawCentredString(175,70,'Autorización')
     c.drawCentredString(390,70,'Autorización')
 
     c.drawCentredString(175,80,'Superintendente Administrativo')
     c.drawCentredString(390,80,'Gerencia Zona')
+    c.setFont('Helvetica-Bold',8)
     if compra.autorizado1:
         c.drawCentredString(175,90,compra.oc_autorizada_por.staff.first_name + ' ' +compra.oc_autorizada_por.staff.last_name)
     if compra.autorizado2:

@@ -34,7 +34,8 @@ def contadores_processor(request):
     conteo_asignar_montos = 0
     conteo_viaticos=0
     conteo_devoluciones = 0
-    
+    conteo_ordenes = 0
+
     conteo_usuario = Profile.objects.all().count()
     conteo_productos = Inventario.objects.filter(cantidad__gt = 0).count()
     solicitudes_generadas = Order.objects.filter(complete = True).count()
@@ -47,7 +48,7 @@ def contadores_processor(request):
         #productos= ArticulosparaSurtir.objects.filter(salida=False, articulos__orden__autorizar = True, articulos__producto__producto__servicio = False, articulos__orden__tipo__tipo="normal")
         #ordenes_por_autorizar = Order.objects.filter(complete=True, autorizar=None)
         conteo = 0
-        conteo_ordenes = 0
+        
         usuario = None
     else:
         #productos= ArticulosparaSurtir.objects.filter(salida=False, articulos__orden__autorizar = True, articulos__producto__producto__servicio = False, articulos__orden__tipo__tipo="normal")
@@ -103,6 +104,7 @@ def contadores_processor(request):
 
 
     return {
+    'conteo_ordenes':conteo_ordenes,
     'conteo_devoluciones': conteo_devoluciones,
     'solicitudes_generadas':solicitudes_generadas,
     'conteo_productos':conteo_productos,

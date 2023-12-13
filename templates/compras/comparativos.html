@@ -52,7 +52,7 @@
         {% endif %}
     </div>
 </div>
-
+{% if usuario.tipo.comprador == True %}
 <div class="row">
     <div class="card text-center" style="width: 15rem;">
         <div class="card-header">
@@ -70,6 +70,7 @@
         </div>
     </div>
 </div>
+{% endif %}
 
 <div class = "row mt-2">
     <div class="col-md-12">
@@ -118,11 +119,13 @@
                         </a>
                         {% endif %}
                     </td>
+                    {% if usuario.tipo.comprador == True %}
                     <td>
                         <a class="btn btn-outline-info" id="btnActualizar" href="{% url 'editar-comparativo' item.id %}" type="button">
                             <i class="fa-solid fa-pen-to-square"></i>
                         </a>
                     </td>
+                    {% endif %}
                     <td>
                         <ul class="nav nav-pills">
                             <li class="nav-item mx-1">

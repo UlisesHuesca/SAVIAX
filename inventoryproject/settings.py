@@ -33,7 +33,13 @@ CURRENCIES =('USD','MXN')
 SECRET_KEY = os.getenv('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+SECURE_HSTS_SECONDS = 31536000  # 1 año
+SECURE_SSL_REDIRECT = True
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True
+DEBUG = False
+
+
 
 ALLOWED_HOSTS = ['vordtec.cloud','www.vordtec.cloud','localhost']
 
@@ -72,6 +78,25 @@ INSTALLED_APPS = [
     'phone_field',
     'crispy_bootstrap4',
 ]
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {
+        "file": {
+            "level": "DEBUG",
+            "class": "logging.FileHandler",
+            "filename": os.path.join(BASE_DIR, "debug.log"),
+        },
+    },
+    "loggers": {
+        "django": {
+            "handlers": ["file"],
+            "level": "DEBUG",
+            "propagate": True,
+        },
+    },
+}
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -120,7 +145,7 @@ WSGI_APPLICATION = 'inventoryproject.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'UlisesHuesca$default',
+        'NAME': os.getenv('DATABASE_NAME'),
 	    'USER': os.getenv('DATABASE_USER'),
         'PASSWORD': os.getenv('DATABASE_PASSWORD'),
         'HOST': 'localhost',
@@ -192,7 +217,7 @@ AUTHENTICATION_BACKENDS = ['user.backends.EmailBackend']
 # https://docs.djangoproject.com/en/3.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-DEFAULT_FROM_EMAIL ='savia@vordtec.com'
+DEFAULT_FROM_EMAIL = os.getenv('EMAIL_HOST_USER')
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 #EMAIL_HOST = 'smtp.gmail.com'

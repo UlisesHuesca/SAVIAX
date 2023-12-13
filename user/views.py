@@ -3,9 +3,11 @@ from django.contrib import messages
 from .forms import UserForm
 from .models import Profile
 from .forms import Profile_Form
+from django.contrib.auth.decorators import login_required
 
 
 # Create your views here.
+@login_required(login_url='user-login')
 def register(request):
     if request.method == 'POST':
         form = UserForm(request.POST)
@@ -28,6 +30,7 @@ def profile(request):
 
     return render(request, 'user/profile.html', context)
 
+@login_required(login_url='user-login')
 def edit_profile(request):
     perfil = Profile.objects.get(staff__id=request.user.id)
     #perfil = Profile.objects.get(id = pk)

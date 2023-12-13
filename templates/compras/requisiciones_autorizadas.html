@@ -118,6 +118,7 @@
                             <li class="nav-item m-1">
                                 <a id="myBtn" type="button" class="btn btn-outline-info" data-bs-toggle="modal" data-bs-target='#dialog' hx-target="#document" hx-get="{% url 'articulos-restantes' req.id %}">Productos</a>
                             </li>
+                            {% if usuario.tipo.comprador == True %}
                             <li class="nav-item m-1">
                                 <a type="button" class="btn btn-outline-success" href="{% url 'oc' req.id %}">Crear OC</a>
                             </li>
@@ -133,6 +134,7 @@
                                     <i class="fa-solid fa-eraser"></i>
                                 </a>
                             </li>
+                            {% endif %}
                         </ul>
                     </td>
                 </tr>

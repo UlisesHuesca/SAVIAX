@@ -3,17 +3,19 @@
 {% load crispy_forms_tags %}
 
 {% block content %}
+<h6>&nbsp</h6>
+<h6>&nbsp</h6>
 <div class row="container">
     <div class="row mt-5">
         <div class="col-md-6 offset-md-3">
-            <div class="border p-3 bg-white">
-                <h3>Registration page</h3>
-                <hr>
-                <form method="POST">
-                    {% csrf_token %}
-                    {{form|crispy}}
-                    <input class="btn btn-light" type="submit" value= "Registro">
-                </form>
+            <div class="card">
+                <div class="card-header">
+                    <h3>Página de Registro</h3>
+                </div>
+                <div class="card-body">
+                <p>No tienes los permisos suficientes para poder hacer un registro de usuario</p>
+                </div>
+
             </div>
         </div>
     </div>

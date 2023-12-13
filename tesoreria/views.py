@@ -137,14 +137,14 @@ def compras_pagos(request, pk):
                                 f'Compra Autorizada {compra.get_folio}',
                                 f'Estimado(a) {compra.proveedor.contacto} | Proveedor {compra.proveedor.nombre}:\n\nEstás recibiendo este correo porque has sido seleccionado para surtirnos la OC adjunta con folio: {compra.get_folio} y referencia: {compra.referencia}.\n\n Atte. {compra.creada_por.staff.first_name} {compra.creada_por.staff.last_name} \nVordtec de México S.A. de C.V.\n\n Este mensaje ha sido automáticamente generado por SAVIA VORDTEC',
                                 'savia@vordtec.com',
-                                ['ulises_huesc@hotmail.com',compra.proveedor.email,'lizeth.ojeda@vordtec.com','osiris.bautista@vordtec.com'],
+                                ['ulises_huesc@hotmail.com',compra.proveedor.email,'lizeth.ojeda@vordtec.com','carlos.ramon@vordtec.com'],
                                 )
                         else:
                             email = EmailMessage(
                                 f'Compra Autorizada {compra.get_folio}',
                                 f'Estimado(a) {compra.proveedor.contacto} | Proveedor {compra.proveedor.nombre}:\n\nEstás recibiendo este correo porque has sido seleccionado para surtirnos la OC adjunta con folio: {compra.get_folio}.\n\n Atte. {compra.creada_por.staff.first_name} {compra.creada_por.staff.last_name} \nVordtec de México S.A. de C.V.\n\n Este mensaje ha sido automáticamente generado por SAVIA VORDTEC',
                                 'savia@vordtec.com',
-                                ['ulises_huesc@hotmail.com',compra.proveedor.email,'lizeth.ojeda@vordtec.com','osiris.bautista@vordtec.com'],
+                                ['ulises_huesc@hotmail.com',compra.proveedor.email,'lizeth.ojeda@vordtec.com','carlos.ramon@vordtec.com'],
                                 )
                         email.attach(f'OC_folio_{compra.get_folio}.pdf',archivo_oc,'application/pdf')
                         email.attach('Pago.pdf',request.FILES['comprobante_pago'].read(),'application/pdf')
