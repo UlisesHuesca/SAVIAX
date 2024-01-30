@@ -1,0 +1,51 @@
+{% extends 'partials/base.html' %}
+{% load static %}
+<html>
+<head>
+{% block title %}Home Page{% endblock %}
+</head>
+
+{% block content %}
+<body style="background-image: url('{% static "images/TORRE_ETIC.jpg" %}'); background-repeat: no-repeat; background-size: cover;"></body>
+<hr>
+<hr>
+<hr>
+{% include 'partials/topside.html' %}
+
+<!-- Graphs -->
+<div class="row">
+    <div class="col-md-6">
+
+    <!--<div class="card mt-2">
+            <div class="card-header">
+                Actualizaciones Gráfico de proyectos
+            </div>
+            <div class="card-body">
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item">[Reporte de Compras] Mejorar reporte de compras, añadir celda Status Crédito-Contado, Status Autorizado, Status Pago. Implementado </li>
+                    <li class="list-group-item">[Compras Autorizadas] Configurar las compras autorizadas para móvil. Implementado </li>
+                    <li class="list-group-item">[Compras Autorizadas] Crear botón para saldos a favor. Implementado </li>
+                    <li class="list-group-item">[Crear solicitudes] Agregar en el filtro de Solicitudes familia y subfamilia. Implementado</li>
+                    <li class="list-group-item">[Crear solicitudes] Configurar la creación de solicitudes para móvil. Implementado</li>
+                  </ul>   
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                Gráfico de inventarios
+            </div>
+            <div class="card-body">
+                <div>
+                    {{ graph_inventarios|safe }}
+                </div>-->
+            </div>
+        </div>
+    </div>
+</div>
+<!-- End Graphs -->
+
+{% endblock %}
+</body>
+</html>
