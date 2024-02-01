@@ -479,7 +479,7 @@ def no_conformidad(request, pk):
                 email = EmailMessage(
                     f'Compra| No conformidad {no_conf.id} OC {no_conf.oc.get_folio}',
                     f'Estimado {no_conf.oc.proveedor.nombre.razon_social},\n Estás recibiendo este correo porque se ha recibido en almacén el producto código:{articulo.articulo_comprado.producto.producto.articulos.producto.producto.codigo} descripción:{articulo.articulo_comprado.producto.producto.articulos.producto.producto.nombre} el cual no fue entregado al almacén\n Este mensaje ha sido automáticamente generado por SAVIA VORDTEC',
-                    'savia@vordcab.com',
+                    'savia@vordtec.com',
                     ['ulises_huesc@hotmail.com',no_conf.oc.proveedor.email,no_conf.oc.creada_por.staff.staff.email,],
                     )
                 #email.attach(f'OC_folio:{articulo.articulo_comprado.oc.folio}.pdf',archivo_oc,'application/pdf')

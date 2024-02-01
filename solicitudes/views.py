@@ -1066,8 +1066,12 @@ def solicitud_autorizacion(request):
     #perfil = Profile.objects.get(id=usuario)
 
     #Este es un filtro por perfil supervisor o superintendente, es decir puede ver todo lo del distrito
+    
     ordenes = Order.objects.filter(complete=True, autorizar=None, staff__distrito=perfil.distrito).order_by('-folio')
-    ordenes = ordenes.filter(supervisor=perfil)
+    if perfil.tipo.nombre == "Admin":
+        ordenes = ordenes
+    else:
+        ordenes = ordenes.filter(supervisor=perfil)
     myfilter=SolicitudesFilter(request.GET, queryset=ordenes)
     ordenes = myfilter.qs
 

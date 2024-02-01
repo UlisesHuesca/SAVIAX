@@ -10,73 +10,66 @@
 {% block content %}
 <hr>
 <hr>
-<hr>
+<h6>&nbsp;</h6>
+<h6>&nbsp;</h6>
 <div class = "row mt-2 bg-white" id="response-div">
         <div class="col-12">
-            <div class="card card-body">
-                <h5>Filtro de Compras Autorizadas</h5>
-                <hr>
-                {% csrf_token %}
-                <form method="GET">
-                <div class="row g-12">
-                    <label for="myfilter.form.codigo" class="col-sm-auto col-form-label text-right my-2"><strong>Folio:</strong></label>
-                    <div class="col-auto my-2">
-                        {{myfilter.form.id|add_class:'form-control'}}
-                    </div>
-                    <label for="myfilter.form.proveedor" class="col-sm-auto col-form-label text-right my-2"><strong>Proveedor:</strong></label>
-                    <div class="col-auto my-2">
-                        {{myfilter.form.proveedor|add_class:'form-control'}}
-                    </div>
-                    <label for="myfilter.form.req" class="col-sm-auto col-form-label text-right my-2"><strong>Requisición:</strong></label>
-                    <div class="col-auto my-2">
-                        {{myfilter.form.req|add_class:'form-control'}}
-                    </div>
-                    <label for="myfilter.form.proyecto" class="col-sm-auto col-form-label text-right"><strong>Proyecto:</strong></label>
-                    <div class="col-auto my-2">
-                        {{myfilter.form.proyecto|add_class:'form-control'}}
-                    </div>
+            <div class="card">
+                <div class="card-header">
+                    <h5>Filtro de Viáticos Autorizados</h5>
                 </div>
-                <div class="row g-12">
-                    <label for="myfilter.form.subproyecto" class="col-sm-1 col-form-label text-right"><strong>Subproyecto:</strong></label>
-                    <div class="col-2">
-                        {{myfilter.form.subproyecto|add_class:'form-control'}}
+                <div class="card-body">
+                    <form method="GET" class="row g-7">
+                        {% csrf_token %}
+                        <label for="myfilter.form.codigo" class="col-sm-auto col-form-label text-right"><strong>Solicitado por:</strong></label>
+                        <div class="col-auto">
+                            {{myfilter.form.staff|add_class:'form-control'}}
+                        </div>
+                        <label for="myfilter.form.proyecto" class="col-sm-auto col-form-label text-right"><strong>Proyecto:</strong></label>
+                        <div class="col-auto">
+                            {{myfilter.form.proyecto|add_class:'form-control'}}
+                        </div>
+                        <label for="myfilter.form.folio" class="col-sm-auto col-form-label text-right"><strong>Folio:</strong></label>
+                        <div class="col-auto">
+                            {{myfilter.form.id|add_class:'form-control'}}
+                        </div>
+                        <label for="myfilter.form.start_date" class="col-sm-auto col-form-label text-right"><strong>Desde:</strong></label>
+                        <div class="col-auto">
+                            {% render_field myfilter.form.start_date type="date" class="form-control" %}
+                        </div>
+                        <label for="myfilter.form.end_date" class="col-sm-auto col-form-label text-right"><strong>Hasta:</strong></label>
+                        <div class="col-auto">
+                            {% render_field myfilter.form.end_date type="date" class="form-control" %}
+                        </div>
+                        <div class="col-auto">
+                        <button class="btn btn-outline-success" type="submit" value="Buscar"><i class="fa-solid fa-magnifying-glass"></i></button>
                     </div>
-                    <label for="myfilter.form.start_date" class="col-sm-1 col-form-label text-right"><strong>Desde:</strong></label>
-                    <div class="col-2">
-                        {% render_field myfilter.form.start_date type="date" class="form-control" %}
-                    </div>
-                    <label for="myfilter.form.end_date" class="col-sm-1 col-form-label text-right"><strong>Hasta:</strong></label>
-                    <div class="col-2">
-                        {% render_field myfilter.form.end_date type="date" class="form-control" %}
-                    </div>
-                    <div class="col-2">
-                        <button class="btn btn-outline-success btn-block" type="submit" value="Buscar"><i class="fa-solid fa-magnifying-glass"></i></button>
-                    </div>
+                    <h6>&nbsp;</h6>
+                    <hr>
+                    </form>
+                    <form method=POST>
+                        {% csrf_token %}
+                        <ul class="nav nav-pills">
+                            <!--<li class="nav-item mx-2">
+                                <button type="submit" class="btn btn-outline-success" value='Reporte Excel'>
+                                    <i class="fa-solid fa-file-excel fa-2xl"></i>
+                                </button>
+                            </li>
+                            <li class="nav-item mx-2">
+                                <button type="button" class="btn btn-outline-danger">
+                                <i class="fa-solid fa-file-pdf fa-2xl"></i>
+                                </button>
+                            </li>-->
+                            <li class="nav-item mx-2">
+                                <div class="btn-group btn-group" role="group" aria-label="Large button group">
+                                    <a type="button" class="btn btn-outline-info" href="{% url 'compras-autorizadas' %}">Compras</a>
+                                    <a type="button" class="btn btn-outline-info" href="{% url 'pago-gastos-autorizados' %}">Gastos</a>
+                                    <a type="button" class="btn btn-outline-info active" style="color:#F5F5F5; background:#3E92CC; border-color: #3E92CC;" href="{% url 'viaticos-autorizados-pago' %}">Viáticos</a>
+                                </div>
+                            </li>
+                        </ul>
+                    </form>
                 </div>
-                <hr>
-                </form>
-                <form method=POST>
-                    {% csrf_token %}
-                    <ul class="nav nav-pills">
-                        <!--<li class="nav-item mx-2">
-                            <button type="submit" class="btn btn-outline-success" value='Reporte Excel'>
-                                <i class="fa-solid fa-file-excel fa-2xl"></i>
-                            </button>
-                        </li>
-                        <li class="nav-item mx-2">
-                            <button type="button" class="btn btn-outline-danger">
-                               <i class="fa-solid fa-file-pdf fa-2xl"></i>
-                            </button>
-                        </li>-->
-                        <li class="nav-item mx-2">
-                            <div class="btn-group btn-group" role="group" aria-label="Large button group">
-                                <a type="button" class="btn btn-outline-info" href="{% url 'compras-autorizadas' %}">Compras</a>
-                                <a type="button" class="btn btn-outline-info" href="{% url 'pago-gastos-autorizados' %}">Gastos</a>
-                                <a type="button" class="btn btn-outline-info active" style="color:#F5F5F5; background:#3E92CC; border-color: #3E92CC;" href="{% url 'viaticos-autorizados-pago' %}">Viáticos</a>
-                              </div>
-                        </li>
-                    </ul>
-                </form>
             </div>
         </div>
     </div>

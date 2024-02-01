@@ -129,6 +129,7 @@
                     <th scope="col">Proyecto</th>
                     <th scope="col">Subproyecto</th>
                     <th scope="col">Autorizado</th>
+                    <th>Autorizado Gerencia</th>
                     <th scope="col">Colaborador</th>
                     <th scope="col">Importe</th>
                     <th scope="col">Fecha</th>
@@ -142,7 +143,16 @@
                     <td>{{viatico.staff.staff.first_name}} {{viatico.staff.staff.last_name}}</td>
                     <td>{{viatico.proyecto.nombre}}</td>
                     <td>{{viatico.subproyecto.nombre}}</td>
-                    <td>{{viatico.superintendente.staff.first_name}} {{viatico.superintendente.staff.last_name}}</td>
+                    <td>{{viatico.superintendente.staff.first_name}} {{viatico.superintendente.staff.last_name}}
+                        {% if viatico.autorizar == True %}| Autorizado
+                        {% elif viatico.autorizar == False %}| Cancelado
+                        {% else %}| No autorizado {% endif %}
+                    </td>
+                    <td>Selene Villanueva
+                        {% if viatico.autorizar2 == True%}|Autorizado
+                        {% elif viatico.autorizar2 == False %}| Cancelado
+                        {% else %}| No autorizado {% endif %}
+                    </td>
                     {% if viatico.colaborador %}
                     <td>{{viatico.colaborador.staff.first_name}} {{viatico.colaborador.staff.last_name}}</td>
                     {% else %}

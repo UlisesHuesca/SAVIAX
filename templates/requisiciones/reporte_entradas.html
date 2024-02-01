@@ -103,11 +103,11 @@
                             <i class="fa-solid fa-file-excel fa-2xl"></i>
                         </button>
                     </li>
-                    <li class="nav-item mx-2">
+                    <!--<li class="nav-item mx-2">
                         <button type="button" class="btn btn-outline-danger btn-lg">
                             <i class="fa-solid fa-file-pdf fa-2xl"></i>
                         </button>
-                    </li>
+                    </li>-->
                 </ul>
             </form>
 
@@ -162,6 +162,7 @@
                     <th class="d-none d-lg-table-cell">Subproyecto</th>
                     <th scope="col-sm">Artículo</th>
                     <th scope="col-sm">Cantidad</th>
+                    <th>Moneda</th>
                     <th scope="col-sm">Precio</th>
                 </tr>
             </thead>
@@ -176,7 +177,8 @@
                     <td class="d-none d-lg-table-cell">{{entrada.articulo_comprado.producto.producto.articulos.orden.subproyecto.nombre}}</td>
                     <td>{{entrada.articulo_comprado.producto.producto.articulos.producto.producto.codigo}} {{entrada.articulo_comprado.producto.producto.articulos.producto.producto.nombre}}</td>
                     <td>{{entrada.cantidad}}</td>
-                    <td>{{entrada.articulo_comprado.precio_unitario}}</td>
+                    <td>{{entrada.articulo_comprado.oc.moneda}}</td>
+                    <td>{{entrada.articulo_comprado.precio_unitario|floatformat:2}}</td>
                 </tr>
                 {% endfor %}
             </tbody>

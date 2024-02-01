@@ -1,2 +1,5 @@
 .env
 debug.log
+venv/
+media/
+

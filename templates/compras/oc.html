@@ -318,7 +318,7 @@
                         <td scope="col">{{product.cantidad}}</td>
                         <td scope="col">${{product.precio_unitario|floatformat:2}}</td>
                         {% if product.precio_unitario != None  and product.cantidad != None %}
-                        <td scope="col">${% widthratio product.precio_unitario 1 product.cantidad %}</td>
+                        <td scope="col">${{subtotal_parcial|floatformat:2}}</td>
                         {% endif %}
                         <td scope="col"><button type="button" class="btn btn-danger" value="Delete" onclick="deleteRow(this)" iva="{{product.producto.producto.articulos.producto.producto.iva}}" id="delete" producto="{{product.producto.id|unlocalize}}" cantidad="{{product.cantidad|unlocalize}}" precio="{{product.precio_unitario.amount}}" aria-label="Close"><i class="fa-solid fa-trash-can"></i></button></td>
                     </tr>

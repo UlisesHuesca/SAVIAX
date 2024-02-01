@@ -1,4 +1,15 @@
 from django.shortcuts import render, redirect
+from django.contrib.auth.decorators import login_required
+from django.http import HttpResponse
+from django.db.models.functions import Concat
+from django.db.models import Value, Sum, Case, When, F, Value, Q, DecimalField, Avg
+from django.contrib import messages
+from django.http import JsonResponse
+from django.core.mail import EmailMessage
+from django.core.paginator import Paginator
+from django.http import FileResponse
+from django.core.files.base import ContentFile
+
 from solicitudes.models import Proyecto, Subproyecto
 from dashboard.models import Inventario, Order, ArticulosparaSurtir, ArticulosOrdenados, Inventario_Batch, Product, Marca
 from dashboard.forms import  Inventario_BatchForm
@@ -6,24 +17,20 @@ from user.models import Profile, User
 from .models import ArticulosRequisitados, Requis, Devolucion, Devolucion_Articulos, Tipo_Devolucion
 from entradas.models import Entrada, EntradaArticulo
 from requisiciones.models import Salidas, ValeSalidas
-from django.contrib.auth.decorators import login_required
 from .filters import ArticulosparaSurtirFilter, SalidasFilter, EntradasFilter, DevolucionFilter
 from .forms import SalidasForm, ArticulosRequisitadosForm, ValeSalidasForm, ValeSalidasProyForm, RequisForm, Rechazo_Requi_Form, DevolucionArticulosForm, DevolucionForm
 from solicitudes.filters import SolicitudesFilter
-from django.http import HttpResponse
+from tesoreria.models import Pago
+
 from openpyxl import Workbook
 from openpyxl.styles import NamedStyle, Font, PatternFill
 from openpyxl.utils import get_column_letter
 import datetime as dt
 from datetime import date, datetime
-from django.db.models.functions import Concat
-from django.db.models import Value, Sum, Case, When, F, Value, Q
-from django.contrib import messages
-from django.http import JsonResponse
-from django.core.mail import EmailMessage
+
 import json
 import csv
-from django.core.paginator import Paginator
+
 import ast # Para leer el csr many to many
 import decimal
 
@@ -36,12 +43,11 @@ from reportlab.lib.colors import Color, black, blue, red, white
 from reportlab.lib.units import cm
 from reportlab.lib.pagesizes import letter, portrait
 from reportlab.rl_config import defaultPageSize
-from django.http import FileResponse
+
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib.enums import TA_CENTER
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, Frame
 from bs4 import BeautifulSoup
-from django.core.files.base import ContentFile
 import urllib.request, urllib.parse, urllib.error
 
 
@@ -233,9 +239,9 @@ def autorizar_devolucion(request, pk):
                 producto_surtir = ArticulosparaSurtir.objects.get(articulos = producto.producto.articulos)
                 inv_del_producto = Inventario.objects.get(producto = producto_surtir.articulos.producto.producto)
                 inv_del_producto._change_reason = f'Esta es una devolucion desde un surtimiento de inventario {devolucion.id}'
-                try:
-                    entrada = EntradaArticulo.objects.get(articulo_comprado__producto__producto=producto_surtir, entrada__oc__req__orden=producto_surtir.articulos.orden, agotado = False)
-                    
+                
+                entrada = EntradaArticulo.objects.filter(articulo_comprado__producto__producto=producto_surtir, entrada__oc__req__orden=producto_surtir.articulos.orden, agotado = False).first()
+                if entrada is not None:    
                     # Verificar si la cantidad en la entrada es suficiente
                     if entrada.cantidad_por_surtir >= producto.cantidad:
                         print(entrada)
@@ -247,7 +253,7 @@ def autorizar_devolucion(request, pk):
                         entrada.cantidad_por_surtir = 0
                         entrada.agotado = True
                         entrada.save()
-                except EntradaArticulo.DoesNotExist:
+                else:
                     # Manejar el caso en que no hay una entrada asociada (opcional)
                     messages.error(request, 'No se encontró una entrada asociada para el producto.')
                     
@@ -1090,6 +1096,10 @@ def reporte_entradas(request):
     page = request.GET.get('page')
     entradas_list = p.get_page(page)
 
+    for entrada in entradas_list:
+        if entrada.articulo_comprado.oc.moneda.nombre == "DOLARES":
+            entrada.articulo_comprado.precio_unitario = entrada.articulo_comprado.precio_unitario * entrada.articulo_comprado.oc.tipo_de_cambio
+
     if request.method == "POST" and 'btnExcel' in request.POST:
 
         return convert_entradas_to_xls(entradas)
@@ -1184,7 +1194,7 @@ def convert_solicitud_autorizada_to_xls(productos):
 
     columna_max = len(columns)+2
 
-    (ws.cell(column = columna_max, row = 1, value='{Reporte Creado Automáticamente por Savia V2. UH}')).style = messages_style
+    (ws.cell(column = columna_max, row = 1, value='{Reporte Creado Automáticamente por Savia Vordtec. UH}')).style = messages_style
     (ws.cell(column = columna_max, row = 2, value='{Software desarrollado por Vordcab S.A. de C.V.}')).style = messages_style
 
     rows = productos.values_list(
@@ -1248,7 +1258,7 @@ def convert_solicitud_autorizada_orden_to_xls(ordenes):
 
     columna_max = len(columns)+2
 
-    (ws.cell(column = columna_max, row = 1, value='{Reporte Creado Automáticamente por Savia V2. UH}')).style = messages_style
+    (ws.cell(column = columna_max, row = 1, value='{Reporte Creado Automáticamente por Savia Vordtec. UH}')).style = messages_style
     (ws.cell(column = columna_max, row = 2, value='{Software desarrollado por Vordcab S.A. de C.V.}')).style = messages_style
 
     rows = ordenes.values_list('id',Concat('staff__staff__first_name',Value(' '),'staff__staff__last_name'),
@@ -1293,8 +1303,11 @@ def convert_entradas_to_xls(entradas):
     date_style = NamedStyle(name='date_style', number_format='DD/MM/YYYY')
     date_style.font = Font(name ='Calibri', size = 10)
     wb.add_named_style(date_style)
+    money_style = NamedStyle(name='money_style', number_format='$ #,##0.00')
+    money_style.font = Font(name ='Calibri', size = 10)
+    wb.add_named_style(money_style)
 
-    columns = ['Folio Solicitud','Fecha','Solicitante','Proyecto','Subproyecto','Código','Articulo','Cantidad','Precio']
+    columns = ['Folio Solicitud','Fecha','Solicitante','Proyecto','Subproyecto','Código','Articulo','Cantidad','Moneda','Tipo de Cambio','Precio']
 
     for col_num in range(len(columns)):
         (ws.cell(row = row_num, column = col_num+1, value=columns[col_num])).style = head_style
@@ -1302,19 +1315,75 @@ def convert_entradas_to_xls(entradas):
 
     columna_max = len(columns)+2
 
-    (ws.cell(column = columna_max, row = 1, value='{Reporte Creado Automáticamente por Savia V2. UH}')).style = messages_style
+    (ws.cell(column = columna_max, row = 1, value='{Reporte Creado Automáticamente por Savia Vordtec. UH}')).style = messages_style
     (ws.cell(column = columna_max, row = 2, value='{Software desarrollado por Vordcab S.A. de C.V.}')).style = messages_style
+    
+    """rows = []
+    for entrada in entradas:
+        # Obtén todos los pagos relacionados con esta entrada
+        pagos = Pago.objects.filter(oc=entrada.entrada.oc)
+        # Calcula el tipo de cambio promedio de estos pagos
+        tipo_de_cambio_promedio_pagos = pagos.aggregate(Avg('tipo_de_cambio'))['tipo_de_cambio__avg']
 
-    rows = entradas.values_list('entrada__oc__req__orden__id','created_at',Concat('entrada__oc__req__orden__staff__staff__first_name',Value(' '),'entrada__oc__req__orden__staff__staff__last_name'),
-                        'entrada__oc__req__orden__proyecto__nombre','entrada__oc__req__orden__subproyecto__nombre','articulo_comprado__producto__producto__articulos__producto__producto__codigo',
-                        'articulo_comprado__producto__producto__articulos__producto__producto__nombre','cantidad','articulo_comprado__precio_unitario')
+        # Usar el tipo de cambio de los pagos, si existe. De lo contrario, usar el tipo de cambio de la entrada
+        tipo_de_cambio = tipo_de_cambio_promedio_pagos or entrada.entrada.oc.tipo_de_cambio
+
+        row = [
+            entrada.entrada.oc.req.orden.id,
+            entrada.created_at,
+            f"{entrada.entrada.oc.req.orden.staff.staff.first_name} {entrada.entrada.oc.req.orden.staff.staff.last_name}",
+            entrada.entrada.oc.req.orden.proyecto.nombre,
+            entrada.entrada.oc.req.orden.subproyecto.nombre,
+            entrada.entrada.oc.req.orden.area.nombre,
+            entrada.articulo_comprado.producto.producto.articulos.producto.producto.codigo,
+            entrada.articulo_comprado.producto.producto.articulos.producto.producto.nombre,
+            entrada.cantidad,
+            entrada.entrada.oc.moneda.nombre,
+            tipo_de_cambio,
+            entrada.articulo_comprado.precio_unitario,
+        ]
+        if row[9] == "DOLARES":
+            if row[10] is None or row[10] < 15:
+                row[10] = 17  # O cualquier valor predeterminado que desees
+        elif row[10] is None:
+                row[10] = ""
+
+        rows.append(row)
+    """
+    rows = entradas.values_list(
+        'entrada__oc__req__orden__id',
+        'created_at',
+        Concat('entrada__oc__req__orden__staff__staff__first_name',Value(' '),'entrada__oc__req__orden__staff__staff__last_name'),
+        'entrada__oc__req__orden__proyecto__nombre',
+        'entrada__oc__req__orden__subproyecto__nombre',
+        'articulo_comprado__producto__producto__articulos__producto__producto__codigo',
+        'articulo_comprado__producto__producto__articulos__producto__producto__nombre',
+        'cantidad',
+        'entrada__oc__moneda__nombre', #8
+        Case(                                          #9
+            When(entrada__oc__tipo_de_cambio__isnull=False, then = F('entrada__oc__tipo_de_cambio')),
+            #When(Pago.objects.filter(oc=F('entrada.oc')).exclude(tipo_de_cambio__isnull=True).exists(),then=F('Pago__tipo_de_cambio')),
+            default=1.0,  # Puedes establecer un valor predeterminado si no hay tipo de cambio.
+            output_field=DecimalField(max_digits=10, decimal_places=2),  # Asegura que el campo sea decimal si es necesario.
+        ),
+        'articulo_comprado__precio_unitario', #10
+    )
 
     for row in rows:
         row_num += 1
         for col_num in range(len(row)):
             (ws.cell(row = row_num, column = col_num+1, value=str(row[col_num]))).style = body_style
             if col_num == 4:
-                (ws.cell(row = row_num, column = col_num+1, value=row[col_num])).style = date_style
+                (ws.cell(row = row_num, column = col_num + 1, value=row[col_num])).style = date_style
+            if col_num == 9:
+                (ws.cell(row = row_num, column = col_num + 1, value=row[col_num])).style = money_style
+            if col_num == 10:
+                if row[8] == "DOLARES":
+                    precio_unitario = row[10]
+                    tipo_de_cambio = row[9]
+                    (ws.cell(row=row_num, column=col_num + 1, value=precio_unitario * tipo_de_cambio)).style = money_style
+                else:
+                    (ws.cell(row=row_num, column=col_num + 1, value=row[col_num])).style = money_style
 
     sheet = wb['Sheet']
     wb.remove(sheet)

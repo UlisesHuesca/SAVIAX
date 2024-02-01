@@ -147,28 +147,32 @@ def articulos_restantes(request, pk):
 
 def dof():
 #Trying to fetch DOF
-    ctx = ssl.create_default_context()
-    ctx.check_hostname = False
-    ctx.verify_mode = ssl.CERT_NONE
+    try:
+        ctx = ssl.create_default_context()
+        ctx.check_hostname = False
+        ctx.verify_mode = ssl.CERT_NONE
 
-    url = 'https://www.dof.gob.mx/#gsc.tab=0'
-    html = urllib.request.urlopen(url, context=ctx).read()
-    soup = BeautifulSoup(html,'html.parser')
-    #tags = soup.find_all('p')
+        url = 'https://www.dof.gob.mx/#gsc.tab=0'
+        html = urllib.request.urlopen(url, context=ctx).read()
+        soup = BeautifulSoup(html,'html.parser')
+        #tags = soup.find_all('p')
 
-    tags = []
-    for tag in soup.find_all('p'):
-       #for anchor in tag.find_all('span'):
-        tags.append(tag.contents)
+        tags = []
+        for tag in soup.find_all('p'):
+        #for anchor in tag.find_all('span'):
+            tags.append(tag.contents)
 
-    #substr = 'DOLAR'
-    #if any(substr in str for str in tags):
-     #   tag = tags[str][1]
+        #substr = 'DOLAR'
+        #if any(substr in str for str in tags):
+        #   tag = tags[str][1]
 
 
-    tag = tags[4][3]
+        tag = tags[4][3]
 
-    return tag
+        return tag
+    except Exception as e:
+        # Manejo de la excepción - log, mensaje de error, etc.
+        return f"Error al obtener datos: {e}"
 
 def oc(request, pk):
     productos = ArticulosRequisitados.objects.filter(req = pk)
