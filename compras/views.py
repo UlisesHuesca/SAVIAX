@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from dashboard.models import Inventario, Order, ArticulosOrdenados, ArticulosparaSurtir
+from dashboard.models import Inventario, Order, ArticulosOrdenados, ArticulosparaSurtir, Producto_Calidad
 from requisiciones.models import Requis, ArticulosRequisitados
 from user.models import Profile
 from tesoreria.models import Pago
@@ -84,10 +84,14 @@ def productos_pendientes(request):
     myfilter = ArticulosRequisitadosFilter(request.GET, queryset=articulos)
     articulos = myfilter.qs
 
+    #Producto_Calidad relacionados
+    productos_calidad = Producto_Calidad.objects.filter(producto__in=articulos.values_list('producto__producto', flat=True))
+
     context= {
         'requis':requis,
         'articulos':articulos,
         'myfilter':myfilter,
+        'productos_calidad': productos_calidad,
         }
 
     return render(request, 'compras/productos_pendientes.html',context)
@@ -147,28 +151,32 @@ def articulos_restantes(request, pk):
 
 def dof():
 #Trying to fetch DOF
-    ctx = ssl.create_default_context()
-    ctx.check_hostname = False
-    ctx.verify_mode = ssl.CERT_NONE
+    try:
+        ctx = ssl.create_default_context()
+        ctx.check_hostname = False
+        ctx.verify_mode = ssl.CERT_NONE
 
-    url = 'https://www.dof.gob.mx/#gsc.tab=0'
-    html = urllib.request.urlopen(url, context=ctx).read()
-    soup = BeautifulSoup(html,'html.parser')
-    #tags = soup.find_all('p')
+        url = 'https://www.dof.gob.mx/#gsc.tab=0'
+        html = urllib.request.urlopen(url, context=ctx).read()
+        soup = BeautifulSoup(html,'html.parser')
+        #tags = soup.find_all('p')
 
-    tags = []
-    for tag in soup.find_all('p'):
-       #for anchor in tag.find_all('span'):
-        tags.append(tag.contents)
+        tags = []
+        for tag in soup.find_all('p'):
+        #for anchor in tag.find_all('span'):
+            tags.append(tag.contents)
 
-    #substr = 'DOLAR'
-    #if any(substr in str for str in tags):
-     #   tag = tags[str][1]
+        #substr = 'DOLAR'
+        #if any(substr in str for str in tags):
+        #   tag = tags[str][1]
 
 
-    tag = tags[4][3]
+        tag = tags[4][3]
 
-    return tag
+        return tag
+    except Exception as e:
+        # Manejo de la excepción - log, mensaje de error, etc.
+        return f"Error al obtener datos: {e}"
 
 def oc(request, pk):
     productos = ArticulosRequisitados.objects.filter(req = pk)

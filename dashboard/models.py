@@ -89,7 +89,7 @@ class Producto_Calidad(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(null=True)
     updated_by = models.ForeignKey(Profile, on_delete = models.CASCADE, null=True)
-    producto = models.ForeignKey(Product, on_delete = models.CASCADE, null=True)
+    producto = models.OneToOneField(Product, on_delete = models.CASCADE, null=True,  related_name='producto_calidad')
     requisitos = models.TextField(blank=True, null=True)
     #criterios_aceptacion = models.TextField(blank=True, null=True)
     documental = models.BooleanField(default= False)
