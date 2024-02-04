@@ -12,7 +12,7 @@ from user.models import Profile, Distrito, Almacen
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse, HttpResponse
 import json
-from django.db.models import Sum, Value, F, Sum, When, Case, DecimalField
+from django.db.models import Sum, Value, F, Sum, When, Case, DecimalField, Q
 from .filters import InventoryFilter, SolicitudesFilter, SolicitudesProdFilter, InventarioFilter, HistoricalInventarioFilter, HistoricalProductoFilter
 from django.contrib import messages
 import decimal
@@ -175,7 +175,7 @@ def product_selection(request):
     tipo = Tipo_Orden.objects.get(tipo ='normal')
     #order, created = Order.objects.get_or_create(staff = usuario, complete = False, tipo = tipo)
     order, created = Order.objects.get_or_create(staff = usuario, complete = False, tipo=tipo, distrito = usuario.distrito)
-    productos = Inventario.objects.filter(complete=True)
+    productos = Inventario.objects.filter(complete=True).exclude(producto__rev_calidad=False, producto__critico__id__in=[1, 2])
     cartItems = order.get_cart_quantity
     myfilter=InventoryFilter(request.GET, queryset=productos)
     productos = myfilter.qs

@@ -31,6 +31,12 @@ class Subfamilia(models.Model):
 
     def __str__(self):
         return f'{self.nombre}'
+    
+class Criticidad(models.Model):
+    nombre = models.CharField(max_length=20)
+
+    def __str__(self):
+        return f'{self.nombre}'
 
 class Product(models.Model):
     codigo = models.CharField(max_length=6, null=True, unique=True)
@@ -47,10 +53,16 @@ class Product(models.Model):
     baja_item = models.BooleanField(default=False)
     image = models.ImageField(null=True, blank=True, upload_to='product_images')
     completado = models.BooleanField(default = False)
-
+    #modificaciones para API
+    critico = models.ForeignKey(Criticidad, on_delete = models.CASCADE, null=True)
+    especs = models.TextField(blank=True, null=True)
+    rev_calidad = models.BooleanField(default = False) 
+    updated_by = models.ForeignKey(Profile, on_delete = models.CASCADE, null=True)
+    
+   
     #Estas opciones de guardado de creación y actualización las voy a utilizar en todos mis modelos
     created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    updated_at = models.DateTimeField(null=True)
     history = HistoricalRecords(history_change_reason_field=models.TextField(null=True))
 
 
@@ -65,6 +77,27 @@ class Product(models.Model):
         except:
             url = ''
         return url
+    
+class Grado_Control(models.Model):
+    nombre = models.CharField(max_length=10, null=True, unique=True)
+    
+    def __str__(self):
+        return f'{self.nombre}'
+    
+#Este modelo fue enteramente creado para cumplimiento con la API
+class Producto_Calidad(models.Model):
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(null=True)
+    updated_by = models.ForeignKey(Profile, on_delete = models.CASCADE, null=True)
+    producto = models.OneToOneField(Product, on_delete = models.CASCADE, null=True,  related_name='producto_calidad')
+    requisitos = models.TextField(blank=True, null=True)
+    #criterios_aceptacion = models.TextField(blank=True, null=True)
+    documental = models.BooleanField(default= False)
+    inspeccion = models.BooleanField(default= False)
+    cumplimiento = models.BooleanField(default= False)
+    g_documental = models.ForeignKey(Grado_Control, on_delete = models.CASCADE, null=True, blank= True, related_name='documental')
+    g_inspeccion = models.ForeignKey(Grado_Control, on_delete = models.CASCADE, null=True, blank=True,related_name='inspeccion')
+    g_cumplimiento = models.ForeignKey(Grado_Control, on_delete = models.CASCADE, null=True, blank=True, related_name='cumplimiento')
 
 class Products_Batch(models.Model):
     file_name = models.FileField(upload_to='product_bash', validators = [FileExtensionValidator(allowed_extensions=('csv',))])

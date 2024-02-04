@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from dashboard.models import Inventario, Order, ArticulosOrdenados, ArticulosparaSurtir
+from dashboard.models import Inventario, Order, ArticulosOrdenados, ArticulosparaSurtir, Producto_Calidad
 from requisiciones.models import Requis, ArticulosRequisitados
 from user.models import Profile
 from tesoreria.models import Pago
@@ -84,10 +84,14 @@ def productos_pendientes(request):
     myfilter = ArticulosRequisitadosFilter(request.GET, queryset=articulos)
     articulos = myfilter.qs
 
+    #Producto_Calidad relacionados
+    productos_calidad = Producto_Calidad.objects.filter(producto__in=articulos.values_list('producto__producto', flat=True))
+
     context= {
         'requis':requis,
         'articulos':articulos,
         'myfilter':myfilter,
+        'productos_calidad': productos_calidad,
         }
 
     return render(request, 'compras/productos_pendientes.html',context)

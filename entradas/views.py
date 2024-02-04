@@ -4,7 +4,7 @@ from django.db.models import Q
 from compras.models import Compra, ArticuloComprado
 from compras.filters import CompraFilter
 from compras.views import attach_oc_pdf
-from dashboard.models import Inventario, Order, ArticulosparaSurtir
+from dashboard.models import Inventario, Order, ArticulosparaSurtir, Producto_Calidad
 from requisiciones.models import Salidas, ArticulosRequisitados, Requis
 from .models import Entrada, EntradaArticulo, Reporte_Calidad, No_Conformidad, NC_Articulo
 from .forms import EntradaArticuloForm, Reporte_CalidadForm, NoConformidadForm, NC_ArticuloForm
@@ -58,8 +58,14 @@ def pendientes_entrada(request):
 
 @login_required(login_url='user-login')
 def pendientes_calidad(request):
-    articulos_entrada = EntradaArticulo.objects.filter(articulo_comprado__producto__producto__articulos__producto__producto__especialista = True, liberado = False)
-
+    articulos_entrada = EntradaArticulo.objects.filter(
+        Q(articulo_comprado__producto__producto__articulos__producto__producto__especialista=True) |
+        Q(articulo_comprado__producto__producto__articulos__producto__producto__critico=True) |
+        Q(articulo_comprado__producto__producto__articulos__producto__producto__rev_calidad=True),
+        liberado=False
+        )
+    
+  
     context = {
         'articulos_entrada':articulos_entrada,
         }
@@ -116,14 +122,14 @@ def articulos_entrada(request, pk):
         for articulo in articulos_entrada:
             producto_surtir = ArticulosparaSurtir.objects.get(articulos = articulo.articulo_comprado.producto.producto.articulos)
             producto_surtir.seleccionado = False
-            if producto_surtir.articulos.producto.producto.especialista == True:
+            if producto_surtir.articulos.producto.producto.especialista or producto_surtir.articulos.producto.producto.critico or producto_surtir.articulos.producto.producto.rev_calidad:
                 producto_surtir.surtir = False
                 articulo.liberado = False
                 archivo_oc = attach_oc_pdf(request, articulo.articulo_comprado.oc.id)
                 email = EmailMessage(
                         f'Compra Autorizada {compra.get_folio}',
                         f'Estimado *Inserte nombre de especialista*,\n Estás recibiendo este correo porque se ha recibido en almacén el producto código:{producto_surtir.articulos.producto.producto.codigo} descripción:{producto_surtir.articulos.producto.producto.nombre} el cual requiere la liberación de calidad\n Este mensaje ha sido automáticamente generado por SAVIA VORDTEC',
-                        'savia@vordcab.com',
+                        'savia@vordtec.com',
                         ['ulises_huesc@hotmail.com'],
                         )
                 email.attach(f'OC_folio:{articulo.articulo_comprado.oc.folio}.pdf',archivo_oc,'application/pdf')
@@ -367,6 +373,7 @@ def update_entrada(request):
 def reporte_calidad(request, pk):
     perfil = Profile.objects.get(staff__id = request.user.id)
     articulo_entrada = EntradaArticulo.objects.get(id = pk, liberado = False)
+    producto_calidad = Producto_Calidad.objects.get(producto = articulo_entrada.articulo_comprado.producto.producto.articulos.producto.producto)
     form = Reporte_CalidadForm()
     articulos_reportes = Reporte_Calidad.objects.filter(articulo = articulo_entrada, completo = True)
     reporte_actual, created = Reporte_Calidad.objects.get_or_create(articulo = articulo_entrada, completo = False)
@@ -413,6 +420,7 @@ def reporte_calidad(request, pk):
 
     context = {
         'form': form,
+        'producto_calidad':producto_calidad,
         'articulo_entrada':articulo_entrada,
         'restantes_liberacion': restantes_liberacion,
         }

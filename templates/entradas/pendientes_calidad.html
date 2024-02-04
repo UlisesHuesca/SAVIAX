@@ -87,14 +87,14 @@
             <tbody>
                 {% for articulo in articulos_entrada %}
                 <tr>
-                    <td scope="col">{{articulo.articulo_comprado.oc.folio}}</th>
+                    <td scope="col">{{articulo.articulo_comprado.oc.get_folio}}</th>
                     <td scope="col">{{articulo.articulo_comprado.oc.proveedor}}</td>
                     <td scope="col">{{articulo.articulo_comprado.producto.producto.articulos.producto.producto.codigo}} | {{articulo.articulo_comprado.producto.producto.articulos.producto.producto.nombre}}</td>
                     <td>{{articulo.articulo_comprado.producto.producto.articulos.orden.proyecto.nombre}}</td>
                     <td>{{articulo.articulo_comprado.producto.producto.articulos.orden.subproyecto.nombre}}</td>
                     <td>{{articulo.entrada.entrada_date}} </td>
                     <td>
-                        <a class="btn btn-outline-info btn-block mx-auto" type="button" data-bs-toggle="modal" data-bs-target="#dialog" hx-target="#document" hx-get={% url 'reporte_calidad' articulo.id %}><i class="fa-solid fa-list-ul"></i></a>
+                        <a class="btn btn-outline-info btn-block mx-auto" type="button" href="{% url 'reporte_calidad' articulo.id %}"><i class="fa-solid fa-list-ul"></i></a>
                     </td>
                 </tr>
                 {% endfor %}

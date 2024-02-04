@@ -1,6 +1,6 @@
 import django_filters
-from dashboard.models import Inventario, Order, ArticulosOrdenados, Product
-from django_filters import CharFilter, DateFilter
+from dashboard.models import Inventario, Order, ArticulosOrdenados, Product, Criticidad
+from django_filters import CharFilter, DateFilter, ChoiceFilter
 from django.db.models import Q
 
 
@@ -9,11 +9,14 @@ class InventoryFilter(django_filters.FilterSet):
     codigo = CharFilter(field_name='producto__codigo', lookup_expr='icontains')
     familia = CharFilter(field_name='producto__familia__nombre', lookup_expr='icontains')
     subfamilia = CharFilter(field_name='producto__familia__nombre', lookup_expr='icontains')
+   # Obtener las opciones de la base de datos
+    criticidad_choices = Criticidad.objects.all().values_list('nombre', 'nombre').distinct()
+    criticidad = ChoiceFilter(field_name='producto__critico__nombre', choices=criticidad_choices)
 
 
     class Meta:
         model = Inventario
-        fields = ['producto','codigo','familia','subfamilia']
+        fields = ['producto','codigo','familia','subfamilia','criticidad']
 
 
 class InventarioFilter(django_filters.FilterSet):

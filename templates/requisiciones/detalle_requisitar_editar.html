@@ -77,9 +77,9 @@
                 </div>
                     
                 <div class="col-sm-1">
-                    <button class="btn btn-outline-success update-purchase" id="update-requi" name="requi">
+                    <a class="btn btn-outline-success update-purchase" id="update-requi" name="requi">
                     <i class="fa-solid fa-circle-plus"></i>
-                    </button>
+                    </a>
                 </div>
             </div>
             <hr>
@@ -179,7 +179,6 @@ let suma = 0;
 let suma_iva = 0;
 
 updateBtn.addEventListener('click',function(){
-        updateBtn.disabled = true; // Deshabilitar el botón inmediatamente
         let requi_tag = document.getElementById('requi');
         let requi = requi_tag.getAttribute('target');
         let orden = requi_tag.getAttribute('orden')

@@ -136,7 +136,10 @@
                     {% for producto in articulos_entrada %}
                     <tr>
                         
-                        <td scope="col">{{producto.articulo_comprado.producto.producto.articulos.producto.producto.nombre}}</td>
+                        <td scope="col">{{producto.articulo_comprado.producto.producto.articulos.producto.producto.nombre}}
+                            {% if producto.articulo_comprado.producto.producto.articulos.producto.producto.critico %}
+                            <button type="button" class="btn btn-danger"><i class="fa-solid fa-q"></i></button>
+                            {% endif %}</td>
                         <td scope="col">{{producto.cantidad}}</td>
                         <th scope="col">{{producto.articulo_comprado.producto.producto.articulos.producto.producto.unidad}}</th>
                         {% if  producto.referencia %}

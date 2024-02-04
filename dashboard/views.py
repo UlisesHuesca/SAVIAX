@@ -1,17 +1,17 @@
 from django.shortcuts import render, redirect
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.forms import inlineformset_factory
 from django.db.models import Sum, Q, Prefetch, Avg, FloatField, Case, When, F,DecimalField, ExpressionWrapper, CharField, Value
 from django.db.models.functions import Concat
-from .models import Product, Subfamilia, Order, Products_Batch, Familia, Unidad, Inventario
+from .models import Product, Subfamilia, Order, Products_Batch, Familia, Unidad, Inventario, Producto_Calidad
 from compras.models import Proveedor, Proveedor_Batch, Proveedor_Direcciones_Batch, Proveedor_direcciones, Estatus_proveedor, Estado
 from solicitudes.models import Subproyecto, Proyecto
 from requisiciones.models import Salidas, ValeSalidas
 from user.models import Profile, Distrito, Banco
-from .forms import ProductForm, Products_BatchForm, AddProduct_Form, Proyectos_Form, ProveedoresForm, Proyectos_Add_Form, Proveedores_BatchForm, ProveedoresDireccionesForm, Proveedores_Direcciones_BatchForm, Subproyectos_Add_Form, ProveedoresExistDireccionesForm, Add_ProveedoresDireccionesForm, DireccionComparativoForm
+from .forms import ProductForm, Products_BatchForm, AddProduct_Form, Proyectos_Form, ProveedoresForm, Proyectos_Add_Form, Proveedores_BatchForm, ProveedoresDireccionesForm, Proveedores_Direcciones_BatchForm, Subproyectos_Add_Form, ProveedoresExistDireccionesForm, Add_ProveedoresDireccionesForm, DireccionComparativoForm, Revision_Calidad_Form
 
 from .filters import ProductFilter, ProyectoFilter, ProveedorFilter, SubproyectoFilter
 
@@ -408,6 +408,43 @@ def product(request):
 
 
     return render(request,'dashboard/product.html', context)
+
+
+@login_required(login_url='user-login')
+def revision_producto_calidad(request, pk):
+
+    usuario = Profile.objects.get(staff=request.user)
+    item = Product.objects.get(id=pk)
+    revision, created = Producto_Calidad.objects.get_or_create(producto = item)
+    form = Revision_Calidad_Form(instance = revision)
+    error_messages = {}
+
+    if request.method == 'POST':
+        form = Revision_Calidad_Form(request.POST, instance = revision)
+        
+        if form.is_valid():
+            item.rev_calidad = True
+            revision = form.save(commit=False)
+            revision.updated_at = datetime.now()
+            revision.updated_by = usuario
+            item.save()
+            revision.save()
+            messages.success(request, f'Has agregado requerimientos de calidad al {revision.producto.nombre} correctamente ')
+            return redirect('dashboard-product')
+        else:
+            for field, errors in form.errors.items():
+                error_messages[field] = errors.as_text()
+    #else:
+    #    form = ProveedoresForm(instance=proveedor)
+    #    formset = ProveedorDireccionesFormSet(instance=proveedor)
+
+
+    context = {
+        'error_messages':error_messages,
+        'form': form,
+        'item':item,
+        }
+    return render(request,'dashboard/revision_producto_calidad.html', context)
 
 
 @login_required(login_url='user-login')
@@ -964,6 +1001,15 @@ def product_delete(request, pk):
 @login_required(login_url='user-login')
 def add_product(request):
     item, created = Product.objects.get_or_create(completado=False)
+    familias = Familia.objects.all()
+
+    familias_para_select2 = [
+        {
+            'id': item.id, 
+            'text': str(item.nombre)
+        } for item in familias
+    ]
+
 
     if request.method =='POST':
         form = AddProduct_Form(request.POST, request.FILES or None, instance = item)
@@ -979,6 +1025,7 @@ def add_product(request):
 
 
     context = {
+        'familias_para_select2':familias_para_select2,
         'form': form,
         'item':item,
         }
@@ -1011,9 +1058,10 @@ def product_update(request, pk):
 def load_subfamilias(request):
 
     familia_id = request.GET.get('familia_id')
-    subfamilias = Subfamilia.objects.filter(familia_id = familia_id)
-
-    return render(request, 'dashboard/subfamilia_dropdown_list_options.html',{'subfamilias': subfamilias})
+    subfamilias = Subfamilia.objects.filter(familia_id = familia_id).values('id','nombre')
+    data = list(subfamilias)
+    return JsonResponse(data, safe=False)
+    #return render(request, 'dashboard/subfamilia_dropdown_list_options.html',{'subfamilias': subfamilias})
 
 
 @login_required(login_url='user-login')

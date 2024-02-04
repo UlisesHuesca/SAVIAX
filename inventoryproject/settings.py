@@ -15,16 +15,16 @@ from dotenv import load_dotenv
 import os 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-import moneyed
+#import moneyed
 load_dotenv()
 
-MXN = moneyed.add_currency(
-    code='MXN',
-    numeric='068',
-    name='Peso mexicano',
-    countries=('MEXICO', )
-)
-CURRENCIES =('USD','MXN')
+#MXN = moneyed.add_currency(
+#    code='MXN',
+#    numeric='068',
+#    name='Peso mexicano',
+#    countries=('MEXICO', )
+#)
+#CURRENCIES =('USD','MXN')
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/3.2/howto/deployment/checklist/
@@ -33,16 +33,16 @@ CURRENCIES =('USD','MXN')
 SECRET_KEY = os.getenv('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-SECURE_HSTS_SECONDS = 31536000  # 1 año
-SECURE_SSL_REDIRECT = True
-SESSION_COOKIE_SECURE = True
-CSRF_COOKIE_SECURE = True
+#SECURE_HSTS_SECONDS = 31536000  # 1 año
+SECURE_SSL_REDIRECT = False
+SESSION_COOKIE_SECURE = False
+CSRF_COOKIE_SECURE = False
 DEBUG = True
 
 
 
-ALLOWED_HOSTS = ['vordtec.cloud','www.vordtec.cloud','localhost']
-
+#ALLOWED_HOSTS = ['vordtec.cloud','www.vordtec.cloud','localhost']
+ALLOWED_HOSTS = ['localhost','127.0.0.1']
 
 # Application definition
 
@@ -70,7 +70,7 @@ INSTALLED_APPS = [
 # Extensions - installed with pip3 / requirements.txt
     'django_extensions',
     'crispy_forms',
-    'djmoney',
+    #'djmoney',
     'plotly',
     'widget_tweaks',
     'simple_history',

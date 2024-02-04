@@ -27,6 +27,7 @@
                     <th scope="col">Unidad</th>
                     <th scope="col">Cantidad Requisitada</th>
                     <th>Comentario Usuario</th>
+                    <th>Criticidad</th>
                 </tr>
             </thead>
             <tbody id="mytbl">
@@ -38,6 +39,7 @@
                     <td scope="col">{{producto.producto.articulos.producto.producto.unidad}}</td>
                     <td scope="col"><p class='quantity' id='prod_quantity'>{{producto.cantidad}}</p></td>
                     <td>{% if producto.producto.articulos.comentario %} {{producto.producto.articulos.comentario}} {% endif %}</td>
+                    <td>{% if producto.producto.articulos.producto.producto.critico.nombre == "Crítico"%} <button type="button" class="btn btn-danger"><i class="fa-solid fa-q"></i></button>{% endif %}</td>
                 </tr>
                 {% endfor %}
             </tbody>

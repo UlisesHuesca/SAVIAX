@@ -116,24 +116,24 @@
                     <td>
                         <ul class="nav nav-pills">
                             <li class="nav-item m-1">
-                                <a id="myBtn" type="button" class="btn btn-outline-info" data-bs-toggle="modal" data-bs-target='#dialog' hx-target="#document" hx-get="{% url 'articulos-restantes' req.id %}">Productos</a>
+                                <a id="myBtn" type="button" class="btn btn-outline-info" href="{% url 'articulos-restantes' req.id %}">Productos</a>
                             </li>
                             {% if usuario.tipo.comprador == True %}
-                            <li class="nav-item m-1">
-                                <a type="button" class="btn btn-outline-success" href="{% url 'oc' req.id %}">Crear OC</a>
-                            </li>
-                            {% if req.comprado_parcial %}
-                            <li class="nav-item m-1">
-                                <a type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#dialog" hx-target="#document" hx-get="{% url 'requisicion-cancelar' req.id %}">
-                                    <i class="fa-solid fa-trash-can"></i>
-                                </a>
-                            </li>
-                            {% endif %}
-                            <li class="nav-item m-1">
-                                <a type="button" class="btn btn-outline-danger" href="{% url 'eliminar-articulos' req.id %}">
-                                    <i class="fa-solid fa-eraser"></i>
-                                </a>
-                            </li>
+                                <li class="nav-item m-1">
+                                    <a type="button" class="btn btn-outline-success" href="{% url 'oc' req.id %}">Crear OC</a>
+                                </li>
+                                {% if req.comprado_parcial %}
+                                <li class="nav-item m-1">
+                                    <a type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#dialog" hx-target="#document" hx-get="{% url 'requisicion-cancelar' req.id %}">
+                                        <i class="fa-solid fa-trash-can"></i>
+                                    </a>
+                                </li>
+                                {% endif %}
+                                <li class="nav-item m-1">
+                                    <a type="button" class="btn btn-outline-danger" href="{% url 'eliminar-articulos' req.id %}">
+                                        <i class="fa-solid fa-eraser"></i>
+                                    </a>
+                                </li>
                             {% endif %}
                         </ul>
                     </td>

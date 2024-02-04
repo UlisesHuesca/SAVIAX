@@ -5,7 +5,7 @@ from . import views
 urlpatterns = [
     path('dashboard/', views.index, name= 'dashboard-index'),
     path('configuracion/proyectos', views.proyectos, name='configuracion-proyectos'),
-    path('onfiguracion/subproyectos/<int:pk>', views.subproyectos, name='subproyectos'),
+    path('configuracion/subproyectos/<int:pk>', views.subproyectos, name='subproyectos'),
     path('configuracion/proyectos/editar/<int:pk>', views.proyectos_edit, name='proyectos-edit'),
     path('configuracion/proyectos/add', views.proyectos_add, name='proyectos-add'),
     path('configuracion/subproyectos_add/<int:pk>', views.subproyectos_add, name='subproyectos-add'),
@@ -31,5 +31,7 @@ urlpatterns = [
     path('order/', views.order, name='dashboard-order'),
     path('ajax/load-subfamilias/', views.load_subfamilias, name='ajax_load_subfamilias'),  # <-- rutina en Ajax
     path('dashboard/staff_detail/<int:pk>/', views.staff_detail, name='dashboard-staff-detail'),
+    #API
+    path('product/revision_calidad/<int:pk>', views.revision_producto_calidad, name='revision-producto-calidad'),
 ]
 

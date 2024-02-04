@@ -1,5 +1,5 @@
 from django import forms
-from .models import Product, Subfamilia, Products_Batch, Inventario_Batch
+from .models import Product, Subfamilia, Products_Batch, Inventario_Batch, Familia, Producto_Calidad
 from compras.models import Proveedor_Batch, Proveedor, Proveedor_direcciones, Proveedor_Direcciones_Batch
 from solicitudes.models import Proyecto, Subproyecto
 
@@ -7,10 +7,28 @@ from solicitudes.models import Proyecto, Subproyecto
 class ProductForm(forms.ModelForm):
     class Meta:
         model = Product
-        fields = ['familia','subfamilia','unidad','especialista','iva','activo','servicio','baja_item','image','gasto']
-
+        fields = ['familia','subfamilia','unidad','especialista','iva','activo','servicio','baja_item','image','gasto','critico','especs']
 
     #Sobreescribiendo el método __init__ y configurando el queryset para que esté vacío
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['familia'].queryset = Familia.objects.none()
+        self.fields['subfamilia'].queryset = Subfamilia.objects.none()
+
+        if 'familia' in self.data:
+            try:
+                familia_id = int(self.data.get('familia'))
+                self.fields['subfamilia'].queryset = Subproyecto.objects.filter(familia = familia_id)  
+                self.fields['familia'].queryset = Proyecto.objects.filter(id= familia_id)
+            except (ValueError, TypeError):
+                pass  # invalid input from the client; ignore and fallback to empty City queryset
+
+class AddProduct_Form(forms.ModelForm):
+    class Meta:
+        model = Product
+        fields = ['codigo','nombre','unidad','familia','subfamilia','especialista','iva','activo','servicio','image','gasto','critico','especs']
+
+#Sobreescribiendo el método __init__ y configurando el queryset para que esté vacío
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['subfamilia'].queryset = Subfamilia.objects.none()
@@ -23,6 +41,16 @@ class ProductForm(forms.ModelForm):
                 pass  # invalid input from the client; ignore and fallback to empty City queryset
         elif self.instance.pk:
             self.fields['subfamilia'].queryset = self.instance.familia.subfamilia_set.order_by('nombre')
+
+#class ProductEditCalidad_Form(forms.ModelForm):
+#    class Meta:
+#        model = Product
+#        fields = ['nombre','unidad','critico']
+
+class Revision_Calidad_Form(forms.ModelForm):
+    class Meta:
+        model = Producto_Calidad
+        fields = ['requisitos', 'documental', 'inspeccion', 'cumplimiento','g_documental','g_inspeccion','g_cumplimiento']
 
 class ProveedoresForm(forms.ModelForm):
     class Meta:
@@ -72,24 +100,6 @@ class Proveedores_Direcciones_BatchForm(forms.ModelForm):
         model = Proveedor_Direcciones_Batch
         fields= ['file_name']
 
-class AddProduct_Form(forms.ModelForm):
-    class Meta:
-        model = Product
-        fields = ['codigo','nombre','unidad','familia','subfamilia','especialista','iva','activo','servicio','image','gasto']
-
-#Sobreescribiendo el método __init__ y configurando el queryset para que esté vacío
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.fields['subfamilia'].queryset = Subfamilia.objects.none()
-
-        if 'familia' in self.data:
-            try:
-                familia_id = int(self.data.get('familia'))
-                self.fields['subfamilia'].queryset = Subfamilia.objects.filter(familia_id=familia_id).order_by('nombre')
-            except (ValueError, TypeError):
-                pass  # invalid input from the client; ignore and fallback to empty City queryset
-        elif self.instance.pk:
-            self.fields['subfamilia'].queryset = self.instance.familia.subfamilia_set.order_by('nombre')
 
 class Proyectos_Form(forms.ModelForm):
     class Meta:

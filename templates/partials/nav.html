@@ -204,8 +204,13 @@
                                 Comparativos
                             </a>
                             <a class="dropdown-item" href="{% url 'add_proveedores2' %}">
-                                Solicitud alta de proveedor
+                                Compras Devueltas
                             </a>
+                            <!--<a class="dropdown-item" href="{% url 'add_proveedores2' %}">
+                                Solicitud alta de proveedor
+                            </a>-->
+                            
+
                             {% if usuario.tipo.comprador == True %}
                             <a class="dropdown-item" href="{% url 'add_proveedores_comparativo' %}">
                                 Agregar Proveedor Comparativo

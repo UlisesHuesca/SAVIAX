@@ -31,6 +31,12 @@ class EntradaArticulo(models.Model):
     def __str__(self):
         return f'{self.id} - {self.entrada} - {self.cantidad} - {self.articulo_comprado}'
 
+class Resultado_Evaluacion(models.Model):
+    nombre = models.CharField(max_length=30)
+
+    def __str__(self):
+        return f'{self.nombre}'
+
 class Reporte_Calidad(models.Model):
     articulo = models.ForeignKey(EntradaArticulo, on_delete = models.CASCADE, null=True)
     cantidad = models.DecimalField(max_digits=14, decimal_places=2, default=0)
@@ -38,7 +44,7 @@ class Reporte_Calidad(models.Model):
     reporte_date = models.DateField(null=True, blank=True)
     reporte_hora = models.TimeField(null=True, blank=True)
     completo = models.BooleanField(default=False)
-    autorizado = models.BooleanField(null=True, default=None)
+    evaluacion = models.ForeignKey(Resultado_Evaluacion, on_delete = models.CASCADE, null=True)
 
     def __str__(self):
         return f'{self.id} - {self.articulo} - {self.completo} - {self.autorizado}'

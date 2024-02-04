@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Entrada, EntradaArticulo, Reporte_Calidad, No_Conformidad, NC_Articulo
+from .models import Entrada, EntradaArticulo, Reporte_Calidad, No_Conformidad, NC_Articulo, Resultado_Evaluacion
 
 # Register your models here.
 class EntradaAdmin(admin.ModelAdmin):
@@ -9,6 +9,7 @@ class EntradaAdmin(admin.ModelAdmin):
 class EntradaArticuloAdmin(admin.ModelAdmin):
     list_display = ('id','entrada','cantidad','articulo_comprado','liberado','cantidad_por_surtir')
     search_fields = ['articulo_comprado__producto__producto__articulos__producto__producto__nombre']
+    raw_id_fields = ('articulo_comprado','entrada')
 
 admin.site.register(Entrada, EntradaAdmin)
 
@@ -19,3 +20,5 @@ admin.site.register(Reporte_Calidad)
 admin.site.register(No_Conformidad)
 
 admin.site.register(NC_Articulo)
+
+admin.site.register(Resultado_Evaluacion)
