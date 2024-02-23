@@ -9,7 +9,7 @@ from dashboard.models import Subproyecto
 from .models import Pago, Cuenta, Facturas
 from gastos.models import Solicitud_Gasto
 from viaticos.models import Solicitud_Viatico
-from .forms import PagoForm, Facturas_Form, Facturas_Completas_Form, Saldo_Form
+from .forms import PagoForm, Facturas_Form, Facturas_Completas_Form, Saldo_Form, ComprobanteForm
 from .filters import PagoFilter, Matriz_Pago_Filter
 from viaticos.filters import Solicitud_Viatico_Filter
 from gastos.filters import Solicitud_Gasto_Filter
@@ -192,6 +192,25 @@ def compras_pagos(request, pk):
 
     return render(request, 'tesoreria/compras_pagos.html',context)
 
+@login_required(login_url='user-login')
+def edit_comprobante_pago(request, pk):
+    pago = Pago.objects.get(id = pk)
+    #print(pago.id)
+    form = ComprobanteForm(instance = pago)
+
+    if request.method == 'POST':
+        form = ComprobanteForm(request.POST, request.FILES, instance=pago)
+        if form.is_valid():
+            form.save()
+            return HttpResponse(status=204) #No content to render nothing and send a "signal" to javascript in order to close window
+    
+    context = {
+        'pago':pago,
+        'form':form, 
+    }
+    
+    return render(request, 'tesoreria/edit_comprobante_pago.html',context)
+
 def edit_pago(request, pk):
     # Obtener el objeto Pago basado en el pk
     usuario = Profile.objects.get(staff__id=request.user.id)
@@ -370,6 +389,7 @@ def matriz_facturas(request, pk):
 def matriz_facturas_nomodal(request, pk):
     compra = Compra.objects.get(id = pk)
     facturas = Facturas.objects.filter(oc = compra, hecho=True)
+    pagos = Pago.objects.filter(oc=compra)
     form = Facturas_Completas_Form(instance=compra)
 
     if request.method == 'POST':
@@ -383,6 +403,7 @@ def matriz_facturas_nomodal(request, pk):
                 messages.error(request,'No está validando')
 
     context={
+        'pagos':pagos,
         'form':form,
         'facturas':facturas,
         'compra':compra,
@@ -561,20 +582,26 @@ def convert_excel_matriz_pagos(pagos):
             proveedor = pago.oc.proveedor
             facturas_completas = pago.oc.facturas_completas
             cuenta_moneda = pago.cuenta.moneda.nombre if pago.cuenta else None
+            solicitado = pago.oc.req.orden.staff.staff.first_name + ' ' + pago.oc.req.orden.staff.staff.last_name
             if cuenta_moneda == 'PESOS':
                 tipo_de_cambio = ''
             elif cuenta_moneda == 'DOLARES':
                  tipo_de_cambio = pago.tipo_de_cambio or pago.oc.tipo_de_cambio or 17
             else:
                 tipo_de_cambio = ''  # default si no se cumplen las condiciones anteriores
+            moneda = pago.oc.moneda.nombre, 
         elif pago.gasto:
+            solicitado = pago.gasto.staff.staff.first_name + ' ' + pago.gasto.staff.staff.last_name
             proveedor = pago.gasto.staff.staff.first_name
             facturas_completas = pago.gasto.facturas_completas
             tipo_de_cambio = '' # Asume que no se requiere tipo de cambio para gastos
+            moneda = pago.gasto.moneda.nombre
         elif pago.viatico:
             proveedor = pago.viatico.staff.staff.first_name
+            solicitado = pago.viatico.staff.staff.first_name + ' ' + pago.viatico.staff.staff.last_name
             facturas_completas = pago.viatico.facturas_completas
             tipo_de_cambio = '' # Asume que no se requiere tipo de cambio para viáticos
+            moneda = pago.viatico.moneda.nombre,
         else:
             proveedor = None
             facturas_completas = None
@@ -584,14 +611,14 @@ def convert_excel_matriz_pagos(pagos):
         row = [
             pago.id,
             get_transaction_id(pago),
-            pago.oc.req.orden.staff.staff.first_name + ' ' + pago.oc.req.orden.staff.staff.last_name if pago.oc else '',
+            solicitado,
             pago.oc.req.orden.proyecto.nombre if pago.oc else '',
             pago.oc.req.orden.subproyecto.nombre if pago.oc else '',
             proveedor,
-            facturas_completas,
+            'Verdadero' if facturas_completas else 'Falso',
             pago.monto,
             pago.pagado_date.strftime('%d/%m/%Y') if pago.pagado_date else '',
-            pago.oc.moneda.nombre if pago.oc else '',  # Modificación aquí
+            moneda,# Modificación aquí
             tipo_de_cambio,
             f'=IF(K{row_num}="",H{row_num},H{row_num}*K{row_num})'  # Calcula total en pesos usando la fórmula de Excel
         ]

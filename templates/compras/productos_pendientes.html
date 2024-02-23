@@ -9,20 +9,7 @@
 <body>
 {% block content %}
 <hr>
-<div class = "row mt-2 bg-white">
-    <ul class="nav nav-pills" >
-        <li class="nav-item mx-2 pl-5">
-            <button type="submit" class="btn btn-outline-success" value='Reporte Excel'>
-                <i class="fa-solid fa-file-excel fa-2xl"></i>
-            </button>
-        </li>
-        <li class="nav-item mx-2">
-            <button type="button" class="btn btn-outline-danger">
-                <i class="fa-solid fa-file-pdf fa-2xl"></i>
-            </button>
-        </li>
-    </ul>
-</div>
+
 
 
 
@@ -72,9 +59,14 @@
             </div>
             <hr>
             </form>
-            <form method=POST>
+            <form method="POST">
                 {% csrf_token %}
                 <ul class="nav nav-pills">
+                    <li class="nav-item m-1">
+                        <button type="submit" name="btnReporte" class="btn btn-outline-success" value='Reporte Excel'>
+                            <i class="fa-solid fa-file-excel fa-2xl"></i>
+                        </button>
+                    </li>
                     <li class="nav-item mx-2">
                         <div class="btn-group btn-group" role="group" aria-label="Large button group">
                             <a type="button" class="btn btn-outline-info" href="{% url 'requisicion-autorizada' %}">Requis</a>
@@ -103,6 +95,7 @@
                     <th scope="col">Subproyecto</th>
                     <th scope="col">Área</th>
                     <th scope="col">Producto</th>
+                    <th>Cantidad</th>
                     <th scope="col">Acción</th>
                 </tr>
             </thead>
@@ -116,6 +109,7 @@
                     <td>{{item.req.orden.subproyecto.nombre}}</td>
                     <td>{{item.req.orden.area}}</td>
                     <td>{{item.producto.articulos.producto.producto.nombre}} </td>
+                    <td>{{item.cantidad}}</td>
                     <td></td>
                 </tr>
                 {% endfor %}

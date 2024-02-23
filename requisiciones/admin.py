@@ -10,7 +10,8 @@ class ValeSalidasAdmin(admin.ModelAdmin):
 
 class Articulos_RequisitadosAdmin(admin.ModelAdmin):
     list_display = ('req','producto','cantidad')
-    search_fields = ['producto__articulos__producto__producto__nombre']
+    search_fields = ['producto__articulos__producto__producto__nombre','req__folio']
+    raw_id_fields = ('req','producto')
 
 class SalidasAdmin(admin.ModelAdmin):
     list_display = ('id','producto','cantidad','precio','complete','entrada')

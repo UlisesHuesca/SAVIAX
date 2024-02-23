@@ -1479,6 +1479,184 @@ def convert_salidas_to_xls(salidas):
     return(response)
 #Aquí termina la implementación del XLSX
 
+def render_entrada_pdf(request, pk):
+    #Configuration of the PDF object
+    buf = io.BytesIO()
+    c = canvas.Canvas(buf, pagesize=portrait(letter))
+    #Here ends conf.
+    articulo = EntradaArticulo.objects.get(id=pk)
+    vale = Entrada.objects.get(id = articulo.entrada.id)
+    productos = EntradaArticulo.objects.filter(entrada= vale)
+    styles = getSampleStyleSheet()
+    styles['BodyText'].fontSize = 6
+
+    #Azul Vordcab
+    prussian_blue = Color(0.0859375,0.1953125,0.30859375)
+    rojo = Color(0.59375, 0.05859375, 0.05859375)
+    #Encabezado
+    c.setFillColor(black)
+    c.setLineWidth(.2)
+    c.setFont('Helvetica',8)
+    caja_iso = 770
+    #Elaborar caja
+    #c.line(caja_iso,500,caja_iso,720)
+
+
+    c.drawString(420,caja_iso,'Preparado por:')
+    c.drawString(420,caja_iso-10,'SUP. ADMON')
+    c.drawString(520,caja_iso,'Aprobación')
+    c.drawString(520,caja_iso-10,'SUB ADM')
+    #Segundo renglón
+    c.drawString(150,caja_iso-25,'Número de documento')
+    c.drawString(160,caja_iso-35,'SEOV-ALM-N4-01-02')
+    c.drawString(245,caja_iso-25,'Clasificación del documento')
+    c.drawString(275,caja_iso-35,'Controlado')
+    c.drawString(355,caja_iso-25,'Nivel del documento')
+    c.drawString(380,caja_iso-35, 'N5')
+    c.drawString(440,caja_iso-25,'Revisión No.')
+    c.drawString(452,caja_iso-35,'001')
+    c.drawString(510,caja_iso-25,'Fecha de Emisión')
+    c.drawString(525,caja_iso-35,'24-Oct.-18')
+
+
+    c.drawString(510,caja_iso-50,'Folio: ')
+    #c.drawString(530,caja_iso-50, str(vale.folio))
+    c.drawString(510,caja_iso-60,'Fecha:')
+    c.drawString(540,caja_iso-60,vale.entrada_date.strftime("%d/%m/%Y"))
+
+    c.setFillColor(rojo)
+    c.setFont('Helvetica-Bold',12)
+    c.drawString(530,caja_iso-50, str(vale.id))
+    
+
+    c.setFont('Helvetica',12)
+    c.setFillColor(prussian_blue)
+    # REC (Dist del eje Y, Dist del eje X, LARGO DEL RECT, ANCHO DEL RECT)
+    c.rect(150,caja_iso-15,250,20, fill=True, stroke=False) #Barra azul superior Orden de Compra
+
+    c.setFillColor(white)
+    c.setLineWidth(.2)
+    c.setFont('Helvetica-Bold',14)
+    c.drawCentredString(280,caja_iso-10,'Vale de Entrada Almacén')
+    c.setLineWidth(.3) #Grosor
+
+    c.drawInlineImage('static/images/logo vordtec_documento.png',45,caja_iso-40, 3 * cm, 1.5 * cm) #Imagen vortec
+   
+
+    data =[]
+    productos_data = []
+    high = 670
+    data.append(['''Código''','''Producto''', '''Cantidad''', '''Unidad'''])
+    for producto in productos:
+        producto_nombre = Paragraph(producto.articulo_comprado.producto.producto.articulos.producto.producto.nombre, styles["BodyText"])
+        data.append([producto.articulo_comprado.producto.producto.articulos.producto.producto.codigo, producto_nombre, producto.cantidad, producto.articulo_comprado.producto.producto.articulos.producto.producto.unidad])
+        high = high - 18
+        #Lo vuelvo a captura de otra manera para el código QR
+        nombre_producto = producto.articulo_comprado.producto.producto.articulos.producto.producto.nombre
+        codigo_producto = producto.articulo_comprado.producto.producto.articulos.producto.producto.codigo
+        producto_info = {
+            'codigo': codigo_producto,
+            'nombre': nombre_producto,
+            'cantidad': str(producto.cantidad),
+            'unidad': str(producto.articulo_comprado.producto.producto.articulos.producto.producto.unidad),
+        }
+        productos_data.append(producto_info)
+    
+    
+    # Generar el código QR
+    #qr = qrcode.QRCode(
+    #    version=1,
+    #    error_correction=qrcode.constants.ERROR_CORRECT_L,
+    #    box_size=10,
+    #    border=4,
+    #)
+    #folio = str(vale.folio)
+    #fecha = vale.created_at.strftime("%d/%m/%Y")
+    #qr_info = {
+    #    'folio': folio,
+    #    'fecha': fecha,
+    #    'productos': productos_data
+    #}
+    #qr_data = json.dumps(qr_info)
+    #qr.add_data(qr_data)
+    #qr.make(fit=True)
+
+    # Generar la imagen del QR y guardarla
+    #qr_image = qr.make_image(fill_color="black", back_color="white")
+    #qr_image_path = '/tmp/temp_qr.png'
+    #qr_image.save(qr_image_path)
+    #c.drawInlineImage(qr_image_path, 500, 440, 100, 100)  # Reemplaza x, y, width, height con tus valores
+
+
+    c.setFillColor(black)
+    c.setFont('Helvetica',8)
+    proyecto_y = 485 if high > 500 else high - 30
+
+    c.setFillColor(prussian_blue)
+    # REC (Dist del eje Y, Dist del eje X, LARGO DEL RECT, ANCHO DEL RECT)
+    c.rect(20,proyecto_y - 5 ,350,20, fill=True, stroke=False) #3ra linea azul
+    c.setFillColor(black)
+    c.setFont('Helvetica',7)
+
+
+    c.setFillColor(white)
+    c.setLineWidth(.1)
+    c.setFont('Helvetica-Bold',10)
+    c.drawCentredString(120,proyecto_y,'Proyecto')
+    c.drawCentredString(300,proyecto_y,'Subproyecto')
+
+    c.setFont('Helvetica',8)
+    c.setFillColor(black)
+    #c.drawCentredString(120,proyecto_y - 15, str(vale.solicitud.proyecto.nombre))
+    #c.drawCentredString(300,proyecto_y - 15, str(vale.solicitud.subproyecto.nombre))
+
+
+    c.setFillColor(black)
+    c.setFont('Helvetica',8)
+    #c.line(135,high-200,215, high-200) #Linea de Autorizacion
+    c.drawCentredString(150,proyecto_y - 30,'Recibió')
+    if vale.almacenista:
+        c.drawCentredString(150,proyecto_y - 40, vale.almacenista.staff.first_name +' '+vale.almacenista.staff.last_name)
+
+    #c.line(370,proyecto_y - 20,430, proyecto_y - 20)
+    #c.drawCentredString(400,proyecto_y - 30,'Recibió')
+    #c.drawCentredString(400,proyecto_y - 40, vale.material_recibido_por.staff.staff.first_name +' '+vale.material_recibido_por.staff.staff.last_name)
+
+
+    #c.line(240, high-200, 310, high-200)
+    c.drawCentredString(280,proyecto_y - 30,'Proveedor')
+    c.drawCentredString(280,proyecto_y - 40, vale.oc.proveedor.nombre.razon_social)
+
+    c.setFont('Helvetica',10)
+    c.setFillColor(prussian_blue)
+    c.setFont('Helvetica', 9)
+    c.setFillColor(black)
+
+    c.setFillColor(prussian_blue)
+    c.rect(20,proyecto_y - 65,565,20, fill=True, stroke=False)
+    c.setFillColor(white)
+
+    width, height = letter
+    table = Table(data, colWidths=[2 * cm, 12.5 * cm, 2.5 * cm, 2.5 * cm,])
+    table.setStyle(TableStyle([ #estilos de la tabla
+        ('INNERGRID',(0,0),(-1,-1), 0.25, colors.white),
+        ('BOX',(0,0),(-1,-1), 0.25, colors.black),
+        ('VALIGN',(0,0),(-1,-1),'MIDDLE'),
+        #ENCABEZADO
+        ('TEXTCOLOR',(0,0),(-1,0), white),
+        ('FONTSIZE',(0,0),(-1,0), 10),
+        ('BACKGROUND',(0,0),(-1,0), prussian_blue),
+        #CUERPO
+        ('TEXTCOLOR',(0,1),(-1,-1), colors.black),
+        ('FONTSIZE',(0,1),(-1,-1), 6),
+        ]))
+    table.wrapOn(c, width, height)
+    table.drawOn(c, 20, high)
+    c.save()
+    c.showPage()
+    buf.seek(0)
+    return FileResponse(buf, as_attachment=True, filename='vale_salida_'+str(vale.id) +'.pdf')
+
 
 def render_salida_pdf(request, pk):
     #Configuration of the PDF object

@@ -75,14 +75,21 @@ def requisiciones_autorizadas(request):
 @login_required(login_url='user-login')
 def productos_pendientes(request):
     perfil = Profile.objects.get(staff__id=request.user.id)
+    
     if perfil.tipo.compras == True:
         requis = Requis.objects.filter(autorizar=True, colocada=False)
     else:
         requis = Requis.objects.filter(complete=None)
 
-    articulos = ArticulosRequisitados.objects.filter(req__autorizar = True, req__colocada=False, cancelado = False)
+    articulos = ArticulosRequisitados.objects.filter(req__autorizar = True, req__colocada=False, cantidad_comprada__lt = F("cantidad"), cancelado = False)
     myfilter = ArticulosRequisitadosFilter(request.GET, queryset=articulos)
     articulos = myfilter.qs
+
+    if request.method == 'POST' and 'btnReporte' in request.POST:
+        convert_excel_productos_requisitados(articulos)
+    #else:
+        #messages.error(request,'Nada')
+
 
     context= {
         'requis':requis,
@@ -335,7 +342,7 @@ def oc_modal(request, pk):
     productos = ArticulosRequisitados.objects.filter(req = pk, cantidad_comprada__lt = F("cantidad"), cancelado=False)
     req = Requis.objects.get(id = pk)
     proveedores = Proveedor_direcciones.objects.filter(
-        Q(estatus__nombre='NUEVO') | Q(estatus__nombre='APROBADO'))
+        Q(estatus__nombre='NUEVO') | Q(estatus__nombre='APROBADO')| Q(estatus__nombre='PREAPROBADO'))
     usuario = Profile.objects.get(staff__id=request.user.id)
     colaborador_sel = Profile.objects.all()
     compras = Compra.objects.all()
@@ -1528,7 +1535,7 @@ def convert_excel_solicitud_matriz_productos(productos):
     money_resumen_style.font = Font(name ='Calibri', size = 14, bold = True)
     wb.add_named_style(money_resumen_style)
 
-    columns = ['OC','RQ','Sol','Solicitante','Proyecto','Subproyecto','Fecha','Proveedor','Área','Cantidad','Código', 'Producto','P.U.','Moneda','Tipo de Cambio','Subtotal','IVA','Total']
+    columns = ['OC','RQ','Sol','Solicitante','Proyecto','Subproyecto','Fecha','Proveedor','Estatus Proveedor','Área','Cantidad','Código', 'Producto','P.U.','Moneda','Tipo de Cambio','Subtotal','IVA','Total','Estatus','Pagada']
 
     for col_num in range(len(columns)):
         (ws.cell(row = row_num, column = col_num+1, value=columns[col_num])).style = head_style
@@ -1558,17 +1565,26 @@ def convert_excel_solicitud_matriz_productos(productos):
         subproyecto_nombre = producto.oc.req.orden.subproyecto.nombre
         created_at = producto.oc.created_at
         proveedor_nombre = producto.oc.proveedor.nombre.razon_social
+        status_proveedor = producto.oc.proveedor.estatus.nombre 
         area_nombre = producto.oc.req.orden.area.nombre
         cantidad = producto.cantidad
         codigo = producto.producto.producto.articulos.producto.producto.codigo
         producto_nombre = producto.producto.producto.articulos.producto.producto.nombre
         precio_unitario = producto.precio_unitario
         moneda_nombre = producto.oc.moneda.nombre
+        if producto.oc.autorizado2:
+            estatus = 'Autorizada'
+        elif producto.oc.autorizado1 == False or producto.oc.autorizado2 == False:
+            estatus = 'Cancelada'  
+        else:
+            estatus = 'No autorizada aún'
+        pagada = 'SI' if producto.oc.pagada == True else "NO"
 
         # Calculate total, subtotal, and IVA using attributes from producto
         subtotal = producto.subtotal_parcial
         iva = producto.iva_parcial
         total = producto.total
+       
 
         # Handling the currency conversion logic
         pagos = Pago.objects.filter(oc_id=compra_id)
@@ -1588,6 +1604,7 @@ def convert_excel_solicitud_matriz_productos(productos):
             subproyecto_nombre, 
             created_at,
             proveedor_nombre,
+            status_proveedor,
             area_nombre,
             cantidad, 
             codigo, 
@@ -1597,7 +1614,9 @@ def convert_excel_solicitud_matriz_productos(productos):
             tipo_de_cambio, 
             subtotal, 
             iva, 
-            total
+            total, 
+            estatus,
+            pagada
         ]
         rows.append(row)
 
@@ -1610,7 +1629,7 @@ def convert_excel_solicitud_matriz_productos(productos):
                 ws.cell(row=row_num, column=col_num + 1, value=cell_value).style = body_style
             if col_num == 9:
                 ws.cell(row=row_num, column=col_num + 1, value=cell_value).style = number_style
-            if col_num in [12, 13, 15, 16, 17]:
+            if col_num in [13, 16, 17, 18]:
                 ws.cell(row=row_num, column=col_num + 1, value=cell_value).style = money_style
 
     sheet = wb['Sheet']
@@ -1619,3 +1638,102 @@ def convert_excel_solicitud_matriz_productos(productos):
 
     return(response)
 
+def convert_excel_productos_requisitados(articulos):
+    response= HttpResponse(content_type = "application/ms-excel")
+    response['Content-Disposition'] = 'attachment; filename = Requisiciones_por_producto_' + str(dt.date.today())+'.xlsx'
+    wb = Workbook()
+    ws = wb.create_sheet(title='Productos_Requisitados')
+    #Comenzar en la fila 1
+    row_num = 1
+
+    #Create heading style and adding to workbook | Crear el estilo del encabezado y agregarlo al Workbook
+    head_style = NamedStyle(name = "head_style")
+    head_style.font = Font(name = 'Arial', color = '00FFFFFF', bold = True, size = 11)
+    head_style.fill = PatternFill("solid", fgColor = '00003366')
+    wb.add_named_style(head_style)
+    #Create body style and adding to workbook
+    body_style = NamedStyle(name = "body_style")
+    body_style.font = Font(name ='Calibri', size = 10)
+    wb.add_named_style(body_style)
+    #Create messages style and adding to workbook
+    messages_style = NamedStyle(name = "mensajes_style")
+    messages_style.font = Font(name="Arial Narrow", size = 11)
+    wb.add_named_style(messages_style)
+    #Create date style and adding to workbook
+    date_style = NamedStyle(name='date_style', number_format='DD/MM/YYYY')
+    date_style.font = Font(name ='Calibri', size = 10)
+    wb.add_named_style(date_style)
+    number_style = NamedStyle(name='number_style', number_format='#,##0.00')
+    number_style.font = Font(name ='Calibri', size = 10)
+    wb.add_named_style(number_style)
+    money_style = NamedStyle(name='money_style', number_format='$ #,##0.00')
+    money_style.font = Font(name ='Calibri', size = 10)
+    wb.add_named_style(money_style)
+    money_resumen_style = NamedStyle(name='money_resumen_style', number_format='$ #,##0.00')
+    money_resumen_style.font = Font(name ='Calibri', size = 14, bold = True)
+    wb.add_named_style(money_resumen_style)
+
+    columns = ['RQ','Sol','Solicitante','Proyecto','Subproyecto','Fecha','Área','Cantidad','Código', 'Producto']
+
+    for col_num in range(len(columns)):
+        (ws.cell(row = row_num, column = col_num+1, value=columns[col_num])).style = head_style
+        ws.column_dimensions[get_column_letter(col_num + 1)].width = 16
+        if col_num == 4 or col_num == 7:
+            ws.column_dimensions[get_column_letter(col_num + 1)].width = 25
+        if col_num == 9:
+            ws.column_dimensions[get_column_letter(col_num + 1)].width = 30
+
+
+
+    columna_max = len(columns)+2
+
+    (ws.cell(column = columna_max, row = 1, value='{Reporte Creado Automáticamente por Savia Vordtec. UH}')).style = messages_style
+    (ws.cell(column = columna_max, row = 2, value='{Software desarrollado por Grupo Vordcab S.A. de C.V.}')).style = messages_style
+    ws.column_dimensions[get_column_letter(columna_max)].width = 20
+
+    rows = []
+
+    for producto in articulos:
+        # Extract the needed attributes
+        req_folio = producto.req.folio
+        orden_folio = producto.req.orden.folio
+        staff_name = f"{producto.req.orden.staff.staff.first_name} {producto.req.orden.staff.staff.last_name}"
+        proyecto_nombre = producto.req.orden.proyecto.nombre
+        subproyecto_nombre = producto.req.orden.subproyecto.nombre
+        created_at = producto.req.created_at.replace(tzinfo=None)
+        area_nombre = producto.req.orden.area.nombre
+        cantidad = producto.cantidad
+        codigo =producto.producto.articulos.producto.producto.codigo
+        producto_nombre = producto.producto.articulos.producto.producto.nombre
+      
+        # Constructing the row
+        row = [
+            req_folio, 
+            orden_folio, 
+            staff_name, 
+            proyecto_nombre, 
+            subproyecto_nombre, 
+            created_at,
+            area_nombre,
+            cantidad, 
+            codigo, 
+            producto_nombre, 
+        ]
+        rows.append(row)
+
+    # Building the Excel sheet with rows
+    for row in rows:
+        row_num += 1
+        for col_num, cell_value in enumerate(row):
+            ws.cell(row=row_num, column=col_num + 1, value=str(cell_value)).style = body_style
+            if col_num == 5:
+                ws.cell(row=row_num, column=col_num + 1, value=cell_value).style = body_style
+            if col_num == 9:
+                ws.cell(row=row_num, column=col_num + 1, value=cell_value).style = number_style
+           
+
+    sheet = wb['Sheet']
+    wb.remove(sheet)
+    wb.save(response)
+
+    return(response)
