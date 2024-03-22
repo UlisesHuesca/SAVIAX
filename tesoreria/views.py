@@ -132,20 +132,60 @@ def compras_pagos(request, pk):
                     if compra.cond_de_pago.nombre == "CONTADO":
                         pagos = Pago.objects.filter(oc=compra, hecho=True)
                         archivo_oc = attach_oc_pdf(request, compra.id)
-                        if compra.referencia:
-                            email = EmailMessage(
-                                f'Compra Autorizada {compra.get_folio}',
-                                f'Estimado(a) {compra.proveedor.contacto} | Proveedor {compra.proveedor.nombre}:\n\nEstás recibiendo este correo porque has sido seleccionado para surtirnos la OC adjunta con folio: {compra.get_folio} y referencia: {compra.referencia}.\n\n Atte. {compra.creada_por.staff.first_name} {compra.creada_por.staff.last_name} \nVordtec de México S.A. de C.V.\n\n Este mensaje ha sido automáticamente generado por SAVIA VORDTEC',
-                                'savia@vordtec.com',
-                                ['ulises_huesc@hotmail.com',compra.proveedor.email,'lizeth.ojeda@vordtec.com','carlos.ramon@vordtec.com'],
-                                )
-                        else:
-                            email = EmailMessage(
-                                f'Compra Autorizada {compra.get_folio}',
-                                f'Estimado(a) {compra.proveedor.contacto} | Proveedor {compra.proveedor.nombre}:\n\nEstás recibiendo este correo porque has sido seleccionado para surtirnos la OC adjunta con folio: {compra.get_folio}.\n\n Atte. {compra.creada_por.staff.first_name} {compra.creada_por.staff.last_name} \nVordtec de México S.A. de C.V.\n\n Este mensaje ha sido automáticamente generado por SAVIA VORDTEC',
-                                'savia@vordtec.com',
-                                ['ulises_huesc@hotmail.com',compra.proveedor.email,'lizeth.ojeda@vordtec.com','carlos.ramon@vordtec.com'],
-                                )
+                        static_path = settings.STATIC_ROOT
+                        img_path = os.path.join(static_path,'images','SAVIA_Logo.png')
+                        img_path2 = os.path.join(static_path,'images','logo vordtec_documento.png')
+                        image_base64 = get_image_base64(img_path)
+                        logo_v_base64 = get_image_base64(img_path2)
+                        html_message = f"""
+                            <html>
+                                <head>
+                                    <meta charset="UTF-8">
+                                </head>
+                                <body>
+                                    <p><img src="data:image/jpeg;base64,{logo_v_base64}" alt="Imagen" style="width:100px;height:auto;"/></p>
+                                    <p>Estimado {compra.req.orden.staff.staff.first_name} {compra.req.orden.staff.staff.last_name},</p>
+                                    <p>Estás recibiendo este correo porque tu OC {compra.get_folio} | RQ: {compra.req.folio} |Sol: {compra.req.orden.folio} ha sido pagada por {pago.tesorero.staff.staff.first_name} {pago.tesorero.staff.staff.last_name},</p>
+                                    <p>Referencia:{compra.referencia}
+                                    <p>El siguiente paso del sistema: Recepción por parte de Almacén</p>
+                                    <p><img src="data:image/png;base64,{image_base64}" alt="Imagen" style="width:50px;height:auto;border-radius:50%"/></p>
+                                    <p>Este mensaje ha sido automáticamente generado por SAVIA 2.0</p>
+                                </body>
+                            </html>
+                            """
+                        email = EmailMessage(
+                            f'OC Pagada {compra.folio}|RQ: {compra.req.folio} |Sol: {compra.req.orden.folio}',
+                            body=html_message,
+                            from_email = settings.DEFAULT_FROM_EMAIL,
+                            to= ['ulises_huesc@hotmail.com', compra.req.orden.staff.staff.staff.email],
+                            headers={'Content-Type': 'text/html'}
+                        )
+                        email.content_subtype = "html " # Importante para que se interprete como HTML
+                        email.send()
+                        html_message2 = f"""
+                            <html>
+                                <head>
+                                    <meta charset="UTF-8">
+                                </head>
+                                <body>
+                                    <p>Estimado(a) {compra.proveedor.contacto}| Proveedor {compra.proveedor.nombre}:,</p>
+                                    <p>Estás recibiendo este correo porque has sido seleccionado para surtirnos la OC adjunta con folio: {compra.get_folio}.<p>
+                                    <p>&nbsp;</p>
+                                    <p> Atte. {compra.creada_por.staff.first_name} {compra.creada_por.staff.last_name}</p> 
+                                    <p>GRUPO VORDCAB S.A. de C.V.</p>
+                                    <p><img src="data:image/jpeg;base64,{logo_v_base64}" alt="Imagen" style="width:100px;height:auto;"/></p>
+                                    <p>Este mensaje ha sido automáticamente generado por SAVIA 2.0</p>
+                                    <p><img src="data:image/png;base64,{image_base64}" alt="Imagen" style="width:50px;height:auto;border-radius:50%"/></p>
+                                </body>
+                            </html>
+                            """
+                        email = EmailMessage(
+                            body=html_message2,
+                            from_email =settings.DEFAULT_FROM_EMAIL,
+                            to= ['ulises_huesc@hotmail.com', compra.creada_por.staff.email, compra.proveedor.email],
+                            headers={'Content-Type': 'text/html'}
+                        )
+                        email.content_subtype = "html " # Importante para que se interprete como HTML
                         email.attach(f'OC_folio_{compra.get_folio}.pdf',archivo_oc,'application/pdf')
                         email.attach('Pago.pdf',request.FILES['comprobante_pago'].read(),'application/pdf')
                         if pagos.count() > 0:
@@ -158,7 +198,7 @@ def compras_pagos(request, pk):
                                 email = EmailMessage(
                                 f'Compra Autorizada {compra.get_folio}',
                                 f'Estimado Especialista,\n Estás recibiendo este correo porque ha sido pagada una OC que contiene el producto código:{producto.producto.producto.articulos.producto.producto.codigo} descripción:{producto.producto.producto.articulos.producto.producto.codigo} el cual requiere la liberación de calidad\n Este mensaje ha sido automáticamente generado por SAVIA X',
-                                'savia@vordtec.com',
+                                settings.DEFAULT_FROM_EMAIL,
                                 ['ulises_huesc@hotmail.com'],
                                 )
                                 email.attach(f'folio:{compra.get_folio}.pdf',archivo_oc,'application/pdf')

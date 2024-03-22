@@ -61,6 +61,7 @@ class Profile(models.Model):
     clabe = models.CharField(max_length=18, null=True, blank=True)
     image = models.ImageField(blank=True, upload_to='profile_images')
     tipo = models.ForeignKey(Tipo_perfil, on_delete = models.CASCADE, null=True)
+    nivel = models.PositiveSmallIntegerField(default=4)
 
     def __str__(self):
         return f'{self.staff.username}'

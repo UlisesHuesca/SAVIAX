@@ -84,9 +84,13 @@
                     <!--<li class="nav-item mx-2">
                         <button type="button" class="btn btn-outline-danger"><i class="fa-solid fa-file-pdf fa-2xl"></i></button>
                     </li>-->
+                    {% if usuario.tipo.nombre == "Comprador" %}
+
+                    {% else %}
                     <li class="nav-item mx-2">
                         <a class="btn btn-outline-info" href="{% url 'proyectos-add' %}"><i class="fa-solid fa-plus"></i>Agregar Proyectos</a>
                     </li>
+                    {% endif %}
                 </ul>
                 </form>
             </div>
@@ -152,7 +156,11 @@
                     <td>${{proyecto.total_gastos|floatformat:2}}</td>
                     <td>{{proyecto.created_at}}</td>
                     <td>
+                        {% if usuario.tipo.nombre == "Comprador" %}
+
+                        {% else %}
                     <a type="button" class="btn btn-outline-info" href="{% url 'proyectos-edit' proyecto.id %}"><i class="fa-solid fa-pen-to-square"></i></a>
+                        {% endif %}
                     </td>
                     <td>
                         <a type="button" class="btn btn-outline-info" href="{% url 'subproyectos' proyecto.id %}">Subproyectos</a>
@@ -164,17 +172,27 @@
         <nav aria-label="Page navigation example">
             <ul class="pagination justify-content-center">
                 {% if proyectos_list.has_previous %}
-                <li class="page-item"><a class="page-link" style="color:#3E92CC" href="{% my_url proyectos_list.previous_page_number 'page' request.GET.urlencode %}"><i class="fa-solid fa-angle-left"></i></a></li>
+                    <li class="page-item"><a class="page-link" style="color:#3E92CC" href="{% my_url 1 'page' request.GET.urlencode %}"><i class="fa-solid fa-angles-left"></i></a></li>
+                    <li class="page-item"><a class="page-link" style="color:#3E92CC" href="{% my_url proyectos_list.previous_page_number  'page' request.GET.urlencode %}"><i class="fa-solid fa-angle-left"></i></a></li>
                 {% endif %}
-                {% for page in proyectos_list.paginator  %}
-                {% if proyectos_list.number == page.number %}
-                <li class="page-item active" aria-current="page"><a class="page-link" style="background-color:#3E92CC; border-color:#3E92CC" href="?page={{page.number}}" id={{page.number}}>{{page.number}}</a></li>
-                {% else %}
-                <li class="page-item"><a class="page-link" style="color:#3E92CC" href="?page={{page.number}}" id={{page.number}}>{{page.number}}</a></li>
-                {% endif %}
+        
+                {% for item in proyectos_list.paginator.page_range %}
+                    {% if proyectos_list.number == item %}
+                        <li class="page-item active"><a href="#" class="page-link bg-dark">{{item}}</a></li>
+                    {% elif item > proyectos_list.number|add:'-2' and item < proyectos_list.number|add:'2' %}
+                        <li class="page-item "><a class="page-link" style="color:#3E92CC" href="{% my_url item 'page' request.GET.urlencode %}" class="page-link">{{item}}</a></li>
+                    {% endif %}
                 {% endfor %}
+        
+                {% if proyectos_list.paginator.num_pages > salidas_list.number|add:'2' %}
+                <li><a class="page-link" style="color:#3E92CC" href="?page={{proyectos_list.number|add:'2'}}">&hellip;</a></li>
+                <li><a style="color:#3E92CC" href="?page={{ item }}">{{item}}</a></li>
+                <li><a class="page-link" style="color:#3E92CC" href="{% my_url proyectos_list.paginator.num_pages 'page' request.GET.urlencode %}">{{proyectos_list.paginator.num_pages}}</a></li>
+                {% endif %}
+        
                 {% if proyectos_list.has_next %}
-                <li class="page-item"><a class="page-link" style="color:#3E92CC" href="{% my_url proyectos_list.next_page_number 'page' request.GET.urlencode %}"><i class="fa-solid fa-angle-right"></i></a></li>
+                    <li class="page-item"><a class="page-link" style="color:#3E92CC" href="{% my_url proyectos_list.next_page_number 'page' request.GET.urlencode %}"><i class="fa-solid fa-chevron-right"></i></a></li>
+                    <li class="page-item"><a class="page-link" style="color:#3E92CC" href="{% my_url proyectos_list.paginator.num_pages 'page' request.GET.urlencode %}"><i class="fa-solid fa-angles-right"></i></a></a></li>
                 {% endif %}
             </ul>
         </nav>

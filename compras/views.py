@@ -3,12 +3,14 @@ from dashboard.models import Inventario, Order, ArticulosOrdenados, Articulospar
 from requisiciones.models import Requis, ArticulosRequisitados
 from user.models import Profile
 from tesoreria.models import Pago
+from requisiciones.views import get_image_base64
 from .filters import CompraFilter, ArticulosRequisitadosFilter,  ArticuloCompradoFilter, HistoricalArticuloCompradoFilter
 from .models import ArticuloComprado, Compra, Proveedor_direcciones, Cond_credito, Uso_cfdi, Moneda, Comparativo, Item_Comparativo
 from tesoreria.models import Facturas
 from .forms import CompraForm, ArticuloCompradoForm, ArticulosRequisitadosForm, ComparativoForm, Item_ComparativoForm, Compra_ComentarioForm
 from requisiciones.forms import Articulo_Cancelado_Form
 from tesoreria.forms import Facturas_Form
+from entradas.models import Entrada, No_Conformidad
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse, HttpResponse
 import json
@@ -398,6 +400,39 @@ def oc_modal(request, pk):
             form.save()
             oc.save()
             req.save()
+            static_path = settings.STATIC_ROOT
+            img_path = os.path.join(static_path,'images','SAVIA_Logo.png')
+            img_path2 = os.path.join(static_path,'images','logo vordtec_documento.png')
+            image_base64 = get_image_base64(img_path)
+            logo_v_base64 = get_image_base64(img_path2)
+            # Crear el mensaje HTML
+            html_message = f"""
+            <html>
+                <head>
+                    <meta charset="UTF-8">
+                </head>
+                <body>
+                    <p><img src="data:image/jpeg;base64,{logo_v_base64}" alt="Imagen" style="width:100px;height:auto;"/></p>
+                    <p>Estimado {oc.req.orden.staff.staff.first_name} {oc.req.orden.staff.staff.last_name},</p>
+                    <p>Estás recibiendo este correo porque tu solicitud: {oc.req.orden.folio}| Req: {oc.req.folio} se ha convertido en la OC: {oc.folio},</p>
+                    <p>creada por {oc.creada_por.staff.first_name} {oc.creada_por.staff.last_name}.</p>
+                    <p>El siguiente paso del sistema: Autorización de OC por Superintedencia Administrativa</p>
+                    <p><img src="data:image/png;base64,{image_base64}" alt="Imagen" style="width:50px;height:auto;border-radius:50%"/></p>
+                    <p>Este mensaje ha sido automáticamente generado por SAVIA 2.0</p>
+                </body>
+            </html>
+            """
+            email = EmailMessage(
+                f'OC Elaborada {oc.folio}',
+                body=html_message,
+                #f'Estimado {requi.orden.staff.staff.staff.first_name} {requi.orden.staff.staff.staff.last_name},\n Estás recibiendo este correo porque tu solicitud: {requi.orden.folio}| Req: {requi.folio} ha sido autorizada,\n por {requi.requi_autorizada_por.staff.staff.first_name} {requi.requi_autorizada_por.staff.staff.last_name}.\n El siguiente paso del sistema: Generación de OC \n\n Este mensaje ha sido automáticamente generado por SAVIA VORDTEC',
+                from_email = settings.DEFAULT_FROM_EMAIL,
+                to= ['ulises_huesc@hotmail.com',oc.req.orden.staff.staff.email],
+                headers={'Content-Type': 'text/html'}
+                )
+            email.content_subtype = "html " # Importante para que se interprete como HTML
+            email.send()
+
             messages.success(request,f'{usuario.staff.first_name}, Has generado la OC {oc.folio} correctamente')
             return redirect('requisicion-autorizada')
 
@@ -455,6 +490,8 @@ def matriz_oc(request):
 
     if request.method == 'POST' and 'btnReporte' in request.POST:
         return convert_excel_matriz_compras(compras)
+
+    
 
     context= {
         'compras_list':compras_list,
@@ -785,6 +822,36 @@ def autorizar_oc1(request, pk):
         compra.autorizado_date1 = date.today()
         compra.autorizado_hora1 = datetime.now().time()
         compra.save()
+        static_path = settings.STATIC_ROOT
+        img_path = os.path.join(static_path,'images','SAVIA_Logo.png')
+        img_path2 = os.path.join(static_path,'images','logo vordtec_documento.png')
+        image_base64 = get_image_base64(img_path)
+        logo_v_base64 = get_image_base64(img_path2)
+        html_message = f"""
+                <html>
+                    <head>
+                        <meta charset="UTF-8">
+                    </head>
+                    <body>
+                        <p><img src="data:image/jpeg;base64,{logo_v_base64}" alt="Imagen" style="width:100px;height:auto;"/></p>
+                        <p>Estimado {compra.req.orden.staff.staff.first_name} {compra.req.orden.staff.staff.last_name},</p>
+                        <p>Estás recibiendo este correo porque tu OC {compra.folio} | RQ: {compra.req.folio} |Sol: {compra.req.orden.folio} ha sido autorizada por {compra.oc_autorizada_por.staff.staff.first_name} {compra.oc_autorizada_por.staff.staff.last_name},</p>
+                        <p>El siguiente paso del sistema: Autorización de OC por Gerencia de Planta</p>
+                        <p><img src="data:image/png;base64,{image_base64}" alt="Imagen" style="width:50px;height:auto;border-radius:50%"/></p>
+                        <p>Este mensaje ha sido automáticamente generado por SAVIA 2.0</p>
+                    </body>
+                </html>
+            """
+            email = EmailMessage(
+                f'OC Autorizada {compra.folio}|RQ: {compra.req.folio} |Sol: {compra.req.orden.folio}',
+                body=html_message,
+                from_email = settings.DEFAULT_FROM_EMAIL,
+                to= ['ulises_huesc@hotmail.com',compra.req.orden.staff.staff.email],
+                headers={'Content-Type': 'text/html'}
+                )
+            email.content_subtype = "html " # Importante para que se interprete como HTML
+            email.send()
+
         messages.success(request, f'{usuario.staff.first_name} has autorizado la solicitud {compra.get_folio}')
         return redirect('autorizacion-oc1')
 
@@ -845,14 +912,58 @@ def autorizar_oc2(request, pk):
         compra.save()
         if compra.cond_de_pago.nombre == "CREDITO":
             archivo_oc = attach_oc_pdf(request, compra.id)
-            email = EmailMessage(
-                f'Compra Autorizada {compra.get_folio}',
-                f'Estimado(a) {compra.proveedor.contacto} | Proveedor {compra.proveedor.nombre}:\n\nEstás recibiendo este correo porque has sido seleccionado para surtirnos la OC adjunta con folio: {compra.get_folio}.\n\n Atte. {compra.creada_por.staff.first_name} {compra.creada_por.staff.last_name} \nVORDTEC DE MÉXICO S.A. de C.V.\n\n Este mensaje ha sido automáticamente generado por SAVIA VORDTEC',
-                'savia@vordtec.com',
-                ['ulises_huesc@hotmail.com','lizeth.ojeda@vordtec.com','carlos.ramon@vordtec.com',compra.proveedor.email,],  #compra.proveedor.email,
+            html_message2 = f"""
+                    <html>
+                        <head>
+                            <meta charset="UTF-8">
+                        </head>
+                        <body>
+                            <p>Estimado(a) {compra.proveedor.contacto}| Proveedor {compra.proveedor.nombre}:,</p>
+                            <p>Estás recibiendo este correo porque has sido seleccionado para surtirnos la OC adjunta con folio: {compra.folio}.<p>
+                            <p>&nbsp;</p>
+                            <p> Atte. {compra.creada_por.staff.first_name} {compra.creada_por.staff.last_name}</p> 
+                            <p>GRUPO VORDCAB S.A. de C.V.</p>
+                            <p><img src="data:image/jpeg;base64,{logo_v_base64}" alt="Imagen" style="width:100px;height:auto;"/></p>
+                            <p><img src="data:image/png;base64,{image_base64}" alt="Imagen" style="width:50px;height:auto;border-radius:50%"/></p>
+                            <p>Este mensaje ha sido automáticamente generado por SAVIA 2.0</p>
+                        </body>
+                    </html>
+                """
+                email = EmailMessage(
+                f'Compra Autorizada {compra.folio}|SAVIA',
+                body=html_message2,
+                from_email =settings.DEFAULT_FROM_EMAIL,
+                to= ['ulises_huesc@hotmail.com', compra.creada_por.staff.email, compra.proveedor.email],
+                headers={'Content-Type': 'text/html'}
                 )
-            email.attach(f'folio:{compra.get_folio}.pdf',archivo_oc,'application/pdf')
-            email.send()
+                email.content_subtype = "html " # Importante para que se interprete como HTML
+                email.attach(f'folio:{compra.folio}.pdf',archivo_oc,'application/pdf')
+                email.send()
+                html_message = f"""
+                    <html>
+                        <head>
+                            <meta charset="UTF-8">
+                        </head>
+                        <body>
+                            <p><img src="data:image/jpeg;base64,{logo_v_base64}" alt="Imagen" style="width:100px;height:auto;"/></p>
+                            <p>Estimado {compra.req.orden.staff.staff.first_name} {compra.req.orden.staff.staff.last_name},</p>
+                            <p>Estás recibiendo este correo porque tu OC {compra.folio} | RQ: {compra.req.folio} |Sol: {compra.req.orden.folio} ha sido autorizada por {compra.oc_autorizada_por2.staff.staff.first_name} {compra.oc_autorizada_por2.staff.staff.last_name},</p>
+                            <p>El siguiente paso del sistema: Recepción por parte de Almacén |Compra a crédito</p>
+                            <p><img src="data:image/png;base64,{image_base64}" alt="Imagen" style="width:50px;height:auto;border-radius:50%"/></p>
+                            <p>Este mensaje ha sido automáticamente generado por SAVIA 2.0</p>
+                        </body>
+                    </html>
+                """
+                email = EmailMessage(
+                    f'OC Autorizada Gerencia {compra.folio}|RQ: {compra.req.folio} |Sol: {compra.req.orden.folio}',
+                    body=html_message,
+                    #f'Estimado {requi.orden.staff.staff.staff.first_name} {requi.orden.staff.staff.staff.last_name},\n Estás recibiendo este correo porque tu solicitud: {requi.orden.folio}| Req: {requi.folio} ha sido autorizada,\n por {requi.requi_autorizada_por.staff.staff.first_name} {requi.requi_autorizada_por.staff.staff.last_name}.\n El siguiente paso del sistema: Generación de OC \n\n Este mensaje ha sido automáticamente generado por SAVIA VORDTEC',
+                    from_email = settings.DEFAULT_FROM_EMAIL,
+                    to= ['ulises_huesc@hotmail.com'],#[requi.orden.staff.staff.staff.email],
+                    headers={'Content-Type': 'text/html'}
+                    )
+                email.content_subtype = "html " # Importante para que se interprete como HTML
+                email.send()
             for producto in productos:
                 if producto.producto.producto.articulos.producto.producto.especialista == True:
                     archivo_oc = attach_oc_pdf(request, compra.id)
@@ -1409,7 +1520,7 @@ def convert_excel_matriz_compras(compras):
 
     columns = ['Compra','Requisición','Solicitud','Solicitante','Proyecto','Subproyecto','Área','Creado','Req. Autorizada','Proveedor',
                'Crédito/Contado','Costo','Monto_Pagado','Status Pago','Status Autorización','Días de entrega','Moneda',
-               'Tipo de cambio','Diferencia de Fechas',"Total en pesos"]
+               'Tipo de cambio','Entrada','Fecha Entrada','Fecha Inicio','Diferencia de Fechas','Status Entrega','No Conformidades','Total en pesos']
 
     for col_num in range(len(columns)):
         (ws.cell(row = row_num, column = col_num+1, value=columns[col_num])).style = head_style
@@ -1431,18 +1542,38 @@ def convert_excel_matriz_compras(compras):
     ws.cell(row=5, column = columna_max, value="% de cumplimiento").style = head_style
     ws.cell(row=6, column = columna_max, value="Monto total de OC's").style = head_style
 
-
     # Asumiendo que las filas de datos comienzan en la fila 2 y terminan en row_num
     ws.cell(row=3, column=columna_max + 1, value=f"=COUNTA(A:A)-1").style = body_style
     ws.cell(row=4, column=columna_max + 1, value=f"=COUNTIF({get_column_letter(len(columns)-1)}:{get_column_letter(len(columns)-1)}, \"<=3\")").style = body_style
     ws.cell(row=5, column=columna_max + 1, value=f"={get_column_letter(columna_max+1)}4/{get_column_letter(columna_max+1)}3").style = percent_style
     ws.cell(row=6, column=columna_max + 1, value=f"=SUM({get_column_letter(len(columns))}:{get_column_letter(len(columns))})").style = money_resumen_style
 
+    #KPIS
+    ws.cell(column = columna_max, row = 8, value='7.1 Porcentaje de órdenes de compra entregadas a tiempo').style = messages_style
+    ws.cell(row=9, column = columna_max, value="Total de OC's con fecha Inicio").style = head_style
+    ws.cell(row=10, column = columna_max, value="OC dentro de tiempo de entrega").style = head_style
+    ws.cell(row=11, column = columna_max, value="% de cumplimiento").style = head_style
+
+     # Asumiendo que las filas de datos comienzan en la fila 2 y terminan en row_num
+    ws.cell(row=9, column=columna_max + 1, value=f"=COUNTIFS(U:U, \"<>No Existe\", U:U, \"<>\")").style = body_style
+    ws.cell(row=10, column=columna_max + 1, value=f"=COUNTIF(W:W, \"En tiempo\")").style = body_style
+    ws.cell(row=11, column=columna_max + 1, value=f"={get_column_letter(columna_max+1)}10/{get_column_letter(columna_max+1)}9").style = percent_style
+
+    ws.cell(column = columna_max, row = 13, value='7.2.Porcentaje de productos o servicios recibidos sin no conformidades').style = messages_style
+    ws.cell(row=14, column = columna_max, value="Total de OC's recibidas").style = head_style
+    ws.cell(row=15, column = columna_max, value="Total de no conformidades").style = head_style
+    ws.cell(row=16, column = columna_max, value="% de cumplimiento").style = head_style
+
+
+    ws.cell(row=14, column=columna_max + 1, value=f"=COUNTIF(S:S, \"Entregado\")").style = body_style
+    ws.cell(row=15, column=columna_max + 1, value=f"=COUNTIFS(X:X, \"<>No Existe\", X:X, \">0\")").style = body_style
+    ws.cell(row=16, column=columna_max + 1, value=f"={get_column_letter(columna_max+1)}15/{get_column_letter(columna_max+1)}14").style = percent_style
+
     rows = []
     for compra in compras:
         # Obtén todos los pagos relacionados con esta compra
         pagos = Pago.objects.filter(oc=compra)
-
+       
         # Calcula el tipo de cambio promedio de estos pagos
         tipo_de_cambio_promedio_pagos = pagos.aggregate(Avg('tipo_de_cambio'))['tipo_de_cambio__avg']
 
@@ -1450,7 +1581,51 @@ def convert_excel_matriz_compras(compras):
         tipo_de_cambio = tipo_de_cambio_promedio_pagos or compra.tipo_de_cambio
         autorizado_text = 'Autorizado' if compra.autorizado2 else 'No Autorizado' if compra.autorizado2 == False or compra.autorizado1 == False else 'Pendiente Autorización'
         pagado_text = 'Pagada' if compra.pagada else 'No Pagada'
+        entrada_text = 'Entregado' if compra.entrada_completa else 'No Entregado'
         
+        if compra.entrada_completa:  # Verificamos si entrada es True para esta compra
+            entradas = Entrada.objects.filter(oc=compra)
+            ultima_entrada = entradas.order_by('-entrada_date').first()
+            if ultima_entrada:  # Verificamos si existe al menos una entrada
+                fecha_ultima_entrada = ultima_entrada.entrada_date
+                # Contabilizar no_conformidades ligadas a las entradas de esta compra
+                no_conformidades_count = No_Conformidad.objects.filter(oc=compra).count()
+            else:
+                # No hay entradas para esta compra
+                fecha_ultima_entrada = "No Existe"
+                no_conformidades_count = "No Existe"
+        else:
+        # El atributo 'entrada' en Compra no es True
+            fecha_ultima_entrada = "No existe"
+            no_conformidades_count = "No Existe"
+        
+        if compra.pagada:
+            ultimo_pago = pagos.order_by('-pagado_date').first()
+        else:
+            ultimo_pago = "No Existe"
+        
+        if compra.cond_de_pago.nombre == "CONTADO" and ultimo_pago != "No Existe":
+            fecha_inicio = ultimo_pago.pagado_date
+        elif compra.cond_de_pago.nombre == "CREDITO":
+            fecha_inicio = compra.autorizado_date2
+        else:
+            fecha_inicio = "No Existe"
+
+        if fecha_ultima_entrada != "No existe" and fecha_inicio != "No Existe":
+            diferencia_fechas = (fecha_ultima_entrada - fecha_inicio).days
+        elif fecha_inicio != "No Existe" and fecha_inicio is not None:
+            diferencia_fechas = (date.today() - fecha_inicio).days 
+        else:
+            diferencia_fechas = 0
+
+        if fecha_inicio == "No Existe":
+            cumplimiento_entrada = "No Evaluable"
+        elif compra.dias_de_entrega >= diferencia_fechas:
+            cumplimiento_entrada = "En tiempo"
+        else:
+            cumplimiento_entrada = "Fuera de tiempo"
+
+
         row = [
         compra.id,
         compra.req.folio,
@@ -1470,6 +1645,12 @@ def convert_excel_matriz_compras(compras):
         compra.dias_de_entrega,
         compra.moneda.nombre,
         tipo_de_cambio,
+        entrada_text,
+        fecha_ultima_entrada,
+        fecha_inicio,
+        diferencia_fechas,
+        cumplimiento_entrada,
+        no_conformidades_count
     ]
         if row[16] == "DOLARES":
             if row[17] is None or row[17] < 15:
@@ -1483,13 +1664,13 @@ def convert_excel_matriz_compras(compras):
         row_num += 1
         for col_num in range(len(row)):
             (ws.cell(row = row_num, column = col_num+1, value=str(row[col_num]))).style = body_style
-            if col_num == 8 or col_num == 7:
+            if col_num == 8 or col_num == 7 or col_num == 19 or col_num ==20:
                 (ws.cell(row = row_num, column = col_num+1, value=row[col_num])).style = date_style
             if col_num == 10 or col_num == 11 or col_num == 12 or col_num == 16:
                 (ws.cell(row = row_num, column = col_num+1, value=row[col_num])).style = money_style
         # Agregamos la fórmula DATEDIF. Asumiendo que las columnas 'Creado' y 'Req. Autorizada'
         # están en las posiciones 8 y 9 respectivamente (empezando desde 0), las posiciones en Excel serán 9 y 10 (empezando desde 1).
-        ws.cell(row=row_num, column=len(columns)-1, value=f"=NETWORKDAYS(I{row_num}, H{row_num})").style = body_style
+        #ws.cell(row=row_num, column=len(columns)-1, value=f"=NETWORKDAYS(I{row_num}, H{row_num})").style = body_style
         # Agregar la fórmula de "Total en pesos"
         ws.cell(row=row_num, column = len(columns), value=f"=IF(ISBLANK(R{row_num}), L{row_num}, L{row_num}*R{row_num})").style = money_style
     
@@ -1549,7 +1730,7 @@ def convert_excel_solicitud_matriz_productos(productos):
 
     columna_max = len(columns)+2
 
-    (ws.cell(column = columna_max, row = 1, value='{Reporte Creado Automáticamente por Savia Vordtec. UH}')).style = messages_style
+    (ws.cell(column = columna_max, row = 1, value='{Reporte Creado Automáticamente por SAVIA Vordtec. UH}')).style = messages_style
     (ws.cell(column = columna_max, row = 2, value='{Software desarrollado por Vordcab S.A. de C.V.}')).style = messages_style
     ws.column_dimensions[get_column_letter(columna_max)].width = 20
 

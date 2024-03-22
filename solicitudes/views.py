@@ -5,6 +5,7 @@ from compras.models import Compra
 from tesoreria.models import Pago
 from solicitudes.models import Subproyecto, Operacion, Proyecto
 from entradas.models import EntradaArticulo, Entrada
+from requisiciones.views import get_image_base64
 from gastos.models import Entrada_Gasto_Ajuste, Conceptos_Entradas
 from .forms import InventarioForm, OrderForm, Inv_UpdateForm, Inv_UpdateForm_almacenista, ArticulosOrdenadosForm, Conceptos_EntradasForm, Entrada_Gasto_AjusteForm, Order_Resurtimiento_Form, ArticulosOrdenadosComentForm, Plantilla_Form, ArticuloPlantilla_Form
 from dashboard.forms import Inventario_BatchForm
@@ -299,25 +300,73 @@ def checkout(request):
                 order.autorizar = True
                 order.approved_at = date.today()
                 order.approved_at_time = datetime.now().time()
+                static_path = settings.STATIC_ROOT
+                img_path = os.path.join(static_path,'images','SAVIA_Logo.png')
+                img_path2 = os.path.join(static_path,'images','logo vordtec_documento.png')
+                productos_html += '</ul>'
+                image_base64 = get_image_base64(img_path)
+                logo_v_base64 = get_image_base64(img_path2)
+                # Crear el mensaje HTML
+                html_message = f"""
+                <html>
+                    <head>
+                        <meta charset="UTF-8">
+                    </head>
+                    <body>
+                        <p><img src="data:image/jpeg;base64,{logo_v_base64}" alt="Imagen" style="width:100px;height:auto;"/></p>
+                        <p>Estimado {order.staff.staff.first_name} {order.staff.staff.last_name},</p>
+                        <p>Estás recibiendo este correo porque tu solicitud folio:{order.folio}  se ha generado</p>
+                        <p>Con los productos siguientes</p>
+                        {productos_html}
+                        <p><img src="data:image/png;base64,{image_base64}" alt="Imagen" style="width:50px;height:auto;border-radius:50%"/></p>
+                        <p>Este mensaje ha sido automáticamente generado por SAVIA 2.0</p>
+                    </body>
+                </html>
+                """
                 email = EmailMessage(
                     f'Solicitud Autorizada {order.folio}',
-                    f'Estás recibiendo este correo porque ha sido aprobada la solicitud {order.folio}\n Este mensaje ha sido automáticamente generado por SAVIA VORDTEC',
-                    'savia@vordtec.com',
-                    [order.staff.staff.email],
+                    body=html_message,
+                    from_email= settings.DEFAULT_FROM_EMAIL,
+                    to=[order.staff.staff.email,ulises_huesc@hotmail.com],
+                    headers={'Content-Type': 'text/html'}
                     )
-                #email.attach(f'OC_folio:{compra.folio}.pdf',archivo_oc,'application/pdf')
+                email.content_subtype = "html " # Importante para que se interprete como HTML
                 email.send()
                 order.sol_autorizada_por = Profile.objects.get(staff__id=request.user.id)    
                 messages.success(request, f'La solicitud {order.folio} ha sido creada')
                 cartItems = '0'
             else:
-                abrev= usuario.distrito.abreviado
+                static_path = settings.STATIC_ROOT
+                img_path = os.path.join(static_path,'images','SAVIA_Logo.png')
+                img_path2 = os.path.join(static_path,'images','logo_vordcab.jpg')
+                productos_html += '</ul>'
+                image_base64 = get_image_base64(img_path)
+                logo_v_base64 = get_image_base64(img_path2)
+                # Crear el mensaje HTML
+                html_message = f"""
+                <html>
+                    <head>
+                        <meta charset="UTF-8">
+                    </head>
+                    <body>
+                        <p><img src="data:image/jpeg;base64,{logo_v_base64}" alt="Imagen" style="width:100px;height:auto;"/></p>
+                        <p>Estimado {order.staff.staff.first_name} {order.staff.staff.last_name},</p>
+                        <p>Estás recibiendo este correo porque tu solicitud folio:{order.folio}  se ha generado</p>
+                        <p>Con los productos siguientes</p>
+                        {productos_html}
+                        <p><img src="data:image/png;base64,{image_base64}" alt="Imagen" style="width:50px;height:auto;border-radius:50%"/></p>
+                        <p>Este mensaje ha sido automáticamente generado por SAVIA 2.0</p>
+                    </body>
+                </html>
+                """
                 email = EmailMessage(
-                    f'Solicitud Autorizada {order.id}',
-                    f'Estás recibiendo este correo por se ha generado la orden {order.folio}\n Este mensaje ha sido automáticamente generado por SAVIA VORDTEC',
-                    'savia@vordtec.com',
-                    [order.staff.staff.email],
+                    f'Solicitud Autorizada {order.folio}',
+                    body=html_message,
+                    from_email= settings.DEFAULT_FROM_EMAIL,
+                    to=[order.staff.staff.email, ulises_huesc@hotmail.com],
+                    headers={'Content-Type': 'text/html'}
                     )
+                email.content_subtype = "html " # Importante para que se interprete como HTML
                 email.send()
                 messages.success(request, f'La solicitud {order.folio} ha sido creada')
             order.complete = True

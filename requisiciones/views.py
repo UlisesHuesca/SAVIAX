@@ -410,7 +410,7 @@ def devolucion_material(request, pk):
                 email = EmailMessage(
                     f'Cancelación de solicitud: {orden.folio}',
                     f'Estimado {orden.staff.staff.first_name} {orden.staff.staff.last_name},\n Estás recibiendo este correo porque tu solicitud: {orden.folio} ha sido devuelta al almacén por {usuario.staff.first_name} {usuario.staff.last_name}, con el siguiente comentario {devolucion.comentario} para más información comunicarse al almacén.\n\n Este mensaje ha sido automáticamente generado por SAVIA VORDTEC',
-                    'savia@vordtec.com',
+                    settings.DEFAULT_FROM_EMAIL,
                     ['ulises_huesc@hotmail.com'],#orden.staff.staff.email],
                     )
                 email.send()
@@ -835,6 +835,12 @@ def requisicion_detalle(request, pk):
 
     return render(request,'requisiciones/detalle_requisitar_editar.html', context)
 
+# Convertir la imagen a base64
+def get_image_base64(image_path):
+    with open(image_path, "rb") as image_file:
+        return base64.b64encode(image_file.read()).decode()
+
+
 def requisicion_autorizar(request, pk):
     usuario = request.user.id
     perfil = Profile.objects.get(staff__id=usuario)
@@ -854,12 +860,37 @@ def requisicion_autorizar(request, pk):
         requi.approved_at = date.today()
         requi.autorizar = True
         requi.save()
+        static_path = settings.STATIC_ROOT
+        img_path = os.path.join(static_path,'images','SAVIA_Logo.png')
+        img_path2 = os.path.join(static_path,'images','logo vordtec_documento.png')
+        image_base64 = get_image_base64(img_path)
+        logo_v_base64 = get_image_base64(img_path2)
+        # Crear el mensaje HTML
+        html_message = f"""
+        <html>
+            <head>
+                <meta charset="UTF-8">
+            </head>
+            <body>
+                <p><img src="data:image/jpeg;base64,{logo_v_base64}" alt="Imagen" style="width:100px;height:auto;"/></p>
+                <p>Estimado {requi.orden.staff.staff.first_name} {requi.orden.staff.staff.last_name},</p>
+                <p>Estás recibiendo este correo porque tu sol: {requi.orden.folio}| Req: {requi.folio} ha sido autorizada,</p>
+                <p>por {requi.requi_autorizada_por.staff.first_name} {requi.requi_autorizada_por.staff.last_name}.</p>
+                <p>El siguiente paso del sistema: Generación de OC</p>
+                <p><img src="data:image/png;base64,{image_base64}" alt="Imagen" style="width:50px;height:auto;border-radius:50%"/></p>
+                <p>Este mensaje ha sido automáticamente generado por SAVIA 2.0</p>
+            </body>
+        </html>
+        """
+
         email = EmailMessage(
                 f'Requisición Autorizada {requi.folio}',
-                f'Estimado {requi.orden.staff.staff.first_name} {requi.orden.staff.staff.last_name},\n Estás recibiendo este correo porque tu solicitud: {requi.orden.folio}| Req: {requi.folio} ha sido autorizada,\n por {requi.requi_autorizada_por.staff.first_name} {requi.requi_autorizada_por.staff.last_name}.\n El siguiente paso del sistema: Generación de OC \n\n Este mensaje ha sido automáticamente generado por SAVIA VORDTEC',
-                'savia@vordtec.com',
-                ['ulises_huesc@hotmail.com'],[requi.orden.staff.staff.email],
+                body=html_message,
+                from_email = settings.DEFAULT_FROM_EMAIL,
+                to= ['ulises_huesc@hotmail.com',requi.orden.staff.email],
+                headers={'Content-Type': 'text/html'}
                 )
+        email.content_subtype = "html " # Importante para que se interprete como HTML
         email.send()
         messages.success(request,f'Has autorizado la requisición {requi.folio} con éxito')
         return redirect('requisicion-autorizacion')
@@ -888,9 +919,9 @@ def requisicion_cancelar(request, pk):
             requis.save()
             email = EmailMessage(
                 f'Requisición Rechazada {requis.folio}',
-                f'Estimado {requis.orden.staff.staff.first_name} {requis.orden.staff.staff.last_name},\n Estás recibiendo este correo porque tu solicitud: {requis.orden.folio}| Req: {requis.folio} ha sido rechazada,\n por {requis.autorizada_por.staff.first_name} {requis.autorizada_por.staff.last_name} por el siguiente motivo: \n " {requis.comentario_compras} ".\n\n Este mensaje ha sido automáticamente generado por SAVIA X',
-                'savia@vordtec.com',
-                ['ulises_huesc@hotmail.com'],[requis.orden.staff.staff.email],
+                f'Estimado {requis.orden.staff.staff.first_name} {requis.orden.staff.staff.last_name},\n Estás recibiendo este correo porque tu solicitud: {requis.orden.folio}| Req: {requis.folio} ha sido rechazada,\n por {requis.autorizada_por.staff.first_name} {requis.autorizada_por.staff.last_name} por el siguiente motivo: \n " {requis.comentario_compras} ".\n\n Este mensaje ha sido automáticamente generado por SAVIA 2.0',
+                settings.DEFAULT_FROM_EMAIL,
+                ['ulises_huesc@hotmail.com',requis.orden.staff.staff.email],
                 )
             email.send()
             messages.error(request,f'Has cancelado la requisición {requis.folio}')

@@ -73,7 +73,7 @@
                             {% endif %}
                             <a class="dropdown-item" href="{% url 'dashboard-product' %}">Productos/Servicios</a>
                             </div>
-                            {% if usuario.tipo.nombre == "Superintendente" or usuario.tipo.nombre == "Admin" or usuario.tipo.nombre == "Gerente" %}
+                            {% if usuario.tipo.nombre == "Superintendente" or usuario.tipo.nombre == "Admin" or usuario.tipo.nombre == "Gerente" or usuario.tipo.nombre == "Comprador" %}
                             <div>
                             {% else %}
                             <div class="d-none">
@@ -104,7 +104,7 @@
                         </a>
                         {% endif %}
                     <div class="dropdown-divider"></div>
-                    {% if usuario.tipo.almacen == True or usuario.tipo.nombre == "Superintendente" %}
+                    {% if usuario.tipo.almacen == True or usuario.tipo.nombre == "Superintendente" or usuario.tipo.nombre == "Gerente" %}
                     <div>
                     {% else %}
                     <div class="d-none">
