@@ -5,10 +5,12 @@ from django.db.models.functions import Concat
 from django.db.models import Value, Sum, Case, When, F, Value, Q, DecimalField, Avg
 from django.contrib import messages
 from django.http import JsonResponse
-from django.core.mail import EmailMessage
+from django.core.mail import EmailMessage, BadHeaderError
+from smtplib import SMTPException
 from django.core.paginator import Paginator
 from django.http import FileResponse
 from django.core.files.base import ContentFile
+from django.conf import settings
 
 from solicitudes.models import Proyecto, Subproyecto
 from dashboard.models import Inventario, Order, ArticulosparaSurtir, ArticulosOrdenados, Inventario_Batch, Product, Marca
@@ -30,13 +32,15 @@ from datetime import date, datetime
 
 import json
 import csv
-
+import os
+import io
 import ast # Para leer el csr many to many
 import decimal
+import base64
 
 #PDF generator
 #PDF generator
-import io
+
 from reportlab.pdfgen import canvas
 from reportlab.lib import colors
 from reportlab.lib.colors import Color, black, blue, red, white
@@ -882,17 +886,20 @@ def requisicion_autorizar(request, pk):
             </body>
         </html>
         """
-
-        email = EmailMessage(
+        try:
+            email = EmailMessage(
                 f'Requisición Autorizada {requi.folio}',
                 body=html_message,
                 from_email = settings.DEFAULT_FROM_EMAIL,
-                to= ['ulises_huesc@hotmail.com',requi.orden.staff.email],
+                to= ['ulises_huesc@hotmail.com', requi.orden.staff.staff.email],
                 headers={'Content-Type': 'text/html'}
                 )
-        email.content_subtype = "html " # Importante para que se interprete como HTML
-        email.send()
-        messages.success(request,f'Has autorizado la requisición {requi.folio} con éxito')
+            email.content_subtype = "html " # Importante para que se interprete como HTML
+            email.send()
+            messages.success(request,f'Has autorizado la requisición {requi.folio} con éxito')
+        except (BadHeaderError, SMTPException) as e:
+            error_message = f'Has autorizado la requisición {requi.folio} con éxito pero el correo de notificación no ha sido enviado debido a un error: {e}'
+            messages.warning(request, error_message)
         return redirect('requisicion-autorizacion')
 
     context = {
@@ -917,14 +924,18 @@ def requisicion_cancelar(request, pk):
             requis.autorizada_por = perfil
             requis.autorizar = False
             requis.save()
-            email = EmailMessage(
-                f'Requisición Rechazada {requis.folio}',
-                f'Estimado {requis.orden.staff.staff.first_name} {requis.orden.staff.staff.last_name},\n Estás recibiendo este correo porque tu solicitud: {requis.orden.folio}| Req: {requis.folio} ha sido rechazada,\n por {requis.autorizada_por.staff.first_name} {requis.autorizada_por.staff.last_name} por el siguiente motivo: \n " {requis.comentario_compras} ".\n\n Este mensaje ha sido automáticamente generado por SAVIA 2.0',
-                settings.DEFAULT_FROM_EMAIL,
-                ['ulises_huesc@hotmail.com',requis.orden.staff.staff.email],
-                )
-            email.send()
-            messages.error(request,f'Has cancelado la requisición {requis.folio}')
+            try:
+                email = EmailMessage(
+                    f'Requisición Rechazada {requis.folio}',
+                    f'Estimado {requis.orden.staff.staff.first_name} {requis.orden.staff.staff.last_name},\n Estás recibiendo este correo porque tu solicitud: {requis.orden.folio}| Req: {requis.folio} ha sido rechazada,\n por {requis.autorizada_por.staff.first_name} {requis.autorizada_por.staff.last_name} por el siguiente motivo: \n " {requis.comentario_compras} ".\n\n Este mensaje ha sido automáticamente generado por SAVIA 2.0',
+                    settings.DEFAULT_FROM_EMAIL,
+                    ['ulises_huesc@hotmail.com',requis.orden.staff.staff.email],
+                    )
+                email.send()
+                messages.error(request,f'Has cancelado la requisición {requis.folio}')
+            except (BadHeaderError, SMTPException) as e:
+                error_message = f'Has cancelado la requisición {requis.folio} con éxito, pero el correo de notificación no ha sido enviado debido a un error: {e}'
+                messages.warning(request, error_message)
             return redirect('requisicion-autorizacion')
     else:
         form = Rechazo_Requi_Form(instance=requis)

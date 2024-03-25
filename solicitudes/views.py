@@ -12,6 +12,7 @@ from dashboard.forms import Inventario_BatchForm
 from user.models import Profile, Distrito, Almacen
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse, HttpResponse
+from django.conf import settings
 import json
 from django.db.models import Sum, Value, F, Sum, When, Case, DecimalField
 from .filters import InventoryFilter, SolicitudesFilter, SolicitudesProdFilter, InventarioFilter, HistoricalInventarioFilter, HistoricalProductoFilter
@@ -28,7 +29,9 @@ from openpyxl.utils import get_column_letter
 import datetime as dt
 import csv
 import ast
-from django.core.mail import EmailMessage
+import os
+from django.core.mail import EmailMessage, BadHeaderError
+from smtplib import SMTPException
 # Create your views here.
 
 
@@ -251,8 +254,10 @@ def checkout(request):
                 folio_number = last_order.last_folio_number + 1
                 order.last_folio_number = folio_number
             order.folio = str(abrev) + str(folio_number).zfill(4)
+            productos_html = '<ul>'
             if usuario.tipo.supervisor == True:
                 for producto in productos:
+                    productos_html += f'<li>{producto.producto.producto.nombre}: {producto.cantidad}.</li>'
                     # We fetch inventory product corresponding to product (that's why we use product.id)
                     # We create a new product line in a new database to control the ArticlestoDeliver (ArticulosparaSurtir)
                     prod_inventario = Inventario.objects.get(id = producto.producto.id)
@@ -323,22 +328,28 @@ def checkout(request):
                     </body>
                 </html>
                 """
-                email = EmailMessage(
-                    f'Solicitud Autorizada {order.folio}',
-                    body=html_message,
-                    from_email= settings.DEFAULT_FROM_EMAIL,
-                    to=[order.staff.staff.email,ulises_huesc@hotmail.com],
-                    headers={'Content-Type': 'text/html'}
-                    )
-                email.content_subtype = "html " # Importante para que se interprete como HTML
-                email.send()
+                try:
+                    email = EmailMessage(
+                        f'Solicitud Autorizada {order.folio}',
+                        body=html_message,
+                        from_email= settings.DEFAULT_FROM_EMAIL,
+                        to=[order.staff.staff.email, 'ulises_huesc@hotmail.com'],
+                        headers={'Content-Type': 'text/html'}
+                        )
+                    email.content_subtype = "html " # Importante para que se interprete como HTML
+                    email.send()
+                    messages.success(request, f'La solicitud {order.folio} ha sido creada')
+                except (BadHeaderError, SMTPException) as e:
+                    error_message = f'La solicitud {order.folio} ha sido creada, pero el correo no ha sido enviado debido a un error: >>> {e}'
+                    messages.warning(request, error_message)
                 order.sol_autorizada_por = Profile.objects.get(staff__id=request.user.id)    
-                messages.success(request, f'La solicitud {order.folio} ha sido creada')
                 cartItems = '0'
             else:
+                for producto in productos:
+                    productos_html += f'<li>{producto.producto.producto.nombre}: {producto.cantidad}.</li>'
                 static_path = settings.STATIC_ROOT
                 img_path = os.path.join(static_path,'images','SAVIA_Logo.png')
-                img_path2 = os.path.join(static_path,'images','logo_vordcab.jpg')
+                img_path2 = os.path.join(static_path,'images','logo vordtec_documento.png')
                 productos_html += '</ul>'
                 image_base64 = get_image_base64(img_path)
                 logo_v_base64 = get_image_base64(img_path2)
@@ -359,16 +370,20 @@ def checkout(request):
                     </body>
                 </html>
                 """
-                email = EmailMessage(
-                    f'Solicitud Autorizada {order.folio}',
-                    body=html_message,
-                    from_email= settings.DEFAULT_FROM_EMAIL,
-                    to=[order.staff.staff.email, ulises_huesc@hotmail.com],
-                    headers={'Content-Type': 'text/html'}
-                    )
-                email.content_subtype = "html " # Importante para que se interprete como HTML
-                email.send()
-                messages.success(request, f'La solicitud {order.folio} ha sido creada')
+                try:
+                    email = EmailMessage(
+                        f'Solicitud Autorizada {order.folio}',
+                        body=html_message,
+                        from_email= settings.DEFAULT_FROM_EMAIL,
+                        to=[order.staff.staff.email, 'ulises_huesc@hotmail.com'],
+                        headers={'Content-Type': 'text/html'}
+                        )
+                    email.content_subtype = "html " # Importante para que se interprete como HTML
+                    email.send()
+                    messages.success(request, f'La solicitud {order.folio} ha sido creada')
+                except (BadHeaderError, SMTPException) as e:
+                    error_message = f'La solicitud {order.folio} ha sido creada, pero el correo no ha sido enviado debido a un error: {e}'
+                    messages.warning(request, error_message)
             order.complete = True
             order.save()
             return redirect('solicitud-matriz')

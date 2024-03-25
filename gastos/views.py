@@ -1,7 +1,8 @@
 from django.shortcuts import render, redirect
 from datetime import date, datetime
 from django.contrib import messages
-from django.core.mail import EmailMessage
+from django.core.mail import EmailMessage, BadHeaderError
+from smtplib import SMTPException
 from dashboard.models import Inventario, Order, ArticulosparaSurtir, ArticulosOrdenados, Tipo_Orden 
 from solicitudes.models import Proyecto, Subproyecto, Operacion
 from tesoreria.models import Pago, Cuenta
@@ -414,20 +415,23 @@ def pago_gasto(request, pk):
                 pago.save()
                 pagos = Pago.objects.filter(gasto=gasto, hecho=True)
                 #archivo_oc = attach_oc_pdf(request, gasto.id)
-                email = EmailMessage(
-                    f'Gasto Autorizado {gasto.id}',
-                    f'Estimado(a) {gasto.staff.staff.first_name} {gasto.staff.staff.last_name}:\n\nEstás recibiendo este correo porque ha sido pagado el gasto con folio: {gasto.id}.\n\n\nVordtec de México S.A. de C.V.\n\n Este mensaje ha sido automáticamente generado por SAVIA VORDTEC',
-                    'savia@vordtec.com',
-                    ['ulises_huesc@hotmail.com',gasto.staff.staff.email],
-                    )
-                #email.attach(f'OC_folio_{gasto.id}.pdf',archivo_oc,'application/pdf')
-                email.attach('Pago.pdf',request.FILES['comprobante_pago'].read(),'application/pdf')
-                if pagos.count() > 0:
-                    for item in pagos:
-                        email.attach(f'Gasto{gasto.id}_P{item.id}.pdf',item.comprobante_pago.read(),'application/pdf')
-                email.send()
-
-                messages.success(request,f'Gracias por registrar tu pago, {usuario.staff.first_name}')
+                try:
+                    email = EmailMessage(
+                        f'Gasto Autorizado {gasto.id}',
+                        f'Estimado(a) {gasto.staff.staff.first_name} {gasto.staff.staff.last_name}:\n\nEstás recibiendo este correo porque ha sido pagado el gasto con folio: {gasto.id}.\n\n\nVordtec de México S.A. de C.V.\n\n Este mensaje ha sido automáticamente generado por SAVIA VORDTEC',
+                        'savia@vordtec.com',
+                        ['ulises_huesc@hotmail.com',gasto.staff.staff.email],
+                        )
+                    #email.attach(f'OC_folio_{gasto.id}.pdf',archivo_oc,'application/pdf')
+                    email.attach('Pago.pdf',request.FILES['comprobante_pago'].read(),'application/pdf')
+                    if pagos.count() > 0:
+                        for item in pagos:
+                            email.attach(f'Gasto{gasto.id}_P{item.id}.pdf',item.comprobante_pago.read(),'application/pdf')
+                    email.send()
+                    messages.success(request,f'Gracias por registrar tu pago, {usuario.staff.first_name}')
+                except (BadHeaderError, SMTPException) as e:
+                    error_message = f'{usuario.staff.first_name}, Gracias por registrar tu pago, pero el correo de notificación no ha sido enviado debido a un error: {e}'
+                    messages.warning(request, error_message)
                 return HttpResponse(status=204) #No content to render nothing and send a "signal" to javascript in order to close window
         else:
             form = Pago_Gasto_Form()
@@ -591,14 +595,18 @@ def gasto_entrada(request, pk):
                     producto_inventario.save()
                     producto_inventario._change_reason = f'Esta es una entrada desde un gasto {item_producto.id}'
                     producto_inventario.save()
-                email = EmailMessage(
-                    f'Entrada de producto por gasto: {articulo_gasto.producto.producto.nombre} |Gasto: {articulo_gasto.gasto.id}',
-                    f'Estimado {articulo_gasto.staff.staff.first_name} {articulo_gasto.staff.staff.last_name},\n Estás recibiendo este correo porque tu producto: {articulo_gasto.producto.producto.nombre} ha sido validado por el almacenista {usuario.staff.first_name} {usuario.staff.last_name}, favor de pasar a firmar el vale de salida para terminar con este proceso.\n\n Este mensaje ha sido automáticamente generado por SAVIA VORDTEC',
-                    'savia@vordtec.com',
-                    ['ulises_huesc@hotmail.com',articulo_gasto.staff.staff.email],
-                    )
-                email.send()
-                orden_producto.save()
+                try:
+                    email = EmailMessage(
+                        f'Entrada de producto por gasto: {articulo_gasto.producto.producto.nombre} |Gasto: {articulo_gasto.gasto.id}',
+                        f'Estimado {articulo_gasto.staff.staff.first_name} {articulo_gasto.staff.staff.last_name},\n Estás recibiendo este correo porque tu producto: {articulo_gasto.producto.producto.nombre} ha sido validado por el almacenista {usuario.staff.first_name} {usuario.staff.last_name}, favor de pasar a firmar el vale de salida para terminar con este proceso.\n\n Este mensaje ha sido automáticamente generado por SAVIA VORDTEC',
+                        'savia@vordtec.com',
+                        ['ulises_huesc@hotmail.com',articulo_gasto.staff.staff.email],
+                        )
+                    email.send()
+                    orden_producto.save()
+                except (BadHeaderError, SMTPException) as e:
+                    error_message = f'{usuario.staff.first_name}, El correo notificación no ha sido enviado debido a un error: {e}'
+                    messages.warning(request, error_message)
                 return redirect('matriz-gasto-entrada')
         if "btn_producto" in request.POST:
             form_product = Conceptos_EntradasForm(request.POST, instance=articulo)
