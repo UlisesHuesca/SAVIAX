@@ -1,7 +1,7 @@
 {% extends 'partials/base.html' %}
 {% load crispy_forms_tags %}
 {% load static %}
-
+{% load djmoney %}
 {% load widget_tweaks %}
 <html>
 <head>
@@ -53,6 +53,22 @@
                         <th scope="col">{{compra.proveedor.nombre.razon_social}}</th>
                         </tr>
                     </thead>
+                    <tbody>
+                        {% for pago in pagos %}
+                        <tr>
+                        <th scope="col">Pago:</th>
+                        <th scope="col">
+                            <a type="button" class="btn btn-outline-info" href="{{pago.comprobante_pago.url}}" download data-bs-toggle="tooltip" data-bs-placement="top" title="Comprobante de pago">
+                            <i class="fa-solid fa-file-invoice-dollar"></i>
+                            </a>
+                            <a type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target='#dialog' data-bs-toggle="tooltip" data-bs-placement="top" title="Cambiar comprobante" hx-target="#document" hx-get="{% url 'edit-comprobante-pago' pago.id %}">               
+                                <i class="fa-solid fa-cloud-arrow-up"></i>
+                            </a>   
+                            
+                        </th>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
                 </table>
                 <hr>
                 <table class='table table-striped'>

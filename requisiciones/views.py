@@ -5,10 +5,12 @@ from django.db.models.functions import Concat
 from django.db.models import Value, Sum, Case, When, F, Value, Q, DecimalField, Avg
 from django.contrib import messages
 from django.http import JsonResponse
-from django.core.mail import EmailMessage
+from django.core.mail import EmailMessage, BadHeaderError
+from smtplib import SMTPException
 from django.core.paginator import Paginator
 from django.http import FileResponse
 from django.core.files.base import ContentFile
+from django.conf import settings
 
 from solicitudes.models import Proyecto, Subproyecto
 from dashboard.models import Inventario, Order, ArticulosparaSurtir, ArticulosOrdenados, Inventario_Batch, Product, Marca
@@ -30,13 +32,15 @@ from datetime import date, datetime
 
 import json
 import csv
-
+import os
+import io
 import ast # Para leer el csr many to many
 import decimal
+import base64
 
 #PDF generator
 #PDF generator
-import io
+
 from reportlab.pdfgen import canvas
 from reportlab.lib import colors
 from reportlab.lib.colors import Color, black, blue, red, white
@@ -410,7 +414,7 @@ def devolucion_material(request, pk):
                 email = EmailMessage(
                     f'Cancelación de solicitud: {orden.folio}',
                     f'Estimado {orden.staff.staff.first_name} {orden.staff.staff.last_name},\n Estás recibiendo este correo porque tu solicitud: {orden.folio} ha sido devuelta al almacén por {usuario.staff.first_name} {usuario.staff.last_name}, con el siguiente comentario {devolucion.comentario} para más información comunicarse al almacén.\n\n Este mensaje ha sido automáticamente generado por SAVIA VORDTEC',
-                    'savia@vordtec.com',
+                    settings.DEFAULT_FROM_EMAIL,
                     ['ulises_huesc@hotmail.com'],#orden.staff.staff.email],
                     )
                 email.send()
@@ -835,6 +839,12 @@ def requisicion_detalle(request, pk):
 
     return render(request,'requisiciones/detalle_requisitar_editar.html', context)
 
+# Convertir la imagen a base64
+def get_image_base64(image_path):
+    with open(image_path, "rb") as image_file:
+        return base64.b64encode(image_file.read()).decode()
+
+
 def requisicion_autorizar(request, pk):
     usuario = request.user.id
     perfil = Profile.objects.get(staff__id=usuario)
@@ -854,14 +864,42 @@ def requisicion_autorizar(request, pk):
         requi.approved_at = date.today()
         requi.autorizar = True
         requi.save()
-        email = EmailMessage(
+        static_path = settings.STATIC_ROOT
+        img_path = os.path.join(static_path,'images','SAVIA_Logo.png')
+        img_path2 = os.path.join(static_path,'images','logo vordtec_documento.png')
+        image_base64 = get_image_base64(img_path)
+        logo_v_base64 = get_image_base64(img_path2)
+        # Crear el mensaje HTML
+        html_message = f"""
+        <html>
+            <head>
+                <meta charset="UTF-8">
+            </head>
+            <body>
+                <p><img src="data:image/jpeg;base64,{logo_v_base64}" alt="Imagen" style="width:100px;height:auto;"/></p>
+                <p>Estimado {requi.orden.staff.staff.first_name} {requi.orden.staff.staff.last_name},</p>
+                <p>Estás recibiendo este correo porque tu sol: {requi.orden.folio}| Req: {requi.folio} ha sido autorizada,</p>
+                <p>por {requi.requi_autorizada_por.staff.first_name} {requi.requi_autorizada_por.staff.last_name}.</p>
+                <p>El siguiente paso del sistema: Generación de OC</p>
+                <p><img src="data:image/png;base64,{image_base64}" alt="Imagen" style="width:50px;height:auto;border-radius:50%"/></p>
+                <p>Este mensaje ha sido automáticamente generado por SAVIA 2.0</p>
+            </body>
+        </html>
+        """
+        try:
+            email = EmailMessage(
                 f'Requisición Autorizada {requi.folio}',
-                f'Estimado {requi.orden.staff.staff.first_name} {requi.orden.staff.staff.last_name},\n Estás recibiendo este correo porque tu solicitud: {requi.orden.folio}| Req: {requi.folio} ha sido autorizada,\n por {requi.requi_autorizada_por.staff.first_name} {requi.requi_autorizada_por.staff.last_name}.\n El siguiente paso del sistema: Generación de OC \n\n Este mensaje ha sido automáticamente generado por SAVIA VORDTEC',
-                'savia@vordtec.com',
-                ['ulises_huesc@hotmail.com'],[requi.orden.staff.staff.email],
+                body=html_message,
+                from_email = settings.DEFAULT_FROM_EMAIL,
+                to= ['ulises_huesc@hotmail.com', requi.orden.staff.staff.email],
+                headers={'Content-Type': 'text/html'}
                 )
-        #email.send()
-        messages.success(request,f'Has autorizado la requisición {requi.folio} con éxito')
+            email.content_subtype = "html " # Importante para que se interprete como HTML
+            email.send()
+            messages.success(request,f'Has autorizado la requisición {requi.folio} con éxito')
+        except (BadHeaderError, SMTPException) as e:
+            error_message = f'Has autorizado la requisición {requi.folio} con éxito pero el correo de notificación no ha sido enviado debido a un error: {e}'
+            messages.warning(request, error_message)
         return redirect('requisicion-autorizacion')
 
     context = {
@@ -886,14 +924,18 @@ def requisicion_cancelar(request, pk):
             requis.autorizada_por = perfil
             requis.autorizar = False
             requis.save()
-            email = EmailMessage(
-                f'Requisición Rechazada {requis.folio}',
-                f'Estimado {requis.orden.staff.staff.first_name} {requis.orden.staff.staff.last_name},\n Estás recibiendo este correo porque tu solicitud: {requis.orden.folio}| Req: {requis.folio} ha sido rechazada,\n por {requis.autorizada_por.staff.first_name} {requis.autorizada_por.staff.last_name} por el siguiente motivo: \n " {requis.comentario_compras} ".\n\n Este mensaje ha sido automáticamente generado por SAVIA X',
-                'savia@vordtec.com',
-                ['ulises_huesc@hotmail.com'],[requis.orden.staff.staff.email],
-                )
-            email.send()
-            messages.error(request,f'Has cancelado la requisición {requis.folio}')
+            try:
+                email = EmailMessage(
+                    f'Requisición Rechazada {requis.folio}',
+                    f'Estimado {requis.orden.staff.staff.first_name} {requis.orden.staff.staff.last_name},\n Estás recibiendo este correo porque tu solicitud: {requis.orden.folio}| Req: {requis.folio} ha sido rechazada,\n por {requis.autorizada_por.staff.first_name} {requis.autorizada_por.staff.last_name} por el siguiente motivo: \n " {requis.comentario_compras} ".\n\n Este mensaje ha sido automáticamente generado por SAVIA 2.0',
+                    settings.DEFAULT_FROM_EMAIL,
+                    ['ulises_huesc@hotmail.com',requis.orden.staff.staff.email],
+                    )
+                email.send()
+                messages.error(request,f'Has cancelado la requisición {requis.folio}')
+            except (BadHeaderError, SMTPException) as e:
+                error_message = f'Has cancelado la requisición {requis.folio} con éxito, pero el correo de notificación no ha sido enviado debido a un error: {e}'
+                messages.warning(request, error_message)
             return redirect('requisicion-autorizacion')
     else:
         form = Rechazo_Requi_Form(instance=requis)
@@ -1478,6 +1520,184 @@ def convert_salidas_to_xls(salidas):
 
     return(response)
 #Aquí termina la implementación del XLSX
+
+def render_entrada_pdf(request, pk):
+    #Configuration of the PDF object
+    buf = io.BytesIO()
+    c = canvas.Canvas(buf, pagesize=portrait(letter))
+    #Here ends conf.
+    articulo = EntradaArticulo.objects.get(id=pk)
+    vale = Entrada.objects.get(id = articulo.entrada.id)
+    productos = EntradaArticulo.objects.filter(entrada= vale)
+    styles = getSampleStyleSheet()
+    styles['BodyText'].fontSize = 6
+
+    #Azul Vordcab
+    prussian_blue = Color(0.0859375,0.1953125,0.30859375)
+    rojo = Color(0.59375, 0.05859375, 0.05859375)
+    #Encabezado
+    c.setFillColor(black)
+    c.setLineWidth(.2)
+    c.setFont('Helvetica',8)
+    caja_iso = 770
+    #Elaborar caja
+    #c.line(caja_iso,500,caja_iso,720)
+
+
+    c.drawString(420,caja_iso,'Preparado por:')
+    c.drawString(420,caja_iso-10,'SUP. ADMON')
+    c.drawString(520,caja_iso,'Aprobación')
+    c.drawString(520,caja_iso-10,'SUB ADM')
+    #Segundo renglón
+    c.drawString(150,caja_iso-25,'Número de documento')
+    c.drawString(160,caja_iso-35,'SEOV-ALM-N4-01-02')
+    c.drawString(245,caja_iso-25,'Clasificación del documento')
+    c.drawString(275,caja_iso-35,'Controlado')
+    c.drawString(355,caja_iso-25,'Nivel del documento')
+    c.drawString(380,caja_iso-35, 'N5')
+    c.drawString(440,caja_iso-25,'Revisión No.')
+    c.drawString(452,caja_iso-35,'001')
+    c.drawString(510,caja_iso-25,'Fecha de Emisión')
+    c.drawString(525,caja_iso-35,'24-Oct.-18')
+
+
+    c.drawString(510,caja_iso-50,'Folio: ')
+    #c.drawString(530,caja_iso-50, str(vale.folio))
+    c.drawString(510,caja_iso-60,'Fecha:')
+    c.drawString(540,caja_iso-60,vale.entrada_date.strftime("%d/%m/%Y"))
+
+    c.setFillColor(rojo)
+    c.setFont('Helvetica-Bold',12)
+    c.drawString(530,caja_iso-50, str(vale.id))
+    
+
+    c.setFont('Helvetica',12)
+    c.setFillColor(prussian_blue)
+    # REC (Dist del eje Y, Dist del eje X, LARGO DEL RECT, ANCHO DEL RECT)
+    c.rect(150,caja_iso-15,250,20, fill=True, stroke=False) #Barra azul superior Orden de Compra
+
+    c.setFillColor(white)
+    c.setLineWidth(.2)
+    c.setFont('Helvetica-Bold',14)
+    c.drawCentredString(280,caja_iso-10,'Vale de Entrada Almacén')
+    c.setLineWidth(.3) #Grosor
+
+    c.drawInlineImage('static/images/logo vordtec_documento.png',45,caja_iso-40, 3 * cm, 1.5 * cm) #Imagen vortec
+   
+
+    data =[]
+    productos_data = []
+    high = 670
+    data.append(['''Código''','''Producto''', '''Cantidad''', '''Unidad'''])
+    for producto in productos:
+        producto_nombre = Paragraph(producto.articulo_comprado.producto.producto.articulos.producto.producto.nombre, styles["BodyText"])
+        data.append([producto.articulo_comprado.producto.producto.articulos.producto.producto.codigo, producto_nombre, producto.cantidad, producto.articulo_comprado.producto.producto.articulos.producto.producto.unidad])
+        high = high - 18
+        #Lo vuelvo a captura de otra manera para el código QR
+        nombre_producto = producto.articulo_comprado.producto.producto.articulos.producto.producto.nombre
+        codigo_producto = producto.articulo_comprado.producto.producto.articulos.producto.producto.codigo
+        producto_info = {
+            'codigo': codigo_producto,
+            'nombre': nombre_producto,
+            'cantidad': str(producto.cantidad),
+            'unidad': str(producto.articulo_comprado.producto.producto.articulos.producto.producto.unidad),
+        }
+        productos_data.append(producto_info)
+    
+    
+    # Generar el código QR
+    #qr = qrcode.QRCode(
+    #    version=1,
+    #    error_correction=qrcode.constants.ERROR_CORRECT_L,
+    #    box_size=10,
+    #    border=4,
+    #)
+    #folio = str(vale.folio)
+    #fecha = vale.created_at.strftime("%d/%m/%Y")
+    #qr_info = {
+    #    'folio': folio,
+    #    'fecha': fecha,
+    #    'productos': productos_data
+    #}
+    #qr_data = json.dumps(qr_info)
+    #qr.add_data(qr_data)
+    #qr.make(fit=True)
+
+    # Generar la imagen del QR y guardarla
+    #qr_image = qr.make_image(fill_color="black", back_color="white")
+    #qr_image_path = '/tmp/temp_qr.png'
+    #qr_image.save(qr_image_path)
+    #c.drawInlineImage(qr_image_path, 500, 440, 100, 100)  # Reemplaza x, y, width, height con tus valores
+
+
+    c.setFillColor(black)
+    c.setFont('Helvetica',8)
+    proyecto_y = 485 if high > 500 else high - 30
+
+    c.setFillColor(prussian_blue)
+    # REC (Dist del eje Y, Dist del eje X, LARGO DEL RECT, ANCHO DEL RECT)
+    c.rect(20,proyecto_y - 5 ,350,20, fill=True, stroke=False) #3ra linea azul
+    c.setFillColor(black)
+    c.setFont('Helvetica',7)
+
+
+    c.setFillColor(white)
+    c.setLineWidth(.1)
+    c.setFont('Helvetica-Bold',10)
+    c.drawCentredString(120,proyecto_y,'Proyecto')
+    c.drawCentredString(300,proyecto_y,'Subproyecto')
+
+    c.setFont('Helvetica',8)
+    c.setFillColor(black)
+    #c.drawCentredString(120,proyecto_y - 15, str(vale.solicitud.proyecto.nombre))
+    #c.drawCentredString(300,proyecto_y - 15, str(vale.solicitud.subproyecto.nombre))
+
+
+    c.setFillColor(black)
+    c.setFont('Helvetica',8)
+    #c.line(135,high-200,215, high-200) #Linea de Autorizacion
+    c.drawCentredString(150,proyecto_y - 30,'Recibió')
+    if vale.almacenista:
+        c.drawCentredString(150,proyecto_y - 40, vale.almacenista.staff.first_name +' '+vale.almacenista.staff.last_name)
+
+    #c.line(370,proyecto_y - 20,430, proyecto_y - 20)
+    #c.drawCentredString(400,proyecto_y - 30,'Recibió')
+    #c.drawCentredString(400,proyecto_y - 40, vale.material_recibido_por.staff.staff.first_name +' '+vale.material_recibido_por.staff.staff.last_name)
+
+
+    #c.line(240, high-200, 310, high-200)
+    c.drawCentredString(280,proyecto_y - 30,'Proveedor')
+    c.drawCentredString(280,proyecto_y - 40, vale.oc.proveedor.nombre.razon_social)
+
+    c.setFont('Helvetica',10)
+    c.setFillColor(prussian_blue)
+    c.setFont('Helvetica', 9)
+    c.setFillColor(black)
+
+    c.setFillColor(prussian_blue)
+    c.rect(20,proyecto_y - 65,565,20, fill=True, stroke=False)
+    c.setFillColor(white)
+
+    width, height = letter
+    table = Table(data, colWidths=[2 * cm, 12.5 * cm, 2.5 * cm, 2.5 * cm,])
+    table.setStyle(TableStyle([ #estilos de la tabla
+        ('INNERGRID',(0,0),(-1,-1), 0.25, colors.white),
+        ('BOX',(0,0),(-1,-1), 0.25, colors.black),
+        ('VALIGN',(0,0),(-1,-1),'MIDDLE'),
+        #ENCABEZADO
+        ('TEXTCOLOR',(0,0),(-1,0), white),
+        ('FONTSIZE',(0,0),(-1,0), 10),
+        ('BACKGROUND',(0,0),(-1,0), prussian_blue),
+        #CUERPO
+        ('TEXTCOLOR',(0,1),(-1,-1), colors.black),
+        ('FONTSIZE',(0,1),(-1,-1), 6),
+        ]))
+    table.wrapOn(c, width, height)
+    table.drawOn(c, 20, high)
+    c.save()
+    c.showPage()
+    buf.seek(0)
+    return FileResponse(buf, as_attachment=True, filename='vale_salida_'+str(vale.id) +'.pdf')
 
 
 def render_salida_pdf(request, pk):

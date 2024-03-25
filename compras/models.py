@@ -11,7 +11,7 @@ from phone_field import PhoneField
 
 
 class Estatus_proveedor(models.Model):
-    nombre = models.CharField(max_length=10, null=True, unique=True)
+    nombre = models.CharField(max_length=15, null=True, unique=True)
 
     def __str__(self):
         return f'{self.nombre}'

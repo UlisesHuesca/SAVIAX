@@ -164,6 +164,7 @@
                     <th scope="col-sm">Cantidad</th>
                     <th>Moneda</th>
                     <th scope="col-sm">Precio</th>
+                    <th>Vale</th>
                 </tr>
             </thead>
             <tbody>
@@ -179,6 +180,11 @@
                     <td>{{entrada.cantidad}}</td>
                     <td>{{entrada.articulo_comprado.oc.moneda}}</td>
                     <td>{{entrada.articulo_comprado.precio_unitario|floatformat:2}}</td>
+                    <td class="d-none d-lg-table-cell">
+                        <a type="submit" href="{% url 'vale-entrada-pdf' entrada.id %}" class="btn btn-outline-info btn-lg">
+                            <i class="fa-solid fa-file-pdf fa-2xl"></i>
+                        </a>
+                    </td>
                 </tr>
                 {% endfor %}
             </tbody>

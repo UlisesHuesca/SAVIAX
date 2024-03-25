@@ -9,17 +9,20 @@ from dashboard.models import Subproyecto
 from .models import Pago, Cuenta, Facturas
 from gastos.models import Solicitud_Gasto
 from viaticos.models import Solicitud_Viatico
-from .forms import PagoForm, Facturas_Form, Facturas_Completas_Form, Saldo_Form
+from .forms import PagoForm, Facturas_Form, Facturas_Completas_Form, Saldo_Form, ComprobanteForm
 from .filters import PagoFilter, Matriz_Pago_Filter
 from viaticos.filters import Solicitud_Viatico_Filter
 from gastos.filters import Solicitud_Gasto_Filter
 from gastos.models import Articulo_Gasto
 from user.models import Profile
 from django.contrib import messages
+from django.conf import settings
 from django.db.models import Sum, Prefetch
 from datetime import date, datetime
+from requisiciones.views import get_image_base64
 import decimal
-from django.core.mail import EmailMessage
+from django.core.mail import EmailMessage, BadHeaderError
+from smtplib import SMTPException
 from django.core.paginator import Paginator
 #Excel stuff
 from openpyxl import Workbook
@@ -27,6 +30,7 @@ from openpyxl.styles import NamedStyle, Font, PatternFill
 from openpyxl.utils import get_column_letter
 import datetime as dt
 from django.db.models.functions import Concat
+import os
 
 
 
@@ -132,37 +136,83 @@ def compras_pagos(request, pk):
                     if compra.cond_de_pago.nombre == "CONTADO":
                         pagos = Pago.objects.filter(oc=compra, hecho=True)
                         archivo_oc = attach_oc_pdf(request, compra.id)
-                        if compra.referencia:
+                        static_path = settings.STATIC_ROOT
+                        img_path = os.path.join(static_path,'images','SAVIA_Logo.png')
+                        img_path2 = os.path.join(static_path,'images','logo vordtec_documento.png')
+                        image_base64 = get_image_base64(img_path)
+                        logo_v_base64 = get_image_base64(img_path2)
+                        html_message = f"""
+                            <html>
+                                <head>
+                                    <meta charset="UTF-8">
+                                </head>
+                                <body>
+                                    <p><img src="data:image/jpeg;base64,{logo_v_base64}" alt="Imagen" style="width:100px;height:auto;"/></p>
+                                    <p>Estimado {compra.req.orden.staff.staff.first_name} {compra.req.orden.staff.staff.last_name},</p>
+                                    <p>Estás recibiendo este correo porque tu OC {compra.get_folio} | RQ: {compra.req.folio} |Sol: {compra.req.orden.folio} ha sido pagada por {pago.tesorero.staff.first_name} {pago.tesorero.staff.last_name},</p>
+                                    <p>Referencia:{compra.referencia}
+                                    <p>El siguiente paso del sistema: Recepción por parte de Almacén</p>
+                                    <p><img src="data:image/png;base64,{image_base64}" alt="Imagen" style="width:50px;height:auto;border-radius:50%"/></p>
+                                    <p>Este mensaje ha sido automáticamente generado por SAVIA 2.0</p>
+                                </body>
+                            </html>
+                            """
+                        email = EmailMessage(
+                            f'OC Pagada {compra.get_folio}|RQ: {compra.req.folio} |Sol: {compra.req.orden.folio}',
+                            body=html_message,
+                            from_email = settings.DEFAULT_FROM_EMAIL,
+                            to= ['ulises_huesc@hotmail.com', compra.req.orden.staff.staff.email],
+                            headers={'Content-Type': 'text/html'}
+                        )
+                        email.content_subtype = "html " # Importante para que se interprete como HTML
+                        email.send()
+                        html_message2 = f"""
+                            <html>
+                                <head>
+                                    <meta charset="UTF-8">
+                                </head>
+                                <body>
+                                    <p>Estimado(a) {compra.proveedor.contacto}| Proveedor {compra.proveedor.nombre}:,</p>
+                                    <p>Estás recibiendo este correo porque has sido seleccionado para surtirnos la OC adjunta con folio: {compra.get_folio}.<p>
+                                    <p>&nbsp;</p>
+                                    <p> Atte. {compra.creada_por.staff.first_name} {compra.creada_por.staff.last_name}</p> 
+                                    <p>GRUPO VORDCAB S.A. de C.V.</p>
+                                    <p><img src="data:image/jpeg;base64,{logo_v_base64}" alt="Imagen" style="width:100px;height:auto;"/></p>
+                                    <p>Este mensaje ha sido automáticamente generado por SAVIA 2.0</p>
+                                    <p><img src="data:image/png;base64,{image_base64}" alt="Imagen" style="width:50px;height:auto;border-radius:50%"/></p>
+                                </body>
+                            </html>
+                            """
+                        try:
                             email = EmailMessage(
-                                f'Compra Autorizada {compra.get_folio}',
-                                f'Estimado(a) {compra.proveedor.contacto} | Proveedor {compra.proveedor.nombre}:\n\nEstás recibiendo este correo porque has sido seleccionado para surtirnos la OC adjunta con folio: {compra.get_folio} y referencia: {compra.referencia}.\n\n Atte. {compra.creada_por.staff.first_name} {compra.creada_por.staff.last_name} \nVordtec de México S.A. de C.V.\n\n Este mensaje ha sido automáticamente generado por SAVIA VORDTEC',
-                                'savia@vordtec.com',
-                                ['ulises_huesc@hotmail.com',]#compra.proveedor.email,'lizeth.ojeda@vordtec.com','carlos.ramon@vordtec.com'],
-                                )
-                        else:
-                            email = EmailMessage(
-                                f'Compra Autorizada {compra.get_folio}',
-                                f'Estimado(a) {compra.proveedor.contacto} | Proveedor {compra.proveedor.nombre}:\n\nEstás recibiendo este correo porque has sido seleccionado para surtirnos la OC adjunta con folio: {compra.get_folio}.\n\n Atte. {compra.creada_por.staff.first_name} {compra.creada_por.staff.last_name} \nVordtec de México S.A. de C.V.\n\n Este mensaje ha sido automáticamente generado por SAVIA VORDTEC',
-                                'savia@vordtec.com',
-                                ['ulises_huesc@hotmail.com'],#compra.proveedor.email,'lizeth.ojeda@vordtec.com','carlos.ramon@vordtec.com'],
-                                )
-                        email.attach(f'OC_folio_{compra.get_folio}.pdf',archivo_oc,'application/pdf')
-                        email.attach('Pago.pdf',request.FILES['comprobante_pago'].read(),'application/pdf')
-                        if pagos.count() > 0:
-                            for pago in pagos:
-                                email.attach(f'Pago_folio_{pago.id}.pdf',pago.comprobante_pago.path,'application/pdf')
-                        #email.send()
-                        for producto in productos:
-                            if producto.producto.producto.articulos.producto.producto.especialista or producto.producto.producto.articulos.producto.producto.critico or producto.producto.producto.articulos.producto.producto.rev_calidad:
-                                archivo_oc = attach_oc_pdf(request, compra.id)
-                                email = EmailMessage(
-                                f'Compra Autorizada {compra.get_folio}',
-                                f'Estimado,\n Estás recibiendo este correo porque ha sido pagada una OC que contiene el producto código:{producto.producto.producto.articulos.producto.producto.codigo} descripción:{producto.producto.producto.articulos.producto.producto.codigo} el cual requiere la liberación de calidad\n Este mensaje ha sido automáticamente generado por SAVIA VORDTEC',
-                                'savia@vordtec.com',
-                                ['ulises_huesc@hotmail.com'],
-                                )
-                                email.attach(f'folio:{compra.get_folio}.pdf',archivo_oc,'application/pdf')
-                                #email.send()
+                            f'Compra Autorizada {compra.get_folio}|SAVIA',
+                            body=html_message2,
+                            from_email =settings.DEFAULT_FROM_EMAIL,
+                            to= ['ulises_huesc@hotmail.com', compra.creada_por.staff.email, compra.proveedor.email],
+                            headers={'Content-Type': 'text/html'}
+                            )
+                            email.content_subtype = "html " # Importante para que se interprete como HTML
+                            email.attach(f'OC_folio_{compra.get_folio}.pdf',archivo_oc,'application/pdf')
+                            email.attach('Pago.pdf',request.FILES['comprobante_pago'].read(),'application/pdf')
+                            if pagos.count() > 0:
+                                for pago in pagos:
+                                    email.attach(f'Pago_folio_{pago.id}.pdf',pago.comprobante_pago.path,'application/pdf')
+                            email.send()
+                            for producto in productos:
+                                if producto.producto.producto.articulos.producto.producto.especialista == True:
+                                    archivo_oc = attach_oc_pdf(request, compra.id)
+                                    email = EmailMessage(
+                                    f'Compra Autorizada {compra.get_folio}',
+                                    f'Estimado Especialista,\n Estás recibiendo este correo porque ha sido pagada una OC que contiene el producto código:{producto.producto.producto.articulos.producto.producto.codigo} descripción:{producto.producto.producto.articulos.producto.producto.codigo} el cual requiere la liberación de calidad\n Este mensaje ha sido automáticamente generado por SAVIA X',
+                                    settings.DEFAULT_FROM_EMAIL,
+                                    ['ulises_huesc@hotmail.com'],
+                                    )
+                                    email.attach(f'folio:{compra.get_folio}.pdf',archivo_oc,'application/pdf')
+                                    email.send()
+                        except (BadHeaderError, SMTPException) as e:
+                            error_message = f'Gracias por registrar tu pago, {usuario.staff.first_name} Atencion: el correo de notificación no ha sido enviado debido a un error: {e}'
+                            messages.warning(request, error_message) 
+
                 pago.save()
                 compra.save()
                 form.save()
@@ -191,6 +241,25 @@ def compras_pagos(request, pk):
     }
 
     return render(request, 'tesoreria/compras_pagos.html',context)
+
+@login_required(login_url='user-login')
+def edit_comprobante_pago(request, pk):
+    pago = Pago.objects.get(id = pk)
+    #print(pago.id)
+    form = ComprobanteForm(instance = pago)
+
+    if request.method == 'POST':
+        form = ComprobanteForm(request.POST, request.FILES, instance=pago)
+        if form.is_valid():
+            form.save()
+            return HttpResponse(status=204) #No content to render nothing and send a "signal" to javascript in order to close window
+    
+    context = {
+        'pago':pago,
+        'form':form, 
+    }
+    
+    return render(request, 'tesoreria/edit_comprobante_pago.html',context)
 
 def edit_pago(request, pk):
     # Obtener el objeto Pago basado en el pk
@@ -370,6 +439,7 @@ def matriz_facturas(request, pk):
 def matriz_facturas_nomodal(request, pk):
     compra = Compra.objects.get(id = pk)
     facturas = Facturas.objects.filter(oc = compra, hecho=True)
+    pagos = Pago.objects.filter(oc=compra)
     form = Facturas_Completas_Form(instance=compra)
 
     if request.method == 'POST':
@@ -383,6 +453,7 @@ def matriz_facturas_nomodal(request, pk):
                 messages.error(request,'No está validando')
 
     context={
+        'pagos':pagos,
         'form':form,
         'facturas':facturas,
         'compra':compra,
@@ -561,20 +632,26 @@ def convert_excel_matriz_pagos(pagos):
             proveedor = pago.oc.proveedor
             facturas_completas = pago.oc.facturas_completas
             cuenta_moneda = pago.cuenta.moneda.nombre if pago.cuenta else None
+            solicitado = pago.oc.req.orden.staff.staff.first_name + ' ' + pago.oc.req.orden.staff.staff.last_name
             if cuenta_moneda == 'PESOS':
                 tipo_de_cambio = ''
             elif cuenta_moneda == 'DOLARES':
                  tipo_de_cambio = pago.tipo_de_cambio or pago.oc.tipo_de_cambio or 17
             else:
                 tipo_de_cambio = ''  # default si no se cumplen las condiciones anteriores
+            moneda = pago.oc.moneda.nombre, 
         elif pago.gasto:
+            solicitado = pago.gasto.staff.staff.first_name + ' ' + pago.gasto.staff.staff.last_name
             proveedor = pago.gasto.staff.staff.first_name
             facturas_completas = pago.gasto.facturas_completas
             tipo_de_cambio = '' # Asume que no se requiere tipo de cambio para gastos
+            moneda = pago.gasto.moneda.nombre
         elif pago.viatico:
             proveedor = pago.viatico.staff.staff.first_name
+            solicitado = pago.viatico.staff.staff.first_name + ' ' + pago.viatico.staff.staff.last_name
             facturas_completas = pago.viatico.facturas_completas
             tipo_de_cambio = '' # Asume que no se requiere tipo de cambio para viáticos
+            moneda = pago.viatico.moneda.nombre,
         else:
             proveedor = None
             facturas_completas = None
@@ -584,14 +661,14 @@ def convert_excel_matriz_pagos(pagos):
         row = [
             pago.id,
             get_transaction_id(pago),
-            pago.oc.req.orden.staff.staff.first_name + ' ' + pago.oc.req.orden.staff.staff.last_name if pago.oc else '',
+            solicitado,
             pago.oc.req.orden.proyecto.nombre if pago.oc else '',
             pago.oc.req.orden.subproyecto.nombre if pago.oc else '',
             proveedor,
-            facturas_completas,
+            'Verdadero' if facturas_completas else 'Falso',
             pago.monto,
             pago.pagado_date.strftime('%d/%m/%Y') if pago.pagado_date else '',
-            pago.oc.moneda.nombre if pago.oc else '',  # Modificación aquí
+            moneda,# Modificación aquí
             tipo_de_cambio,
             f'=IF(K{row_num}="",H{row_num},H{row_num}*K{row_num})'  # Calcula total en pesos usando la fórmula de Excel
         ]

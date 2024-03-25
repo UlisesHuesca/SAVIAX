@@ -5,12 +5,14 @@ from compras.models import Compra
 from tesoreria.models import Pago
 from solicitudes.models import Subproyecto, Operacion, Proyecto
 from entradas.models import EntradaArticulo, Entrada
+from requisiciones.views import get_image_base64
 from gastos.models import Entrada_Gasto_Ajuste, Conceptos_Entradas
 from .forms import InventarioForm, OrderForm, Inv_UpdateForm, Inv_UpdateForm_almacenista, ArticulosOrdenadosForm, Conceptos_EntradasForm, Entrada_Gasto_AjusteForm, Order_Resurtimiento_Form, ArticulosOrdenadosComentForm, Plantilla_Form, ArticuloPlantilla_Form
 from dashboard.forms import Inventario_BatchForm
 from user.models import Profile, Distrito, Almacen
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse, HttpResponse
+from django.conf import settings
 import json
 from django.db.models import Sum, Value, F, Sum, When, Case, DecimalField, Q
 from .filters import InventoryFilter, SolicitudesFilter, SolicitudesProdFilter, InventarioFilter, HistoricalInventarioFilter, HistoricalProductoFilter
@@ -27,7 +29,9 @@ from openpyxl.utils import get_column_letter
 import datetime as dt
 import csv
 import ast
-from django.core.mail import EmailMessage
+import os
+from django.core.mail import EmailMessage, BadHeaderError
+from smtplib import SMTPException
 # Create your views here.
 
 
@@ -250,8 +254,10 @@ def checkout(request):
                 folio_number = last_order.last_folio_number + 1
                 order.last_folio_number = folio_number
             order.folio = str(abrev) + str(folio_number).zfill(4)
+            productos_html = '<ul>'
             if usuario.tipo.supervisor == True:
                 for producto in productos:
+                    productos_html += f'<li>{producto.producto.producto.nombre}: {producto.cantidad}.</li>'
                     # We fetch inventory product corresponding to product (that's why we use product.id)
                     # We create a new product line in a new database to control the ArticlestoDeliver (ArticulosparaSurtir)
                     prod_inventario = Inventario.objects.get(id = producto.producto.id)
@@ -299,27 +305,85 @@ def checkout(request):
                 order.autorizar = True
                 order.approved_at = date.today()
                 order.approved_at_time = datetime.now().time()
-                email = EmailMessage(
-                    f'Solicitud Autorizada {order.folio}',
-                    f'Estás recibiendo este correo porque ha sido aprobada la solicitud {order.folio}\n Este mensaje ha sido automáticamente generado por SAVIA VORDTEC',
-                    'savia@vordtec.com',
-                    [order.staff.staff.email],
-                    )
-                #email.attach(f'OC_folio:{compra.folio}.pdf',archivo_oc,'application/pdf')
-                #email.send()
+                static_path = settings.STATIC_ROOT
+                img_path = os.path.join(static_path,'images','SAVIA_Logo.png')
+                img_path2 = os.path.join(static_path,'images','logo vordtec_documento.png')
+                productos_html += '</ul>'
+                image_base64 = get_image_base64(img_path)
+                logo_v_base64 = get_image_base64(img_path2)
+                # Crear el mensaje HTML
+                html_message = f"""
+                <html>
+                    <head>
+                        <meta charset="UTF-8">
+                    </head>
+                    <body>
+                        <p><img src="data:image/jpeg;base64,{logo_v_base64}" alt="Imagen" style="width:100px;height:auto;"/></p>
+                        <p>Estimado {order.staff.staff.first_name} {order.staff.staff.last_name},</p>
+                        <p>Estás recibiendo este correo porque tu solicitud folio:{order.folio}  se ha generado</p>
+                        <p>Con los productos siguientes</p>
+                        {productos_html}
+                        <p><img src="data:image/png;base64,{image_base64}" alt="Imagen" style="width:50px;height:auto;border-radius:50%"/></p>
+                        <p>Este mensaje ha sido automáticamente generado por SAVIA 2.0</p>
+                    </body>
+                </html>
+                """
+                try:
+                    email = EmailMessage(
+                        f'Solicitud Autorizada {order.folio}',
+                        body=html_message,
+                        from_email= settings.DEFAULT_FROM_EMAIL,
+                        to=[order.staff.staff.email, 'ulises_huesc@hotmail.com'],
+                        headers={'Content-Type': 'text/html'}
+                        )
+                    email.content_subtype = "html " # Importante para que se interprete como HTML
+                    email.send()
+                    messages.success(request, f'La solicitud {order.folio} ha sido creada')
+                except (BadHeaderError, SMTPException) as e:
+                    error_message = f'La solicitud {order.folio} ha sido creada, pero el correo no ha sido enviado debido a un error: >>> {e}'
+                    messages.warning(request, error_message)
                 order.sol_autorizada_por = Profile.objects.get(staff__id=request.user.id)    
-                messages.success(request, f'La solicitud {order.folio} ha sido creada')
                 cartItems = '0'
             else:
-                abrev= usuario.distrito.abreviado
-                email = EmailMessage(
-                    f'Solicitud Autorizada {order.id}',
-                    f'Estás recibiendo este correo por se ha generado la orden {order.folio}\n Este mensaje ha sido automáticamente generado por SAVIA VORDTEC',
-                    'savia@vordtec.com',
-                    [order.staff.staff.email],
-                    )
-                email.send()
-                messages.success(request, f'La solicitud {order.folio} ha sido creada')
+                for producto in productos:
+                    productos_html += f'<li>{producto.producto.producto.nombre}: {producto.cantidad}.</li>'
+                static_path = settings.STATIC_ROOT
+                img_path = os.path.join(static_path,'images','SAVIA_Logo.png')
+                img_path2 = os.path.join(static_path,'images','logo vordtec_documento.png')
+                productos_html += '</ul>'
+                image_base64 = get_image_base64(img_path)
+                logo_v_base64 = get_image_base64(img_path2)
+                # Crear el mensaje HTML
+                html_message = f"""
+                <html>
+                    <head>
+                        <meta charset="UTF-8">
+                    </head>
+                    <body>
+                        <p><img src="data:image/jpeg;base64,{logo_v_base64}" alt="Imagen" style="width:100px;height:auto;"/></p>
+                        <p>Estimado {order.staff.staff.first_name} {order.staff.staff.last_name},</p>
+                        <p>Estás recibiendo este correo porque tu solicitud folio:{order.folio}  se ha generado</p>
+                        <p>Con los productos siguientes</p>
+                        {productos_html}
+                        <p><img src="data:image/png;base64,{image_base64}" alt="Imagen" style="width:50px;height:auto;border-radius:50%"/></p>
+                        <p>Este mensaje ha sido automáticamente generado por SAVIA 2.0</p>
+                    </body>
+                </html>
+                """
+                try:
+                    email = EmailMessage(
+                        f'Solicitud Autorizada {order.folio}',
+                        body=html_message,
+                        from_email= settings.DEFAULT_FROM_EMAIL,
+                        to=[order.staff.staff.email, 'ulises_huesc@hotmail.com'],
+                        headers={'Content-Type': 'text/html'}
+                        )
+                    email.content_subtype = "html " # Importante para que se interprete como HTML
+                    email.send()
+                    messages.success(request, f'La solicitud {order.folio} ha sido creada')
+                except (BadHeaderError, SMTPException) as e:
+                    error_message = f'La solicitud {order.folio} ha sido creada, pero el correo no ha sido enviado debido a un error: {e}'
+                    messages.warning(request, error_message)
             order.complete = True
             order.save()
             return redirect('solicitud-matriz')

@@ -10,6 +10,7 @@ from .models import Product, Subfamilia, Order, Products_Batch, Familia, Unidad,
 from compras.models import Proveedor, Proveedor_Batch, Proveedor_Direcciones_Batch, Proveedor_direcciones, Estatus_proveedor, Estado
 from solicitudes.models import Subproyecto, Proyecto
 from requisiciones.models import Salidas, ValeSalidas
+from compras.models import Compra
 from user.models import Profile, Distrito, Banco
 from .forms import ProductForm, Products_BatchForm, AddProduct_Form, Proyectos_Form, ProveedoresForm, Proyectos_Add_Form, Proveedores_BatchForm, ProveedoresDireccionesForm, Proveedores_Direcciones_BatchForm, Subproyectos_Add_Form, ProveedoresExistDireccionesForm, Add_ProveedoresDireccionesForm, DireccionComparativoForm, Revision_Calidad_Form
 
@@ -1122,23 +1123,29 @@ def convert_excel_matriz_proyectos(proyectos):
     ws.cell(column = columna_max, row = 1, value='{Reporte Creado Automáticamente por Savia Vordtec. UH}').style = messages_style
     ws.cell(column = columna_max, row = 2, value='{Software desarrollado por Vordcab S.A. de C.V.}').style = messages_style
     ws.column_dimensions[get_column_letter(columna_max)].width = 30
-   
-    rows = [
-        (
+    
+
+    rows = []
+    for p in proyectos:
+        total_costo_oc = Compra.objects.filter(req__orden__proyecto=p).aggregate(total=Sum('costo_oc'))['total']
+    
+        # 'total_costo_oc' será None si no hay Compras relacionadas, por lo que puedes usar 0 como valor por defecto
+        total_costo_oc = total_costo_oc if total_costo_oc is not None else 0
+
+        row = [
             p.id,
             p.nombre,
             p.descripcion,
             p.cliente.nombre if p.cliente else '', 
             p.status_de_entrega, 
             p.get_projects_total if p.get_projects_total is not None else 0, 
-            p.suma_salidas if p.suma_salidas is not None else 0,
-            p.suma_comprat if p.suma_comprat is not None else 0, 
-            p.suma_pagos if p.suma_pagos is not None else 0, 
-            p.suma_gastos if p.suma_gastos is not None else 0, 
+            0,
+            total_costo_oc,#p.suma_comprat if p.suma_comprat is not None else 0, 
+            0,#p.suma_pagos if p.suma_pagos is not None else 0, 
+            0,#p.suma_gastos if p.suma_gastos is not None else 0, 
             p.created_at
-        ) 
-        for p in proyectos
-    ]
+            ]
+        rows.append(row)
 
     for row in rows:
         row_num += 1
