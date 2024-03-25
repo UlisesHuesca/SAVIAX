@@ -306,7 +306,7 @@ def checkout(request):
                     [order.staff.staff.email],
                     )
                 #email.attach(f'OC_folio:{compra.folio}.pdf',archivo_oc,'application/pdf')
-                email.send()
+                #email.send()
                 order.sol_autorizada_por = Profile.objects.get(staff__id=request.user.id)    
                 messages.success(request, f'La solicitud {order.folio} ha sido creada')
                 cartItems = '0'

@@ -860,7 +860,7 @@ def requisicion_autorizar(request, pk):
                 'savia@vordtec.com',
                 ['ulises_huesc@hotmail.com'],[requi.orden.staff.staff.email],
                 )
-        email.send()
+        #email.send()
         messages.success(request,f'Has autorizado la requisición {requi.folio} con éxito')
         return redirect('requisicion-autorizacion')
 

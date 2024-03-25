@@ -151,7 +151,7 @@ def compras_pagos(request, pk):
                         if pagos.count() > 0:
                             for pago in pagos:
                                 email.attach(f'Pago_folio_{pago.id}.pdf',pago.comprobante_pago.path,'application/pdf')
-                        email.send()
+                        #email.send()
                         for producto in productos:
                             if producto.producto.producto.articulos.producto.producto.especialista or producto.producto.producto.articulos.producto.producto.critico or producto.producto.producto.articulos.producto.producto.rev_calidad:
                                 archivo_oc = attach_oc_pdf(request, compra.id)
@@ -162,7 +162,7 @@ def compras_pagos(request, pk):
                                 ['ulises_huesc@hotmail.com'],
                                 )
                                 email.attach(f'folio:{compra.get_folio}.pdf',archivo_oc,'application/pdf')
-                                email.send()
+                                #email.send()
                 pago.save()
                 compra.save()
                 form.save()
