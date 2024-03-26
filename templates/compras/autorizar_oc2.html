@@ -78,7 +78,7 @@
                         </tr>
                         <tr>
                             <th scope="col">Presupuesto remanente:*</th>
-                            <th scope="col" id="resta">{{resta}}</th>
+                            <th scope="col" id="resta">{{resta|floatformat:2}}</th>
                         </tr>
                     </tbody>
                 </table>
@@ -103,7 +103,7 @@
                             <td>{{producto.producto.producto.articulos.producto.producto.codigo}}</td>
                             <td>{{producto.producto.producto.articulos.producto.producto.nombre}}</td>
                             <td>{{producto.cantidad}}</td>
-                            <td>${{producto.precio_unitario}}</td>
+                            <td>${{producto.precio_unitario|floatformat:2}}</td>
                         </tr>
                    {% endfor %}
                    </tbody>

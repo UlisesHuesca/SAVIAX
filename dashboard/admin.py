@@ -26,6 +26,7 @@ class ArticulosOrdenadosAdmin(admin.ModelAdmin):
 class ArticulosparaSurtirAdmin(admin.ModelAdmin):
     search_fields = ['articulos__producto__producto__nombre']
     list_display = ('id','articulos','cantidad', 'surtir','requisitar','cantidad_requisitar','salida','precio')
+    raw_id_fields = ('articulos',)
 
 class OrderAdmin(admin.ModelAdmin):
     list_display = ('id','folio','staff','proyecto','subproyecto','tipo','approved_at','requisitado','requisitar')

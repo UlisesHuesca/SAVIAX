@@ -16,6 +16,9 @@ class ProveedorAdmin(admin.ModelAdmin):
 
 class Proveedor_direccionesAdmin(admin.ModelAdmin):
     search_fields = ('nombre__razon_social',)
+
+class MonedaAdmin(admin.ModelAdmin):
+    list_display = ('id','nombre')
 # Register your models here.
 admin.site.register(Compra, CompraAdmin)
 
@@ -33,7 +36,7 @@ admin.site.register(Uso_cfdi)
 
 admin.site.register(Cond_credito)
 
-admin.site.register(Moneda)
+admin.site.register(Moneda,MonedaAdmin)
 
 admin.site.register(Estado)
 

@@ -19,8 +19,8 @@ from datetime import date, datetime, timedelta
 from num2words import num2words
 from django.core.paginator import Paginator
 import decimal
-from django.db.models import F, Avg, Value, ExpressionWrapper, fields, Sum, Q
-from django.db.models.functions import Concat
+from django.db.models import F, Avg, Value, ExpressionWrapper, fields, Sum, Q, Case, When, DecimalField
+from django.db.models.functions import Concat, Coalesce
 from django.conf import settings
 #PDF generator
 import io
@@ -876,8 +876,44 @@ def autorizar_oc1(request, pk):
     usuario = Profile.objects.get(staff__id=request.user.id)
     compra = Compra.objects.get(id = pk)
     productos = ArticuloComprado.objects.filter(oc=pk)
+    # Esto asume que ya has obtenido una instancia específica de Compra con 'compra = Compra.objects.get(id=pk)'
+    proyecto_id = compra.req.orden.proyecto.id
+    #print('proyecto',proyecto_id)
+    compras_por_sumar = Compra.objects.filter(req__orden__proyecto__id=proyecto_id, complete = True)
+    # Ahora, sumamos los 'costo_oc' para todas las Compras que están bajo el mismo proyecto.
+    total_costo_oc = 0
+    total_costo_autorizado = 0
+    total_costo_pagado = 0
+    # Recorremos cada compra para calcular los totales.
+    for compra in compras_por_sumar:
+        # Ajustamos el costo_oc si la moneda es DOLARES.
+        if compra.moneda:
+            if compra.moneda.nombre == "DOLARES":
+                costo_oc = compra.costo_oc
+                tc = compra.tipo_de_cambio or 17            
+                costo_oc_ajustado = compra.costo_oc * tc
 
-   
+            else:
+                costo_oc_ajustado = compra.costo_oc
+        else:
+            costo_oc_ajustado = compra.costo_oc
+        
+        # Sumamos al total general.
+        total_costo_oc += costo_oc_ajustado
+        
+        # Si la compra está autorizada, la sumamos al total autorizado.
+        if compra.autorizado2:
+            total_costo_autorizado += costo_oc_ajustado
+        
+        # Si la compra está pagada, la sumamos al total pagado.
+        if compra.pagada:
+            total_costo_pagado += costo_oc_ajustado
+
+    # Ahora tenemos los totales calculados.
+    #print('Total costo OC:', total_costo_oc)
+    #print('Total costo OC (autorizado):', total_costo_autorizado)
+    #print('Total costo OC (pagado):', total_costo_pagado)
+
     costo_fletes = 0
     #Si hay tipo de cambio es porque la compra fue en dólares entonces multiplico por tipo de cambio la cantidad
     #Escenario con dólares
@@ -891,8 +927,12 @@ def autorizar_oc1(request, pk):
         costo_oc = compra.costo_oc
         if compra.costo_fletes:
             costo_fletes = compra.costo_fletes
-    costo_total = costo_fletes + costo_oc
-    resta = compra.req.orden.subproyecto.presupuesto - costo_oc - costo_fletes - compra.req.orden.subproyecto.gastado
+
+    print(costo_oc)
+    print(compra.req.orden.subproyecto.gastado)
+    
+    costo_total = costo_fletes + costo_oc 
+    resta = compra.req.orden.subproyecto.presupuesto - total_costo_pagado - costo_total
     porcentaje = "{0:.2f}%".format((costo_oc/compra.req.orden.subproyecto.presupuesto)*100)
 
 
@@ -970,6 +1010,42 @@ def autorizar_oc2(request, pk):
     usuario = Profile.objects.get(staff__id=request.user.id)
     compra = Compra.objects.get(id = pk)
     productos = ArticuloComprado.objects.filter(oc=pk)
+    proyecto_id = compra.req.orden.proyecto.id
+    #print('proyecto',proyecto_id)
+    compras_por_sumar = Compra.objects.filter(req__orden__proyecto__id=proyecto_id, complete = True)
+    # Ahora, sumamos los 'costo_oc' para todas las Compras que están bajo el mismo proyecto.
+    total_costo_oc = 0
+    total_costo_autorizado = 0
+    total_costo_pagado = 0
+    # Recorremos cada compra para calcular los totales.
+    for compra in compras_por_sumar:
+        # Ajustamos el costo_oc si la moneda es DOLARES.
+        if compra.moneda:
+            if compra.moneda.nombre == "DOLARES":
+                costo_oc = compra.costo_oc
+                tc = compra.tipo_de_cambio or 17            
+                costo_oc_ajustado = compra.costo_oc * tc
+
+            else:
+                costo_oc_ajustado = compra.costo_oc
+        else:
+            costo_oc_ajustado = compra.costo_oc
+        
+        # Sumamos al total general.
+        total_costo_oc += costo_oc_ajustado
+        
+        # Si la compra está autorizada, la sumamos al total autorizado.
+        if compra.autorizado2:
+            total_costo_autorizado += costo_oc_ajustado
+        
+        # Si la compra está pagada, la sumamos al total pagado.
+        if compra.pagada:
+            total_costo_pagado += costo_oc_ajustado
+
+    # Ahora tenemos los totales calculados.
+    #print('Total costo OC:', total_costo_oc)
+    #print('Total costo OC (autorizado):', total_costo_autorizado)
+    #print('Total costo OC (pagado):', total_costo_pagado)
 
     costo_fletes = 0
     #Si hay tipo de cambio es porque la compra fue en dólares entonces multiplico por tipo de cambio la cantidad
@@ -984,7 +1060,7 @@ def autorizar_oc2(request, pk):
         if compra.costo_fletes:
             costo_fletes = compra.costo_fletes
     costo_total = costo_fletes + costo_oc
-    resta = compra.req.orden.subproyecto.presupuesto - costo_oc - costo_fletes - compra.req.orden.subproyecto.gastado
+    resta = compra.req.orden.subproyecto.presupuesto - total_costo_pagado - costo_total
     porcentaje = "{0:.2f}%".format((costo_oc/compra.req.orden.subproyecto.presupuesto)*100)
 
     if request.method == 'POST':

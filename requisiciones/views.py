@@ -288,6 +288,7 @@ def cancelar_devolucion(request, pk):
                 producto_surtir = ArticulosparaSurtir.objects.get(articulos = producto.producto.articulos)
             producto_surtir.cantidad = producto_surtir.cantidad + producto.cantidad
             producto_surtir.surtir = True
+            producto_surtir.seleccionado = False
             producto_surtir.save()
             #inv_del_producto.save()
         devolucion.autorizada = False
