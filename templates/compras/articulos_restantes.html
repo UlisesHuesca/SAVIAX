@@ -1,4 +1,4 @@
-{% extends 'partials/base_w_nav.html' %}
+{% extends 'partials/base.html' %}
 {% load static %}
 
 <html>
@@ -8,47 +8,96 @@
 
 <body>
 {% block content %}
-
-<div class="modal-dialog modal-lg" role="document">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h5 class="modal-title">Requisicion: {{requis.folio}}</h5>
-            <button class="btn-close" type="button" data-bs-dismiss ="modal" aria-label="Close"></button>
-        </div>
-
-        <div class="modal-body">
-            <div class='box-element-2'>
-            <table class="table table-dark table-striped table-hover mx-2">
-            <thead>
-                <tr>
-                    <th scope="col">#</th>
-                    <th scope="col">Código</th>
-                    <th scope="col">Artículo</th>
-                    <th scope="col">Unidad</th>
-                    <th scope="col">Cantidad Restante</th>
-                    <th>Comentario Usuario</th>
-                </tr>
-            </thead>
-            <tbody id="mytbl">
-                {% for producto in productos %}
-                <tr>
-                    <td scope="col"><img class='row-image' src="{{producto.producto.articulos.producto.producto.imageURL}}"></td>
-                    <td scope="col">{{producto.producto.articulos.producto.producto.codigo}}</td>
-                    <td scope="col">{{producto.producto.articulos.producto.producto.nombre}}</td>
-                    <td scope="col">{{producto.producto.articulos.producto.producto.unidad}}</td>
-                    <td scope="col"><p class='quantity' id='prod_quantity'>{{producto.cantidad}}</p></td>
-                    <td>{% if producto.producto.articulos.comentario %}{{producto.producto.articulos.comentario}} {% endif %}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-            </table>
-          
-            <h6>Comentario Superintendente:   {%if requis.comentario_super%} {{requis.comentario_super}} {%else%} No hay comentario {%endif%}</h6>
-            <h6>Comentario Almacén: {%if requis.comentario_compras %} {{requis.comentario_compras}} {% else %}No hay comentario{% endif %}</h6>
+<h6>&nbsp;</h6>
+<h6>&nbsp;</h6>
+<h6>&nbsp;</h6>
+<div class="row">
+    <div class="col-lg-10 offset-md-1">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="modal-title">Requisicion: {{requis.folio}}</h5>
             </div>
-        </div>
 
-        <div class="modal-footer">
+            <div class="card-body">
+                <div class ="table-responsive-sm">
+                    <table class="table table-ligth table-striped mx-1">
+                        <thead>
+                            <tr>
+                                <th scope="col">Cantidad Restante</th>
+                                <th scope="col">Código</th>
+                                <th scope="col">Artículo</th>
+                                <th>Producto/Serivicio</th>
+                                <th scope="col">Unidad</th>
+                                <th>Comentario Usuario</th>
+                                <th>Especificaciones Técnicas</th>
+                                <th>Criticidad</th>
+                                <th>Requisitos</th>
+                                <th style="text-align: center;">Documental</th>
+                                <th style="text-align: center;">Grado</th>
+                                <th style="text-align: center;">Inspección</th>
+                                <th style="text-align: center;">Grado</th>
+                                <th style="text-align: center;">Cumplimiento</th>
+                                <th style="text-align: center;">Grado</th>
+                            </tr>
+                        </thead>
+                        <tbody id="mytbl">
+                            {% for producto in productos %}
+                            <tr>
+                                <td scope="col"><p class='quantity' id='prod_quantity'>{{producto.cantidad}}</p></td>
+                                <td scope="col">{{producto.producto.articulos.producto.producto.codigo}}</td>
+                                <td scope="col">{{producto.producto.articulos.producto.producto.nombre}}</td>
+                                <td scope="col">{{producto.producto.articulos.producto.producto.unidad}}</td>
+                                <td scope="col">{% if producto.producto.articulos.producto.producto.servicio %} Servicio {% else %} Producto {% endif %}</td>
+                                <td>{{producto.producto.articulos.producto.producto.especs}}</td>
+                                <td>{% if producto.producto.articulos.comentario %}{{producto.producto.articulos.comentario}} {% endif %}</td>
+                                {% if producto.producto.articulos.producto.producto.critico.nombre == "Crítico" %}
+                                <td>
+                                    <button type="button" class="btn btn-danger"><i class="fa-solid fa-q"></i></button>
+                                </td>
+                                <td>
+                                    {{producto.producto.articulos.producto.producto.producto_calidad.requisitos}}
+                                </td>
+                                <td style="text-align: center;">
+                                    {%if producto.producto.articulos.producto.producto.producto_calidad.documental %}
+                                        <div class="alert alert-success" role="alert">
+                                        <i class="fa-regular fa-circle-check"></i>
+                                        </div>
+                                    {% endif %} 
+                                </td>
+                                <td style="text-align: center;">{{producto.producto.articulos.producto.producto.producto_calidad.g_documental}}</td>
+                                <td style="text-align: center;">
+                                    {% if producto.producto.articulos.producto.producto.producto_calidad.inspeccion %}
+                                    <div class="alert alert-success" role="alert">
+                                        <i class="fa-regular fa-circle-check"></i>
+                                    </div>
+                                    {% endif %} 
+                                </td>
+                                <td style="text-align: center;">{{producto.producto.articulos.producto.producto.producto_calidad.g_inspeccion}}</td>
+                                <td style="text-align: center;">
+                                    {% if producto.producto.articulos.producto.producto.producto_calidad.cumplimiento %}
+                                    <div class="alert alert-success" role="alert">
+                                        <i class="fa-regular fa-circle-check"></i>
+                                    </div>
+                                    {% endif %} 
+                                </td>
+                                <td>{{producto.producto.articulos.producto.producto.producto_calidad.g_cumplimiento}}</td>
+                                {% endif %}
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            
+                <h6>Comentario Superintendente:   {%if requis.comentario_super%} {{requis.comentario_super}} {%else%} No hay comentario {%endif%}</h6>
+                <h6>Comentario Almacén: {%if requis.comentario_compras %} {{requis.comentario_compras}} {% else %}No hay comentario{% endif %}</h6>
+            
+            </div>
+
+            <div class="card-footer">
+                <div class="container-fluid text-end">
+                    <a id="myBtn" type="button" class="btn btn-lg btn-outline-info col-lg-3 col-md-12 col-sm-12 col-xs-12" href="{% url 'requisicion-autorizada' %}">Cerrar</a>
+                </div>
+            </div>
         </div>
     </div>
 </div>

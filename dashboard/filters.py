@@ -1,5 +1,5 @@
 import django_filters
-from .models import Product, Proyecto, Subproyecto
+from .models import Product, Proyecto, Subproyecto, Criticidad
 from compras.models import Proveedor
 from django_filters import CharFilter, DateTimeFilter
 
@@ -8,10 +8,11 @@ class ProductFilter(django_filters.FilterSet):
     codigo = CharFilter(field_name='codigo', lookup_expr='icontains')
     familia = CharFilter(field_name='familia__nombre', lookup_expr='icontains')
     subfamilia = CharFilter(field_name='subfamilia__nombre', lookup_expr='icontains')
+    critico = django_filters.ModelChoiceFilter(queryset= Criticidad.objects.all())
 
     class Meta:
         model = Product
-        fields = ['codigo','nombre','familia', 'subfamilia',]
+        fields = ['codigo','nombre','familia', 'subfamilia','critico']
 
 class ProyectoFilter(django_filters.FilterSet):
     id = CharFilter(field_name='id', lookup_expr='icontains')

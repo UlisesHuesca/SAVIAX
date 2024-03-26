@@ -243,9 +243,9 @@ def autorizar_devolucion(request, pk):
                 producto_surtir = ArticulosparaSurtir.objects.get(articulos = producto.producto.articulos)
                 inv_del_producto = Inventario.objects.get(producto = producto_surtir.articulos.producto.producto)
                 inv_del_producto._change_reason = f'Esta es una devolucion desde un surtimiento de inventario {devolucion.id}'
-                
-                entrada = EntradaArticulo.objects.filter(articulo_comprado__producto__producto=producto_surtir, entrada__oc__req__orden=producto_surtir.articulos.orden, agotado = False).first()
-                if entrada is not None:    
+                try:
+                    entrada = EntradaArticulo.objects.get(articulo_comprado__producto__producto=producto_surtir, entrada__oc__req__orden=producto_surtir.articulos.orden, agotado = False)
+                    
                     # Verificar si la cantidad en la entrada es suficiente
                     if entrada.cantidad_por_surtir >= producto.cantidad:
                         print(entrada)
@@ -257,7 +257,7 @@ def autorizar_devolucion(request, pk):
                         entrada.cantidad_por_surtir = 0
                         entrada.agotado = True
                         entrada.save()
-                else:
+                except EntradaArticulo.DoesNotExist:
                     # Manejar el caso en que no hay una entrada asociada (opcional)
                     messages.error(request, 'No se encontró una entrada asociada para el producto.')
                     
@@ -288,6 +288,7 @@ def cancelar_devolucion(request, pk):
                 producto_surtir = ArticulosparaSurtir.objects.get(articulos = producto.producto.articulos)
             producto_surtir.cantidad = producto_surtir.cantidad + producto.cantidad
             producto_surtir.surtir = True
+            producto_surtir.seleccionado = False
             producto_surtir.save()
             #inv_del_producto.save()
         devolucion.autorizada = False

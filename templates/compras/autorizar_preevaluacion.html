@@ -1,0 +1,77 @@
+{% extends 'partials/base_w_nav.html' %}
+{% load crispy_forms_tags %}
+{% load static %}
+{& load humanize %}
+<html>
+<head>
+{% block title %}Autorización Preevaluación{% endblock %}
+</head>
+<body>
+{% block content %}
+<div class="col-lg-8 col-sm-12 offset-lg-2">
+    <div class="card" id="form-wrapper">
+        <div class="card-header"> 
+            <h5>Autorizar Preevaluación: {{preevaluacion.id}}</h5>
+           
+        </div>
+
+        <div class="card-body">
+            <table class='table table-striped'>
+                <thead>
+                    <tr>
+                    <th scope="col"><i class="fa-solid fa-user-gear"></i>Proveedor:</th>
+                    <th scope="col">{{preevaluacion.nombre.razon_social}}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <th scope="col"><i class="fa-solid fa-user"></i> Creado por:</th>
+                    <th scope="col">{{preevaluacion.creado_por.staff.last_name}}</th>
+                </tr>
+                {% if preevaluacion.especs_b %}
+                <tr>
+                    <th scope="col"><i class="fa-solid fa-list-check"></i> Especificaciones:</th>
+                    <th scope="col">{{preevaluacion.especs_ver}}</th>
+                </tr>
+                {% endif %}
+                {% if preevaluacion.precios_b %}
+                <tr>
+                    <th scope="col"><i class="fa-solid fa-dollar-sign"></i> Precios:</th>
+                    <th scope="col">{{preevaluacion.precios_ver}}</th>
+                </tr>
+                {% endif %}
+                {% if preevaluacion.sgc_b %}
+                <tr>
+                    <th scope="col"><i class="fa-solid fa-list-check"></i> Requisitos SGC:</th>
+                    <th scope="col">{{preevaluacion.requisitos_sgc_ver}}</th>
+                </tr>
+                {% endif %}
+                {% if preevaluacion.control_cadena_b %}
+                <tr>
+                    <th scope="col"><i class="fa-solid fa-list-check"></i> Control Cadena Suministro:</th>
+                    <th scope="col">{{preevaluacion.control_cadena_suministro}}</th>
+                </tr>
+                {% endif %}
+                {% if preevaluacion.capacidad_proveedor_b %}
+                <tr>
+                    <th scope="col"><i class="fa-solid fa-route"></i> Capacidad Proveedor:</th>
+                    <th scope="col">{{preevaluacion.capacidad_proveedor}}</th>
+                </tr>
+                {% endif %}
+              
+                </tbody> 
+            </table>
+        </div>   
+        <div class="card-footer">
+            <form method="POST">
+                {% csrf_token %}
+                <button id="approve-btn" name="btn_autorizar" class="btn btn-success" type="submit">Autorizar</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+</body>
+</html>

@@ -1,13 +1,13 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from dashboard.models import Inventario, Order, ArticulosOrdenados, ArticulosparaSurtir
+from dashboard.models import Inventario, Order, ArticulosOrdenados, ArticulosparaSurtir, Producto_Calidad
 from requisiciones.models import Requis, ArticulosRequisitados
 from user.models import Profile
 from tesoreria.models import Pago
 from requisiciones.views import get_image_base64
 from .filters import CompraFilter, ArticulosRequisitadosFilter,  ArticuloCompradoFilter, HistoricalArticuloCompradoFilter
-from .models import ArticuloComprado, Compra, Proveedor_direcciones, Cond_credito, Uso_cfdi, Moneda, Comparativo, Item_Comparativo
+from .models import ArticuloComprado, Compra, Proveedor, Proveedor_direcciones, Cond_credito, Uso_cfdi, Moneda, Comparativo, Item_Comparativo, Preevaluacion
 from tesoreria.models import Facturas
-from .forms import CompraForm, ArticuloCompradoForm, ArticulosRequisitadosForm, ComparativoForm, Item_ComparativoForm, Compra_ComentarioForm
+from .forms import CompraForm, ArticuloCompradoForm, ArticulosRequisitadosForm, ComparativoForm, Item_ComparativoForm, Compra_ComentarioForm, PreevaluacionForm
 from requisiciones.forms import Articulo_Cancelado_Form
 from tesoreria.forms import Facturas_Form
 from entradas.models import Entrada, No_Conformidad
@@ -19,8 +19,8 @@ from datetime import date, datetime, timedelta
 from num2words import num2words
 from django.core.paginator import Paginator
 import decimal
-from django.db.models import F, Avg, Value, ExpressionWrapper, fields, Sum, Q
-from django.db.models.functions import Concat
+from django.db.models import F, Avg, Value, ExpressionWrapper, fields, Sum, Q, Case, When, DecimalField
+from django.db.models.functions import Concat, Coalesce
 from django.conf import settings
 #PDF generator
 import io
@@ -38,13 +38,16 @@ from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, Tabl
 from bs4 import BeautifulSoup
 from django.core.files.base import ContentFile
 import urllib.request, urllib.parse, urllib.error
+from io import BytesIO
 from django.core.mail import EmailMessage, BadHeaderError
 from smtplib import SMTPException
 # Import Excel Stuff
 from django.contrib import messages
-from openpyxl import Workbook
+from openpyxl import Workbook #,save_virtual_workbook
 from openpyxl.styles import NamedStyle, Font, PatternFill
 from openpyxl.utils import get_column_letter
+#from openpyxl.writer.excel import save_virtual_workbook
+#from openpyxl import
 import datetime as dt
 #from urllib.parse import (
 #    ParseResult,
@@ -100,6 +103,7 @@ def productos_pendientes(request):
         'requis':requis,
         'articulos':articulos,
         'myfilter':myfilter,
+        #'productos_calidad': productos_calidad,
         }
 
     return render(request, 'compras/productos_pendientes.html',context)
@@ -471,6 +475,77 @@ def mostrar_comparativo(request, pk):
     return render(request, 'compras/mostrar_comparativo.html',context)
 
 @login_required(login_url='user-login')
+def preevaluaciones(request, pk):
+    proveedor = Proveedor.objects.get(id=pk)
+    preevaluaciones= Preevaluacion.objects.filter(nombre = proveedor, completo = True)
+
+    context = {
+        'proveedor':proveedor,
+        'preevaluaciones':preevaluaciones,
+    }
+
+    return render(request, 'compras/preevaluaciones.html',context)
+
+@login_required(login_url='user-login')
+def preevaluacion(request, pk):
+    usuario = Profile.objects.get(staff__id=request.user.id)
+    proveedor = Proveedor.objects.get(id=pk)
+    preevaluacion, created = Preevaluacion.objects.get_or_create(nombre = proveedor, completo= False)
+    form = PreevaluacionForm(instance = preevaluacion)
+    error_messages = {}
+
+    if request.method == 'POST':
+        form = PreevaluacionForm(request.POST, instance = preevaluacion)
+        if form.is_valid():
+            preevaluacion = form.save(commit=False)
+            preevaluacion.completo = True
+            preevaluacion.creado_por = usuario
+            preevaluacion.modified_at = datetime.now()
+            preevaluacion.save()
+            messages.success(request,f'Has creado la preevaluación con éxito')
+            return redirect('dashboard-proveedores')
+        else:
+            for field, errors in form.errors.items():
+                error_messages[field] = errors.as_text()
+
+    
+    context= {
+        'proveedor': proveedor,
+        'error_messages':error_messages,
+        'form': form,
+        }
+
+    return render(request, 'compras/preevaluacion.html',context)
+
+def autorizacion_preevaluacion(request):
+    preevaluaciones = Preevaluacion.objects.filter(completo = True, resultado = None)
+
+    context = {
+        'preevaluaciones':preevaluaciones,
+    }
+
+    return render(request, 'compras/matriz_autorizacion_preevaluacion.html', context)
+
+def autorizar_preevaluacion(request, pk):
+    preevaluacion = Preevaluacion.objects.get(id = pk)
+
+    if request.method == 'POST' and 'btn_autorizar' in request.POST:
+        preevaluacion.resultado = True
+        preevaluacion.save()
+        messages.success(request,f'La preevaluacion {preevaluacion.id} ha sido autorizada')
+        return redirect('autorizacion-preevaluacion')
+    else:
+        messages.success(request,'Nada')
+
+
+    context = {
+        'preevaluacion':preevaluacion,
+    }
+
+    return render(request, 'compras/autorizar_preevaluacion.html', context)
+
+
+@login_required(login_url='user-login')
 def matriz_oc(request):
     compras = Compra.objects.filter(complete=True)
     myfilter = CompraFilter(request.GET, queryset=compras)
@@ -801,8 +876,44 @@ def autorizar_oc1(request, pk):
     usuario = Profile.objects.get(staff__id=request.user.id)
     compra = Compra.objects.get(id = pk)
     productos = ArticuloComprado.objects.filter(oc=pk)
+    # Esto asume que ya has obtenido una instancia específica de Compra con 'compra = Compra.objects.get(id=pk)'
+    proyecto_id = compra.req.orden.proyecto.id
+    #print('proyecto',proyecto_id)
+    compras_por_sumar = Compra.objects.filter(req__orden__proyecto__id=proyecto_id, complete = True)
+    # Ahora, sumamos los 'costo_oc' para todas las Compras que están bajo el mismo proyecto.
+    total_costo_oc = 0
+    total_costo_autorizado = 0
+    total_costo_pagado = 0
+    # Recorremos cada compra para calcular los totales.
+    for compra in compras_por_sumar:
+        # Ajustamos el costo_oc si la moneda es DOLARES.
+        if compra.moneda:
+            if compra.moneda.nombre == "DOLARES":
+                costo_oc = compra.costo_oc
+                tc = compra.tipo_de_cambio or 17            
+                costo_oc_ajustado = compra.costo_oc * tc
 
-   
+            else:
+                costo_oc_ajustado = compra.costo_oc
+        else:
+            costo_oc_ajustado = compra.costo_oc
+        
+        # Sumamos al total general.
+        total_costo_oc += costo_oc_ajustado
+        
+        # Si la compra está autorizada, la sumamos al total autorizado.
+        if compra.autorizado2:
+            total_costo_autorizado += costo_oc_ajustado
+        
+        # Si la compra está pagada, la sumamos al total pagado.
+        if compra.pagada:
+            total_costo_pagado += costo_oc_ajustado
+
+    # Ahora tenemos los totales calculados.
+    #print('Total costo OC:', total_costo_oc)
+    #print('Total costo OC (autorizado):', total_costo_autorizado)
+    #print('Total costo OC (pagado):', total_costo_pagado)
+
     costo_fletes = 0
     #Si hay tipo de cambio es porque la compra fue en dólares entonces multiplico por tipo de cambio la cantidad
     #Escenario con dólares
@@ -816,8 +927,12 @@ def autorizar_oc1(request, pk):
         costo_oc = compra.costo_oc
         if compra.costo_fletes:
             costo_fletes = compra.costo_fletes
-    costo_total = costo_fletes + costo_oc
-    resta = compra.req.orden.subproyecto.presupuesto - costo_oc - costo_fletes - compra.req.orden.subproyecto.gastado
+
+    print(costo_oc)
+    print(compra.req.orden.subproyecto.gastado)
+    
+    costo_total = costo_fletes + costo_oc 
+    resta = compra.req.orden.subproyecto.presupuesto - total_costo_pagado - costo_total
     porcentaje = "{0:.2f}%".format((costo_oc/compra.req.orden.subproyecto.presupuesto)*100)
 
 
@@ -895,6 +1010,42 @@ def autorizar_oc2(request, pk):
     usuario = Profile.objects.get(staff__id=request.user.id)
     compra = Compra.objects.get(id = pk)
     productos = ArticuloComprado.objects.filter(oc=pk)
+    proyecto_id = compra.req.orden.proyecto.id
+    #print('proyecto',proyecto_id)
+    compras_por_sumar = Compra.objects.filter(req__orden__proyecto__id=proyecto_id, complete = True)
+    # Ahora, sumamos los 'costo_oc' para todas las Compras que están bajo el mismo proyecto.
+    total_costo_oc = 0
+    total_costo_autorizado = 0
+    total_costo_pagado = 0
+    # Recorremos cada compra para calcular los totales.
+    for compra in compras_por_sumar:
+        # Ajustamos el costo_oc si la moneda es DOLARES.
+        if compra.moneda:
+            if compra.moneda.nombre == "DOLARES":
+                costo_oc = compra.costo_oc
+                tc = compra.tipo_de_cambio or 17            
+                costo_oc_ajustado = compra.costo_oc * tc
+
+            else:
+                costo_oc_ajustado = compra.costo_oc
+        else:
+            costo_oc_ajustado = compra.costo_oc
+        
+        # Sumamos al total general.
+        total_costo_oc += costo_oc_ajustado
+        
+        # Si la compra está autorizada, la sumamos al total autorizado.
+        if compra.autorizado2:
+            total_costo_autorizado += costo_oc_ajustado
+        
+        # Si la compra está pagada, la sumamos al total pagado.
+        if compra.pagada:
+            total_costo_pagado += costo_oc_ajustado
+
+    # Ahora tenemos los totales calculados.
+    #print('Total costo OC:', total_costo_oc)
+    #print('Total costo OC (autorizado):', total_costo_autorizado)
+    #print('Total costo OC (pagado):', total_costo_pagado)
 
     costo_fletes = 0
     #Si hay tipo de cambio es porque la compra fue en dólares entonces multiplico por tipo de cambio la cantidad
@@ -909,7 +1060,7 @@ def autorizar_oc2(request, pk):
         if compra.costo_fletes:
             costo_fletes = compra.costo_fletes
     costo_total = costo_fletes + costo_oc
-    resta = compra.req.orden.subproyecto.presupuesto - costo_oc - costo_fletes - compra.req.orden.subproyecto.gastado
+    resta = compra.req.orden.subproyecto.presupuesto - total_costo_pagado - costo_total
     porcentaje = "{0:.2f}%".format((costo_oc/compra.req.orden.subproyecto.presupuesto)*100)
 
     if request.method == 'POST':
@@ -1217,118 +1368,137 @@ def generar_pdf(compra):
 
 
 
-    c.drawString(420,caja_iso,'Preparado por:')
-    c.drawString(420,caja_iso-10,'SUP. ADMON')
-    c.drawString(520,caja_iso,'Aprobación')
-    c.drawString(520,caja_iso-10,'SUB ADM')
-    c.drawString(150,caja_iso-20,'Número de documento')
-    c.drawString(160,caja_iso-30,'F-ADQ-N4-01.02')
-    c.drawString(245,caja_iso-20,'Clasificación del documento')
-    c.drawString(275,caja_iso-30,'Controlado')
-    c.drawString(355,caja_iso-20,'Nivel del documento')
-    c.drawString(380,caja_iso-30, 'N5')
-    c.drawString(440,caja_iso-20,'Revisión No.')
-    c.drawString(452,caja_iso-30,'000')
-    c.drawString(510,caja_iso-20,'Fecha de Emisión')
-    c.drawString(525,caja_iso-30,'1-Sep.-18')
+    c.drawString(410,caja_iso + 10,'Preparado por:')
+    c.drawString(410,caja_iso,'Adquisiciones')
+    c.drawString(500,caja_iso + 10,'Aprobación')
+    c.drawString(475,caja_iso,'Subdirección Administrativa')
+    c.drawString(20,caja_iso-20,'Número de documento')
+    c.drawString(30,caja_iso-30,'F-ADQ-N4-01.02')
+    c.drawString(145,caja_iso-20,'Clasificación del documento')
+    c.drawString(175,caja_iso-30,'Registro')
+    c.drawString(255,caja_iso-20,'Nivel del documento')
+    c.drawString(280,caja_iso-30, 'N5')
+    c.drawString(340,caja_iso-20,'Revisión No.')
+    c.drawString(352,caja_iso-30,'001')
+    c.drawString(410,caja_iso-20,'Fecha de Emisión')
+    c.drawString(425,caja_iso-30,'')
+    c.drawString(500,caja_iso-20,'Fecha de Modificación')
+    c.drawString(525,caja_iso-30,'')
 
-    caja_proveedor = caja_iso - 65
+    caja_proveedor = caja_iso - 50
     c.setFont('Helvetica',12)
     c.setFillColor(prussian_blue)
     # REC (Dist del eje Y, Dist del eje X, LARGO DEL RECT, ANCHO DEL RECT)
-    c.rect(150,750,250,20, fill=True, stroke=False) #Barra azul superior Orden de Compra
-    c.rect(20,caja_proveedor - 8,565,20, fill=True, stroke=False) #Barra azul superior Proveedor | Detalle
-    c.rect(20,520,565,2, fill=True, stroke=False) #Linea posterior horizontal
+    c.rect(150,750,250,30, fill=True, stroke=False) #Barra azul superior Orden de Compra
+    c.rect(20,caja_proveedor,565,10, fill=True, stroke=False) #Barra azul superior Proveedor | Detalle
+    c.rect(20,570,565,2, fill=True, stroke=False) #Linea posterior horizontal
     c.setFillColor(white)
     c.setLineWidth(.2)
     c.setFont('Helvetica-Bold',14)
-    c.drawCentredString(280,755,'Orden de compra')
+    c.drawCentredString(280,760,'Orden de compra')
     c.setLineWidth(.3) #Grosor
-    c.line(20,caja_proveedor-8,20,520) #Eje Y donde empieza, Eje X donde empieza, donde termina eje y,donde termina eje x (LINEA 1 contorno)
-    c.line(585,caja_proveedor-8,585,520) #Linea 2 contorno
-    c.drawInlineImage('static/images/logo vordtec_documento.png',45,730, 3 * cm, 1.5 * cm) #Imagen vortec
+    c.line(20,caja_proveedor,20,570) #Eje Y donde empieza, Eje X donde empieza, donde termina eje y,donde termina eje x (LINEA 1 contorno)
+    c.line(585,caja_proveedor,585,570) #Linea 2 contorno
+    c.drawInlineImage('static/images/logo vordtec_documento.png',40,755, 1.5 * cm, 0.75 * cm) #Imagen vortec
 
     c.setFillColor(white)
-    c.setFont('Helvetica-Bold',11)
-    c.drawString(120,caja_proveedor,'Proveedor')
-    c.drawString(400,caja_proveedor, 'Detalles')
+    c.setFont('Helvetica-Bold',9)
+    c.drawString(120,caja_proveedor+1,'Autorización')
+    c.drawString(400,caja_proveedor+1, 'Datos de Proveedor')
     inicio_central = 300
-    c.line(inicio_central,caja_proveedor-25,inicio_central,520) #Linea Central de caja Proveedor | Detalle
+    c.line(inicio_central,caja_proveedor,inicio_central,570) #Linea Central de caja Proveedor | Detalle
     c.setFillColor(black)
-    c.setFont('Helvetica',9)
-    c.drawString(30,caja_proveedor-20,'Nombre:')
-    c.drawString(30,caja_proveedor-40,'RFC:')
-    c.drawString(30,caja_proveedor-60,'Uso del CFDI:')
-    c.drawString(30,caja_proveedor-80,'Solicitó:')
-    c.drawString(30,caja_proveedor-100,'Fecha:')
-    c.drawString(30,caja_proveedor-120,'Proveedor Calif:')
-    c.drawString(30,caja_proveedor-140,'Tiempo de Entrega:')
+    c.setFont('Helvetica',8)
+    c.drawRightString(130,caja_proveedor-10,'Folio de solicitud:')
+    c.drawRightString(130,caja_proveedor-20,'Folio de Requisición:')
+    c.drawRightString(130,caja_proveedor-30,'Folio de orden de compra:')
+    c.drawRightString(130,caja_proveedor-40,'Proyecto/Orden de Trabajo:')
+    c.drawRightString(130,caja_proveedor-50,'Subproyecto:')
+    c.drawRightString(130,caja_proveedor-60,'Elaboró:')
+    c.drawRightString(130,caja_proveedor-70,'Autorizó:')
+    c.drawRightString(130,caja_proveedor-80,'Fecha:')
 
-    c.setFont('Helvetica-Bold',12)
-    c.drawString(500,caja_proveedor-20,'FOLIO:')
-
-    c.setFillColor(rojo)
-    c.setFont('Helvetica-Bold',12)
-    c.drawString(540,caja_proveedor-20, compra.get_folio)
-
-    c.setFillColor(black)
-    c.setFont('Helvetica',9)
-    c.drawString(inicio_central + 10,caja_proveedor-35,'No. Requisición:')
-    c.drawString(inicio_central + 10,caja_proveedor-55,'Método de pago:')
-    c.drawString(inicio_central + 10,caja_proveedor-75,'Condiciones de pago:')
-    c.drawString(inicio_central + 10,caja_proveedor-95,'Enviar Factura a:')
-    c.drawString(inicio_central + 10,caja_proveedor-115,'Banco:')
-    c.drawString(inicio_central + 10,caja_proveedor-135,'Cuenta:')
-    c.drawString(inicio_central + 10,caja_proveedor-155,'Clabe:')
+    c.drawString(135,caja_proveedor-10, compra.req.orden.folio)
+    c.drawString(135,caja_proveedor-20, compra.req.folio)
+    c.drawString(135,caja_proveedor-30, compra.get_folio) #podría ser folio también
+    c.drawString(135,caja_proveedor-40, compra.req.orden.proyecto.nombre)
+    c.drawString(135,caja_proveedor-50, compra.req.orden.subproyecto.nombre)
+    c.drawString(135,caja_proveedor-60, compra.req.orden.staff.staff.first_name+' '+compra.req.orden.staff.staff.last_name)
+    if compra.oc_autorizada_por2:
+        c.drawString(135,caja_proveedor-70, compra.oc_autorizada_por2.staff.first_name+' '+ compra.oc_autorizada_por2.staff.last_name)
+    c.drawString(135,caja_proveedor-80, str(compra.autorizado_date2))
 
     c.setFillColor(black)
-    c.setFont('Helvetica',9)
-    if compra.proveedor.nombre.razon_social == 'COLABORADOR':
-        c.drawString(100,caja_proveedor-20, compra.deposito_comprador.staff.first_name+' '+compra.deposito_comprador.staff.last_name)
-    else:
-        c.drawString(100,caja_proveedor-20, compra.proveedor.nombre.razon_social)
-    c.drawString(100,caja_proveedor-40, compra.proveedor.nombre.rfc)
-    c.drawString(100,caja_proveedor-60, compra.uso_del_cfdi.descripcion)
-    c.drawString(100,caja_proveedor-80, compra.req.orden.staff.staff.first_name +' '+ compra.req.orden.staff.staff.last_name)
-    c.drawString(100,caja_proveedor-100, compra.created_at.strftime("%d/%m/%Y"))
-    c.drawString(100,caja_proveedor-120, compra.proveedor.estatus.nombre)
-    if compra.dias_de_entrega:
-        c.drawString(110,caja_proveedor-140, str(compra.dias_de_entrega)+' '+'días hábiles')
+    c.setFont('Helvetica',8)
+    c.drawRightString(inicio_central + 110,caja_proveedor-10,'Nombre:')
+    c.drawRightString(inicio_central + 110,caja_proveedor-20,'RFC:')
+    c.drawRightString(inicio_central + 110,caja_proveedor-30,'Número de Cuenta Bancaria:')
+    c.drawRightString(inicio_central + 110,caja_proveedor-40,'Nombre del Banco:')
+    c.drawRightString(inicio_central + 110,caja_proveedor-50,'CLABE:')
+    c.drawRightString(inicio_central + 110,caja_proveedor-60,'SWIFT:')
+    c.drawRightString(inicio_central + 110,caja_proveedor-70,'Estatus:')
+
+    c.drawString(inicio_central + 115,caja_proveedor-10, compra.proveedor.nombre.razon_social)
+    c.drawString(inicio_central + 115,caja_proveedor-20, compra.proveedor.nombre.rfc)
+    c.drawString(inicio_central + 115,caja_proveedor-30, compra.proveedor.cuenta)
+    c.drawString(inicio_central + 115,caja_proveedor-40, compra.proveedor.banco.nombre)
+    c.drawString(inicio_central + 115,caja_proveedor-50, compra.proveedor.clabe)
+    if compra.proveedor.swift:
+        c.drawString(inicio_central + 115,caja_proveedor-60, compra.proveedor.swift)
+    c.drawString(inicio_central + 115,caja_proveedor-70, compra.proveedor.estatus.nombre)
+
+    c.setFont('Helvetica',12)
+    c.setFillColor(prussian_blue)
+    c.rect(20,caja_proveedor-90,565,10, fill=True, stroke=False)
+
+    c.setFillColor(white)
+    c.setFont('Helvetica-Bold',9)
+    c.drawString(90,caja_proveedor-89,'Condiciones Comerciales')
+    c.drawString(370,caja_proveedor-89, 'Datos de Facturación')
+
+    c.setFillColor(black)
+    c.setFont('Helvetica',8)
+    c.drawRightString(130,caja_proveedor-100,'Tiempo de entrega:')
+    c.drawRightString(130,caja_proveedor-110,'Política de Garantía:')
+    c.drawRightString(130,caja_proveedor-120,'Condición de pago:')
+    c.drawRightString(130,caja_proveedor-130,'Vigencia de cotización:')
+
+    
+    c.drawString(135,caja_proveedor-100, str(compra.dias_de_entrega))
+    #c.drawString(135,caja_proveedor-110, compra.uso_del_cfdi.descripcion)
+    c.drawString(135,caja_proveedor-120, compra.cond_de_pago.nombre )
+    #c.drawString(135,caja_proveedor-130, compra.uso_del_cfdi.descripcion)
 
 
-
-    c.drawString(inicio_central + 90,caja_proveedor-35, str(compra.req.id))
-    c.drawString(inicio_central + 90,caja_proveedor-95, 'tesoreria.planta@vordtec.com')
-    if compra.proveedor.nombre.razon_social == 'COLABORADOR':
-        c.drawString(inicio_central + 90,caja_proveedor-115, compra.deposito_comprador.banco.nombre)
-        c.drawString(inicio_central + 90,caja_proveedor-135, compra.deposito_comprador.cuenta_bancaria)
-        c.drawString(inicio_central + 90,caja_proveedor-155, compra.deposito_comprador.clabe)
-    else:
-        c.drawString(inicio_central + 90,caja_proveedor-115, compra.proveedor.banco.nombre)
-        c.drawString(inicio_central + 90,caja_proveedor-135, compra.proveedor.cuenta)
-        c.drawString(inicio_central + 90,caja_proveedor-155, compra.proveedor.clabe)
-
-
-
-
-    if compra.cond_de_pago.nombre == "CREDITO":
-        c.drawString(inicio_central + 90,caja_proveedor-55, compra.cond_de_pago.nombre + '  ' + str(compra.dias_de_credito) + 'días')
-    else:
-        c.drawString(inicio_central + 90,caja_proveedor-55, compra.cond_de_pago.nombre )
-
+    c.drawRightString(inicio_central + 110,caja_proveedor-100,'Moneda:')
+    c.drawRightString(inicio_central + 110,caja_proveedor-110,'Uso del CFDI:')
+    c.drawRightString(inicio_central + 110,caja_proveedor-120,'Enviar factura al correo:')
+    c.drawRightString(inicio_central + 110,caja_proveedor-130,'Regimen Fiscal:')
+   
+    c.drawString(inicio_central + 115,caja_proveedor-100, compra.moneda.nombre)
+    c.drawString(inicio_central + 115,caja_proveedor-110, compra.uso_del_cfdi.descripcion)
+    c.drawString(inicio_central + 115,caja_proveedor-120, compra.creada_por.staff.email)
+    c.drawString(inicio_central + 115,caja_proveedor-130, '601 - General de Ley Personas Morales')
 
     data =[]
-    high = 495
-    data.append(['''Código''','''Producto''', '''Cantidad''', '''Unidad''', '''P.Unitario''', '''Importe'''])
+    data_c = []
+    high = 530
+    item = 0
+    
+    data.append(['''Partida''','''Código''','''Descripción General''', '''Cantidad''', '''Unidad''', '''P.Unitario''', '''Descuento''', '''Importe'''])
+   
     for producto in productos:
+        item = item + 1
         importe = producto.precio_unitario * producto.cantidad
         importe_rounded = round(importe, 4)
         data.append([
+            item,
             producto.producto.producto.articulos.producto.producto.codigo,
             producto.producto.producto.articulos.producto.producto.nombre,
             producto.cantidad, 
             producto.producto.producto.articulos.producto.producto.unidad,
             producto.precio_unitario,
+            '',
             importe_rounded
         ])
         high = high - 18
@@ -1338,28 +1508,19 @@ def generar_pdf(compra):
 
     c.setFillColor(prussian_blue)
     # REC (Dist del eje Y, Dist del eje X, LARGO DEL RECT, ANCHO DEL RECT)
-    c.rect(20,200,340,20, fill=True, stroke=False) #2ra linea azul, donde esta el proyecto y el subproyecto, se coloca altura de 150
+    c.rect(20,210,390,10, fill=True, stroke=False) #2ra linea azul, donde esta el proyecto y el subproyecto, se coloca altura de 150
     c.setFillColor(black)
-    c.setFont('Helvetica',7)
-
     c.setFillColor(white)
     c.setLineWidth(.1)
     c.setFont('Helvetica-Bold',10)
-    c.drawString(25,205,'Proyecto')
-    c.drawString(100,205,compra.req.orden.proyecto.nombre)
-    c.setFillColor(black)
-    c.drawString(25,190,'Subproyecto')
-    c.drawString(25,175,'Elaboró')
-    c.drawString(25,160,'Moneda')
-    c.setFont('Helvetica',8)
+    c.drawString(200,211,'Total con letra')
 
-    c.drawString(100,190,compra.req.orden.subproyecto.nombre)
-    c.drawString(100,175,compra.creada_por.staff.first_name + ' ' +compra.creada_por.staff.last_name)
-    c.drawString(100,160,compra.moneda.nombre)
+   
 
+    
     c.setLineWidth(.3)
-    c.line(370,220,370,160) #Eje Y donde empieza, Eje X donde empieza, donde termina eje y,donde termina eje x (LINEA 1 contorno)
-    c.line(370,160,580,160)
+    c.line(410,220,410,160) #Eje Y donde empieza, Eje X donde empieza, donde termina eje y,donde termina eje x (LINEA 1 contorno)
+    c.line(410,160,580,160)
 
     c.setFillColor(black)
     c.setFont('Helvetica-Bold',9)
@@ -1374,7 +1535,7 @@ def generar_pdf(compra):
     c.drawString(20,130,'Opciones y condiciones:')
     c.setFont('Helvetica',8)
     letras = 320
-    c.drawString(20,140,'Total con letra:')
+    #c.drawString(20,140,'Total con letra:')
     #c.line(135,90,215,90 ) #Linea de Autorizacion
     #c.line(350,90,430,90)
     c.drawCentredString(175,70,'Autorización')
@@ -1417,9 +1578,9 @@ def generar_pdf(compra):
 
 
     if compra.moneda.nombre == "PESOS":
-        c.drawString(80,140, num2words(compra.costo_plus_adicionales, lang='es', to='currency', currency='MXN'))
+        c.drawString(40,201, num2words(compra.costo_plus_adicionales, lang='es', to='currency', currency='MXN'))
     if compra.moneda.nombre == "DOLARES":
-        c.drawString(80,140, num2words(compra.costo_plus_adicionales, lang='es', to='currency',currency='USD'))
+        c.drawString(40,201, num2words(compra.costo_plus_adicionales, lang='es', to='currency',currency='USD'))
 
     c.setFillColor(black)
     width, height = letter
@@ -1444,14 +1605,14 @@ def generar_pdf(compra):
     c.setFillColor(white)
 
     
-    table = Table(data, colWidths=[1.2 * cm, 13 * cm, 1.5 * cm, 1.2 * cm, 1.5 * cm, 1.5 * cm,])
+    table = Table(data, colWidths=[1 * cm, 1.2 * cm, 10 * cm, 1.5 * cm, 1.2 * cm, 1.5 * cm,1.5 * cm, 1.5 * cm,])
     table_style = TableStyle([ #estilos de la tabla
         ('INNERGRID',(0,0),(-1,-1), 0.25, colors.white),
         ('BOX',(0,0),(-1,-1), 0.25, colors.black),
         ('VALIGN',(0,0),(-1,-1),'MIDDLE'),
         #ENCABEZADO
         ('TEXTCOLOR',(0,0),(-1,0), white),
-        ('FONTSIZE',(0,0),(-1,0), 8),
+        ('FONTSIZE',(0,0),(-1,0), 7),
         ('BACKGROUND',(0,0),(-1,0), prussian_blue),
         #CUERPO
         ('TEXTCOLOR',(0,1),(-1,-1), colors.black),
@@ -1471,13 +1632,12 @@ def generar_pdf(compra):
         ])
     table.setStyle(table_style)
 
+  
+
     rows_per_page = 15
     total_rows = len(data) - 1  # Excluye el encabezado
     remaining_rows = total_rows - rows_per_page
 
-
-  
-   
      
     if remaining_rows <= 0:
         # Si no hay suficientes filas para una segunda página, dibujar la tabla completa en la primera página
@@ -1486,7 +1646,7 @@ def generar_pdf(compra):
     else:
         # Dibujar las primeras 15 filas en la primera página
         first_page_data = data[:rows_per_page + 1]  # Incluye el encabezado
-        first_page_table = Table(first_page_data, colWidths=[1.2 * cm, 13 * cm, 1.5 * cm, 1.2 * cm, 1.5 * cm, 1.5 * cm])
+        first_page_table = Table(first_page_data, colWidths=[1 * cm, 1.2 * cm, 10 * cm, 1.5 * cm, 1.2 * cm, 1.5 * cm,1.5 * cm, 1.5 * cm,])
         first_page_table.setStyle(table_style)
         first_page_table.wrapOn(c, c._pagesize[0], c._pagesize[1])
         #adjusted_high = c._pagesize[1] - h - 36  # 70 puede ser un margen superior que desees mantener
@@ -1495,39 +1655,112 @@ def generar_pdf(compra):
         # Agregar una nueva página y dibujar las filas restantes en la segunda página
         c.showPage()
         remaining_data = data[rows_per_page + 1:]
-        remaining_table = Table(remaining_data, colWidths=[1.2 * cm, 13 * cm, 1.5 * cm, 1.2 * cm, 1.5 * cm, 1.5 * cm])
+        remaining_table = Table(remaining_data, colWidths=[1 * cm, 1.2 * cm, 10 * cm, 1.5 * cm, 1.2 * cm, 1.5 * cm,1.5 * cm, 1.5 * cm,])
         remaining_table.setStyle(table_style2)
         remaining_table.wrapOn(c, c._pagesize[0], c._pagesize[1])
         remaining_table_height = len(remaining_data) * 18
         remaining_table_y = c._pagesize[1] - 70 - remaining_table_height - 10  # Espacio para el encabezado
         remaining_table.drawOn(c, 20, remaining_table_y)  # Posición en la segunda página
-
+        
+        c.setFillColor(black)
+        c.setLineWidth(.2)
+        c.setFont('Helvetica',8)
         # Agregar el encabezado en la segunda página
-        c.setFont('Helvetica', 8)
-        c.drawString(420, caja_iso, 'Preparado por:')
-        c.drawString(420, caja_iso - 10, 'SUP. ADMON')
-        c.drawString(520, caja_iso, 'Aprobación')
-        c.drawString(520, caja_iso - 10, 'SUB ADM')
-        c.drawString(150, caja_iso - 20, 'Número de documento')
-        c.drawString(160, caja_iso - 30, 'F-ADQ-N4-01.02')
-        c.drawString(245, caja_iso - 20, 'Clasificación del documento')
-        c.drawString(275, caja_iso - 30, 'Controlado')
-        c.drawString(355, caja_iso - 20, 'Nivel del documento')
-        c.drawString(380, caja_iso - 30, 'N5')
-        c.drawString(440, caja_iso - 20, 'Revisión No.')
-        c.drawString(452, caja_iso - 30, '000')
-        c.drawString(510, caja_iso - 20, 'Fecha de Emisión')
-        c.drawString(525, caja_iso - 30, '1-Sep.-18')
+        c.drawString(410,caja_iso + 10,'Preparado por:')
+        c.drawString(410,caja_iso,'Adquisiciones')
+        c.drawString(500,caja_iso + 10,'Aprobación')
+        c.drawString(475,caja_iso,'Subdirección Administrativa')
+        c.drawString(20,caja_iso-20,'Número de documento')
+        c.drawString(30,caja_iso-30,'F-ADQ-N4-01.02')
+        c.drawString(145,caja_iso-20,'Clasificación del documento')
+        c.drawString(175,caja_iso-30,'Registro')
+        c.drawString(255,caja_iso-20,'Nivel del documento')
+        c.drawString(280,caja_iso-30, 'N5')
+        c.drawString(340,caja_iso-20,'Revisión No.')
+        c.drawString(352,caja_iso-30,'001')
+        c.drawString(410,caja_iso-20,'Fecha de Emisión')
+        c.drawString(425,caja_iso-30,'')
+        c.drawString(500,caja_iso-20,'Fecha de Modificación')
+        c.drawString(525,caja_iso-30,'')
 
         caja_proveedor = caja_iso - 65
         c.setFont('Helvetica', 12)
         c.setFillColor(prussian_blue)
-        c.rect(150, 750, 250, 20, fill=True, stroke=False)  # Barra azul superior Orden de Compra
+        c.rect(150,750,250,30, fill=True, stroke=False) #Barra azul superior Orden de Compra
         c.setFillColor(colors.white)
         c.setFont('Helvetica-Bold', 14)
-        c.drawCentredString(280, 755, 'Orden de compra')
-        c.drawInlineImage('static/images/logo vordtec_documento.png', 45, 730, 3 * cm, 1.5 * cm)  # Imagen vortec
+        c.drawCentredString(280, 760, 'Orden de compra')
+        c.drawInlineImage('static/images/logo vordtec_documento.png',40,755, 1.5 * cm, 0.75 * cm) #Imagen vortec
+    
+    high = 700
+    data_c.append(['''Partida''','''Cantidad''','''Código''','''Producto/Servicio''','''Criticidad''','''Descripción General''','''Especificaciones Técnicas''','''Criterios de aceptación'''])
+    item = 0
+    for producto in productos:
+        item = item + 1
+        try:
+            producto_calidad = str(producto.producto.articulos.producto.producto.producto_calidad.requisitos)
+        except AttributeError:
+            producto_calidad = None
+        data_c.append([
+            item,
+            producto.cantidad, 
+            producto.producto.producto.articulos.producto.producto.codigo,
+            'Servicio' if producto.producto.producto.articulos.producto.producto.servicio else 'Producto',
+            producto.producto.producto.articulos.producto.producto.critico.nombre if producto.producto.producto.articulos.producto.producto.critico else 'ND',
+            producto.producto.producto.articulos.producto.producto.nombre,
+            producto.producto.producto.articulos.producto.producto.especs,
+            producto_calidad,
+            #producto.producto.articulos.producto.producto.producto_calidad.requisitos,
+        ])
+        high = high - 18
+    table = Table(data_c, colWidths=[1.2 * cm, 1.5 * cm, 1.2 * cm, 2.2 * cm, 1.5 * cm, 4.2 * cm, 4.2 * cm, 4.2 * cm,])
+    table_style_criticos = TableStyle([ #estilos de la tabla
+        ('INNERGRID',(0,0),(-1,-1), 0.25, colors.white),
+        ('BOX',(0,0),(-1,-1), 0.25, colors.black),
+        ('VALIGN',(0,0),(-1,-1),'MIDDLE'),
+        #ENCABEZADO
+        ('TEXTCOLOR',(0,0),(-1,0), white),
+        ('FONTSIZE',(0,0),(-1,0), 7),
+        ('BACKGROUND',(0,0),(-1,0), prussian_blue),
+        #CUERPO
+        ('TEXTCOLOR',(0,1),(-1,-1), colors.black),
+        ('FONTSIZE',(0,1),(-1,-1), 6),
+        ])
+    table.setStyle(table_style_criticos)
 
+    c.showPage()
+    table.wrapOn(c, width, height)
+    table.drawOn(c, 20, high) 
+    c.setFillColor(black)
+    c.setLineWidth(.2)
+    c.setFont('Helvetica',8)
+    c.drawString(410,caja_iso + 10,'Preparado por:')
+    c.drawString(410,caja_iso,'Adquisiciones')
+    c.drawString(500,caja_iso + 10,'Aprobación')
+    c.drawString(475,caja_iso,'Subdirección Administrativa')
+    c.drawString(20,caja_iso-20,'Número de documento')
+    c.drawString(30,caja_iso-30,'F-ADQ-N4-01.02')
+    c.drawString(145,caja_iso-20,'Clasificación del documento')
+    c.drawString(175,caja_iso-30,'Registro')
+    c.drawString(255,caja_iso-20,'Nivel del documento')
+    c.drawString(280,caja_iso-30, 'N5')
+    c.drawString(340,caja_iso-20,'Revisión No.')
+    c.drawString(352,caja_iso-30,'001')
+    c.drawString(410,caja_iso-20,'Fecha de Emisión')
+    c.drawString(425,caja_iso-30,'')
+    c.drawString(500,caja_iso-20,'Fecha de Modificación')
+    c.drawString(525,caja_iso-30,'')
+
+    caja_proveedor = caja_iso - 65
+    c.setFont('Helvetica', 12)
+    c.setFillColor(prussian_blue)
+    c.rect(150,750,250,30, fill=True, stroke=False) #Barra azul superior Orden de Compra
+    c.setFillColor(colors.white)
+    c.setFont('Helvetica-Bold', 14)
+    c.drawCentredString(280, 760, 'Orden de compra')
+    c.drawInlineImage('static/images/logo vordtec_documento.png',40,755, 1.5 * cm, 0.75 * cm) #Imagen vortec
+    c.showPage()
+    
     c.save()
     buf.seek(0)
     return buf
@@ -1535,7 +1768,7 @@ def generar_pdf(compra):
 
 def convert_excel_matriz_compras(compras):
     response= HttpResponse(content_type = "application/ms-excel")
-    response['Content-Disposition'] = 'attachment; filename = Matriz_compras_' + str(dt.date.today())+'.xlsx'
+    response['Content-Disposition'] = 'attachment; filename= Matriz_compras_' + str(dt.date.today())+'.xlsx'
     wb = Workbook()
     ws = wb.create_sheet(title='Solicitudes')
     #Comenzar en la fila 1

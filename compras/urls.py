@@ -33,6 +33,10 @@ urlpatterns = [
     path('compras/historico_articulos_compras', views.historico_articulos_compras, name='historico-articulos-compras'),
     path('compras/mostrar_comparativo/<int:pk>', views.mostrar_comparativo, name='mostrar-comparativo'),
     path('editar_comparativo/<int:pk>/', views.editar_comparativo, name='editar-comparativo'),
+    path('compras/preevaluacion/<int:pk>', views.preevaluacion, name='preevaluacion'),
+    path('compras/preevaluaciones/<int:pk>', views.preevaluaciones, name='preevaluaciones'),
+    path('compras/autorizacion_preevaluaciones', views.autorizacion_preevaluacion, name='autorizacion-preevaluacion'),
+    path('compras/autorizar_preevaluacion/<int:pk>', views.autorizar_preevaluacion, name='autorizar-preevaluacion'),
     ]
 
 if settings.DEBUG:

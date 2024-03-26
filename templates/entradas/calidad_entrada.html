@@ -1,4 +1,4 @@
-{% extends 'partials/base_w_nav.html' %}
+{% extends 'partials/base.html' %}
 {% load static %}
 {% load widget_tweaks %}
 {% load crispy_forms_tags %}
@@ -34,40 +34,77 @@
         {% endif %}
     </div>
 </div>
-<div class="modal-dialog-lg" role="document">
-    <form  hx-post="{{request.path}}" class="modal-content">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h5 class="modal-title">Reporte Calidad</h5>
-            <button class="btn-close cerrar" type="button" id="cerrar1" data-bs-dismiss="modal" aria-label="Close"></button>
-        </div>
-        <div class="modal-body" style="color:white">
-            <div>
-                {% csrf_token %}
-                    <label for="form.producto" class="col-auto col-form-label my-1"><strong>Producto:</strong></label>
+<h6>&nbsp;</h6>
+<h6>&nbsp;</h6>
+<div class="container">
+    <div class="row">
+        <div class="col-md-6 offset-md-3">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="modal-title">Reporte Calidad</h5>
+                </div>
+            <form method="POST" id='ProductForm' enctype='multipart/form-data'></form>
+                <div class="card-body">
+                    {% csrf_token %}
+                    <div class="alert alert-secondary" role="alert">
+                       <strong>Producto:</strong> {% if articulo_entrada.articulo_comprado.producto.producto.articulos.producto.producto.critico %} <button type="button" class="btn btn-danger"><i class="fa-solid fa-q"></i></button>{% endif %} {{articulo_entrada.articulo_comprado.producto.producto.articulos.producto.producto.nombre}}
+                    </div>
+                    <div class="alert alert-secondary" role="alert">
+                        <strong>Especificaciones:</strong> {% if producto_calidad.especs %} {{producto_calidad.especs}} {%endif %} 
+                     </div>
+                     <div class="alert alert-secondary" role="alert">
+                        <strong>Documentación:</strong> {% if producto_calidad.documentacion %} {{producto_calidad.documentacion}} {%endif %} 
+                     </div>
+                     <div class="alert alert-secondary" role="alert">
+                        <strong>Entradas restantes:</strong>&nbsp; {{restantes_liberacion}}
+                     </div>
                     <div class="col-8">
-                        <label>{{articulo_entrada.articulo_comprado.producto.producto.articulos.producto.producto.nombre}}</label>
+                        <label></label>
                     </div>
-                    <label for="form.cantidad" class="col-auto col-form-label my-1"><strong>Cantidad:(Entradas:{{restantes_liberacion}})</strong></label>
-                    <div class="col-4">
-                        {{ form.cantidad|add_class:"form-control"}}
+                    <div class="row my-2">
+                        <div class="col-12">
+                            <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1"><i class="fa-solid fa-hashtag"></i></span>
+                                <div class="form-floating form-floating-group flex-grow-1">   
+                                    {{form.cantidad|add_class:"form-control"|append_attr:"placeholder= Cantidad"}}
+                                    <label style="color: #121212;" for="id_area">Cantidad*</label>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <label for="form.cantidad" class="col-auto col-form-label my-1"><strong>Comentarios:</strong></label>
-                    <div class="col-4">
-                        {{ form.comentarios|add_class:"form-control"}}
+                    <div class="row my-2">
+                        <div class="col-12">
+                            <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1"><i class="fa-solid fa-comment"></i></span>
+                                <div class="form-floating form-floating-group flex-grow-1">   
+                                    {{form.comentarios|add_class:"form-control"|append_attr:"placeholder= Comentarios"}}
+                                    <label style="color: #121212;" for="id_area">Comentarios*</label>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <label for="form.price_2" class="col-auto col-form-label my-1"><strong>Liberado:</strong></label>
-                    <div class="col-4">
-                        {{ form.autorizado|add_class:"form-control"}}
+                    <div class="row my-2">
+                        <div class="col-12">
+                            <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1"><i class="fa-solid fa-check-double"></i></span>
+                                <div class="form-floating form-floating-group flex-grow-1">   
+                                    {{form.evaluacion|add_class:"form-select"|append_attr:"placeholder= Evaluación"}}
+                                    <label style="color: #121212;" for="id_area">Evaluación*</label>
+                                </div>
+                            </div>
+                        </div>
                     </div>
+                </div>
+       
+                <div class="card-footer">
+                    <button class="btn btn-success col-2" id="crear" type="submit" >Evaluar</button>
+                    <a type="button" class="btn btn-secondary" id="cerrar" data-bs-dismiss="modal">Cerrar</a>
+                </div>
+            </form>
             </div>
         </div>
-        <div class="modal-footer">
-                <button class="btn btn-success col-2" id="crear" type="submit" >Crear</button>
-                <a type="button" class="btn btn-secondary" id="cerrar" data-bs-dismiss="modal">Cerrar</a>
-        </div>
+    
     </div>
-    </form>
 </div>
 
 <!--Este es el modal-->

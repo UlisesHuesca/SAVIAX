@@ -1,6 +1,6 @@
 from django.contrib import admin
 from simple_history.admin import SimpleHistoryAdmin
-from .models import Product, Order, Familia, Unidad, Subfamilia, Marca, Inventario, ArticulosOrdenados, ArticulosparaSurtir, Products_Batch, Tipo_Orden, Inventario_Batch
+from .models import Product, Order, Familia, Unidad, Subfamilia, Marca, Inventario, ArticulosOrdenados, ArticulosparaSurtir, Products_Batch, Tipo_Orden, Inventario_Batch, Grado_Control, Producto_Calidad, Criticidad
 from compras.models import Proveedor_Batch
 # Esta línea es para cambiarle el nombre al sitio administrador por defaul (Django administration)
 admin.site.site_header = 'SAVIA administration'
@@ -26,6 +26,7 @@ class ArticulosOrdenadosAdmin(admin.ModelAdmin):
 class ArticulosparaSurtirAdmin(admin.ModelAdmin):
     search_fields = ['articulos__producto__producto__nombre']
     list_display = ('id','articulos','cantidad', 'surtir','requisitar','cantidad_requisitar','salida','precio')
+    raw_id_fields = ('articulos',)
 
 class OrderAdmin(admin.ModelAdmin):
     list_display = ('id','folio','staff','proyecto','subproyecto','tipo','approved_at','requisitado','requisitar')
@@ -33,6 +34,8 @@ class OrderAdmin(admin.ModelAdmin):
 class SubfamiliaAdmin(admin.ModelAdmin):
     list_display = ('id','nombre','familia')
 
+class CriticidadAdmin(admin.ModelAdmin):
+    list_display = ('id','nombre')
 # Register your models here.
 admin.site.register(Familia)
 
@@ -60,3 +63,8 @@ admin.site.register(Proveedor_Batch)
 
 admin.site.register(Tipo_Orden)
 
+admin.site.register(Producto_Calidad)
+
+admin.site.register(Grado_Control)
+
+admin.site.register(Criticidad, CriticidadAdmin)

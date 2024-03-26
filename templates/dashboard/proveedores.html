@@ -148,6 +148,7 @@
                     <th scope="col">RFC</th>
                     <th scope="col">Edición</th>
                     <th scope="col">Direcciones</th>
+                    <th>Preevaluación</th>
                 </tr>
             </thead>
             <tbody>
@@ -166,6 +167,9 @@
                     </td>
                     <td>
                         <a class="btn btn-outline-info" id="btnProveedorDirecciones" type="button" href="{% url 'proveedor-direcciones' proveedor.id %}"><i class="fa-solid fa-location-dot"></i></a>
+                    </td>
+                    <td>
+                        <a class="btn btn-outline-info" id="btnEvaluacion" type="button" href="{% url 'preevaluaciones' proveedor.id %}"><i class="fa-solid fa-list-check"></i></a>
                     </td>
                 </tr>
                 {% endfor %}

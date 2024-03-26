@@ -20,6 +20,7 @@
                     <div style="flex:1"></div>
                     <div style="flex:2">Artículo</div>
                     <div style="flex:1">Cantidad Pendiente</div>
+                    <div style="flex:1">Calidad</div>
                 </div>
                 {% for articulo_comprado in articulos_comprados %}
                 <div class='cart-row'>
@@ -34,8 +35,13 @@
                             {% endif %}
                         </p>
                     </div>
+                    <div style="flex:1"> {% if articulo_comprado.producto.producto.articulos.producto.producto.critico %}
+                        <button type="button" class="btn btn-danger"><i class="fa-solid fa-q"></i></button>
+                        {% endif %}
+                    </div>
                 </div>
                 {% endfor %}
+                
             </div>
         </div>
 

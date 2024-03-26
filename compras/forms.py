@@ -1,5 +1,5 @@
 from django import forms
-from .models import Compra, ArticuloComprado, Comparativo, Item_Comparativo
+from .models import Compra, ArticuloComprado, Comparativo, Item_Comparativo, Preevaluacion
 from requisiciones.models import ArticulosRequisitados
 
 class CompraForm(forms.ModelForm):
@@ -35,3 +35,9 @@ class Compra_ComentarioForm(forms.ModelForm):
     class Meta:
         model = Compra
         fields = ['comentarios']
+
+class PreevaluacionForm(forms.ModelForm):
+    class Meta:
+        model = Preevaluacion
+        fields = ['tipo_evaluacion','comparativo_model','especs_ver','especs_b','precios_ver','precios_b','control_cadena_suministro','control_cadena_b','capacidad_proveedor','capacidad_proveedor_b','requisitos_sgc_ver','sgc_b']
+

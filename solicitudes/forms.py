@@ -1,4 +1,5 @@
 from django import forms
+from django.db.models import Q 
 from solicitudes.models import Subproyecto, Proyecto
 from dashboard.models import Inventario, Order, Product, ArticulosOrdenados, Plantilla, ArticuloPlantilla
 from gastos.models import Entrada_Gasto_Ajuste, Conceptos_Entradas 
@@ -20,7 +21,7 @@ class InventarioForm(forms.ModelForm):
         existing = Inventario.objects.all().values_list('producto')
 
         # Override the product query set with a list of product excluding those already in the pricelist
-        self.fields['producto'].queryset = Product.objects.exclude(id__in=existing)
+        self.fields['producto'].queryset = Product.objects.filter().exclude(id__in=existing)
 
 class ArticulosOrdenadosForm(forms.ModelForm):
 

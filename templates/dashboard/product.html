@@ -83,6 +83,15 @@
                             </div>
                         </div>
                     </div>
+                    <div class="col-3">
+                        <div class="input-group mb-3">
+                        <span class="input-group-text" id="basic-addon1"><i class="fa-solid fa-gears"></i></span>
+                            <div class="form-floating form-floating-group flex-grow-1">   
+                            {{myfilter.form.critico|add_class:"form-control"|append_attr:"placeholder= Criticidad"}}
+                            <label style="color: #121212;" for="id_familia">Criticidad</label>
+                            </div>
+                        </div>
+                    </div>
                     <div class="col-2">
                         <button class="btn btn-outline-success btn-block my-2 btn-lg" type="submit" value="Buscar"><i class="fa-solid fa-magnifying-glass"></i></button>
                     </div>
@@ -116,6 +125,7 @@
                     <th scope="col">IVA</th>
                     <th scope="col">Servicio</th>
                     <th scope="col">Editar</th>
+                    <th>Crítico</th>
                 </tr>
             </thead>
             <tbody>
@@ -135,9 +145,12 @@
                     {% else %}
                     <td></td>
                     {% endif %}
-                    <!--
-                    <a class="btn btn-outline-danger" href="{% url 'dashboard-product-delete' item.id %}">Eliminar</a></td> -->
-                </tr>
+                    {% if item.critico %}
+                    <td>
+                        <a class="btn btn-outline-danger" id="btnActualizar" type="button" href ="{% url 'revision-producto-calidad' item.id %}"><i class="fa-solid fa-q"></i></a>
+                    </td>
+                    {% endif %}
+                    </tr>
                 {% endfor %}
             </tbody>
         </table>

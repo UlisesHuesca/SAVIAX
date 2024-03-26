@@ -1,0 +1,211 @@
+{% extends 'partials/base.html' %}
+{% load crispy_forms_tags %}
+{% load static %}
+{% load widget_tweaks %}
+<html>
+<head>
+{% block title %}Agregar Producto/Servicio{% endblock %}
+</head>
+<body>
+{% block content %}
+<hr>
+<h6>&nbsp;</h6>
+<h6>&nbsp;</h6>
+<h6>&nbsp;</h6>
+<div class="container">
+    <div class="row">
+        <div class="col-md-6 offset-md-3">
+            <div class="card">
+                <div class="card-header">
+                  <h3>Revisión Producto</h3>
+                </div>
+                <form method="POST" id='ProductForm' enctype='multipart/form-data'>
+                    {% csrf_token %}
+                    {% if error_messages %}
+                    <div class="alert alert-danger" role="alert">
+                        {{error_messages}}
+                    </div>
+                    {% endif %}
+                    
+                        <div class="row">
+                            <div class="col-sm-12">
+                                <div class="input-group mb-3">
+                                    <span class="input-group-text" id="basic-addon1"><i class="fa-regular fa-message"></i></span>
+                                    <span class="input-group-text d-lg-block d-none" id="basic-addon1">Requisitos del SGC</span>
+                                    <div class="form-floating form-floating-group flex-grow-1">   
+                                        {{form.requisitos|add_class:"form-control"|append_attr:"type=text"}}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="alert alert-dark" role="alert">
+                           Tipo de Control
+                        </div>
+                        <div class="form-check form-switch col-sm-3">
+                            <label for="form.impuesto" class="form-check-label"><strong>Documental</strong></label>
+                            {{form.documental|add_class:"form-check-input"}}
+                        </div>
+                        <div id ="g_documental" class="row d-none">
+                            <div class="col-sm-12">
+                                <div class="input-group mb-3">
+                                    <span class="input-group-text" id="basic-addon1"><i class="fa-regular fa-message"></i></span>
+                                    <span class="input-group-text d-lg-block d-none" id="basic-addon1">Grado de Control | Documental</span>
+                                    <div class="form-floating form-floating-group flex-grow-1">   
+                                        {{form.g_documental|add_class:"form-control"|append_attr:"placeholder=Grado de Control"}}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="lbl_documental" class="alert alert-primary d-none" role="alert">
+                            
+                        </div>
+                        
+                        <div class="form-check form-switch col-6 col-sm-12">
+                            <label for="form.impuesto" class="form-check-label"><strong>Inspección</strong></label>
+                            {{form.inspeccion|add_class:"form-check-input"}}
+                          </div>
+                          <div  id ="g_inspeccion" class="row d-none">
+                            <div class="col-sm-12">
+                                <div class="input-group mb-3">
+                                    <span class="input-group-text" id="basic-addon1"><i class="fa-regular fa-message"></i></span>
+                                    <span class="input-group-text d-lg-block d-none" id="basic-addon1">Grado de Control | Inspección</span>
+                                    <div class="form-floating form-floating-group flex-grow-1">   
+                                        {{form.g_inspeccion|add_class:"form-control"|append_attr:"placeholder=Grado de Control"}}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="lbl_inspeccion" class="alert alert-primary d-none" role="alert">
+                            
+                        </div>
+                        
+                        <div class="form-check form-switch col-6 col-sm-12">
+                            <label for="form.impuesto" class="form-check-label"><strong>Cumplimiento</strong></label>
+                            {{form.cumplimiento|add_class:"form-check-input"}}
+                        </div>
+                        <div  id ="g_cumplimiento"  class="row d-none">
+                            <div class="col-sm-12">
+                                <div class="input-group mb-3">
+                                    <span class="input-group-text" id="basic-addon1"><i class="fa-regular fa-message"></i></span>
+                                    <span class="input-group-text d-lg-block d-none" id="basic-addon1">Grado de Control | Cumplimiento</span>
+                                    <div class="form-floating form-floating-group flex-grow-1">   
+                                        {{form.g_cumplimiento|add_class:"form-control"|append_attr:"placeholder=Grado de Control"}}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="lbl_cumplimiento" class="alert alert-primary d-none" role="alert">
+                            
+                        </div>
+                      
+                    <h6>&nbsp;</h6>
+                    <div class="container-fluid text-end">
+                      <a class="btn btn-outline-secondary" href="{% url 'dashboard-product' %}">Cancelar</a>
+                      <input class="btn btn-outline-info" type='submit' value="Actualizar">
+                    </div>
+                </form>
+            </div>
+        </div>
+
+    </div>
+</div>
+</body>
+</html>
+<!--AJAX CALL-->
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+  <script>
+
+function addChange(type){
+    var checkElementId = "id_" + type;
+    var gradoElementId = "g_" + type
+    var lblElementId ="lbl_" + type
+    var checkElement = document.getElementById(checkElementId);
+    var gradeElement = document.getElementById(gradoElementId);
+    var lblElement =document.getElementById(lblElementId)
+    checkElement.addEventListener('change',function(){
+    console.log(checkElement.checked);
+    if (checkElement.checked){
+        gradeElement.classList.remove('d-none')
+        lblElement.classList.remove('d-none')
+    } else {
+        gradeElement.classList.add('d-none')
+        lblElement.classList.add('d-none')
+    }
+    })
+};
+
+// Llama a la función para cada tipo
+addChange("documental");
+addChange("inspeccion");
+addChange("cumplimiento");
+
+document.getElementById('id_g_documental').addEventListener('change', function(){
+    var selectedValue = this.value;
+    var lbl =document.getElementById("lbl_documental")
+    console.log(selectedValue)
+    switch(selectedValue) {
+    case "1":
+        // Código para cuando el valor es 'alto'
+        lbl.innerHTML ="1. Carta origen de los productos</br> 2. Certificado de calidad de los producto</br> 3. Certificado de Pruebas (según producto)</br> 4. Evaluación en sitio"
+        break;
+    case "2":
+        // Código para cuando el valor es 'medio'
+        lbl.innerHTML ="1. Carta origen de los productos</br> 2. Certificado de calidad de los producto</br> 3. Certificado de Pruebas (según producto)"
+        break;
+    case "3":
+        // Código para cuando el valor es 'bajo'
+        lbl.innerHTML ="1. Carta origen de los productos</br> 2. Certificado de calidad de los producto</br>"
+        break;
+    default:
+        lbl.innerHTML =""
+        break;
+}
+})
+
+document.getElementById('id_g_inspeccion').addEventListener('change', function(){
+    var selectedValue = this.value;
+    var lbl =document.getElementById("lbl_inspeccion")
+    console.log(selectedValue)
+    switch(selectedValue) {
+    case "1":
+        // Código para cuando el valor es 'alto'
+        lbl.innerHTML ="1. Revisión de documentación de control de los procesos</br> 2. Documentación de pruebas al producto</br> 3. Inspección del producto o servicio en sitio por personal de Calidad de Vordtec de México S.A. de C.V."
+        break;
+    case "2":
+        // Código para cuando el valor es 'medio'
+        lbl.innerHTML ="1. Revisión de documentación de control de los procesos</br> 2. Documentación de pruebas al producto</br>"
+        break;
+    case "3":
+        // Código para cuando el valor es 'bajo'
+        lbl.innerHTML ="1. Revisión de documentación de control de los procesos</br>"
+        break;
+    default:
+        lbl.innerHTML =""
+        break;
+}
+})
+document.getElementById('id_g_cumplimiento').addEventListener('change', function(){
+    var selectedValue = this.value;
+    var lbl =document.getElementById("lbl_cumplimiento")
+    console.log(selectedValue)
+    switch(selectedValue) {
+    case "1":
+        // Código para cuando el valor es 'alto'
+        lbl.innerHTML ="1. Realizando una evaluación en el lugar de las actividades relevantes."
+        break;
+    case "2":
+        // Código para cuando el valor es 'medio'
+        lbl.innerHTML ="1. Identificando cómo el producto, componente o actividad suministrado cumple con los requisitos mencionados cuando están limitados por acuerdo legales, contractuales o de propiedad"
+        break;
+    case "3":
+        // Código para cuando el valor es 'bajo'
+        lbl.innerHTML ="1. Realizando la inspección del primer artículo"
+        break;
+    default:
+        lbl.innerHTML =""
+        break;
+}
+})
+  </script>
+{% endblock %}

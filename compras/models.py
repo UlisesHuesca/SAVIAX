@@ -1,5 +1,5 @@
 from django.db import models
-from dashboard.models import Order, Inventario, ArticulosparaSurtir, Familia
+from dashboard.models import Order, Inventario, ArticulosparaSurtir, Familia, Criticidad
 from requisiciones.models import Requis, ArticulosRequisitados
 from user.models import Profile, Distrito, Banco
 from simple_history.models import HistoricalRecords
@@ -72,6 +72,56 @@ class Proveedor_direcciones(models.Model):
 
     def __str__(self):
         return f'{self.nombre}'
+    
+class Tipo_Evaluacion(models.Model):
+    nombre = models.CharField(max_length=20, null=True, blank=True)
+
+    def __str__(self):
+        return f'{self.nombre}'
+    
+class Comparativo(models.Model):
+    nombre = models.CharField(max_length=100, null=True)
+    proveedor = models.ForeignKey(Proveedor_direcciones, on_delete = models.CASCADE, null=True)
+    proveedor2 = models.ForeignKey(Proveedor_direcciones, on_delete = models.CASCADE, null=True, related_name='proveedor2') 
+    proveedor3 = models.ForeignKey(Proveedor_direcciones, on_delete = models.CASCADE, null=True, related_name='proveedor3')
+    cotizacion = models.FileField(blank=True, null=True, upload_to='facturas',validators=[FileExtensionValidator(['pdf'])]) 
+    cotizacion2 = models.FileField(blank=True, null=True, upload_to='facturas',validators=[FileExtensionValidator(['pdf'])])
+    cotizacion3 = models.FileField(blank=True, null=True, upload_to='facturas',validators=[FileExtensionValidator(['pdf'])])
+    creada_por = models.ForeignKey(Profile, on_delete = models.CASCADE, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    completo = models.BooleanField(default=False)
+    comentarios = models.TextField(max_length=200, null=True)
+
+    def __str__(self):
+        return f'{self.nombre}'
+    
+class Preevaluacion(models.Model):
+    nombre = models.ForeignKey(Proveedor, on_delete=models.CASCADE, null=True, related_name = "preevaluacion")
+    creado_por = models.ForeignKey(Profile, on_delete = models.CASCADE, null=True)
+    creado_at = models.DateTimeField(auto_now_add=True)
+    modified_at = models.DateTimeField(null=True)
+    tipo_evaluacion = models.ForeignKey(Tipo_Evaluacion, on_delete= models.CASCADE, null=True)
+    criticidad = models.ForeignKey(Criticidad, on_delete= models.CASCADE, null=True)
+    requisitos_sgc_ver = models.CharField(max_length=255, null=True, blank=True)  #Campo para la evaluacion inicial
+    sgc_b = models.BooleanField(default=False)  #Campo para la evaluacion inicial 
+    especs_ver = models.CharField(max_length=255, null=True, blank=True) #Campo para la evaluacion inicial simplificada
+    especs_b = models.BooleanField(default=False) #Campo para la evaluacion inicial simplificada
+    precios_ver = models.CharField(max_length=255, null=True, blank=True) #Campo para la evaluacion inicial simplificada
+    precios_b = models.BooleanField(default = False) #Campo para la evaluacion inicial simplificada
+    control_cadena_suministro = models.CharField(max_length=255, null=True, blank=True)  #Campo para la evaluacion inicial simplificada
+    control_cadena_b= models.BooleanField(default = False) #Campo para la evaluacion inicial simplificada
+    resultado = models.BooleanField(default= None, null=True)
+    capacidad_proveedor = models.CharField(max_length=255, null=True, blank=True)  #Campo para la evaluacion inicial simplificada
+    capacidad_proveedor_b= models.BooleanField(default = False) #Campo para la evaluacion inicial simplificada
+    areas_exito = models.CharField(max_length=255, null=True, blank=True)
+    areas_oportunidad = models.CharField(max_length=255, null=True, blank=True)
+    history = HistoricalRecords(history_change_reason_field=models.TextField(null=True))
+    completo = models.BooleanField(default=False)
+    comparativo_model = models.ForeignKey(Comparativo, on_delete = models.CASCADE, null=True, blank=True)
+
+    def __str__(self):
+        return f'{self.id} - {self.nombre}'
+
 
 class Proveedor_Direcciones_Batch(models.Model):
     file_name = models.FileField(upload_to='product_bash', validators = [FileExtensionValidator(allowed_extensions=('csv',))])
@@ -97,21 +147,7 @@ class Moneda(models.Model):
     def __str__(self):
         return f'{self.nombre}'
     
-class Comparativo(models.Model):
-    nombre = models.CharField(max_length=100, null=True)
-    proveedor = models.ForeignKey(Proveedor_direcciones, on_delete = models.CASCADE, null=True)
-    proveedor2 = models.ForeignKey(Proveedor_direcciones, on_delete = models.CASCADE, null=True, related_name='proveedor2') 
-    proveedor3 = models.ForeignKey(Proveedor_direcciones, on_delete = models.CASCADE, null=True, related_name='proveedor3')
-    cotizacion = models.FileField(blank=True, null=True, upload_to='facturas',validators=[FileExtensionValidator(['pdf'])]) 
-    cotizacion2 = models.FileField(blank=True, null=True, upload_to='facturas',validators=[FileExtensionValidator(['pdf'])])
-    cotizacion3 = models.FileField(blank=True, null=True, upload_to='facturas',validators=[FileExtensionValidator(['pdf'])])
-    creada_por = models.ForeignKey(Profile, on_delete = models.CASCADE, null=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    completo = models.BooleanField(default=False)
-    comentarios = models.TextField(max_length=200, null=True)
 
-    def __str__(self):
-        return f'{self.nombre}'
 
 class Item_Comparativo(models.Model):
     producto = models.ForeignKey(Inventario, on_delete = models.CASCADE, null=True)
@@ -174,6 +210,7 @@ class Compra(models.Model):
     pagada = models.BooleanField(default=False)
     monto_pagado = models.DecimalField(max_digits=14,decimal_places=2, default=0)
     entrada_completa = models.BooleanField(default=False)
+    recepcion_completa = models.BooleanField(default=False)
     solo_servicios = models.BooleanField(default=False)
     regresar_oc = models.BooleanField(default=False)
     comentarios = models.TextField(max_length=400, null=True)
@@ -245,9 +282,10 @@ class Compra(models.Model):
 class ArticuloComprado(models.Model):
     producto = models.ForeignKey(ArticulosRequisitados, on_delete = models.CASCADE, null=True)
     oc = models.ForeignKey(Compra, on_delete = models.CASCADE, null=True)
-    cantidad = models.DecimalField(max_digits=14, decimal_places=2, default=0)
-    cantidad_pendiente = models.DecimalField(max_digits=14, decimal_places=2, null=True)
+    cantidad = models.DecimalField(max_digits=14, decimal_places=2, default=0)           #Esta es la cantidad que se compró
+    cantidad_pendiente = models.DecimalField(max_digits=14, decimal_places=2, null=True) #La cantidad pendiente, es la cantidad que no se ha suministrado al almacén
     entrada_completa = models.BooleanField(default=False)
+    recepcion_completa = models.BooleanField(default=False)
     seleccionado = models.BooleanField(default=False)
     precio_unitario = models.DecimalField(max_digits=14, decimal_places=4, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)

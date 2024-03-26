@@ -1,0 +1,287 @@
+{% extends 'partials/base.html' %}
+{% load crispy_forms_tags %}
+{% load static %}
+{% load widget_tweaks %}
+<html>
+<head>
+{% block title %}Preevaluación{% endblock %}
+</head>
+<body>
+{% block content %}
+<!-- Esta es la zona donde se crean los mensajes perrones con sweet alert -->
+<div class="row my-4">
+    <div class="col-md-4">
+    <script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+        {% if messages %}
+            {% for message in messages %}
+                {% if message.tags == "error" %}
+                <script>
+                Swal.fire({
+                    "title":"Error",
+                    "text":"{{message}}",
+                    "icon":"error",
+                })
+                </script>
+                {% else %}
+                <script>
+                Swal.fire({
+                    "title":"Excelente",
+                    "text":"{{message}}",
+                    "icon":"success",
+                })
+                </script>
+                {% endif %}
+            {% endfor %}
+        {% endif %}
+    </div>
+</div>
+<hr>
+<h6>&nbsp;</h6>
+<h6>&nbsp;</h6>
+<h6>&nbsp;</h6>
+<div class="container">
+    <div class="row">
+        <div class="col-lg-8 offset-md-2">
+            <div class="card">
+                <div class="card-header">
+                  <h3>Preevaluación</h3>
+                </div>
+                <form method="POST" id='ProductForm'>
+                    {% csrf_token %}
+                    <div class="alert alert-primary">
+                        Proveedor: {{proveedor}}                                
+                    </div>
+                    {% if error_messages %}
+                        <div class="alert alert-danger" role="alert">
+                            {{error_messages}}
+                        </div>
+                    {% endif %}
+                    <div class="col-12">
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1"><i class="fa-solid fa-list" ></i></span>  
+                            <div class="form-floating form-floating-group flex-grow-1"> 
+                            {{form.tipo_evaluacion|add_class:"form-control"}}
+                            <label for="id_razon_social">Tipo de Evaluación</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="alert alert-primary simplificada d-none">
+                        1. Verificar que el producto cumple con las especificaciones requeridas
+                    </div>  
+                    <div class="col-12 simplificada d-none">
+                        <div class="input-group mb-3">
+                        <span class="input-group-text" id="basic-addon1" ><i class="fa-solid fa-list"></i></span>
+                            <div class="form-floating form-floating-group flex-grow-1">   
+                            {{form.especs_ver|add_class:"form-control"|append_attr:"placeholder=Detalles"}}
+                            <label for="id_razon_social">Detalles</label>
+                            </div>
+                            <button type="button" class="btn btn-primary" data-toggle="popover" title="Cumplimiento | Producto" data-bs-content="Detalles sobre cómo se verifica el cumplimiento">
+                                <i class="fa-solid fa-circle-info"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="form-check form-switch col-sm-3 simplificada d-none">
+                        <label for="form.impuesto" class="form-check-label"><strong>Cumple</strong></label>
+                            {{form.especs_b|add_class:"form-check-input"}}
+                    </div>
+                    <div class="alert alert-primary simplificada d-none" role="alert">
+                        2. Comparar los precios ofrecidos por el proveedor con al menos otras dos cotizaciones del mismo año y de diferentes
+                        proveedores para asegurar que sean aceptables
+                    </div>
+                    <div class="col-12 simplificada d-none">
+                        <div class="input-group mb-3">
+                        <span class="input-group-text" id="basic-addon1"><i class="fa-solid fa-list"></i></span>
+                            <div class="form-floating form-floating-group flex-grow-1">   
+                            {{form.precios_ver|add_class:"form-control"|append_attr:"placeholder=Detalles"}}
+                            <label for="id_previos_ver">Detalles*</label>
+                            </div>
+                            <button type="button"  class="btn btn-primary" data-toggle="popover" title="Cumplimiento | Producto" data-bs-content="Detalles sobre cómo se verifica el cumplimiento">
+                                <i class="fa-solid fa-circle-info"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="form-check form-switch col-sm-3 simplificada d-none">
+                          <label for="form.impuesto" class="form-check-label"><strong>Cumple</strong></label>
+                              {{form.precios_b|add_class:"form-check-input"}}
+                    </div>
+                      
+                    <div class="alert alert-primary inicial d-none" role="alert">
+                        1. Verificación de cumplimiento del Sistema de Gestión de la Calidad del Proveedor
+                    </div>
+                    <div class="col-12 inicial d-none">
+                        <div class="input-group mb-3">
+                        <span class="input-group-text" id="basic-addon1"><i class="fa-solid fa-list" ></i></span>
+                            <div class="form-floating form-floating-group flex-grow-1">   
+                                {{form.requisitos_sgc_ver|add_class:"form-control"|append_attr:"placeholder=Detalles"}}
+                                <label for="id_razon_social">Detalles*</label>
+                            </div>
+                            <button type="button"  class="btn btn-primary" data-toggle="popover" title="Cumplimiento | SGC" data-bs-content="Detalles sobre cómo se verifica el cumplimiento de los requisitos del sistema de calidad de la organización, como una lista de verificación">
+                                <i class="fa-solid fa-circle-info"></i>
+                            </button>  
+                        </div>
+                    </div>
+                    <div class="form-check form-switch col-sm-3 inicial d-none">
+                        <label for="form.impuesto" class="form-check-label"><strong>Cumple</strong></label>
+                              {{form.sgc_b|add_class:"form-check-input"}}
+                    </div>  
+                    <div class="alert alert-primary inicial d-none" role="alert">
+                        2. Control en la Cadena de Suministro del Proveedor
+                    </div>
+                    <div class="col-12 inicial d-none">
+                        <div class="input-group mb-3">
+                        <span class="input-group-text" id="basic-addon1"><i class="fa-solid fa-list"></i></span>
+                            <div class="form-floating form-floating-group flex-grow-1">   
+                            {{form.control_cadena_suministro|add_class:"form-control"|append_attr:"placeholder=Detalles"}}
+                            <label for="id_control_cadena_suministro">Descripción*</label>
+                            </div>
+                            <button type="button"  class="btn btn-primary" data-toggle="popover" title="Cumplimiento | Cadena de Suministro" data-bs-content="Descripción de cómo se verifica el tipo y grado de control en la
+                            cadena de suministro del proveedor">
+                                <i class="fa-solid fa-circle-info"></i>
+                            </button>  
+                        </div>
+                    </div>
+                    <div class="form-check form-switch col-sm-3 inicial d-none">
+                        <label for="id_control_cadena" class="form-check-label"><strong>Cumple</strong></label>
+                              {{form.control_cadena_b|add_class:"form-check-input"}}
+                    </div>
+                    <div class="alert alert-primary inicial d-none" role="alert">
+                            3. Evaluación de la Capacidad del Proveedor
+                    </div>
+                    <div class="col-12 inicial d-none">
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1"><i class="fa-solid fa-list"></i></span>
+                                <div class="form-floating form-floating-group flex-grow-1">   
+                                {{form.capacidad_proveedor|add_class:"form-control"|append_attr:"placeholder=Detalles"}}
+                                <label for="id_razon_social">Descripción*</label>
+                                </div>
+                                <button type="button"  class="btn btn-primary" data-toggle="popover" title="Cumplimiento | Capacidad del Proveedor" data-bs-content="Descripción de cómo se evalúa la capacidad del proveedor para cumplir con los 
+                                requisitos de la organización. Detalles sobre si se realizó una evaluación en el lugar, inspección del primer artículo o identificación de cumplimiento a través de acuerdos legales o contractuales">
+                                    <i class="fa-solid fa-circle-info"></i>
+                                </button>  
+                        </div>
+                        <div class="form-check form-switch col-sm-3 inicial d-none">
+                            <label for="form.impuesto" class="form-check-label"><strong>Cumple</strong></label>
+                                  {{form.capacidad_proveedor_b|add_class:"form-check-input"}}
+                        </div>
+                    </div>
+                        <div id="comparativo" class="row my-2">
+                            <div class="col-12">
+                                <div class="input-group mb-3">
+                                <span class="input-group-text" id="basic-addon1"><i class="fa-solid fa-list"></i></span>
+                                    <div class="form-floating form-floating-group flex-grow-1">   
+                                        {{form.comparativo_model|add_class:"form-control"}}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                  
+                    <h6>&nbsp;</h6>
+                    <div class="container-fluid text-end">
+                      <a class="btn btn-outline-secondary" href="{% url 'dashboard-proveedores' %}">Cancelar</a>
+                      <button class="btn btn-outline-info" type='submit'>Actualizar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+    </div>
+</div>
+</body>
+</html>
+<!--AJAX CALL-->
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+  <script>
+
+
+$(document).ready(function(){
+  $('[data-toggle="popover"]').popover();   
+});
+
+document.getElementById("id_tipo_evaluacion").addEventListener("change", function(){
+    var valor = this.value
+    var simplificada = document.getElementsByClassName("simplificada");
+    var inicial = document.getElementsByClassName('inicial');
+
+    //console.log(simplificada)
+    if (valor == 2){
+        for (var i=0; i < simplificada.length; i++){
+          console.log( simplificada[i])
+          simplificada[i].classList.remove('d-none')
+        }
+        for (var i=0; i < inicial.length; i++){
+          inicial[i].classList.add('d-none')
+          var inputs = inicial[i].querySelectorAll('input');
+            //console.log(inputs)
+          
+            for( var j=0; j < inputs.length; j ++) {
+             inputs[j].value = ""
+            } 
+        }
+
+    }
+    else if (valor == 1){
+        for (var i=0; i < inicial.length; i++){
+          inicial[i].classList.remove('d-none')
+        }
+        for (var i=0; i < simplificada.length; i++){
+            simplificada[i].classList.add('d-none')
+            var inputs = simplificada[i].querySelectorAll('input');
+            //console.log(inputs)
+          
+            for( var j=0; j < inputs.length; j ++) {
+             inputs[j].value = ""
+            } 
+        }
+    } else {
+        for (var i=0; i < simplificada.length; i++){
+          console.log( simplificada[i])
+          simplificada[i].classList.add('d-none')
+          var inputs = simplificada[i].querySelectorAll('input');
+          for ( var j=0; j< inputs.length; j ++){
+            inputs[j].value = ""
+            }   
+        }
+        for (var i=0; i < inicial.length; i++){
+          inicial[i].classList.add('d-none')
+          var inputs = inicial[i].querySelectorAll('input');
+          for ( var j=0; j< inputs.length; j ++){
+            inputs[j].value = ""
+          }
+        }
+
+    }
+
+});
+
+
+
+$(document).ready(function() {
+    $('#id_comparativo_model').select2({
+        allowClear: true,
+        width: '100%',
+        templateResult: formatRepo, // Función para renderizar los resultados
+        templateSelection: formatRepoSelection // Función para renderizar la selección
+    });
+});
+
+function formatRepo (repo) {
+    if (repo.loading) {
+        return repo.text;
+    }
+
+    var $container = $("<div class='select2-result-repository clearfix'>" +
+        "<div class='form-control form-control-lg select2-result-repository__title'></div>" +
+        "</div>");
+
+    $container.find(".select2-result-repository__title").text(repo.text);
+    
+    // Aquí podrías agregar más elementos al contenedor si es necesario.
+
+    return $container;
+}
+function formatRepoSelection (repo) {
+    return repo.text || repo.id;
+}
+  </script>
+{% endblock %}
