@@ -18,11 +18,13 @@ class SalidasAdmin(admin.ModelAdmin):
     search_fields = ['producto__articulos__producto__producto__nombre']
 
 class DevolucionAdmin(admin.ModelAdmin):
-    list_display = ('id','solicitud','almacenista')
+    list_display = ('id','solicitud','almacenista','autorizada')
+    raw_id_fields = ('solicitud','almacenista','producto',)
 
 class Devolucion_ArticulosAdmin(admin.ModelAdmin):
     list_display = ('vale_devolucion','producto','cantidad','precio','comentario')
     search_fields = ['producto__articulos__producto__producto__nombre']
+    raw_id_fields = ('vale_devolucion','producto',)
 
 
 class Tipo_Admin(admin.ModelAdmin):

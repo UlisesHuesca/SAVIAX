@@ -24,7 +24,7 @@ def pendientes_recepcion(request):
 
 
     if usuario.tipo.almacen == True:
-        compras = Compra.objects.filter(Q(cond_de_pago__nombre ='CREDITO') | Q(pagada = True), recepcion_completa = False, entrada_completa = False, solo_servicios= False, autorizado2= True).order_by('-folio')
+        compras = Compra.objects.filter(Q(cond_de_pago__nombre ='CREDITO') | Q(pagada = True), recepcion_completa = False, entrada_completa = False, autorizado2= True).order_by('-autorizado_date2')
         for compra in compras:
             articulos_entrada  = ArticuloComprado.objects.filter(oc=compra, entrada_completa = False)
             servicios_pendientes = articulos_entrada.filter(producto__producto__articulos__producto__producto__servicio=True)
@@ -34,9 +34,14 @@ def pendientes_recepcion(request):
             if  cant_entradas == cant_servicios and cant_entradas > 0:
                 compra.solo_servicios = True
                 compra.save()
-        compras = Compra.objects.filter(Q(cond_de_pago__nombre ='CREDITO') | Q(pagada = True),  recepcion_completa = False , entrada_completa = False, solo_servicios= False, autorizado2= True).order_by('-folio')
+        compras = Compra.objects.filter(
+            Q(cond_de_pago__nombre ='CREDITO') | Q(pagada = True),  
+            Q(solo_servicios=False) | (Q(solo_servicios=True) & Q(req__orden__staff=usuario)),
+            recepcion_completa = False , 
+            entrada_completa = False, 
+            autorizado2= True).order_by('-autorizado_date2')
     else:
-        compras = Compra.objects.filter(Q(cond_de_pago__nombre ='CREDITO') | Q(pagada = True), solo_servicios= True, entrada_completa = False, autorizado2= True, req__orden__staff = usuario).order_by('-folio')
+        compras = Compra.objects.filter(Q(cond_de_pago__nombre ='CREDITO') | Q(pagada = True), solo_servicios= True, entrada_completa = False, autorizado2= True, req__orden__staff = usuario).order_by('-autorizado_date2')
 
 
     myfilter = CompraFilter(request.GET, queryset=compras)

@@ -2,8 +2,9 @@ from django.contrib import admin
 from .models import Compra, ArticuloComprado, Proveedor, Proveedor_direcciones, Proveedor_Direcciones_Batch, Estatus_proveedor, Uso_cfdi, Cond_credito, Moneda, Estado, Comparativo, Item_Comparativo, Tipo_Evaluacion, Preevaluacion
 
 class CompraAdmin(admin.ModelAdmin):
-    list_display = ('id','folio', 'req','proveedor','oc_autorizada_por2','cond_de_pago','autorizado1','autorizado2')
+    list_display = ('id','folio', 'req','solo_servicios','proveedor','oc_autorizada_por2','cond_de_pago','autorizado1','autorizado2')
     list_filter = ('proveedor',)
+    raw_id_fields = ('req','creada_por','oc_autorizada_por', 'oc_autorizada_por2', 'proveedor')
 
 class ArticuloComprado_Admin(admin.ModelAdmin):
     list_display = ('oc','producto','cantidad')
