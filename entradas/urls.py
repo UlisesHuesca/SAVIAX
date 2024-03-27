@@ -15,5 +15,7 @@ urlpatterns = [
     path('entradas/productos/<int:pk>', views.productos, name="productos"),
     path('no_conformidad/', views.update_no_conformidad, name="update_no_conformidad"),
     path('entradas/recepcion', views.pendientes_recepcion, name='pendientes-recepcion'),
+    path('entradas/recepcion_servicios', views.recepcion_servicios, name='recepcion-servicios'),
+    path('entradas/articulos_recepcion_servicios/<int:pk>', views.articulos_recepcion_servicios, name='articulos-recepcion-servicios'),
     path('update_cantidad/', views.update_cantidad, name='update_cantidad'),
 ]

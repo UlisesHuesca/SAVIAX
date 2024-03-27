@@ -20,15 +20,18 @@ from django.core.paginator import Paginator
 
 @login_required(login_url='user-login')
 def pendientes_recepcion(request):
-    usuario = Profile.objects.get(staff=request.user.id)
+    usuario = Profile.objects.get(staff__id=request.user.id)
 
 
-    if usuario.tipo.almacen == True:
-        compras = Compra.objects.filter(Q(cond_de_pago__nombre ='CREDITO') | Q(pagada = True), recepcion_completa = False, entrada_completa = False, autorizado2= True).order_by('-autorizado_date2')
+    if usuario.tipo.comprador == True:
+        compras = Compra.objects.filter(
+            Q(cond_de_pago__nombre ='CREDITO') | Q(pagada = True), 
+            recepcion_completa = False, 
+            autorizado2= True).order_by('-autorizado_date2')
         for compra in compras:
-            articulos_entrada  = ArticuloComprado.objects.filter(oc=compra, entrada_completa = False)
-            servicios_pendientes = articulos_entrada.filter(producto__producto__articulos__producto__producto__servicio=True)
-            cant_entradas = articulos_entrada.count()
+            articulos_recepcion  = ArticuloComprado.objects.filter(oc=compra, recepcion_completa = False)
+            servicios_pendientes = articulos_recepcion.filter(producto__producto__articulos__producto__producto__servicio=True)
+            cant_entradas = articulos_recepcion.count()
             cant_servicios = servicios_pendientes.count()
 
             if  cant_entradas == cant_servicios and cant_entradas > 0:
@@ -36,9 +39,8 @@ def pendientes_recepcion(request):
                 compra.save()
         compras = Compra.objects.filter(
             Q(cond_de_pago__nombre ='CREDITO') | Q(pagada = True),  
-            Q(solo_servicios=False) | (Q(solo_servicios=True) & Q(req__orden__staff=usuario)),
+            Q(solo_servicios=False),
             recepcion_completa = False , 
-            entrada_completa = False, 
             autorizado2= True).order_by('-autorizado_date2')
     else:
         compras = Compra.objects.filter(Q(cond_de_pago__nombre ='CREDITO') | Q(pagada = True), solo_servicios= True, entrada_completa = False, autorizado2= True, req__orden__staff = usuario).order_by('-autorizado_date2')
@@ -60,7 +62,28 @@ def pendientes_recepcion(request):
 
     return render(request, 'entradas/pendientes_recepcion.html', context)
 
+@login_required(login_url='user-login')
+def recepcion_servicios(request):
+    usuario = Profile.objects.get(staff__id=request.user.id)
 
+    compras = Compra.objects.filter(Q(cond_de_pago__nombre ='CREDITO') | Q(pagada = True), solo_servicios= True, entrada_completa = False, autorizado2= True, req__orden__staff = usuario).order_by('-autorizado_date2')
+
+
+    myfilter = CompraFilter(request.GET, queryset=compras)
+    compras = myfilter.qs
+
+    #Set up pagination
+    p = Paginator(compras, 50)
+    page = request.GET.get('page')
+    compras_list = p.get_page(page)
+
+    context = {
+        'compras':compras,
+        'myfilter':myfilter,
+        'compras_list':compras_list,
+        }
+
+    return render(request, 'entradas/pendientes_recepcion_servicios.html', context)
 
 @login_required(login_url='user-login')
 def devolucion_a_proveedor(request):
@@ -75,9 +98,10 @@ def devolucion_a_proveedor(request):
 # Create your views here.
 @login_required(login_url='user-login')
 def pendientes_entrada(request):
-    usuario = Profile.objects.get(staff=request.user.id)
-
-    articulos_recepcionados = EntradaArticulo.objects.filter(recepcion = True, almacenado = False)
+    usuario = Profile.objects.get(staff__id=request.user.id)
+    
+    if usuario.tipo.almacen == True:
+        articulos_recepcionados = EntradaArticulo.objects.filter(recepcion = True, almacenado = False)
 
     myfilter = CompraFilter(request.GET, queryset=articulos_recepcionados)
     articulos_recepcionados = myfilter.qs
@@ -248,6 +272,7 @@ def articulos_recepcion(request, pk):
     if usuario.tipo.compras == True:
         articulos = ArticuloComprado.objects.filter(oc=pk, recepcion_completa = False, seleccionado = False, producto__producto__articulos__producto__producto__servicio = False)
 
+
     compra = Compra.objects.get(id=pk)
 
 
@@ -291,6 +316,68 @@ def articulos_recepcion(request, pk):
         compra.save()
         messages.success(request, f'La entrada-recepcion {entrada.id} se ha realizado con éxito')
         return redirect('pendientes-recepcion')
+
+    context = {
+        'articulos':articulos,
+        'entrada':entrada,
+        'compra':compra,
+        'form':form,
+        'articulos_entrada':articulos_entrada,
+        }
+
+    return render(request, 'entradas/articulos_recepcion.html', context)
+
+@login_required(login_url='user-login')
+def articulos_recepcion_servicios(request, pk):
+
+    usuario = Profile.objects.get(staff__id=request.user.id)
+    compra = Compra.objects.get(id=pk)
+    articulos = ArticuloComprado.objects.filter(oc=compra, entrada_completa = False, recepcion_completa = False, seleccionado = False, producto__producto__articulos__producto__producto__servicio = True)
+
+
+  
+
+
+    entrada, created = Entrada.objects.get_or_create(oc=compra, almacenista= usuario, completo = False)
+    articulos_entrada = EntradaArticulo.objects.filter(entrada = entrada)
+    form = EntradaArticuloForm()
+
+    for articulo in articulos:
+        if articulo.cantidad_pendiente == None:
+            articulo.cantidad_pendiente = articulo.cantidad
+
+
+    if request.method == 'POST' and 'entrada' in request.POST:
+        entrada.completo = True              
+        entrada.entrada_date = date.today()
+        entrada.entrada_hora = datetime.now().time()
+        articulos_comprados = ArticuloComprado.objects.filter(oc=pk)
+        num_art_comprados = articulos_comprados.count()        
+        
+
+        for articulo in articulos_entrada:
+            articulo_compra = articulos_comprados.get(id = articulo.articulo_comprado.id)
+            aggregation = EntradaArticulo.objects.filter(
+                articulo_comprado = articulo_compra,
+                entrada__completo = True
+            ).aggregate(
+                suma_cantidad = Sum('cantidad'),
+                suma_cantidad_por_surtir = Sum('cantidad_por_surtir')
+            )
+            suma_cantidad = aggregation['suma_cantidad'] or 0
+            if suma_cantidad >=  articulo_compra.cantidad:
+                articulo_compra.seleccionado = False
+                articulo_compra.save()
+        
+        articulos_recepcionados = articulos_comprados.filter(recepcion_completa = True)
+        num_art_recepcionados = articulos_recepcionados.count()
+        if num_art_recepcionados >= num_art_comprados:
+            compra.recepcion_completa = True
+        
+        entrada.save()
+        compra.save()
+        messages.success(request, f'La recepcion del servicio {entrada.id} se ha realizado con éxito')
+        return redirect('recepcion-servicios')
 
     context = {
         'articulos':articulos,

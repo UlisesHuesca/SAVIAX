@@ -35,6 +35,7 @@ def contadores_processor(request):
     conteo_viaticos=0
     conteo_devoluciones = 0
     conteo_ordenes = 0
+    conteo_servicios = 0
 
     conteo_usuario = Profile.objects.all().count()
     conteo_productos = Inventario.objects.filter(cantidad__gt = 0).count()
@@ -95,12 +96,12 @@ def contadores_processor(request):
             conteo_requis_pendientes = requisiciones_pendientes.count()
             conteo_gastos_pendientes = gastos_pendientes.count()
             conteo_viaticos = viaticos_pendientes.count()
-        if usuario.tipo.almacen == True:
-            entradas = Compra.objects.filter(Q(cond_de_pago__nombre ='CREDITO') | Q(pagada = True), solo_servicios= False, entrada_completa = False, autorizado2= True).order_by('-folio')
-            conteo_entradas = entradas.count()
-        else:
-            entradas = Compra.objects.filter(Q(cond_de_pago__nombre ='CREDITO') | Q(pagada = True), solo_servicios= True, entrada_completa = False, autorizado2= True, req__orden__staff = usuario).order_by('-folio')
-            conteo_entradas = entradas.count()
+    
+        entradas = Compra.objects.filter(Q(cond_de_pago__nombre ='CREDITO') | Q(pagada = True), solo_servicios= False, entrada_completa = False, autorizado2= True).order_by('-folio')
+        conteo_entradas = entradas.count()
+        
+        servicios = Compra.objects.filter(Q(cond_de_pago__nombre ='CREDITO') | Q(pagada = True), solo_servicios= True, entrada_completa = False, autorizado2= True, req__orden__staff = usuario).order_by('-folio')
+        conteo_servicios = servicios.count()
 
 
     return {
@@ -125,4 +126,5 @@ def contadores_processor(request):
     'usuario':usuario,
     'conteo_requis': conteo_requis,
     'conteo_pagos':conteo_pagos,
+    'conteo_servicios':conteo_servicios,
     }
