@@ -1156,7 +1156,7 @@ def autorizar_oc2(request, pk):
                         <body>
                             <p><img src="data:image/jpeg;base64,{logo_v_base64}" alt="Imagen" style="width:100px;height:auto;"/></p>
                             <p>Estimado {compra.req.orden.staff.staff.first_name} {compra.req.orden.staff.staff.last_name},</p>
-                            <p>Estás recibiendo este correo porque tu OC {compra.get_folio} | RQ: {compra.req.folio} |Sol: {compra.req.orden.folio} ha sido autorizada por {compra.oc_autorizada_por2.staff.staff.first_name} {compra.oc_autorizada_por2.staff.staff.last_name},</p>
+                            <p>Estás recibiendo este correo porque tu OC {compra.get_folio} | RQ: {compra.req.folio} |Sol: {compra.req.orden.folio} ha sido autorizada por {compra.oc_autorizada_por2.staff.first_name} {compra.oc_autorizada_por2.staff.last_name},</p>
                             <p>El siguiente paso del sistema: Pago por parte de tesorería</p>
                             <p><img src="data:image/png;base64,{image_base64}" alt="Imagen" style="width:50px;height:auto;border-radius:50%"/></p>
                             <p>Este mensaje ha sido automáticamente generado por SAVIA 2.0</p>
