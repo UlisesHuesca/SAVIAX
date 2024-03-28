@@ -109,7 +109,7 @@ def solicitud_autorizada(request):
     if usuario.tipo.almacen == True:
         #productos= ArticulosparaSurtir.objects.filter(Q(salida=False) | Q(surtir=True), articulos__orden__autorizar = True)
         #productos= ArticulosparaSurtir.objects.filter(Q(salida=False) | Q(surtir=True), articulos__orden__autorizar = True, articulos__orden__tipo__tipo = "normal")
-        productos= ArticulosparaSurtir.objects.filter(surtir=True, articulos__orden__autorizar = True, articulos__orden__tipo__tipo = "normal")
+        productos= ArticulosparaSurtir.objects.filter(surtir=True, articulos__orden__autorizar = True, articulos__orden__tipo__tipo = "normal").order_by('-created_at')
     #else:
         #productos = Requis.objects.filter(complete=None)
     myfilter = ArticulosparaSurtirFilter(request.GET, queryset=productos)
@@ -146,7 +146,7 @@ def solicitudes_autorizadas_pendientes(request):
     if usuario.tipo.almacenista == True:
         #productos= ArticulosparaSurtir.objects.filter(Q(salida=False) | Q(surtir=True), articulos__orden__autorizar = True)
         #productos= ArticulosparaSurtir.objects.filter(Q(salida=False) | Q(surtir=True), articulos__orden__autorizar = True, articulos__orden__tipo__tipo = "normal")
-        productos= ArticulosparaSurtir.objects.filter(salida=False, surtir=False, articulos__orden__autorizar = True, articulos__orden__tipo__tipo = "normal")
+        productos= ArticulosparaSurtir.objects.filter(salida=False, surtir=False, articulos__orden__autorizar = True, articulos__orden__tipo__tipo = "normal").order_by('-created_at')
 
     #else:
         #productos = Requis.objects.filter(complete=None)
@@ -674,11 +674,11 @@ def solicitud_autorizada_orden(request):
     #usuario = request.user.id
 
     perfil = Profile.objects.get(staff__id=request.user.id)
-    ordenes = Order.objects.filter(requisitar = True, complete=True, autorizar=True, staff__distrito=perfil.distrito, requisitado = False)
+    ordenes = Order.objects.filter(requisitar = True, complete=True, autorizar=True, staff__distrito=perfil.distrito, requisitado = False).order_by('-folio')
 
 
     if perfil.tipo.almacenista == True:
-        ordenes = Order.objects.filter(requisitar = True, requisitado=False)
+        ordenes = Order.objects.filter(requisitar = True, requisitado=False).order_by('-folio')
         #ordenes = Order.objects.filter(requisitar = True, complete=True, autorizar =True)
     #perfil = Profile.objects.get(id=usuario)
 

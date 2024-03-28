@@ -38,6 +38,15 @@
                         <div class="input-group mb-3">
                         <span class="input-group-text" id="basic-addon1"><i class="fa-solid fa-hashtag"></i></span>
                             <div class="form-floating form-floating-group flex-grow-1">   
+                            {{myfilter.form.vale_salida|add_class:'form-control'|append_attr:"placeholder= Vale Salida"}}
+                            <label style="color: #121212;" for="id_solicitud">Vale Salida</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="serie" class="col-lg-2 col-md-auto col-sm-auto">
+                        <div class="input-group mb-3">
+                        <span class="input-group-text" id="basic-addon1"><i class="fa-solid fa-hashtag"></i></span>
+                            <div class="form-floating form-floating-group flex-grow-1">   
                             {{myfilter.form.codigo|add_class:'form-control'|append_attr:"placeholder= Código"}}
                             <label style="color: #121212;" for="id_codigo">Código</label>
                             </div>

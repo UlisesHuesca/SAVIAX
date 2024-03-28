@@ -1,6 +1,7 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q
+from .filters import EntradaArticuloFilter
 from compras.models import Compra, ArticuloComprado
 from compras.filters import CompraFilter
 from compras.views import attach_oc_pdf
@@ -103,7 +104,7 @@ def pendientes_entrada(request):
     if usuario.tipo.almacen == True:
         articulos_recepcionados = EntradaArticulo.objects.filter(recepcion = True, almacenado = False)
 
-    myfilter = CompraFilter(request.GET, queryset=articulos_recepcionados)
+    myfilter = EntradaArticuloFilter(request.GET, queryset=articulos_recepcionados)
     articulos_recepcionados = myfilter.qs
 
     if request.method == "POST" and 'entrada' in request.POST:
