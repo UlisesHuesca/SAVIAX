@@ -9,7 +9,7 @@ from activos.models import Activo
 #from djmoney.models.fields import MoneyField
 # Create your models here.
 class Requis(models.Model):
-    orden = models.ForeignKey(Order, on_delete = models.CASCADE, null = True)
+    orden = models.ForeignKey(Order, on_delete = models.CASCADE, null = True, related_name='requis')
     folio = models.CharField(max_length=7, blank=True, null=True)
     colocada = models.BooleanField(default=False)
     complete = models.BooleanField(null=True)
@@ -83,7 +83,7 @@ class ArticulosRequisitados(models.Model):
         return f'{self.req} - {self.producto}- {self.cantidad}'
 
 class ValeSalidas(models.Model):
-    solicitud = models.ForeignKey(Order, on_delete = models.CASCADE, null=True)
+    solicitud = models.ForeignKey(Order, on_delete = models.CASCADE, null=True, related_name='vale_salida')
     almacenista = models.ForeignKey(Profile, on_delete = models.CASCADE, null=True, related_name='Almacen')
     proyecto = models.ForeignKey(Proyecto, on_delete = models.CASCADE, null=True, blank=True)
     subproyecto = models.ForeignKey(Subproyecto, on_delete = models.CASCADE, null=True, blank=True)

@@ -559,8 +559,9 @@ def update_recepcion_articulos(request):
         print(producto_comprado.cantidad_pendiente)
         if producto_comprado.cantidad_pendiente == None:         #Se determina la cantidad pendiente, 
             producto_comprado.cantidad_pendiente = producto_comprado.cantidad         #Si no existe, la cantidad de la OC se convierte en el producto pendiente 
-        if entrada_item.cantidad > producto_comprado.cantidad_pendiente: #Si la cantidad de las entradas es mayor a la cantidad de la compra se rechaza
-            messages.error(request,f'La cantidad de entradas sobrepasa la cantidad comprada {entrada_item.cantidad} mayor que {producto_comprado.cantidad_pendiente}')
+        tolerance = 0.01
+        if abs(entrada_item.cantidad - producto_comprado.cantidad_pendiente) > tolerance: #Si la cantidad de las entradas es mayor a la cantidad de la compra se rechaza
+            messages.error(request,f'La cantidad de entradas sobrepasa la cantidad comprada {entrada_item.cantidad} > {producto_comprado.cantidad_pendiente}')
         else: #Esta parte afecta a la OC en cantidades, no creo que sea conveniente en la recepción afectar cantidades de inventario ni de OC, aunque eso podría afectar el
             #ciclo de entradas 
             messages.success(request,'Haz agregado exitosamente un producto')

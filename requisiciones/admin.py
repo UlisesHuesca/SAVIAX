@@ -4,6 +4,7 @@ from .models import Salidas, Requis, ArticulosRequisitados, ValeSalidas, Devoluc
 class RequisAdmin(admin.ModelAdmin):
     list_display = ('id','folio','orden','autorizar')
     list_filter = ('folio',)
+    raw_id_fields = ('orden',)
 
 class ValeSalidasAdmin(admin.ModelAdmin):
     list_display = ('id','solicitud','complete','created_at')
@@ -19,7 +20,7 @@ class SalidasAdmin(admin.ModelAdmin):
 
 class DevolucionAdmin(admin.ModelAdmin):
     list_display = ('id','solicitud','almacenista','autorizada')
-    raw_id_fields = ('solicitud','almacenista','producto',)
+    raw_id_fields = ('solicitud','almacenista',)
 
 class Devolucion_ArticulosAdmin(admin.ModelAdmin):
     list_display = ('vale_devolucion','producto','cantidad','precio','comentario')

@@ -1255,75 +1255,11 @@ def cancelada_sol(request, pk):
 def status_sol(request, pk):
     solicitud = Order.objects.get(id = pk)
     product_solicitudes = ArticulosOrdenados.objects.filter(orden=pk)
-    product_surtir = ArticulosparaSurtir.objects.filter(articulos__orden = pk)
-    listo_surtir = False
-    for item in product_surtir:
-        if item.surtir == True:
-            listo_surtir = True
-
-    num_prod_sol= product_solicitudes.count
+    
     context = {
-        'listo_surtir':listo_surtir,
         'solicitud': solicitud,
         'product_solicitudes': product_solicitudes,
-        'num_prod_sol': num_prod_sol,
     }
-
-    try:
-        requi = Requis.objects.get(orden = solicitud, complete = True )
-    except Requis.DoesNotExist:
-        requi = False
-
-    salidas = ValeSalidas.objects.filter(solicitud = solicitud)
-    if salidas and not requi:
-        exist_salida = True
-        context.update({
-            'exist_salida':exist_salida,
-            'salidas':salidas,
-        })
-
-    if requi:
-        exist_req = True
-        prod_req = ArticulosRequisitados.objects.filter(req__id = requi.id)
-        num_prod_req = prod_req.count()
-        compras = Compra.objects.filter(req = requi, complete = True)
-
-        context.update({
-            'requi': requi,
-            'exist_req': exist_req,
-            'num_prod_req': num_prod_req,
-            'prod_req':prod_req,
-            'compras':compras,
-        })
-
-        if compras:
-            pagos = Pago.objects.filter(oc__req = requi)
-            exist_oc = True
-            context.update({
-                'exist_oc': exist_oc,
-                'pagos':pagos,
-            })
-
-            if pagos:
-                exist_pago = True
-                entradas = Entrada.objects.filter(oc__req = requi, completo = True)
-                exist_entradas = bool(entradas)
-                salidas = ValeSalidas.objects.filter(solicitud = solicitud)
-                exist_salidas = bool(salidas)
-
-                context.update({
-                    'exist_pago': exist_pago,
-                    'exist_entradas': exist_entradas,
-                    'entradas': entradas,
-                    'salidas':salidas,
-                    'exist_salidas': exist_salidas,
-                })
-
-                if entradas:
-                    articulos_entradas = EntradaArticulo.objects.filter(entrada__oc__req = requi)
-                    context.update({
-                        'articulos_entradas': articulos_entradas,
-                    })
 
     return render(request,'solicitud/detalle.html', context)
 

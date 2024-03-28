@@ -169,7 +169,7 @@ class Item_Comparativo(models.Model):
     completo = models.BooleanField(default=False)
 
 class Compra(models.Model):
-    req = models.ForeignKey(Requis, on_delete = models.CASCADE, null=True)
+    req = models.ForeignKey(Requis, on_delete = models.CASCADE, null=True, related_name = 'compras')
     folio = models.CharField(max_length=7, null=True)
     complete = models.BooleanField(default=False)
     creada_por = models.ForeignKey(Profile, on_delete = models.CASCADE, null=True, related_name='Generacion')
