@@ -138,9 +138,13 @@ def pendientes_entrada(request):
                 print("No se encontró ningún objeto!")
         else:
             producto_surtir = ArticulosparaSurtir.objects.get(articulos = producto_comprado.producto.producto.articulos)       
-          
-        if producto_comprado.cantidad_pendiente < entrada_item.cantidad: #Si la cantidad de las entradas es mayor a la cantidad de la compra se rechaza
-            messages.error(request,f'La cantidad de entradas sobrepasa la cantidad comprada {suma_cantidad} > {entrada_item.cantidad}')
+        tolerance = 0.01
+        print(entrada_item.cantidad)
+        print(producto_comprado.cantidad_pendiente)
+        if abs(entrada_item.cantidad - producto_comprado.cantidad_pendiente) > tolerance: #Si la cantidad de las entradas es mayor a la cantidad de la compra se rechaza
+            messages.error(request,f'La cantidad de entradas sobrepasa la cantidad comprada {entrada_item.cantidad} > {producto_comprado.cantidad_pendiente}') 
+        #if producto_comprado.cantidad_pendiente < entrada_item.cantidad: #Si la cantidad de las entradas es mayor a la cantidad de la compra se rechaza
+            #messages.error(request,f'La cantidad de entradas sobrepasa la cantidad comprada {suma_cantidad} > {entrada_item.cantidad}')
         else:   #En caso de que NO sea un RESURMIENTO
             producto_comprado.cantidad_pendiente = producto_comprado.cantidad - suma_cantidad
             if producto_inv.producto.servicio == False:     #Se sacan los cálculos de costeo en caso de NO sea un SERVICIO
@@ -153,6 +157,7 @@ def pendientes_entrada(request):
                 else:    
                     precio_unit_promedio = monto_total/nueva_cantidad_inventario
                 producto_inv.price = precio_unit_promedio
+            
                 #Esta parte determina el comportamiento de todos las solicitudes que se tienen que activar cuando la entrada es de resurtimiento
             if entrada.oc.req.orden.tipo.tipo == 'resurtimiento':
                 if producto_surtir:
@@ -187,6 +192,7 @@ def pendientes_entrada(request):
                     producto_surtir.cantidad_requisitar = producto_surtir.cantidad_requisitar - entrada_item.cantidad   #Al producto pendiente por requisitar se le resta lo que entra
                     producto_surtir.seleccionado = False
                     producto_surtir.surtir = True
+                    producto_surtir.save()
                     producto_inv._change_reason = 'Se modifica el inventario en view: update_entrada. Esto es una entrada para solicitud normal'
                     entrada.entrada_date = date.today()
                     entrada.entrada_hora = datetime.now().time()

@@ -7,7 +7,7 @@ from solicitudes.models import Proyecto, Subproyecto
 class ProductForm(forms.ModelForm):
     class Meta:
         model = Product
-        fields = ['familia','subfamilia','unidad','especialista','iva','activo','servicio','baja_item','image','gasto','critico','especs']
+        fields = ['familia','subfamilia','unidad','especialista','iva','activo','servicio','baja_item','image','gasto','critico','especs','preevaluacion', 'descripcion_especifica','criterios_aceptacion']
 
     #Sobreescribiendo el método __init__ y configurando el queryset para que esté vacío
     def __init__(self, *args, **kwargs):
@@ -26,7 +26,7 @@ class ProductForm(forms.ModelForm):
 class AddProduct_Form(forms.ModelForm):
     class Meta:
         model = Product
-        fields = ['codigo','nombre','unidad','familia','subfamilia','especialista','iva','activo','servicio','image','gasto','critico','especs']
+        fields = ['codigo','nombre','unidad','familia','subfamilia','especialista','iva','activo','servicio','image','gasto','critico','especs','preevaluacion', 'descripcion_especifica','criterios_aceptacion']
 
 #Sobreescribiendo el método __init__ y configurando el queryset para que esté vacío
     def __init__(self, *args, **kwargs):

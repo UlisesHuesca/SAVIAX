@@ -198,7 +198,7 @@
                   
                     <td>
                         <form method="POST">
-                            {% csrf_token %}
+                        {% csrf_token %}
                         <ul class="nav nav-pills">
                             <input type="hidden" name="entrada_articulo_id" value="{{item.id|unlocalize}}">
                             <li class="nav-item m-1">

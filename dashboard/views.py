@@ -1011,6 +1011,7 @@ def add_product(request):
         } for item in familias
     ]
 
+    error_messages = {}
 
     if request.method =='POST':
         form = AddProduct_Form(request.POST, request.FILES or None, instance = item)
@@ -1021,11 +1022,15 @@ def add_product(request):
             item.save()
             messages.success(request,f'Has agregado correctamente el producto {item.nombre}')
             return redirect('dashboard-product')
+        else:
+            for field, errors in form.errors.items():
+                error_messages[field] = errors.as_text()
     else:
         form = AddProduct_Form()
 
 
     context = {
+        'error_messages':error_messages,
         'familias_para_select2':familias_para_select2,
         'form': form,
         'item':item,
@@ -1037,18 +1042,22 @@ def product_update(request, pk):
 #def product_update_modal(request, pk):
 
     item = Product.objects.get(id=pk)
-
+    error_messages = {}
     if request.method =='POST':
         form = AddProduct_Form(request.POST, request.FILES or None, instance=item, )
         if form.is_valid():
             form.save()
             messages.success(request,f'Has actualizado correctamente el producto {item.nombre}')
             return redirect('dashboard-product')
+        else:
+            for field, errors in form.errors.items():
+                error_messages[field] = errors.as_text()
     else:
         form = AddProduct_Form(instance=item)
 
 
     context = {
+        'error_messages':error_messages,
         'form': form,
         'item':item,
         }

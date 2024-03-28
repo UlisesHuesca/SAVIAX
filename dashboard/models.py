@@ -44,6 +44,8 @@ class Product(models.Model):
     unidad = models.ForeignKey(Unidad, on_delete = models.CASCADE, null=True)
     familia = models.ForeignKey(Familia, on_delete = models.CASCADE, null=True)
     subfamilia = models.ForeignKey(Subfamilia, on_delete =models.CASCADE, null=True, blank=True)
+    descripcion_especifica = models.TextField(blank=True, null=True)
+    criterios_aceptacion = models.TextField(blank=True, null=True)
     especialista = models.BooleanField(default=False)
     iva = models.BooleanField(default=True)
     activo = models.BooleanField(default=False)
@@ -53,6 +55,7 @@ class Product(models.Model):
     baja_item = models.BooleanField(default=False)
     image = models.ImageField(null=True, blank=True, upload_to='product_images')
     completado = models.BooleanField(default = False)
+    preevaluacion =  models.BooleanField(default=False)
     #modificaciones para API
     critico = models.ForeignKey(Criticidad, on_delete = models.CASCADE, null=True)
     especs = models.TextField(blank=True, null=True)
