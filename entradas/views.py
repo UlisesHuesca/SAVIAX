@@ -127,7 +127,7 @@ def pendientes_entrada(request):
 
         if entrada.oc.req.orden.tipo.tipo == 'resurtimiento': #si es resurtimiento
             try:
-                producto_surtir = ArticulosparaSurtir.objects.get(articulos=producto_comprado.producto.producto.articulos, surtir=False, articulos__orden__tipo__tipo='resurtimiento')
+                producto_surtir = ArticulosparaSurtir.objects.filter(articulos=producto_comprado.producto.producto.articulos, requisitar=True, articulos__orden__tipo__tipo='resurtimiento')
                 print(producto_surtir)
                 # ...
             except ArticulosparaSurtir.MultipleObjectsReturned:
@@ -162,16 +162,28 @@ def pendientes_entrada(request):
             if entrada.oc.req.orden.tipo.tipo == 'resurtimiento':
                 if producto_surtir:
                     producto_inv.cantidad_entradas = pendientes_surtir + entrada_item.cantidad
-                    producto_surtir.cantidad_requisitar = producto_surtir.cantidad_requisitar - entrada_item.cantidad
-                    producto_surtir.cantidad = producto_surtir.cantidad + entrada_item.cantidad
                     producto_inv.cantidad = producto_inv.cantidad + entrada_item.cantidad 
-                    if producto_surtir.cantidad_requisitar == 0:
-                        producto_surtir.requisitar = False
-                    
-                    producto_surtir.precio = producto_comprado.precio_unitario
-                    producto_surtir.save()
+                    producto_inv._change_reason = 'Se modifica el inventario en view: update_entrada. Esto es una entrada para resurtimiento'
                     producto_inv.save()
-                producto_inv._change_reason = 'Se modifica el inventario en view: update_entrada. Esto es una entrada para resurtimiento'
+                    for producto in producto_surtir:  #producto surtir deben de ser todos los productos que estaban en espera de ser requisitados se itera sobre ellos
+                        if entrada_item.agotado == False:
+                            if (entrada_item.cantidad_por_surtir - producto_surtir.cantidad_requisitar) > 0:       #si la entrada es mayor que la cantidad por surtir entonces                                                                                     #se evalua si la cantidad que queda de item es suficiente para cubrir el surtimiento
+                                producto_surtir.cantidad = producto_surtir.cantidad + producto_surtir.cantidad_requisitar  #la cantidad de producto a surtir es igual a la cantidad por surtir mas la que se iba a requisitar (iba, ya no es necesario)
+                                entrada_item.cantidad_por_surtir = entrada_item.cantidad_por_surtir - producto_surtir.cantidad_requisitar #la cantidad disponible para surtir es igual a la que cantidad que había disponible menos la cantidad por requisitar (que ya se le sumo al surtir arriba por ello se resta para mantener el balance)
+                                producto_inv.cantidad = producto_inv.cantidad - producto_surtir.cantidad_requisitar #a la cantidad de inventario también se le resta la cantidad por requisitar ya que originalmente aquí se suma la cantidad total de la entrada
+                                producto_surtir.cantidad_requisitar = 0 #la cantidad a requisitar es 0 (ya no queda nada más por requisitar)
+                                producto_surtir.requisitar = False #al no quedar cantidad por requisitar, el requisitar es falso
+                                producto_surtir.precio = producto_comprado.precio_unitario 
+                                producto_inv._change_reason = 'Se modifica el inventario en view: update_entrada. Esto es un apartado de un resurtimiento que estaba por requistarse'
+                            else: #si la cantidad de entrada por surtir no es mayor que la necesidad del material que se quiere requisitar, entonces:
+                                producto_surtir.cantidad = producto_surtir.cantidad + entrada_item.cantidad_por_surtir #a la cantidad por surtir se le suma lo que sea que quede en la entrada por surtir
+                                producto_inv.cantidad = producto_inv.cantidad - entrada_item.cantidad_por_surtir # a la cantidad del inventario se le resta también lo que sea que quede en la entrada por surtir
+                                entrada_item.cantidad_por_surtir = 0  #la cantidad por surtir se agota
+                                entrada_item.agotado = True           #es decir, es producto se agota
+                                producto_inv._change_reason = 'Aqui se acaba el resurtimiento'
+                            producto_surtir.save()
+                            producto_inv.save()
+                            entrada_item.save()
             else:
                 if producto_surtir.articulos.producto.producto.especialista or producto_surtir.articulos.producto.producto.critico or producto_surtir.articulos.producto.producto.rev_calidad:
                     producto_surtir.surtir = False                           
