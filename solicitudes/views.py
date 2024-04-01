@@ -1258,7 +1258,7 @@ def status_sol(request, pk):
     
     context = {
         'solicitud': solicitud,
-        'product_solicitudes': product_solicitudes,
+        'productos_solicitados': product_solicitudes,
     }
 
     return render(request,'solicitud/detalle.html', context)

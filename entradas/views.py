@@ -102,7 +102,7 @@ def pendientes_entrada(request):
     usuario = Profile.objects.get(staff__id=request.user.id)
     
     if usuario.tipo.almacen == True:
-        articulos_recepcionados = EntradaArticulo.objects.filter(recepcion = True, almacenado = False)
+        articulos_recepcionados = EntradaArticulo.objects.filter(recepcion = True, almacenado = False, articulo_comprado__producto__producto__articulos__producto__producto__servicio=False)
 
     myfilter = EntradaArticuloFilter(request.GET, queryset=articulos_recepcionados)
     articulos_recepcionados = myfilter.qs
@@ -197,32 +197,34 @@ def pendientes_entrada(request):
                             )
                     email.attach(f'OC_folio:{entrada_item.articulo_comprado.oc.folio}.pdf',archivo_oc,'application/pdf')
                     #email.send()
-                else:  #Este código es el que tiene que suceder para hacer la entrada a almacén, pero eso solo
-                    producto_inv.cantidad_entradas = pendientes_surtir
-                    producto_inv.cantidad_apartada = producto_inv.apartada_entradas
-                    producto_surtir.cantidad = producto_surtir.cantidad + entrada_item.cantidad                       #Al producto disponible para surtir se le suma lo que entra
-                    producto_surtir.cantidad_requisitar = producto_surtir.cantidad_requisitar - entrada_item.cantidad   #Al producto pendiente por requisitar se le resta lo que entra
-                    producto_surtir.seleccionado = False
-                    producto_surtir.surtir = True
-                    producto_surtir.save()
-                    producto_inv._change_reason = 'Se modifica el inventario en view: update_entrada. Esto es una entrada para solicitud normal'
-                    entrada.entrada_date = date.today()
-                    entrada.entrada_hora = datetime.now().time()
-                    entrada_item.almacenado = True
-                    if suma_cantidad < producto_comprado.cantidad:
-                        producto_comprado.recepcion_completa = False
-                        producto_comprado.seleccionado = False
-                        compra.recepcion_completa = False
-                    else:
-                        producto_comprado.entrada_completa = True
+                #Este código es el que tiene que suceder para hacer la entrada a almacén
+                producto_inv.cantidad_entradas = pendientes_surtir
+                producto_inv.cantidad_apartada = producto_inv.apartada_entradas
+                producto_surtir.cantidad = producto_surtir.cantidad + entrada_item.cantidad                       #Al producto disponible para surtir se le suma lo que entra
+                producto_surtir.cantidad_requisitar = producto_surtir.cantidad_requisitar - entrada_item.cantidad   #Al producto pendiente por requisitar se le resta lo que entra
+                producto_surtir.seleccionado = False
+                producto_surtir.surtir = True
+                producto_inv._change_reason = 'Se modifica el inventario en view: update_entrada. Esto es una entrada para solicitud normal'
+                entrada.entrada_date = date.today()
+                entrada.entrada_hora = datetime.now().time()
+                entrada.save()
+                entrada_item.almacenado = True
+                if suma_cantidad < producto_comprado.cantidad:
+                    producto_comprado.recepcion_completa = False
+                    producto_comprado.seleccionado = False
+                    compra.recepcion_completa = False
+                else:
+                    producto_comprado.entrada_completa = True
+                messages.success(request,'Haz agregado exitosamente un producto')
                 entrada_item.save()
+                producto_comprado.save()
                 producto_inv.save()
                 entrada.save()
                 producto_surtir.save()
                 #Se guardan todas las bases de datos
           
                 #cantidad_entradas = entradas_producto.cantidad - entradas_producto.cantidad_por_surtir
-            messages.success(request,'Haz agregado exitosamente un producto')
+            #messages.success(request,'Haz agregado exitosamente un producto')
             if producto_comprado.producto.producto.articulos.producto.producto.servicio == True:
                 salida, created = Salidas.objects.get_or_create(producto = producto_surtir, salida_firmada=True, cantidad = entrada_item.cantidad)
                 salida.comentario = 'Esta salida es un  servicio por lo tanto no pasa por almacén y no existe registro de la salida del mismo'
