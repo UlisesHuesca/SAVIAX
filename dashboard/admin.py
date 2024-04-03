@@ -22,7 +22,7 @@ class InventarioAdmin(SimpleHistoryAdmin):
 class ArticulosOrdenadosAdmin(admin.ModelAdmin):
     list_display = ('id','orden','producto','cantidad')
     search_fields = ['producto__producto__nombre']
-    raw_id_fields = ('articulos','producto','orden',)
+    raw_id_fields = ('producto','orden',)
 
 class ArticulosparaSurtirAdmin(admin.ModelAdmin):
     search_fields = ['articulos__producto__producto__nombre','articulos__orden__folio']

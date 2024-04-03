@@ -145,10 +145,12 @@
                     {% else %}
                     <td></td>
                     {% endif %}
-                    {% if item.critico %}
-                    <td>
-                        <a class="btn btn-outline-danger" id="btnActualizar" type="button" href ="{% url 'revision-producto-calidad' item.id %}"><i class="fa-solid fa-q"></i></a>
-                    </td>
+                    {% if usuario.tipo.nombre == "Supervisor_Calidad" %}    
+                        {% if item.critico.nombre == "Crítico" or item.critico.nombre == "No Crítico" %}
+                        <td>
+                            <a class="btn btn-outline-danger" id="btnActualizar" type="button" href ="{% url 'revision-producto-calidad' item.id %}"><i class="fa-solid fa-q"></i></a>
+                        </td>
+                        {% endif %}
                     {% endif %}
                     </tr>
                 {% endfor %}

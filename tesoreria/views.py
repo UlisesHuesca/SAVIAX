@@ -609,7 +609,7 @@ def convert_excel_matriz_pagos(pagos):
     columna_max = len(columns)+2
 
     # Agregar los mensajes
-    ws.cell(column = columna_max, row = 1, value='{Reporte Creado Automáticamente por Savia Vordtec. UH}').style = messages_style
+    ws.cell(column = columna_max, row = 1, value='{Reporte Creado Automáticamente por SAVIA 2.0. UH}').style = messages_style
     ws.cell(column = columna_max, row = 2, value='{Software desarrollado por Vordcab S.A. de C.V.}').style = messages_style
     ws.column_dimensions[get_column_letter(columna_max)].width = 30
 
@@ -645,13 +645,13 @@ def convert_excel_matriz_pagos(pagos):
             proveedor = pago.gasto.staff.staff.first_name
             facturas_completas = pago.gasto.facturas_completas
             tipo_de_cambio = '' # Asume que no se requiere tipo de cambio para gastos
-            moneda = pago.gasto.moneda.nombre
+            moneda = 'PESOS'
         elif pago.viatico:
             proveedor = pago.viatico.staff.staff.first_name
             solicitado = pago.viatico.staff.staff.first_name + ' ' + pago.viatico.staff.staff.last_name
             facturas_completas = pago.viatico.facturas_completas
             tipo_de_cambio = '' # Asume que no se requiere tipo de cambio para viáticos
-            moneda = pago.viatico.moneda.nombre,
+            moneda = 'PESOS',
         else:
             proveedor = None
             facturas_completas = None
@@ -685,5 +685,5 @@ def convert_excel_matriz_pagos(pagos):
     sheet = wb['Sheet']
     wb.remove(sheet)
     wb.save(response)
-
+    response.set_cookie('descarga_iniciada', 'true', max_age=20)  # La cookie expira en 20 segundos
     return(response)

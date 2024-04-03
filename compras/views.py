@@ -885,28 +885,28 @@ def autorizar_oc1(request, pk):
     total_costo_autorizado = 0
     total_costo_pagado = 0
     # Recorremos cada compra para calcular los totales.
-    for compra in compras_por_sumar:
+    for comprax in compras_por_sumar:
         # Ajustamos el costo_oc si la moneda es DOLARES.
-        if compra.moneda:
-            if compra.moneda.nombre == "DOLARES":
-                costo_oc = compra.costo_oc
-                tc = compra.tipo_de_cambio or 17            
-                costo_oc_ajustado = compra.costo_oc * tc
+        if comprax.moneda:
+            if comprax.moneda.nombre == "DOLARES":
+                costo_oc = comprax.costo_oc
+                tc = comprax.tipo_de_cambio or 17            
+                costo_oc_ajustado = comprax.costo_oc * tc
 
             else:
-                costo_oc_ajustado = compra.costo_oc
+                costo_oc_ajustado = comprax.costo_oc
         else:
-            costo_oc_ajustado = compra.costo_oc
+            costo_oc_ajustado = comprax.costo_oc
         
         # Sumamos al total general.
         total_costo_oc += costo_oc_ajustado
         
         # Si la compra está autorizada, la sumamos al total autorizado.
-        if compra.autorizado2:
+        if comprax.autorizado2:
             total_costo_autorizado += costo_oc_ajustado
         
         # Si la compra está pagada, la sumamos al total pagado.
-        if compra.pagada:
+        if comprax.pagada:
             total_costo_pagado += costo_oc_ajustado
 
     # Ahora tenemos los totales calculados.
@@ -928,8 +928,8 @@ def autorizar_oc1(request, pk):
         if compra.costo_fletes:
             costo_fletes = compra.costo_fletes
 
-    print(costo_oc)
-    print(compra.req.orden.subproyecto.gastado)
+    #print(costo_oc)
+    #print(compra.req.orden.subproyecto.gastado)
     
     costo_total = costo_fletes + costo_oc 
     resta = compra.req.orden.subproyecto.presupuesto - total_costo_pagado - costo_total
@@ -1018,28 +1018,28 @@ def autorizar_oc2(request, pk):
     total_costo_autorizado = 0
     total_costo_pagado = 0
     # Recorremos cada compra para calcular los totales.
-    for compra in compras_por_sumar:
+    for comprax in compras_por_sumar:
         # Ajustamos el costo_oc si la moneda es DOLARES.
-        if compra.moneda:
-            if compra.moneda.nombre == "DOLARES":
-                costo_oc = compra.costo_oc
-                tc = compra.tipo_de_cambio or 17            
-                costo_oc_ajustado = compra.costo_oc * tc
+        if comprax.moneda:
+            if comprax.moneda.nombre == "DOLARES":
+                costo_oc = comprax.costo_oc
+                tc = comprax.tipo_de_cambio or 17            
+                costo_oc_ajustado = comprax.costo_oc * tc
 
             else:
-                costo_oc_ajustado = compra.costo_oc
+                costo_oc_ajustado = comprax.costo_oc
         else:
-            costo_oc_ajustado = compra.costo_oc
+            costo_oc_ajustado = comprax.costo_oc
         
         # Sumamos al total general.
         total_costo_oc += costo_oc_ajustado
         
         # Si la compra está autorizada, la sumamos al total autorizado.
-        if compra.autorizado2:
+        if comprax.autorizado2:
             total_costo_autorizado += costo_oc_ajustado
         
         # Si la compra está pagada, la sumamos al total pagado.
-        if compra.pagada:
+        if comprax.pagada:
             total_costo_pagado += costo_oc_ajustado
 
     # Ahora tenemos los totales calculados.
@@ -1814,7 +1814,7 @@ def convert_excel_matriz_compras(compras):
     columna_max = len(columns)+2
 
     # Agregar los mensajes
-    ws.cell(column = columna_max, row = 1, value='{Reporte Creado Automáticamente por Savia Vordtec. UH}').style = messages_style
+    ws.cell(column = columna_max, row = 1, value='{Reporte Creado Automáticamente por SAVIA 2.0. UH}').style = messages_style
     ws.cell(column = columna_max, row = 2, value='{Software desarrollado por Vordcab S.A. de C.V.}').style = messages_style
     ws.column_dimensions[get_column_letter(columna_max)].width = 30
     ws.column_dimensions[get_column_letter(columna_max + 1)].width = 30
@@ -1865,7 +1865,7 @@ def convert_excel_matriz_compras(compras):
         autorizado_text = 'Autorizado' if compra.autorizado2 else 'No Autorizado' if compra.autorizado2 == False or compra.autorizado1 == False else 'Pendiente Autorización'
         pagado_text = 'Pagada' if compra.pagada else 'No Pagada'
         entrada_text = 'Entregado' if compra.entrada_completa else 'No Entregado'
-        
+        condicion_fecha_ultima_entrada = True
         if compra.entrada_completa:  # Verificamos si entrada es True para esta compra
             entradas = Entrada.objects.filter(oc=compra)
             ultima_entrada = entradas.order_by('-entrada_date').first()
@@ -1875,33 +1875,41 @@ def convert_excel_matriz_compras(compras):
                 no_conformidades_count = No_Conformidad.objects.filter(oc=compra).count()
             else:
                 # No hay entradas para esta compra
-                fecha_ultima_entrada = "No Existe"
-                no_conformidades_count = "No Existe"
+                fecha_ultima_entrada = "No existe"
+                condicion_fecha_ultima_entrada = False
+                no_conformidades_count = "No existe"
         else:
         # El atributo 'entrada' en Compra no es True
             fecha_ultima_entrada = "No existe"
-            no_conformidades_count = "No Existe"
+            condicion_fecha_ultima_entrada = False
+            no_conformidades_count = "No existe"
         
+        ultimo_pago = None
         if compra.pagada:
             ultimo_pago = pagos.order_by('-pagado_date').first()
-        else:
-            ultimo_pago = "No Existe"
+
+        if ultimo_pago == None:
+            ultimo_pago = "No existe"
         
-        if compra.cond_de_pago.nombre == "CONTADO" and ultimo_pago != "No Existe":
+        if compra.cond_de_pago.nombre == "CONTADO" and ultimo_pago != "No existe":
             fecha_inicio = ultimo_pago.pagado_date
         elif compra.cond_de_pago.nombre == "CREDITO":
             fecha_inicio = compra.autorizado_date2
-        else:
-            fecha_inicio = "No Existe"
+        
+        if fecha_inicio == None:
+            fecha_inicio = "No existe"
 
-        if fecha_ultima_entrada != "No existe" and fecha_inicio != "No Existe":
-            diferencia_fechas = (fecha_ultima_entrada - fecha_inicio).days
-        elif fecha_inicio != "No Existe" and fecha_inicio is not None:
+        if condicion_fecha_ultima_entrada != False and fecha_inicio != "No existe":
+            if fecha_ultima_entrada != None: 
+                diferencia_fechas = (fecha_ultima_entrada - fecha_inicio).days
+        elif fecha_inicio != "No existe" and fecha_inicio is not None:
             diferencia_fechas = (date.today() - fecha_inicio).days 
         else:
             diferencia_fechas = 0
 
-        if fecha_inicio == "No Existe":
+        if compra.dias_de_entrega == None:
+            compra.dias_de_entrega = 0
+        if fecha_inicio == "No existe":
             cumplimiento_entrada = "No Evaluable"
         elif compra.dias_de_entrega >= diferencia_fechas:
             cumplimiento_entrada = "En tiempo"
@@ -1961,7 +1969,7 @@ def convert_excel_matriz_compras(compras):
     sheet = wb['Sheet']
     wb.remove(sheet)
     wb.save(response)
-
+    response.set_cookie('descarga_iniciada', 'true', max_age=20)  # La cookie expira en 20 segundos
     return(response)
 
 def convert_excel_solicitud_matriz_productos(productos):
