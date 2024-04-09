@@ -96,7 +96,7 @@
                     <th scope="col">Área</th>
                     <th scope="col">Producto</th>
                     <th>Cantidad</th>
-                    <th scope="col">Acción</th>
+                    <th scope="col">Preevaluado</th>
                 </tr>
             </thead>
             <tbody>
@@ -110,7 +110,7 @@
                     <td>{{item.req.orden.area}}</td>
                     <td>{{item.producto.articulos.producto.producto.nombre}} </td>
                     <td>{{item.cantidad}}</td>
-                    <td></td>
+                    <td>{% if item.producto.articulos.producto.producto.preevaluacion %}<button class="btn btn-outline-danger" id="btnActualizar" type="button" href ="#"><i class="fa-solid fa-p"></i></button>{% endif %}</td>
                 </tr>
                 {% endfor %}
             </tbody>

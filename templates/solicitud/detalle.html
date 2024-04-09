@@ -55,7 +55,7 @@
                                     {% elif requi.autorizar == False %}
                                     <button class="accordion-button collapsed btn-danger" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="false" aria-controls="collapseOne">
                                         Requisición:&nbsp<strong>{{ requi.folio }}</strong>&nbsp  <i class="fa-solid fa-circle-check"></i>&nbsp Cancelada
-                                    {% else %}
+                                    {% elif requi.complete %}
                                     <button class="accordion-button collapsed btn-warning" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="false" aria-controls="collapseOne">
                                         Requisición:&nbsp<strong>{{ requi.folio }}</strong>&nbsp  <i class="fa-solid fa-circle-check"></i>&nbsp No Autorizada Aún
                                     {% endif %}
@@ -63,6 +63,11 @@
                                 </h2>
                                 <div id="collapseOne" class="accordion-collapse collapse" aria-labelledby="headingOne" data-bs-parent="#accordionExample">
                                     <div class="accordion-body" style="color:black">
+                                        {% for producto in requi.productos.all %}
+                                        <ul>
+                                            <li>{{producto.producto.articulos.producto.producto.nombre}} &nbsp| &nbspCantidad:{{producto.cantidad}}</li>
+                                        </ul>
+                                    {% endfor %}
                                     </div>
                                 </div>
                                     {% if requi.autorizar %}
@@ -70,16 +75,16 @@
                                             <h2 class="accordion-header" id="headingSol">
                                                 {% if compra.autorizado2 %}
                                                 <button class="accordion-button collapsed btn-success" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="false" aria-controls="collapseOne">
-                                                    Compra:&nbsp<strong> {{ compra.get_folio }}</strong>&nbsp<i class="fa-solid fa-circle-check"></i> &nbsp Autorizada: {{ compra.autorizado_at_2|date:"d/m/Y"}}
+                                                    Compra:&nbsp<strong> {{ compra.get_folio }}</strong>&nbsp<i class="fa-solid fa-circle-check"></i> &nbsp Autorizada: {{ compra.autorizado_date2|date:"d/m/Y"}}
                                                 {% elif compra.autorizado1 %}    
                                                 <button class="accordion-button collapsed btn-warning" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="false" aria-controls="collapseOne">
-                                                    Compra:&nbsp<strong> {{ compra.get_folio }}</strong>&nbsp<i class="fa-solid fa-circle-check"></i> &nbsp Autorizada: {{ compra.autorizado_at|date:"d/m/Y"}}&nbsp|Falta Autorización Gerencia
+                                                    Compra:&nbsp<strong> {{ compra.get_folio }}</strong>&nbsp<i class="fa-solid fa-circle-check"></i> &nbsp Autorizada: {{ compra.autorizado_date2|date:"d/m/Y"}}&nbsp|Falta Autorización Gerencia
                                                 {% elif compra.autorizado2 == False %}
                                                 <button class="accordion-button collapsed btn-danger" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="false" aria-controls="collapseOne">
-                                                    Compra:&nbsp<strong> {{ compra.get_folio }}</strong>&nbsp<i class="fa-solid fa-circle-check"></i> &nbsp Cancelada: {{ compra.autorizado_at_2|date:"d/m/Y"}}| Cancelada Gerencia
+                                                    Compra:&nbsp<strong> {{ compra.get_folio }}</strong>&nbsp<i class="fa-solid fa-circle-check"></i> &nbsp Cancelada: {{ compra.autorizado_date2|date:"d/m/Y"}}| Cancelada Gerencia
                                                 {% elif compra.autorizado2 == False %}
                                                 <button class="accordion-button collapsed btn-danger" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="false" aria-controls="collapseOne">
-                                                    Compra:&nbsp<strong> {{ compra.get_folio }}</strong>&nbsp<i class="fa-solid fa-circle-check"></i> &nbsp Cancelada: {{ compra.autorizado_at_2|date:"d/m/Y"}}| Cancelada Sup. Adm.
+                                                    Compra:&nbsp<strong> {{ compra.get_folio }}</strong>&nbsp<i class="fa-solid fa-circle-check"></i> &nbsp Cancelada: {{ compra.autorizado_date2|date:"d/m/Y"}}| Cancelada Sup. Adm.
                                                 {% elif compra.complete  and compra.autorizado1 == None %}
                                                 <button class="accordion-button collapsed  btn-warning" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="false" aria-controls="collapseOne">
                                                     Compra:&nbsp<strong> {{ compra.get_folio }}</strong>&nbsp<i class="fa-solid fa-circle-check"></i>Falta Autorización Sup. Adm.
@@ -92,6 +97,11 @@
                                             <div id="collapseOne" class="accordion-collapse collapse" aria-labelledby="headingOne" data-bs-parent="#accordionExample">
                                                 <div class="accordion-body" style="color:black">
                                                     <p>Creada: {{ compra.created_at|date:"d/m/Y" }}</p>
+                                                    {% for producto in compra.articulocomprado_set.all %}
+                                                    <ul>
+                                                        <li>{{producto.producto.producto.articulos.producto.producto.nombre}} &nbsp| &nbspCantidad:{{producto.cantidad}}</li>
+                                                    </ul>
+                                                    {% endfor %}
                                                 </div>
                                             </div>
                                             {% if compra.autorizado2 %}

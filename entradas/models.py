@@ -18,7 +18,7 @@ class Entrada(models.Model):
         return f'{self.id} - {self.oc} - {self.completo}'
 
 class EntradaArticulo(models.Model):
-    entrada = models.ForeignKey(Entrada, on_delete = models.CASCADE, null=True)
+    entrada = models.ForeignKey(Entrada, on_delete = models.CASCADE, null=True, related_name = "articulos")
     cantidad = models.DecimalField(max_digits=14, decimal_places=2, default=0)
     cantidad_por_surtir = models.DecimalField(max_digits=14, decimal_places=2, null=True) #Cambié el dafault de 0 porque eso es lo que considera la view para llenar este campo
     articulo_comprado = models.ForeignKey(ArticuloComprado, on_delete = models.CASCADE, null=True)

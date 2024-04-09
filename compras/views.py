@@ -1,4 +1,13 @@
 from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth.decorators import login_required
+from django.http import JsonResponse, HttpResponse, FileResponse
+from django.contrib import messages
+from django.core.paginator import Paginator
+from django.db.models import F, Avg, Value, ExpressionWrapper, fields, Sum, Q, Case, When, DecimalField, Max
+from django.db.models.functions import Concat, Coalesce
+from django.conf import settings
+from django.core.mail import EmailMessage, BadHeaderError
+from django.core.files.base import ContentFile
 from dashboard.models import Inventario, Order, ArticulosOrdenados, ArticulosparaSurtir, Producto_Calidad
 from requisiciones.models import Requis, ArticulosRequisitados
 from user.models import Profile
@@ -11,17 +20,12 @@ from .forms import CompraForm, ArticuloCompradoForm, ArticulosRequisitadosForm, 
 from requisiciones.forms import Articulo_Cancelado_Form
 from tesoreria.forms import Facturas_Form
 from entradas.models import Entrada, No_Conformidad
-from django.contrib.auth.decorators import login_required
-from django.http import JsonResponse, HttpResponse
 import json
-from django.contrib import messages
 from datetime import date, datetime, timedelta
 from num2words import num2words
-from django.core.paginator import Paginator
+
 import decimal
-from django.db.models import F, Avg, Value, ExpressionWrapper, fields, Sum, Q, Case, When, DecimalField
-from django.db.models.functions import Concat, Coalesce
-from django.conf import settings
+
 #PDF generator
 import io
 import os
@@ -31,18 +35,16 @@ from reportlab.lib.colors import Color, black, blue, red, white
 from reportlab.lib.units import cm
 from reportlab.lib.pagesizes import letter
 from reportlab.rl_config import defaultPageSize
-from django.http import FileResponse
+
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib.enums import TA_CENTER
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, Frame
 from bs4 import BeautifulSoup
-from django.core.files.base import ContentFile
 import urllib.request, urllib.parse, urllib.error
 from io import BytesIO
-from django.core.mail import EmailMessage, BadHeaderError
+
 from smtplib import SMTPException
 # Import Excel Stuff
-from django.contrib import messages
 from openpyxl import Workbook #,save_virtual_workbook
 from openpyxl.styles import NamedStyle, Font, PatternFill
 from openpyxl.utils import get_column_letter
@@ -238,7 +240,7 @@ def compra_edicion(request, pk):
     productos = ArticulosRequisitados.objects.filter(req = oc.req, sel_comp = False)
     req = Requis.objects.get(id = oc.req.id)
     proveedores = Proveedor_direcciones.objects.filter(
-        Q(estatus__nombre='NUEVO') | Q(estatus__nombre='APROBADO'))
+        Q(estatus__nombre='NUEVO') | Q(estatus__nombre='APROBADO') | Q(nombre__preevaluacion__isnull=False))
     form_product = ArticuloCompradoForm()
     form = CompraForm(instance=oc)
 
@@ -1145,7 +1147,7 @@ def autorizar_oc2(request, pk):
                         email.send()
                 messages.success(request, f'{usuario.staff.first_name} has autorizado la solicitud {compra.get_folio}')
             except (BadHeaderError, SMTPException) as e:
-                error_message = f'{usuario.staff.staff.first_name} has autorizado la compra {compra.folio} pero el correo de notificación no ha sido enviado debido a un error: {e}'
+                error_message = f'{usuario.staff.first_name} has autorizado la compra {compra.folio} pero el correo de notificación no ha sido enviado debido a un error: {e}'
                 messages.warning(request, error_message)   
         else:
             html_message = f"""
@@ -1174,9 +1176,9 @@ def autorizar_oc2(request, pk):
                     )
                 email.content_subtype = "html " # Importante para que se interprete como HTML
                 email.send()
-                messages.success(request, f'{usuario.staff.staff.first_name} has autorizado la compra {compra.get_folio}')
+                messages.success(request, f'{usuario.staff.first_name} has autorizado la compra {compra.get_folio}')
             except (BadHeaderError, SMTPException) as e:
-                error_message = f'{usuario.staff.staff.first_name} has autorizado la compra {compra.get_folio} pero el correo de notificación no ha sido enviado debido a un error: {e}'
+                error_message = f'{usuario.staff.first_name} has autorizado la compra {compra.get_folio} pero el correo de notificación no ha sido enviado debido a un error: {e}'
                 messages.warning(request, error_message)   
         return redirect('autorizacion-oc2')
 
@@ -1765,6 +1767,27 @@ def generar_pdf(compra):
     buf.seek(0)
     return buf
 
+def dias_laborables(inicio, fin):
+    # Definimos los días festivos directamente dentro de la función
+    festivos = [
+        date(2024, 3, 18),  # Festivo específico 1
+        date(2024, 3, 26),  # Festivo específico 2
+    ]
+    
+    # Comenzamos el conteo desde el día siguiente al 'inicio' para no incluir el día inicial en el conteo
+    dia_actual = inicio + timedelta(days=1)
+    dias_habiles = 0
+    
+    while dia_actual < fin:  # Cambiamos a < para no incluir el día 'fin' en el conteo
+        if dia_actual.weekday() < 5 and dia_actual not in festivos:
+            dias_habiles += 1
+        dia_actual += timedelta(days=1)
+    
+    # Verificamos si el día 'fin' debe contarse como un día hábil
+    if fin.weekday() < 5 and fin not in festivos:
+        dias_habiles += 1
+    
+    return dias_habiles
 
 def convert_excel_matriz_compras(compras):
     response= HttpResponse(content_type = "application/ms-excel")
@@ -1801,7 +1824,7 @@ def convert_excel_matriz_compras(compras):
     percent_style.font = Font(name ='Calibri', size = 10)
     wb.add_named_style(percent_style)
 
-    columns = ['Compra','Requisición','Solicitud','Solicitante','Proyecto','Subproyecto','Área','Creado','Req. Autorizada','Proveedor',
+    columns = ['Compra','Requisición','Solicitud','Proyecto','Subproyecto','Área','Solicitante','Creado','Req. Autorizada','Proveedor',
                'Crédito/Contado','Costo','Monto_Pagado','Status Pago','Status Autorización','Días de entrega','Moneda',
                'Tipo de cambio','Entrada','Fecha Entrada','Fecha Inicio','Diferencia de Fechas','Status Entrega','No Conformidades','Total en pesos']
 
@@ -1815,7 +1838,7 @@ def convert_excel_matriz_compras(compras):
 
     # Agregar los mensajes
     ws.cell(column = columna_max, row = 1, value='{Reporte Creado Automáticamente por SAVIA 2.0. UH}').style = messages_style
-    ws.cell(column = columna_max, row = 2, value='{Software desarrollado por Vordcab S.A. de C.V.}').style = messages_style
+    ws.cell(column = columna_max, row = 2, value='{Software desarrollado por Grupo Vordcab S.A. de C.V.}').style = messages_style
     ws.column_dimensions[get_column_letter(columna_max)].width = 30
     ws.column_dimensions[get_column_letter(columna_max + 1)].width = 30
 
@@ -1834,13 +1857,13 @@ def convert_excel_matriz_compras(compras):
     #KPIS
     ws.cell(column = columna_max, row = 8, value='7.1 Porcentaje de órdenes de compra entregadas a tiempo').style = messages_style
     ws.cell(row=9, column = columna_max, value="Total de OC's con fecha Inicio").style = head_style
-    ws.cell(row=10, column = columna_max, value="OC dentro de tiempo de entrega").style = head_style
+    ws.cell(row=10, column = columna_max, value="OC fuera de tiempo de entrega").style = head_style
     ws.cell(row=11, column = columna_max, value="% de cumplimiento").style = head_style
 
      # Asumiendo que las filas de datos comienzan en la fila 2 y terminan en row_num
     ws.cell(row=9, column=columna_max + 1, value=f"=COUNTIFS(U:U, \"<>No Existe\", U:U, \"<>\")").style = body_style
-    ws.cell(row=10, column=columna_max + 1, value=f"=COUNTIF(W:W, \"En tiempo\")").style = body_style
-    ws.cell(row=11, column=columna_max + 1, value=f"={get_column_letter(columna_max+1)}10/{get_column_letter(columna_max+1)}9").style = percent_style
+    ws.cell(row=10, column=columna_max + 1, value=f"=COUNTIF(W:W, \"Fuera de tiempo\")").style = body_style
+    ws.cell(row=11, column=columna_max + 1, value=f"=1-({get_column_letter(columna_max+1)}10/{get_column_letter(columna_max+1)}9)").style = percent_style
 
     ws.cell(column = columna_max, row = 13, value='7.2.Porcentaje de productos o servicios recibidos sin no conformidades').style = messages_style
     ws.cell(row=14, column = columna_max, value="Total de OC's recibidas").style = head_style
@@ -1854,6 +1877,7 @@ def convert_excel_matriz_compras(compras):
 
     rows = []
     for compra in compras:
+        no_conformidades_count = 0
         # Obtén todos los pagos relacionados con esta compra
         pagos = Pago.objects.filter(oc=compra)
        
@@ -1866,9 +1890,22 @@ def convert_excel_matriz_compras(compras):
         pagado_text = 'Pagada' if compra.pagada else 'No Pagada'
         entrada_text = 'Entregado' if compra.entrada_completa else 'No Entregado'
         condicion_fecha_ultima_entrada = True
-        if compra.entrada_completa:  # Verificamos si entrada es True para esta compra
+        # Definimos la fecha de referencia
+        fecha_referencia = datetime.strptime("27/03/2024","%d/%m/%Y").date()
+        ultima_fecha_recepcion = compra.vale_entrada.aggregate(
+            ultima_fecha=Max('articulos__fecha_recepcion')
+        )['ultima_fecha']
+       
+        if ultima_fecha_recepcion:
+        # Comparamos la fecha de vale_entrada con la fecha de referencia
+            if ultima_fecha_recepcion.date() >= fecha_referencia:
+                if compra.recepcion_completa:
+                    # Si la recepción está completa, usamos la fecha de recepción del vale
+                    fecha_ultima_entrada = ultima_fecha_recepcion.date()
+        elif compra.entrada_completa:  # Verificamos si entrada es True para esta compra
             entradas = Entrada.objects.filter(oc=compra)
             ultima_entrada = entradas.order_by('-entrada_date').first()
+           
             if ultima_entrada:  # Verificamos si existe al menos una entrada
                 fecha_ultima_entrada = ultima_entrada.entrada_date
                 # Contabilizar no_conformidades ligadas a las entradas de esta compra
@@ -1888,22 +1925,19 @@ def convert_excel_matriz_compras(compras):
         if compra.pagada:
             ultimo_pago = pagos.order_by('-pagado_date').first()
 
-        if ultimo_pago == None:
-            ultimo_pago = "No existe"
         
-        if compra.cond_de_pago.nombre == "CONTADO" and ultimo_pago != "No existe":
+        if compra.cond_de_pago.nombre == "CONTADO" and compra.autorizado2 and compra.pagada:
             fecha_inicio = ultimo_pago.pagado_date
-        elif compra.cond_de_pago.nombre == "CREDITO":
+        elif compra.cond_de_pago.nombre == "CREDITO" and compra.autorizado2:
             fecha_inicio = compra.autorizado_date2
-        
-        if fecha_inicio == None:
+        else:
             fecha_inicio = "No existe"
 
         if condicion_fecha_ultima_entrada != False and fecha_inicio != "No existe":
             if fecha_ultima_entrada != None: 
-                diferencia_fechas = (fecha_ultima_entrada - fecha_inicio).days
+                diferencia_fechas = dias_laborables(fecha_inicio, fecha_ultima_entrada)
         elif fecha_inicio != "No existe" and fecha_inicio is not None:
-            diferencia_fechas = (date.today() - fecha_inicio).days 
+            diferencia_fechas = dias_laborables(fecha_inicio, date.today())
         else:
             diferencia_fechas = 0
 
