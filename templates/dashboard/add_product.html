@@ -21,6 +21,11 @@
                 </div>
                 <form method="POST" id='ProductForm' enctype='multipart/form-data'>
                     {% csrf_token %}
+                    {% if error_messages %}
+                    <div class="alert alert-danger" role="alert">
+                        {{error_messages}}
+                    </div>
+                    {% endif %}
                     <div class="col-12">
                       <div class="input-group mb-3">
                       <span class="input-group-text" id="basic-addon1"><i class="fa-solid fa-list"></i></span>
@@ -39,6 +44,15 @@
                           </div>
                       </div>
                     </div>
+                    <div class="col-12">
+                        <div class="input-group mb-3">
+                        <span class="input-group-text" id="basic-addon1"><i class="fa-solid fa-list"></i></span>
+                            <div class="form-floating form-floating-group flex-grow-1">   
+                            {{form.unidad|add_class:"form-control"|append_attr:"placeholder=Unidad"}}
+                            <label for="id_razon_social">Unidad*</label>
+                            </div>
+                        </div>
+                      </div>
                     <div class="row">
                         <div class="col-12">
                             <div class="input-group mb-3">

@@ -333,10 +333,12 @@ def proyectos_add(request):
 
     return render(request,'dashboard/proyectos_add.html',context)
 
+
 @login_required(login_url='user-login')
 def subproyectos_add(request, pk):
     proyecto = Proyecto.objects.get(id=pk)
     form = Subproyectos_Add_Form()
+    error_messages = {}
 
     if request.method =='POST':
         form = Subproyectos_Add_Form(request.POST)
@@ -346,10 +348,14 @@ def subproyectos_add(request, pk):
             subproyecto.save()
             messages.success(request,'Has agregado correctamente el subproyecto')
             return redirect('subproyectos', pk=proyecto.id)
+        else:
+            for field, errors in form.errors.items():
+                error_messages[field] = errors.as_text()
     else:
         form = Subproyectos_Add_Form()
 
     context = {
+        'error_messages':error_messages,
         'form': form,
         'proyecto':proyecto,
         }

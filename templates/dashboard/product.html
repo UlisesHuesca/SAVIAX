@@ -126,6 +126,7 @@
                     <th scope="col">Servicio</th>
                     <th scope="col">Editar</th>
                     <th>Crítico</th>
+                    <th>Preevaluación</th>
                 </tr>
             </thead>
             <tbody>
@@ -145,11 +146,21 @@
                     {% else %}
                     <td></td>
                     {% endif %}
-                    {% if item.critico %}
                     <td>
-                        <a class="btn btn-outline-danger" id="btnActualizar" type="button" href ="{% url 'revision-producto-calidad' item.id %}"><i class="fa-solid fa-q"></i></a>
-                    </td>
+                    {% if usuario.tipo.nombre == "Supervisor_Calidad" %}    
+                        {% if item.critico.id == "Crítico" or item.critico.nombre == "No Crítico" %}
+                        
+                            <a class="btn btn-outline-danger" id="btnActualizar" type="button" href ="{% url 'revision-producto-calidad' item.id %}"><i class="fa-solid fa-q"></i></a>
+                        {% endif %}
                     {% endif %}
+                    </td>
+                    <td>
+                    {% if usuario.tipo.comprador == True %}    
+                        {% if item.preevaluacion == True %}
+                            <a class="btn btn-outline-danger" id="btnActualizar" type="button" href ="#"><i class="fa-solid fa-p"></i></a>
+                        {% endif %}
+                    {% endif %}
+                    </td>
                     </tr>
                 {% endfor %}
             </tbody>

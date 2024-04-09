@@ -159,9 +159,9 @@ def solicitudes_gasto(request):
 
    
     if perfil.tipo.nombre == "Admin" or perfil.tipo.nombre == "Gerente":
-        solicitudes = Solicitud_Gasto.objects.all().order_by('-folio')
+        solicitudes = Solicitud_Gasto.objects.filter(complete = True).order_by('-created_at')
     else:
-        solicitudes = Solicitud_Gasto.objects.filter(complete=True, staff = perfil).order_by('-folio')
+        solicitudes = Solicitud_Gasto.objects.filter(complete=True, staff = perfil).order_by('-created_at')
 
     myfilter=Solicitud_Gasto_Filter(request.GET, queryset=solicitudes)
     solicitudes = myfilter.qs
@@ -515,7 +515,13 @@ def matriz_gasto_entrada(request):
     #articulos_gasto = Articulo_Gasto.objects.filter(gasto = gasto)
 
     #articulos_gasto = Articulo_Gasto.objects.all()
-    articulos_gasto = Articulo_Gasto.objects.filter(Q(producto__producto__nombre = "MATERIALES")|Q(producto__producto__nombre = "HERRAMIENTA"), completo = True, validacion = False, gasto__autorizar = None, gasto__tipo__tipo='REEMBOLSO')
+    articulos_gasto = Articulo_Gasto.objects.filter(
+        Q(producto__producto__nombre = "MATERIALES")|Q(producto__producto__nombre = "HERRAMIENTA"), 
+        completo = True, 
+        validacion = False, 
+        gasto__autorizar = None, 
+        gasto__tipo__tipo='REEMBOLSO'
+        )
 
     context={
         'articulos_gasto':articulos_gasto,
