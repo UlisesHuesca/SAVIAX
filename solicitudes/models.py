@@ -48,7 +48,7 @@ class Proyecto(models.Model):
 
     @property
     def get_projects_total(self):
-        subproyectos = self.subproyecto_set.all()
+        subproyectos = self.subproyectos.all()
         total = sum([subproyecto.presupuesto for subproyecto in subproyectos])
         return total
 
@@ -74,7 +74,7 @@ class Proyecto(models.Model):
 
 
 class Subproyecto(models.Model):
-    proyecto = models.ForeignKey(Proyecto, on_delete = models.CASCADE, null=True)
+    proyecto = models.ForeignKey(Proyecto, on_delete = models.CASCADE, null=True, related_name = "subproyectos")
     nombre = models.CharField(max_length=50, null=True)
     descripcion = models.CharField(max_length=50, null=True, blank=True)
     presupuesto = models.DecimalField(max_digits=14, decimal_places=2, null=True)

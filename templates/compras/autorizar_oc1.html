@@ -58,6 +58,10 @@
                             <th scope="col">{{compra.req.orden.subproyecto.nombre}}</th>
                         </tr>
                         <tr>
+                            <th scope="col">Presupuesto Proyecto:</th>
+                            <th scope="col" id="proyecto" value={{suma_presupuesto}}>{{suma_presupuesto}}</th>
+                        </tr>
+                        <tr>
                             <th scope="col">Presupuesto Subproyecto:</th>
                             <th scope="col" id="subproyecto" value={{compra.req.orden.subproyecto}}>{{compra.req.orden.subproyecto.presupuesto}}</th>
                         </tr>
@@ -81,7 +85,7 @@
                         {% endif %}
                         <tr style="color:#3e92cc">
                             <th scope="col">Importe OC:</th>
-                            <th scope="col">$ {{costo_oc}}</th>
+                            <th scope="col">$ {{costo_oc|floatformat:2}}</th>
                         </tr>
                         {% if compra.costo_fletes > 0 %}
                         <tr style="color:#3e92cc">
@@ -106,7 +110,7 @@
 
                         <tr>
                             <th scope="col">Presupuesto remanente:*</th>
-                            <th scope="col" id="resta">$ {{resta}}</th>
+                            <th scope="col" id="resta">$ {{resta|floatformat:2}}</th>
                         </tr>
                     </tbody>
                 </table>
