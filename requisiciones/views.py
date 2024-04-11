@@ -1130,7 +1130,7 @@ def render_pdf_view(request, pk):
     return FileResponse(buf, as_attachment=True, filename='reporte_' + str(orden.folio) +'.pdf')
 
 def reporte_entradas(request):
-    entradas = EntradaArticulo.objects.filter(entrada__completo = True, articulo_comprado__producto__producto__articulos__producto__producto__servicio = False)
+    entradas = EntradaArticulo.objects.filter(entrada__completo = True, articulo_comprado__producto__producto__articulos__producto__producto__servicio = False, almacenado = True)
     myfilter = EntradasFilter(request.GET, queryset=entradas)
     entradas = myfilter.qs
 

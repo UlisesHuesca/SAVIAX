@@ -881,7 +881,7 @@ def autorizar_oc1(request, pk):
     # Esto asume que ya has obtenido una instancia específica de Compra con 'compra = Compra.objects.get(id=pk)'
     proyecto_id = compra.req.orden.proyecto.id
     #print('proyecto',proyecto_id)
-    compras_por_sumar = Compra.objects.filter(req__orden__proyecto__id=proyecto_id, complete = True)
+    compras_por_sumar = Compra.objects.filter(req__orden__proyecto__id=proyecto_id, complete = True, pagada = True)
     # Ahora, sumamos los 'costo_oc' para todas las Compras que están bajo el mismo proyecto.
     total_costo_oc = 0
     total_costo_autorizado = 0
@@ -934,7 +934,9 @@ def autorizar_oc1(request, pk):
     #print(compra.req.orden.subproyecto.gastado)
     
     costo_total = costo_fletes + costo_oc 
-    resta = compra.req.orden.subproyecto.presupuesto - total_costo_pagado - costo_total
+    suma_presupuesto = compra.req.orden.proyecto.subproyectos.aggregate(total_presupuesto=Sum('presupuesto'))['total_presupuesto']
+    suma_presupuesto = suma_presupuesto if suma_presupuesto is not None else 0
+    resta = suma_presupuesto - total_costo_pagado - costo_total
     porcentaje = "{0:.2f}%".format((costo_oc/compra.req.orden.subproyecto.presupuesto)*100)
 
 
@@ -981,6 +983,8 @@ def autorizar_oc1(request, pk):
         return redirect('autorizacion-oc1')
 
     context={
+        'total_costo_pagado':total_costo_pagado,
+        'suma_presupuesto':suma_presupuesto,
         'compra':compra,
         'costo_oc':costo_oc,
         'productos':productos,
@@ -1774,10 +1778,16 @@ def dias_laborables(inicio, fin):
         date(2024, 3, 26),  # Festivo específico 2
     ]
     
+    if not isinstance(inicio, date):
+        inicio = date(2023, 3, 1)
     # Comenzamos el conteo desde el día siguiente al 'inicio' para no incluir el día inicial en el conteo
     dia_actual = inicio + timedelta(days=1)
     dias_habiles = 0
+    if fin == "No existe":
+        fin = date.today()
+
     
+
     while dia_actual < fin:  # Cambiamos a < para no incluir el día 'fin' en el conteo
         if dia_actual.weekday() < 5 and dia_actual not in festivos:
             dias_habiles += 1
@@ -1933,7 +1943,7 @@ def convert_excel_matriz_compras(compras):
         else:
             fecha_inicio = "No existe"
 
-        if condicion_fecha_ultima_entrada != False and fecha_inicio != "No existe":
+        if condicion_fecha_ultima_entrada != False and fecha_inicio != "No existe" or fecha_inicio is not None:
             if fecha_ultima_entrada != None: 
                 diferencia_fechas = dias_laborables(fecha_inicio, fecha_ultima_entrada)
         elif fecha_inicio != "No existe" and fecha_inicio is not None:

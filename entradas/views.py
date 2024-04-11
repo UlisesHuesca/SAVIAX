@@ -142,7 +142,7 @@ def pendientes_entrada(request):
         tolerance = 0.01
         print(entrada_item.cantidad)
         print(producto_comprado.cantidad_pendiente)
-        if abs(entrada_item.cantidad - producto_comprado.cantidad_pendiente) > tolerance: #Si la cantidad de las entradas es mayor a la cantidad de la compra se rechaza
+        if abs(entrada_item.cantidad_por_surtir - entrada_item.cantidad) > tolerance: #Si la cantidad de las entradas es mayor a la cantidad de la compra se rechaza
             messages.error(request,f'La cantidad de entradas sobrepasa la cantidad comprada {entrada_item.cantidad} > {producto_comprado.cantidad_pendiente}') 
         #if producto_comprado.cantidad_pendiente < entrada_item.cantidad: #Si la cantidad de las entradas es mayor a la cantidad de la compra se rechaza
             #messages.error(request,f'La cantidad de entradas sobrepasa la cantidad comprada {suma_cantidad} > {entrada_item.cantidad}')

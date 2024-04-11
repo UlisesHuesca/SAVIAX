@@ -278,6 +278,21 @@ myModal.addEventListener('hidden.bs.modal', function (event) {
   location.reload();
 })
 
+function preventDoubleClick(button) {
+    setTimeout(function() {
+        button.disabled = true;
+    }, 50);
+}
+
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Función para prevenir el doble clic en el botón
+    var myBtn = document.getElementById('myBtn');
+    myBtn.addEventListener('click', function() {
+        preventDoubleClick(this);
+    });
+});
+
 function modificar_cantidad(productoId){
     var form_cantidad = document.getElementById("form_cantidad_"+productoId);
     var cantidad = document.getElementById("cantidad_"+productoId);
