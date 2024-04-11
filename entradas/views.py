@@ -127,9 +127,10 @@ def pendientes_entrada(request):
 
         if entrada.oc.req.orden.tipo.tipo == 'resurtimiento': #si es resurtimiento
             try:
-                producto_surtir = ArticulosparaSurtir.objects.filter(articulos=producto_comprado.producto.producto.articulos, requisitar=True, articulos__orden__tipo__tipo='normal')
+                producto_surtir = ArticulosparaSurtir.objects.filter(articulos__producto=producto_comprado.producto.producto.articulos.producto, requisitar=True, articulos__orden__tipo__tipo='normal')
                 mismo_producto = ArticulosparaSurtir.objects.get(articulos = producto_comprado.producto.producto.articulos)
                 print(producto_surtir)
+                print(mismo_producto)
                 # ...
             except ArticulosparaSurtir.MultipleObjectsReturned:
                 # Maneja el caso en que se devuelven múltiples objetos
@@ -140,14 +141,16 @@ def pendientes_entrada(request):
         else:
             producto_surtir = ArticulosparaSurtir.objects.get(articulos = producto_comprado.producto.producto.articulos)       
         tolerance = 0.01
-        print(entrada_item.cantidad)
-        print(producto_comprado.cantidad_pendiente)
+        #print(entrada_item.cantidad)
+        #print(producto_comprado.cantidad_pendiente)
         if abs(entrada_item.cantidad_por_surtir - entrada_item.cantidad) > tolerance: #Si la cantidad de las entradas es mayor a la cantidad de la compra se rechaza
+            print('Que?')
             messages.error(request,f'La cantidad de entradas sobrepasa la cantidad comprada {entrada_item.cantidad} > {producto_comprado.cantidad_pendiente}') 
-        #if producto_comprado.cantidad_pendiente < entrada_item.cantidad: #Si la cantidad de las entradas es mayor a la cantidad de la compra se rechaza
+        
             #messages.error(request,f'La cantidad de entradas sobrepasa la cantidad comprada {suma_cantidad} > {entrada_item.cantidad}')
         else:   #En caso de que NO sea un RESURMIENTO
             producto_comprado.cantidad_pendiente = producto_comprado.cantidad - suma_cantidad
+            
             if producto_inv.producto.servicio == False:     #Se sacan los cálculos de costeo en caso de NO sea un SERVICIO
                 monto_inventario = producto_inv.cantidad * producto_inv.price + producto_inv.apartada * producto_inv.price
                 cantidad_inventario = producto_inv.cantidad + producto_inv.apartada
@@ -161,6 +164,7 @@ def pendientes_entrada(request):
             
                 #Esta parte determina el comportamiento de todos las solicitudes que se tienen que activar cuando la entrada es de resurtimiento
             if entrada.oc.req.orden.tipo.tipo == 'resurtimiento':
+                print('esto es un resurtimiento')
                 if producto_surtir:
                     entrada_item.almacenado = True
                     producto_inv.cantidad_entradas = pendientes_surtir + entrada_item.cantidad
@@ -170,8 +174,9 @@ def pendientes_entrada(request):
                     entrada_item.save()
                     for producto in producto_surtir:  #producto surtir deben de ser todos los productos que estaban en espera de ser requisitados se itera sobre ellos
                         if entrada_item.agotado == False:
-                            if (entrada_item.cantidad_por_surtir - producto.cantidad_requisitar) > 0:       #si la entrada es mayor que la cantidad por surtir entonces                                                                                     #se evalua si la cantidad que queda de item es suficiente para cubrir el surtimiento
-                                mismo_producto.cantidad = mismo_producto.cantidad + mismo_producto.cantidad_requisitar  #la cantidad de producto a surtir es igual a la cantidad por surtir mas la que se iba a requisitar (iba, ya no es necesario)
+                            if (entrada_item.cantidad_por_surtir - producto.cantidad_requisitar) >= 0:       #si la entrada es mayor que la cantidad por surtir entonces                                                                                     #se evalua si la cantidad que queda de item es suficiente para cubrir el surtimiento
+                                mismo_producto.cantidad = mismo_producto.cantidad + producto.cantidad_requisitar  #la cantidad de producto a surtir es igual a la cantidad por surtir mas la que se iba a requisitar (iba, ya no es necesario)
+                                producto.cantidad = producto.cantidad + producto.cantidad_requisitar
                                 entrada_item.cantidad_por_surtir = entrada_item.cantidad_por_surtir - producto.cantidad_requisitar #la cantidad disponible para surtir es igual a la que cantidad que había disponible menos la cantidad por requisitar (que ya se le sumo al surtir arriba por ello se resta para mantener el balance)
                                 producto_inv.cantidad = producto_inv.cantidad - producto.cantidad_requisitar #a la cantidad de inventario también se le resta la cantidad por requisitar ya que originalmente aquí se suma la cantidad total de la entrada
                                 producto.cantidad_requisitar = 0 #la cantidad a requisitar es 0 (ya no queda nada más por requisitar)
@@ -186,10 +191,14 @@ def pendientes_entrada(request):
                                 mismo_producto.requisitar = False
                                 entrada_item.agotado = True           #es decir, es producto se agota
                                 producto_inv._change_reason = 'Aqui se acaba el resurtimiento'
-                            producto_surtir.save()
+                            producto.surtir = True
+                            producto.save()
+                            mismo_producto.save()
                             producto_inv.save()
                             entrada_item.save()
+                            messages.success(request,'Haz agregado exitosamente un producto, desde un resurtimiento')
             else:
+                print('esto no es resurtiminento')
                 if producto_surtir.articulos.producto.producto.especialista or producto_surtir.articulos.producto.producto.critico or producto_surtir.articulos.producto.producto.rev_calidad:
                     producto_surtir.surtir = False                           
                     entrada_item.liberado = False
@@ -225,7 +234,7 @@ def pendientes_entrada(request):
                 producto_comprado.save()
                 producto_inv.save()
                 entrada.save()
-                producto_surtir.save()
+                mismo_producto.save()
                 #Se guardan todas las bases de datos
           
                 #cantidad_entradas = entradas_producto.cantidad - entradas_producto.cantidad_por_surtir
