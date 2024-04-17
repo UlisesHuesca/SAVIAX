@@ -42,7 +42,7 @@ DEBUG = True
 
 
 #ALLOWED_HOSTS = ['vordtec.cloud','www.vordtec.cloud','localhost']
-ALLOWED_HOSTS = ['localhost','127.0.0.1']
+ALLOWED_HOSTS = ['vordtec.cloud','www.vordtec.cloud','localhost','127.0.0.1']
 
 # Application definition
 

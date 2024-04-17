@@ -20,100 +20,85 @@
         <div class="card-header">
             <h5>Pendientes de Entrada</h5>
         </div>
+        
         <div class="card-body">
-            {% csrf_token %}
             <form method="GET">
-            <div class="row">
-                <div class="col-lg-3 col-sm-12">
-                    <div class="input-group mb-3">
-                    <span class="input-group-text" id="basic-addon1"><i class="fa-solid fa-hashtag"></i></span>
-                        <div class="form-floating form-floating-group flex-grow-1">   
-                            {{myfilter.form.oc|add_class:"form-control"|append_attr:"placeholder= Folio OC"}}
-                            <label style="color: #121212;" for="id_staff">Folio OC</label>
+                {% csrf_token %}
+                <div class="row">
+                    <div class="col-lg-3 col-sm-12">
+                        <div class="input-group mb-3">
+                        <span class="input-group-text" id="basic-addon1"><i class="fa-solid fa-hashtag"></i></span>
+                            <div class="form-floating form-floating-group flex-grow-1">   
+                                {{myfilter.form.oc|add_class:"form-control"|append_attr:"placeholder= Folio OC"}}
+                                <label style="color: #121212;" for="id_staff">Folio OC</label>
+                            </div>
                         </div>
                     </div>
+                    <div class="col-lg-3 col-sm-12">
+                        <div class="input-group mb-3">
+                        <span class="input-group-text" id="basic-addon1"><i class="fa-solid fa-user"></i></span>
+                            <div class="form-floating form-floating-group flex-grow-1">   
+                                {{myfilter.form.proveedor|add_class:"form-control"|append_attr:"placeholder= Proveedor"}}
+                                <label style="color: #121212;" for="id_staff">Proveedor</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-3 col-sm-12">
+                        <div class="input-group mb-3">
+                        <span class="input-group-text" id="basic-addon1"><i class="fa-solid fa-hashtag"></i></span>
+                            <div class="form-floating form-floating-group flex-grow-1">   
+                                {{myfilter.form.req|add_class:"form-control"|append_attr:"placeholder= Requisición"}}
+                                <label style="color: #121212;" for="id_staff">Requisición</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-3 col-sm-12">
+                        <div class="input-group mb-3">
+                        <span class="input-group-text" id="basic-addon1"><i class="fa-solid fa-diagram-project"></i></span>
+                            <div class="form-floating form-floating-group flex-grow-1">   
+                                {{myfilter.form.proyecto|add_class:"form-control"|append_attr:"placeholder= Proyecto"}}
+                                <label style="color: #121212;" for="id_proyecto">Proyecto</label>
+                            </div>
+                        </div>
+                    </div>       
                 </div>
-                <div class="col-lg-3 col-sm-12">
-                    <div class="input-group mb-3">
-                    <span class="input-group-text" id="basic-addon1"><i class="fa-solid fa-user"></i></span>
-                        <div class="form-floating form-floating-group flex-grow-1">   
-                            {{myfilter.form.proveedor|add_class:"form-control"|append_attr:"placeholder= Proveedor"}}
-                            <label style="color: #121212;" for="id_staff">Proveedor</label>
+                <div class="row">
+                    <div class="col-lg-3 col-sm-12">
+                        <div class="input-group mb-3">
+                        <span class="input-group-text" id="basic-addon1"><i class="fa-solid fa-diagram-project"></i></span>
+                            <div class="form-floating form-floating-group flex-grow-1">   
+                                {{myfilter.form.subproyecto|add_class:"form-control"|append_attr:"placeholder= Subproyecto"}}
+                                <label style="color: #121212;" for="id_proyecto">Subproyecto</label>
+                            </div>
+                        </div>
+                    </div>  
+                    <div id="serie" class="col-lg-2 col-md-auto col-sm-auto">
+                        <div class="input-group mb-3">
+                        <span class="input-group-text" id="basic-addon1"><i class="fa-regular fa-calendar"></i></span>
+                            <div class="form-floating form-floating-group flex-grow-1">   
+                                {% render_field myfilter.form.start_date type="date" class="form-control" %}
+                            <label style="color: #121212;" for="id_subproyecto">Desde:</label>
+                            </div>
                         </div>
                     </div>
-                </div>
-                <div class="col-lg-3 col-sm-12">
-                    <div class="input-group mb-3">
-                    <span class="input-group-text" id="basic-addon1"><i class="fa-solid fa-hashtag"></i></span>
-                        <div class="form-floating form-floating-group flex-grow-1">   
-                            {{myfilter.form.req|add_class:"form-control"|append_attr:"placeholder= Requisición"}}
-                            <label style="color: #121212;" for="id_staff">Requisición</label>
+                    <div id="serie" class="col-lg-2 col-md-auto col-sm-auto">
+                        <div class="input-group mb-3">
+                        <span class="input-group-text" id="basic-addon1"><i class="fa-regular fa-calendar"></i></span>
+                            <div class="form-floating form-floating-group flex-grow-1">   
+                                {% render_field myfilter.form.end_date type="date" class="form-control" %}
+                            <label style="color: #121212;" for="id_subproyecto">Hasta:</label>
+                            </div>
                         </div>
                     </div>
-                </div>
-                <div class="col-lg-3 col-sm-12">
-                    <div class="input-group mb-3">
-                    <span class="input-group-text" id="basic-addon1"><i class="fa-solid fa-diagram-project"></i></span>
-                        <div class="form-floating form-floating-group flex-grow-1">   
-                            {{myfilter.form.proyecto|add_class:"form-control"|append_attr:"placeholder= Proyecto"}}
-                            <label style="color: #121212;" for="id_proyecto">Proyecto</label>
-                        </div>
-                    </div>
-                </div>       
-            </div>
-            <div class="row">
-                <div class="col-lg-3 col-sm-12">
-                    <div class="input-group mb-3">
-                    <span class="input-group-text" id="basic-addon1"><i class="fa-solid fa-diagram-project"></i></span>
-                        <div class="form-floating form-floating-group flex-grow-1">   
-                            {{myfilter.form.subproyecto|add_class:"form-control"|append_attr:"placeholder= Subproyecto"}}
-                            <label style="color: #121212;" for="id_proyecto">Subproyecto</label>
-                        </div>
-                    </div>
-                </div>  
-                <div id="serie" class="col-lg-2 col-md-auto col-sm-auto">
-                    <div class="input-group mb-3">
-                    <span class="input-group-text" id="basic-addon1"><i class="fa-regular fa-calendar"></i></span>
-                        <div class="form-floating form-floating-group flex-grow-1">   
-                            {% render_field myfilter.form.start_date type="date" class="form-control" %}
-                        <label style="color: #121212;" for="id_subproyecto">Desde:</label>
-                        </div>
-                    </div>
-                </div>
-                <div id="serie" class="col-lg-2 col-md-auto col-sm-auto">
-                    <div class="input-group mb-3">
-                    <span class="input-group-text" id="basic-addon1"><i class="fa-regular fa-calendar"></i></span>
-                        <div class="form-floating form-floating-group flex-grow-1">   
-                            {% render_field myfilter.form.end_date type="date" class="form-control" %}
-                        <label style="color: #121212;" for="id_subproyecto">Hasta:</label>
-                        </div>
-                    </div>
-                </div>
                     <div class="col-2">
                         <button class="btn btn-outline-success btn-block btn-lg mt-1" type="submit" value="Buscar"><i class="fa-solid fa-magnifying-glass"></i></button>
                     </div>
                 </div>
-                <hr>
-                </form>
-                <form method=POST>
-                    {% csrf_token %}
-                    <!--<ul class="nav nav-pills">
-                        <li class="nav-item mx-2">
-                            <button type="submit" class="btn btn-outline-success" value='Reporte Excel'>
-                                <i class="fa-solid fa-file-excel fa-2xl"></i>
-                            </button>
-                        </li>
-                        <li class="nav-item mx-2">
-                            <button type="button" class="btn btn-outline-danger">
-                               <i class="fa-solid fa-file-pdf fa-2xl"></i>
-                            </button>
-                        </li>
-                    </ul>-->
-                </form>
-            </div>
+            <hr>
+            </form>
         </div>
-        
-    </div>
+    </div>      
+</div>
     <!-- Aquí terminan el encabezado de los filtros -->
 
 <!-- Esta es la zona donde se crean los mensajes perrones con sweet alert -->
@@ -148,72 +133,73 @@
     <div class="card">
         <div class ="table-responsive-sm">
             <table class="table bg-white">
-            <thead class="text-black" style="background-color: #F5F5F5;">
-                <tr>
-                    <th scope="col">Compra</th>
-                    <th class="d-none d-lg-table-cell">Req.</th>
-                    <th scope="col">Sol.</th>
-                    <th class="d-none d-lg-table-cell">Solicitado por</th>
-                    <th scope="col">Proyecto</th>
-                    <th class="d-none d-lg-table-cell">Subproyecto</th>
-                    <th class="d-none d-lg-table-cell">Fecha Recepción</th>
-                    <th scope="col">Proveedor</th>
-                    <th>Concepto</th>
-                    <th>Cantidad</th>
-                    <th scope="col">Edición</th>
-                    <th>Entrada Almacén</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for item in articulos_recepcionados_list %}
-                <tr>
-                    <td scope="col">{{item.entrada.oc.get_folio}}</th>
-                    <td class="d-none d-lg-table-cell">{{item.entrada.oc.req.folio}}</td>
-                    <td scope="col">{{item.entrada.oc.req.orden.folio}}</td>
-                    <td class="d-none d-lg-table-cell">{{item.entrada.oc.req.orden.staff.staff.first_name}} {{item.entrada.oc.req.orden.staff.staff.last_name}}</td>
-                    <td>{{item.entrada.oc.req.orden.proyecto.nombre}}</td>
-                    <td class="d-none d-lg-table-cell">{{item.entrada.oc.req.orden.subproyecto.nombre}}</td>
-                    <td class="d-none d-lg-table-cell">{{item.fecha_recepcion}} </td>
-                    {% if compra.proveedor.nombre.razon_social == "COLABORADOR" %}
-                    <td>{{compra.deposito_comprador.staff.first_name}} {{compra.deposito_comprador.staff.last_name}}</td>
-                    {% else %}
-                    <td>{{item.entrada.oc.proveedor}}</td>
-                    {% endif %}
-                   
-                    <td>{{item.articulo_comprado.producto.producto.articulos.producto}}</td>
-                    <td class="" id="cantidad_{{item.id|unlocalize}}" cantidad_compra="{{ item.articulo_comprado.cantidad_pendiente}}" >{{item.cantidad}}</td>
-                    <td class="d-none" id="form_cantidad_{{item.id|unlocalize}}">
-                        <input type="number"  class="form-control" id="cantidad-input_{{ item.id|unlocalize }}" value="{{ item.cantidad }}">
-                    </td>
-                    <td><a id="edit_quantity_{{item.id|unlocalize}}" class="btn btn-lg btn-outline-info m-1" onclick="modificar_cantidad('{{item.id|unlocalize}}')">
-                            <i class="fa-solid fa-pen-to-square"></i>
-                        </a>
-                        <button type="button" id="save_cantidad_{{item.id|unlocalize}}" onclick="aceptar_edicion2('{{item.id|unlocalize}}')"    class="btn btn-outline-primary d-none">
-                            <i class="fa-regular fa-circle-check"></i>
-                        </button>
-                        <button id="cancel_edit2_{{item.id|unlocalize}}" type="button" class="btn add-btn d-none" onclick="cancelar_edicion2('{{item.id|unlocalize}}')" style="color:ghostwhite; background-color:#980F0F ;">
-                            <i class="fa-solid fa-circle-xmark"></i>
-                        </button>
-                    </td>
-                  
-                    <td>
-                        <form method="POST">
-                        {% csrf_token %}
-                        <ul class="nav nav-pills">
+                <thead class="text-black" style="background-color: #F5F5F5;">
+                    <tr>
+                        <th scope="col">Compra</th>
+                        <th class="d-none d-lg-table-cell">Req.</th>
+                        <th scope="col">Sol.</th>
+                        <th class="d-none d-lg-table-cell">Solicitado por</th>
+                        <th scope="col">Proyecto</th>
+                        <th class="d-none d-lg-table-cell">Subproyecto</th>
+                        <th class="d-none d-lg-table-cell">Fecha Recepción</th>
+                        <th scope="col">Proveedor</th>
+                        <th>Concepto</th>
+                        <th>Cantidad</th>
+                        <th scope="col">Edición</th>
+                        <th>Entrada Almacén</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in articulos_recepcionados_list %}
+                    <tr>
+                        <td scope="col">{{item.entrada.oc.get_folio}}</th>
+                        <td class="d-none d-lg-table-cell">{{item.entrada.oc.req.folio}}</td>
+                        <td scope="col">{{item.entrada.oc.req.orden.folio}}</td>
+                        <td class="d-none d-lg-table-cell">{{item.entrada.oc.req.orden.staff.staff.first_name}} {{item.entrada.oc.req.orden.staff.staff.last_name}}</td>
+                        <td>{{item.entrada.oc.req.orden.proyecto.nombre}}</td>
+                        <td class="d-none d-lg-table-cell">{{item.entrada.oc.req.orden.subproyecto.nombre}}</td>
+                        <td class="d-none d-lg-table-cell">{{item.fecha_recepcion}} </td>
+                        {% if compra.proveedor.nombre.razon_social == "COLABORADOR" %}
+                        <td>{{compra.deposito_comprador.staff.first_name}} {{compra.deposito_comprador.staff.last_name}}</td>
+                        {% else %}
+                        <td>{{item.entrada.oc.proveedor}}</td>
+                        {% endif %}
+                    
+                        <td>{{item.articulo_comprado.producto.producto.articulos.producto}}</td>
+                        <td class="" id="cantidad_{{item.id|unlocalize}}" cantidad_compra="{{ item.articulo_comprado.cantidad_pendiente}}" >{{item.cantidad}}</td>
+                        <td class="d-none" id="form_cantidad_{{item.id|unlocalize}}">
+                            <input type="number"  class="form-control" id="cantidad-input_{{ item.id|unlocalize }}" value="{{ item.cantidad }}">
+                        </td>
+                        <td><a id="edit_quantity_{{item.id|unlocalize}}" class="btn btn-lg btn-outline-info m-1" onclick="modificar_cantidad('{{item.id|unlocalize}}')">
+                                <i class="fa-solid fa-pen-to-square"></i>
+                            </a>
+                            <button type="button" id="save_cantidad_{{item.id|unlocalize}}" onclick="aceptar_edicion2('{{item.id|unlocalize}}')"    class="btn btn-outline-primary d-none">
+                                <i class="fa-regular fa-circle-check"></i>
+                            </button>
+                            <button id="cancel_edit2_{{item.id|unlocalize}}" type="button" class="btn add-btn d-none" onclick="cancelar_edicion2('{{item.id|unlocalize}}')" style="color:ghostwhite; background-color:#980F0F ;">
+                                <i class="fa-solid fa-circle-xmark"></i>
+                            </button>
+                        </td>
+                    
+                        <td>
+                            <form method="POST" id="myForm">
+                            {% csrf_token %}
                             <input type="hidden" name="entrada_articulo_id" value="{{item.id|unlocalize}}">
-                            <li class="nav-item m-1">
-                                <button id="myBtn" type="submit" name="entrada" class="btn btn-outline-success btn-lg"><i class="fa-solid fa-check"></i></button>
-                            </li>
-                            <!-- Añadir el botón de NC aquí -->
-                            <li class="nav-item m-1">
-                            <a id="ncBtn" type="button" class="btn btn-outline-warning btn-lg" href="#">NC</a>
-                            </li> 
-                        </ul>
-                        </form>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
+                            <ul class="nav nav-pills">
+                                
+                                <li class="nav-item m-1">
+                                    <input id="submit-button" type="submit" name="entrada" class="btn btn-outline-success btn-lg">
+                                </li>
+                                <!-- Añadir el botón de NC aquí -->
+                                <li class="nav-item m-1">
+                                <a id="ncBtn" type="button" class="btn btn-outline-warning btn-lg" href="#">NC</a>
+                                </li> 
+                            </ul>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
             </table>
 
         </div>
@@ -259,39 +245,8 @@
 <script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script>
-var dataSpyList = [].slice.call(document.querySelectorAll('[data-bs-spy="scroll"]'))
-dataSpyList.forEach(function (dataSpyEl) {
-  bootstrap.ScrollSpy.getInstance(dataSpyEl)
-    .refresh()
-});
-;(function(){
-    const modal = new bootstrap.Modal(document.getElementById('dialog'))
-
-    htmx.on('htmx:beforeSwap',(e)=>{
-        if (e.detail.target.id === "document" && !e.detail.xhr.response)
-        modal.hide()
-    })
-})()
-var myModal = document.getElementById('dialog')
-
-myModal.addEventListener('hidden.bs.modal', function (event) {
-  location.reload();
-})
-
-function preventDoubleClick(button) {
-    setTimeout(function() {
-        button.disabled = true;
-    }, 50);
-}
 
 
-document.addEventListener('DOMContentLoaded', function() {
-    // Función para prevenir el doble clic en el botón
-    var myBtn = document.getElementById('myBtn');
-    myBtn.addEventListener('click', function() {
-        preventDoubleClick(this);
-    });
-});
 
 function modificar_cantidad(productoId){
     var form_cantidad = document.getElementById("form_cantidad_"+productoId);
