@@ -198,7 +198,7 @@ def pendientes_entrada(request):
                             entrada_item.save()
                             messages.success(request,'Haz agregado exitosamente un producto, desde un resurtimiento')
                 else:
-                    print('algo aquí')
+                    messages.success(request,'Haz agregado exitosamente un producto, desde un resurtimiento')
             else:
                 print('esto no es resurtiminento')
                 if producto_surtir.articulos.producto.producto.especialista or producto_surtir.articulos.producto.producto.critico or producto_surtir.articulos.producto.producto.rev_calidad:
@@ -254,6 +254,7 @@ def pendientes_entrada(request):
             compra.save()
             producto_comprado.save()
             producto_inv.save()
+            messages.success(request,'Haz agregado exitosamente un producto')
         return redirect('pendientes-entrada')
         
 

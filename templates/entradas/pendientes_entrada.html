@@ -188,7 +188,7 @@
                             <ul class="nav nav-pills">
                                 
                                 <li class="nav-item m-1">
-                                    <input id="submit-button" type="submit" name="entrada" class="btn btn-outline-success btn-lg">
+                                    <button id="myBtn" type="submit" name="entrada" class="btn btn-outline-success btn-lg"><i class="fa-solid fa-check"></i></button>
                                 </li>
                                 <!-- Añadir el botón de NC aquí -->
                                 <li class="nav-item m-1">
@@ -246,7 +246,20 @@
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script>
 
+function preventDoubleClick(button) {
+    setTimeout(function() {
+        button.disabled = true;
+    }, 50);
+}
 
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Función para prevenir el doble clic en el botón
+    var myBtn = document.getElementById('myBtn');
+    myBtn.addEventListener('click', function() {
+        preventDoubleClick(this);
+    });
+});
 
 function modificar_cantidad(productoId){
     var form_cantidad = document.getElementById("form_cantidad_"+productoId);
