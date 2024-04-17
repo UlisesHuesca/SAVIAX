@@ -256,6 +256,7 @@ def pendientes_entrada(request):
             producto_inv.save()
             messages.success(request,'Haz agregado exitosamente un producto')
         return redirect('pendientes-entrada')
+        
 
 
 

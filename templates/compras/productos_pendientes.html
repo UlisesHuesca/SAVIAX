@@ -94,6 +94,7 @@
                     <th scope="col">Proyecto</th>
                     <th scope="col">Subproyecto</th>
                     <th scope="col">Área</th>
+                    <th>Código</th>
                     <th scope="col">Producto</th>
                     <th>Cantidad</th>
                     <th scope="col">Preevaluado</th>
@@ -108,6 +109,7 @@
                     <td>{{item.req.orden.proyecto.nombre}}</td>
                     <td>{{item.req.orden.subproyecto.nombre}}</td>
                     <td>{{item.req.orden.area}}</td>
+                    <td>{{item.producto.articulos.producto.producto.codigo}}</td>
                     <td>{{item.producto.articulos.producto.producto.nombre}} </td>
                     <td>{{item.cantidad}}</td>
                     <td>{% if item.producto.articulos.producto.producto.preevaluacion %}<button class="btn btn-outline-danger" id="btnActualizar" type="button" href ="#"><i class="fa-solid fa-p"></i></button>{% endif %}</td>
