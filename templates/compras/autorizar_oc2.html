@@ -31,6 +31,14 @@
                             <th scope="col">{{compra.req.orden.subproyecto.nombre}}</th>
                         </tr>
                         <tr>
+                            <th scope="col">Presupuesto Proyecto:</th>
+                            <th scope="col" id="proyecto" value={{suma_presupuesto}}>{{suma_presupuesto}}</th>
+                        </tr>
+                        <tr>
+                            <th scope="col">Presupuesto Subproyecto:</th>
+                            <th scope="col" id="subproyecto" value={{compra.req.orden.subproyecto}}>{{compra.req.orden.subproyecto.presupuesto}}</th>
+                        </tr>
+                        <tr>
                             <th scope="col">Solicitud:</th>
                             <th scope="col">{{compra.req.orden.folio}}</th>
                         </tr>
@@ -48,10 +56,6 @@
                             <th scope="col"  style="color:#3e92cc" id="subproyecto">Esta OC se depositará a la cuenta del colaborador(a): {{compra.deposito_colaborador.staff.first_name}} {{compra.deposito_colaborador.staff.last_name}}</th>
                         </tr>
                         {% endif %}
-                        <tr>
-                            <th scope="col">Presupuesto Subproyecto:</th>
-                            <th scope="col" id="subproyecto" value={{compra.req.orden.subproyecto}}>{{compra.req.orden.subproyecto.presupuesto}}</th>
-                        </tr>
                         <tr style="color:#3e92cc">
                             <th scope="col">Importe OC:</th>
                             <th scope="col">${{costo_oc}}</th>
