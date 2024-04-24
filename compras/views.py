@@ -240,7 +240,7 @@ def compra_edicion(request, pk):
     productos = ArticulosRequisitados.objects.filter(req = oc.req, sel_comp = False)
     req = Requis.objects.get(id = oc.req.id)
     proveedores = Proveedor_direcciones.objects.filter(
-        Q(estatus__nombre='NUEVO') | Q(estatus__nombre='APROBADO') | Q(nombre__preevaluacion__isnull=False))
+        Q(estatus__nombre='NUEVO') | Q(estatus__nombre='APROBADO') | Q(estatus__nombre='PREAPROBADO'))
     form_product = ArticuloCompradoForm()
     form = CompraForm(instance=oc)
 
