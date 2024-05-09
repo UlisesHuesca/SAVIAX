@@ -145,11 +145,11 @@ class Articulo_Gasto(models.Model):
     @property
     def get_iva(self):
         iva = 0
-
-        if self.precio_unitario and self.cantidad:
-            iva = self.precio_unitario * decimal.Decimal(str(0.16))*self.cantidad
-        else:
-            iva = 0
+        if self.producto.producto.iva:
+            if self.precio_unitario and self.cantidad:
+                iva = self.precio_unitario * decimal.Decimal(str(0.16))*self.cantidad
+            else:
+                iva = 0
         return iva
 
     @property

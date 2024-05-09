@@ -549,7 +549,7 @@ def autorizar_preevaluacion(request, pk):
 
 @login_required(login_url='user-login')
 def matriz_oc(request):
-    compras = Compra.objects.filter(complete=True)
+    compras = Compra.objects.filter(complete=True).order_by('-id')
     myfilter = CompraFilter(request.GET, queryset=compras)
     compras = myfilter.qs
     # Calcular el total de órdenes de compra
