@@ -158,7 +158,7 @@ def solicitudes_gasto(request):
 
 
    
-    if perfil.tipo.nombre == "Admin" or perfil.tipo.nombre == "Gerente":
+    if perfil.tipo.nombre == "Admin" or perfil.tipo.nombre == "Gerente" or perfil.tipo.superintendente:
         solicitudes = Solicitud_Gasto.objects.filter(complete = True).order_by('-created_at')
     else:
         solicitudes = Solicitud_Gasto.objects.filter(complete=True, staff = perfil).order_by('-created_at')

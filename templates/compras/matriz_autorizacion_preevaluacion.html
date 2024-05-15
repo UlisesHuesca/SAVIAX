@@ -86,13 +86,12 @@
                                 <a id="myBtn" type="button" class="btn btn-outline-success btn-lg" href="{% url 'autorizar-preevaluacion' item.id %}"><i class="fa-solid fa-check"></i></a>
                             </li>
                             <li class="nav-item m-1">
-                                <a type="button" class="btn btn-outline-danger btn-lg" data-bs-toggle="modal" data-bs-target="#dialog" hx-target="#document" hx-get="#"><i class="fa-solid fa-xmark"></i></a>
+                                <a type="button" class="btn btn-outline-danger btn-lg" href="{% url 'cancelar-preevaluacion' item.id %}"><i class="fa-solid fa-xmark"></i></a>
                             </li>
-                        
-                                {% if compra.comparativo_model %}
+                                {% if item.comparativo_model %}
                                 <li class="nav-item m-1">
-                                    <a id="myBtn" type="button" class="btn btn-outline-success btn-lg" data-bs-toggle="modal" data-bs-target='#dialog' hx-target="#document" hx-get="{% url 'mostrar-comparativo' compra.comparativo_model.id %}">
-                                        <i class="fa-solid fa-eye"></i>
+                                    <a id="myBtn" type="button" class="btn btn-outline-success btn-lg" data-bs-toggle="modal" data-bs-target='#dialog' hx-target="#document" hx-get="{% url 'mostrar-comparativo' item.comparativo_model.id %}">
+                                        <i class="fa-solid fa-scale-balanced"></i>
                                     </a>
                                 </li>
                                 {% endif %}

@@ -108,11 +108,11 @@ class Preevaluacion(models.Model):
     especs_b = models.BooleanField(default=False) #Campo para la evaluacion inicial simplificada
     precios_ver = models.CharField(max_length=255, null=True, blank=True) #Campo para la evaluacion inicial simplificada
     precios_b = models.BooleanField(default = False) #Campo para la evaluacion inicial simplificada
-    control_cadena_suministro = models.CharField(max_length=255, null=True, blank=True)  #Campo para la evaluacion inicial simplificada
+    control_cadena_suministro = models.CharField(max_length=255, null=True, blank=True)  #Campo para la evaluacion inicial
     control_cadena_b= models.BooleanField(default = False) #Campo para la evaluacion inicial simplificada
     resultado = models.BooleanField(default= None, null=True)
-    capacidad_proveedor = models.CharField(max_length=255, null=True, blank=True)  #Campo para la evaluacion inicial simplificada
-    capacidad_proveedor_b= models.BooleanField(default = False) #Campo para la evaluacion inicial simplificada
+    capacidad_proveedor = models.CharField(max_length=255, null=True, blank=True)  #Campo para la evaluacion inicial 
+    capacidad_proveedor_b= models.BooleanField(default = False) #Campo para la evaluacion inicial
     areas_exito = models.CharField(max_length=255, null=True, blank=True)
     areas_oportunidad = models.CharField(max_length=255, null=True, blank=True)
     history = HistoricalRecords(history_change_reason_field=models.TextField(null=True))

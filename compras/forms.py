@@ -32,6 +32,12 @@ class Item_ComparativoForm(forms.ModelForm):
                   'precio2','modelo3','marca3','precio3','dias_de_entrega3',]
 
 class Compra_ComentarioForm(forms.ModelForm):
+    especs_b = forms.BooleanField(required=False)
+    precios_b = forms.BooleanField(required=False)
+    control_cadena_b = forms.BooleanField(required=False)
+    capacidad_proveedor_b = forms.BooleanField(required=False)
+    sgc_b = forms.BooleanField(required=False)
+
     class Meta:
         model = Compra
         fields = ['comentarios']

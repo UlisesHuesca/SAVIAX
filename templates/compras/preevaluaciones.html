@@ -67,7 +67,7 @@
                                 <i class="fa-solid fa-backward"></i>
                             </a>
                             <a class="btn btn-outline-info" id="btnActualizar" type="button" href="{% url 'preevaluacion' proveedor.id %}">
-                                <i class="fa-solid fa-plus"> Agregar Preevaluación</i>
+                                <i class="fa-solid fa-plus"> Preevaluacion</i>
                             </a>
                         </li>
                     </ul>
@@ -84,7 +84,8 @@
                     <th scope="col">Creado por</th>
                     <th scope="col">Fecha</th>
                     <th>Comparativo</th>
-                    <th scope="col">Edición</th>
+                    <th>Status</th>
+                    <!--<th scope="col">Edición</th>-->
                 </tr>
             </thead>
             <tbody>
@@ -95,9 +96,15 @@
                     <td>{{item.creado_por.staff.first_name}} {{item.creado_por.staff.last_name}}</td>
                     <td>{{item.creado_at}}</td>
                     <td>{{item.comparativo_model}}</td>
+                    
                     <td>
-                        <a class="btn btn-outline-info" id="btnActualizar" type="button" href=""><i class="fa-solid fa-pen-to-square"></i></a>
+                        {% if item.resultado %} <span class="badge bg-primary">Autorizado</span> {% elif item.resultado == False %} <span class="badge bg-danger">Cancelado</span>{% else %} <span class="badge bg-warning">No Autorizado Aún</span> {% endif %}</td></td>
                     </td>
+                    <!--<td>  
+                       
+                        <a class="btn btn-outline-info" id="btnActualizar" type="button" href=""><i class="fa-solid fa-pen-to-square"></i></a>
+                        
+                    </td>-->
                 </tr>
                 {% endfor %}
             </tbody>
