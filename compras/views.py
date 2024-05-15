@@ -570,7 +570,7 @@ def cancelar_preevaluacion(request, pk):
 
 @login_required(login_url='user-login')
 def matriz_oc(request):
-    compras = Compra.objects.filter(complete=True)
+    compras = Compra.objects.filter(complete=True).order_by('-id')
     myfilter = CompraFilter(request.GET, queryset=compras)
     compras = myfilter.qs
     # Calcular el total de órdenes de compra
@@ -1039,7 +1039,7 @@ def autorizar_oc2(request, pk):
     productos = ArticuloComprado.objects.filter(oc=pk)
     proyecto_id = compra.req.orden.proyecto.id
     #print('proyecto',proyecto_id)
-    compras_por_sumar = Compra.objects.filter(req__orden__proyecto__id=proyecto_id, complete = True)
+    compras_por_sumar = Compra.objects.filter(req__orden__proyecto__id=proyecto_id, complete = True, pagada = True)
     # Ahora, sumamos los 'costo_oc' para todas las Compras que están bajo el mismo proyecto.
     total_costo_oc = 0
     total_costo_autorizado = 0
@@ -1087,7 +1087,9 @@ def autorizar_oc2(request, pk):
         if compra.costo_fletes:
             costo_fletes = compra.costo_fletes
     costo_total = costo_fletes + costo_oc
-    resta = compra.req.orden.subproyecto.presupuesto - total_costo_pagado - costo_total
+    suma_presupuesto = compra.req.orden.proyecto.subproyectos.aggregate(total_presupuesto=Sum('presupuesto'))['total_presupuesto']
+    suma_presupuesto = suma_presupuesto if suma_presupuesto is not None else 0
+    resta = suma_presupuesto - total_costo_pagado - costo_total
     porcentaje = "{0:.2f}%".format((costo_oc/compra.req.orden.subproyecto.presupuesto)*100)
 
     if request.method == 'POST':
@@ -1208,6 +1210,7 @@ def autorizar_oc2(request, pk):
         return redirect('autorizacion-oc2')
 
     context={
+        'suma_presupuesto':suma_presupuesto,
         'compra':compra,
         'costo_oc':costo_oc,
         'productos':productos,

@@ -236,7 +236,7 @@ def pendientes_entrada(request):
                 producto_comprado.save()
                 producto_inv.save()
                 entrada.save()
-                mismo_producto.save()
+                producto_surtir.save()
                 #Se guardan todas las bases de datos
           
                 #cantidad_entradas = entradas_producto.cantidad - entradas_producto.cantidad_por_surtir
