@@ -1123,8 +1123,8 @@ def convert_excel_matriz_proyectos(proyectos):
     percent_style.font = Font(name ='Calibri', size = 10)
     wb.add_named_style(percent_style)
 
-    columns = ['ID','Proyectos','Descripción','Cliente','Status de Entrega','Monto','Gastado Salidas','Suma de Compras',
-              'Pagado Compras','Pagado Gastos','Creado']
+    columns = ['ID','Proyectos','Descripción','Cliente','Status de Entrega','Monto','Suma de Compras Autorizadas',
+              'Pagado Compras','Creado']
 
     for col_num in range(len(columns)):
         (ws.cell(row = row_num, column = col_num+1, value=columns[col_num])).style = head_style
@@ -1142,23 +1142,23 @@ def convert_excel_matriz_proyectos(proyectos):
 
     rows = []
     for p in proyectos:
-        total_costo_oc = Compra.objects.filter(req__orden__proyecto=p).aggregate(total=Sum('costo_oc'))['total']
-    
+        total_costo_oc = Compra.objects.filter(req__orden__proyecto=p)
+        total_autorizadas = total_costo_oc.filter(autorizado2 = True).aggregate(total=Sum('costo_oc'))['total']
+        total_pagadas = total_costo_oc.filter(pagada = True).aggregate(total=Sum('costo_oc'))['total']
         # 'total_costo_oc' será None si no hay Compras relacionadas, por lo que puedes usar 0 como valor por defecto
-        total_costo_oc = total_costo_oc if total_costo_oc is not None else 0
+        total_autorizadas = total_autorizadas if total_autorizadas is not None else 0
+        total_pagadas = total_pagadas if total_pagadas is not None else 0
 
         row = [
-            p.id,
-            p.nombre,
-            p.descripcion,
-            p.cliente.nombre if p.cliente else '', 
-            p.status_de_entrega, 
-            p.get_projects_total if p.get_projects_total is not None else 0, 
-            0,
-            total_costo_oc,#p.suma_comprat if p.suma_comprat is not None else 0, 
-            0,#p.suma_pagos if p.suma_pagos is not None else 0, 
-            0,#p.suma_gastos if p.suma_gastos is not None else 0, 
-            p.created_at
+            p.id, #'ID'
+            p.nombre, #'Proyectos'
+            p.descripcion, #'Descripción'
+            p.cliente.nombre if p.cliente else '', #'Cliente'
+            p.status_de_entrega, #'Status de Entrega'
+            p.get_projects_total if p.get_projects_total is not None else 0,
+            total_autorizadas,
+            total_pagadas,
+            p.created_at #'Creado'
             ]
         rows.append(row)
 
@@ -1166,9 +1166,9 @@ def convert_excel_matriz_proyectos(proyectos):
         row_num += 1
         for col_num in range(len(row)):
             (ws.cell(row = row_num, column = col_num+1, value=str(row[col_num]))).style = body_style
-            if col_num == 10:
+            if col_num == 8:
                 (ws.cell(row = row_num, column = col_num+1, value=row[col_num])).style = date_style
-            if col_num in [5,6,7,8,9]:
+            if col_num in [5,6,7]:
                 (ws.cell(row = row_num, column = col_num+1, value=row[col_num])).style = money_style
     
     sheet = wb['Sheet']

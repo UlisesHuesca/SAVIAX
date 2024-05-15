@@ -1858,7 +1858,7 @@ def convert_excel_matriz_compras(compras):
     wb.add_named_style(percent_style)
 
     columns = ['Compra','Requisición','Solicitud','Proyecto','Subproyecto','Área','Solicitante','Creado','Req. Autorizada','Proveedor',
-               'Crédito/Contado','Costo','Monto_Pagado','Status Pago','Status Autorización','Días de entrega','Moneda',
+               'Crédito/Contado','Costo','Monto_Pagado','Status Pago','Status Autorización','Tipo Item','Días de entrega','Moneda',
                'Tipo de cambio','Entrada','Fecha Entrada','Fecha Inicio','Diferencia de Fechas','Status Entrega','No Conformidades','Total en pesos']
 
     for col_num in range(len(columns)):
@@ -1877,14 +1877,14 @@ def convert_excel_matriz_compras(compras):
 
     # Agregar los encabezados de las nuevas columnas debajo de los mensajes
     ws.cell(row=3, column = columna_max, value="Total de OC's").style = head_style
-    ws.cell(row=4, column = columna_max, value="OC dentro de tiempo").style = head_style
-    ws.cell(row=5, column = columna_max, value="% de cumplimiento").style = head_style
+    #ws.cell(row=4, column = columna_max, value="OC dentro de tiempo").style = head_style
+    #ws.cell(row=5, column = columna_max, value="% de cumplimiento").style = head_style
     ws.cell(row=6, column = columna_max, value="Monto total de OC's").style = head_style
 
     # Asumiendo que las filas de datos comienzan en la fila 2 y terminan en row_num
     ws.cell(row=3, column=columna_max + 1, value=f"=COUNTA(A:A)-1").style = body_style
-    ws.cell(row=4, column=columna_max + 1, value=f"=COUNTIF({get_column_letter(len(columns)-1)}:{get_column_letter(len(columns)-1)}, \"<=3\")").style = body_style
-    ws.cell(row=5, column=columna_max + 1, value=f"={get_column_letter(columna_max+1)}4/{get_column_letter(columna_max+1)}3").style = percent_style
+    #ws.cell(row=4, column=columna_max + 1, value=f"=COUNTIF({get_column_letter(len(columns)-1)}:{get_column_letter(len(columns)-1)}, \"<=3\")").style = body_style
+    #ws.cell(row=5, column=columna_max + 1, value=f"={get_column_letter(columna_max+1)}4/{get_column_letter(columna_max+1)}3").style = percent_style
     ws.cell(row=6, column=columna_max + 1, value=f"=SUM({get_column_letter(len(columns))}:{get_column_letter(len(columns))})").style = money_resumen_style
 
     #KPIS
@@ -1906,7 +1906,7 @@ def convert_excel_matriz_compras(compras):
 
     ws.cell(row=14, column=columna_max + 1, value=f"=COUNTIF(S:S, \"Entregado\")").style = body_style
     ws.cell(row=15, column=columna_max + 1, value=f"=COUNTIFS(X:X, \"<>No Existe\", X:X, \">0\")").style = body_style
-    ws.cell(row=16, column=columna_max + 1, value=f"={get_column_letter(columna_max+1)}15/{get_column_letter(columna_max+1)}14").style = percent_style
+    ws.cell(row=16, column=columna_max + 1, value=f"=1-IFERROR(({get_column_letter(columna_max+1)}15/{get_column_letter(columna_max+1)}14), 0)").style = percent_style
 
     rows = []
     for compra in compras:
@@ -1915,10 +1915,10 @@ def convert_excel_matriz_compras(compras):
         pagos = Pago.objects.filter(oc=compra)
        
         # Calcula el tipo de cambio promedio de estos pagos
-        tipo_de_cambio_promedio_pagos = pagos.aggregate(Avg('tipo_de_cambio'))['tipo_de_cambio__avg']
+        tipo_de_cambio_promedio_pagos = pagos.aggregate(Avg('tipo_de_cambio'))['tipo_de_cambio__avg'] 
 
         # Usar el tipo de cambio de los pagos, si existe. De lo contrario, usar el tipo de cambio de la compra
-        tipo_de_cambio = tipo_de_cambio_promedio_pagos or compra.tipo_de_cambio
+        tipo_de_cambio = tipo_de_cambio_promedio_pagos or compra.tipo_de_cambio or ""
         autorizado_text = 'Autorizado' if compra.autorizado2 else 'No Autorizado' if compra.autorizado2 == False or compra.autorizado1 == False else 'Pendiente Autorización'
         pagado_text = 'Pagada' if compra.pagada else 'No Pagada'
         entrada_text = 'Entregado' if compra.entrada_completa else 'No Entregado'
@@ -1983,6 +1983,17 @@ def convert_excel_matriz_compras(compras):
         else:
             cumplimiento_entrada = "Fuera de tiempo"
 
+        articulos = compra.articulocomprado_set.all()
+        todos_servicios = all(articulo.producto.producto.articulos.producto.producto.servicio for articulo in articulos)
+        ningun_servicio = all(not articulo.producto.producto.articulos.producto.producto.servicio for articulo in articulos)
+
+        if todos_servicios:
+            tipo_producto = "SERVICIOS"
+        elif ningun_servicio:
+            tipo_producto = "PRODUCTOS"
+        else:
+            tipo_producto = "PRODUCTO/SERVICIOS"
+
 
         row = [
         compra.id,
@@ -2000,6 +2011,7 @@ def convert_excel_matriz_compras(compras):
         compra.monto_pagado,
         pagado_text,
         autorizado_text,
+        tipo_producto,
         compra.dias_de_entrega,
         compra.moneda.nombre,
         tipo_de_cambio,
@@ -2022,15 +2034,15 @@ def convert_excel_matriz_compras(compras):
         row_num += 1
         for col_num in range(len(row)):
             (ws.cell(row = row_num, column = col_num+1, value=str(row[col_num]))).style = body_style
-            if col_num == 8 or col_num == 7 or col_num == 19 or col_num ==20:
+            if col_num == 8 or col_num == 7 or col_num == 20 or col_num ==21    :
                 (ws.cell(row = row_num, column = col_num+1, value=row[col_num])).style = date_style
-            if col_num == 10 or col_num == 11 or col_num == 12 or col_num == 16:
+            if col_num == 10 or col_num == 11 or col_num == 12 or col_num == 17 or col_num == 18:
                 (ws.cell(row = row_num, column = col_num+1, value=row[col_num])).style = money_style
         # Agregamos la fórmula DATEDIF. Asumiendo que las columnas 'Creado' y 'Req. Autorizada'
         # están en las posiciones 8 y 9 respectivamente (empezando desde 0), las posiciones en Excel serán 9 y 10 (empezando desde 1).
         #ws.cell(row=row_num, column=len(columns)-1, value=f"=NETWORKDAYS(I{row_num}, H{row_num})").style = body_style
         # Agregar la fórmula de "Total en pesos"
-        ws.cell(row=row_num, column = len(columns), value=f"=IF(ISBLANK(R{row_num}), L{row_num}, L{row_num}*R{row_num})").style = money_style
+        ws.cell(row=row_num, column = len(columns), value=f"=IF(ISBLANK(S{row_num}), L{row_num}, L{row_num}*S{row_num})").style = money_style
     
     
     sheet = wb['Sheet']
