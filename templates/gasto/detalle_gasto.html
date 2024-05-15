@@ -40,7 +40,7 @@
                             <td>{{producto.subproyecto.nombre}}</td>
                             <td><p class='quantity' id='prod_quantity'>{{producto.cantidad|floatformat:2}}</p></td>
                             <td>${{producto.precio_unitario|floatformat:2}}</td>
-                            <td>${{producto.total_parcial}}</td>
+                            <td>${{producto.total_parcial| floatformat:2}}</td>
                             <td>{{producto.comentario}}</td>
                         </tr>
                         {% endfor %}

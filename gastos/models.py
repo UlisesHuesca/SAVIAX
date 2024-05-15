@@ -170,7 +170,7 @@ class Articulo_Gasto(models.Model):
     @property
     def total_parcial(self):
         impuesto = self.get_iva
-        total = round(self.get_subtotal + impuesto + self.get_otros_impuestos)
+        total = round(self.get_subtotal + impuesto + self.get_otros_impuestos, 2)
         return total
 
 class Factura(models.Model):
