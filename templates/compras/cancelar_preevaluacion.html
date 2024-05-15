@@ -4,14 +4,14 @@
 {& load humanize %}
 <html>
 <head>
-{% block title %}Autorización Preevaluación{% endblock %}
+{% block title %}Cancelación Preevaluación{% endblock %}
 </head>
 <body>
 {% block content %}
 <div class="col-lg-8 col-sm-12 offset-lg-2">
     <div class="card" id="form-wrapper">
         <div class="card-header"> 
-            <h5>Autorizar Preevaluación: {{preevaluacion.id}}</h5>
+            <h5>Cancelar Preevaluación: {{preevaluacion.id}}</h5>
            
         </div>
 
@@ -88,7 +88,7 @@
         <div class="card-footer">
             <form method="POST">
                 {% csrf_token %}
-                <button id="approve-btn" name="btn_autorizar" class="btn btn-success" type="submit">Autorizar</button>
+                <button id="approve-btn" name="btn_autorizar" class="btn btn-danger" type="submit">Cancelar</button>
                 <a type="button" class="btn btn-secondary" href="{% url 'autorizacion-preevaluacion' %}">Cerrar</a>
             </form>
         </div>

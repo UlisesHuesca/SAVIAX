@@ -36,7 +36,7 @@
     </div>
 </div>
 <hr>
-<h6>&nbsp;</h6>
+
 <h6>&nbsp;</h6>
 <h6>&nbsp;</h6>
 <div class="container">
@@ -80,9 +80,11 @@
                             </button>
                         </div>
                     </div>
-                    <div class="form-check form-switch col-sm-3 simplificada d-none">
-                        <label for="form.impuesto" class="form-check-label"><strong>Cumple</strong></label>
+                    <div class="row ms-3 my-2 d-none simplificada">
+                        <div class="form-check form-switch col-sm">
+                        <label for="form.especs_b" class="form-check-label"><strong>Cumple</strong></label>
                             {{form.especs_b|add_class:"form-check-input"}}
+                        </div>
                     </div>
                     <div class="alert alert-primary simplificada d-none" role="alert">
                         2. Comparar los precios ofrecidos por el proveedor con al menos otras dos cotizaciones del mismo año y de diferentes
@@ -100,9 +102,11 @@
                             </button>
                         </div>
                     </div>
-                    <div class="form-check form-switch col-sm-3 simplificada d-none">
-                          <label for="form.impuesto" class="form-check-label"><strong>Cumple</strong></label>
+                    <div class="row ms-3 my-2 d-none simplificada">
+                        <div class="form-check form-switch col-sm">
+                          <label for="form.precios_b" class="form-check-label"><strong>Cumple</strong></label>
                               {{form.precios_b|add_class:"form-check-input"}}
+                        </div>
                     </div>
                       
                     <div class="alert alert-primary inicial d-none" role="alert">

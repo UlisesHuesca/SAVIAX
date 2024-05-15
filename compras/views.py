@@ -498,7 +498,9 @@ def preevaluacion(request, pk):
 
     if request.method == 'POST':
         form = PreevaluacionForm(request.POST, instance = preevaluacion)
+        #print(request.POST)
         if form.is_valid():
+            print(form.cleaned_data)
             preevaluacion = form.save(commit=False)
             preevaluacion.completo = True
             preevaluacion.creado_por = usuario
@@ -536,8 +538,8 @@ def autorizar_preevaluacion(request, pk):
         preevaluacion.save()
         messages.success(request,f'La preevaluacion {preevaluacion.id} ha sido autorizada')
         return redirect('autorizacion-preevaluacion')
-    else:
-        messages.success(request,'Nada')
+    #else:
+    #    messages.success(request,'Nada')
 
 
     context = {
@@ -545,6 +547,25 @@ def autorizar_preevaluacion(request, pk):
     }
 
     return render(request, 'compras/autorizar_preevaluacion.html', context)
+
+def cancelar_preevaluacion(request, pk):
+    preevaluacion = Preevaluacion.objects.get(id = pk)
+
+    if request.method == 'POST' and 'btn_autorizar' in request.POST:
+        preevaluacion.resultado = False
+        preevaluacion.save()
+        messages.success(request,f'La preevaluacion {preevaluacion.id} ha sido cancelada')
+        return redirect('autorizacion-preevaluacion')
+    #else:
+    #    messages.success(request,'Nada')
+
+
+    context = {
+        'preevaluacion':preevaluacion,
+    }
+
+    return render(request, 'compras/cancelar_preevaluacion.html', context)
+
 
 
 @login_required(login_url='user-login')
@@ -1613,7 +1634,6 @@ def generar_pdf(compra):
     c.rect(20,30,565,30, fill=True, stroke=False)
     c.setFillColor(white)
 
-    
     table = Table(data, colWidths=[1 * cm, 1.2 * cm, 10 * cm, 1.5 * cm, 1.2 * cm, 1.5 * cm,1.5 * cm, 1.5 * cm,])
     table_style = TableStyle([ #estilos de la tabla
         ('INNERGRID',(0,0),(-1,-1), 0.25, colors.white),
