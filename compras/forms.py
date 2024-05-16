@@ -1,5 +1,5 @@
 from django import forms
-from .models import Compra, ArticuloComprado, Comparativo, Item_Comparativo, Preevaluacion
+from .models import Compra, ArticuloComprado, Comparativo, Item_Comparativo, Preevaluacion, Proveedor_direcciones, Proveedor
 from requisiciones.models import ArticulosRequisitados
 
 class CompraForm(forms.ModelForm):
@@ -8,11 +8,35 @@ class CompraForm(forms.ModelForm):
         fields = ['id','proveedor','cond_de_pago','uso_del_cfdi','dias_de_credito','deposito_comprador','anticipo',
                   'monto_anticipo','dias_de_entrega','impuesto','impuestos_adicionales','flete','costo_fletes',
                   'tesoreria_matriz','opciones_condiciones','moneda','tipo_de_cambio','logistica', 'referencia','comparativo_model']
+        
+    def __init__(self,*args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['proveedor'].queryset = Proveedor_direcciones.objects.none()
+        self.fields['comparativo_model'].queryset = Comparativo.objects.none()
+        if 'proveedor' in self.data:
+            try:
+                seleccion_actual = int(self.data.get('proveedor'))
+                # Lógica para determinar el nuevo queryset basado en la selección actual
+                self.fields['proveedor'].queryset = Proveedor_direcciones.objects.filter(id= seleccion_actual)
+            except (ValueError, TypeError):
+                pass  # Manejo de errores en caso de entrada no válida
+        if 'comparativo_model' in self.data:
+            try:
+                seleccion_actual = int(self.data.get('comparativo_model'))
+                self.fields['comparativo_model'].queryset = Comparativo.objects.filter(id = seleccion_actual)
+            except (ValueError, TypeError):
+                pass #Manejo de errores en caso de entrada no válida
 
 class ArticuloCompradoForm(forms.ModelForm):
     class Meta:
         model = ArticuloComprado
         fields = ['producto','cantidad','precio_unitario']
+
+    def __init__(self,*args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.fields['producto'].queryset = ArticulosRequisitados.objects.none() 
+    
 
 class ArticulosRequisitadosForm(forms.ModelForm):
 

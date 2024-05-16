@@ -23,6 +23,12 @@ class ProductForm(forms.ModelForm):
             except (ValueError, TypeError):
                 pass  # invalid input from the client; ignore and fallback to empty City queryset
 
+class PrecioMax_Form(forms.ModelForm):
+    class Meta:
+        model = Product
+        fields = ['preciomax', 'porcentaje']
+
+
 class AddProduct_Form(forms.ModelForm):
     class Meta:
         model = Product

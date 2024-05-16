@@ -12,6 +12,7 @@ urlpatterns = [
     path('configuracion/subproyectos_edit/<int:pk>', views.subproyectos_edit, name='subproyectos-edit'),
     path('staff/', views.staff, name='dashboard-staff'),
     path('product/', views.product, name='dashboard-product'),
+    path('product/precio_maximo/<int:pk>', views.precio_maximo, name = 'precio-maximo'),
     path('product/upload_batch_products', views.upload_batch_products, name='upload_batch_products'),
     #path('product/delete/<int:pk>/', views.product_delete, name='dashboard-product-delete'),
     path('product/update/<int:pk>/', views.product_update, name='dashboard-product-update'),

@@ -249,7 +249,7 @@ def compra_edicion(request, pk):
     iva = 0
     total = 0
     dif_cant = 0
-    form.fields['deposito_comprador'].queryset = colaborador_sel
+    #form.fields['deposito_comprador'].queryset = colaborador_sel
     for item in productos_comp:
         subtotal = decimal.Decimal(subtotal + item.cantidad * item.precio_unitario)
         if item.producto.producto.articulos.producto.producto.iva == True:
@@ -357,6 +357,7 @@ def oc_modal(request, pk):
     usuario = Profile.objects.get(staff__id=request.user.id)
     colaborador_sel = Profile.objects.all()
     compras = Compra.objects.all()
+    comparativos = Comparativo.objects.filter(completo =True)
     oc, created = Compra.objects.get_or_create(complete = False, req = req, creada_por = usuario, regresar_oc = False)
     #consecutivo = compras.count() + 1
     productos_comp = ArticuloComprado.objects.filter(oc=oc)
@@ -367,7 +368,39 @@ def oc_modal(request, pk):
     iva = 0
     total = 0
     dif_cant = 0
-    form.fields['deposito_comprador'].queryset = colaborador_sel
+    #form.fields['deposito_comprador'].queryset = colaborador_sel
+    error_messages = {}
+    productos_para_select2 = [
+        {
+            'id': producto.id,
+            'text': str(producto.producto.articulos.producto), 
+            'cantidad': str(producto.cantidad), 
+            'cantidad_pendiente': str(producto.cantidad_comprada),
+            'preciomax': str(producto.producto.articulos.producto.producto.preciomax),
+            'porcentaje': str(producto.producto.articulos.producto.producto.porcentaje)
+        } for producto in productos
+    ]
+        
+    productos_comp_to_function = [
+        {
+            'id': producto.id,
+            'precio': str(producto.precio_unitario),
+            'precio_max': str(producto.producto.producto.articulos.producto.producto.preciomax),
+            'porcentaje': str(producto.producto.producto.articulos.producto.producto.porcentaje)
+        } for producto in productos_comp
+    ] 
+
+    comparativos_para_select2 = [
+        {
+            'id': comparativo.id, 
+            'text': str(comparativo.nombre)
+        } for comparativo in comparativos
+    ]
+
+
+
+
+
     for item in productos_comp:
         subtotal = decimal.Decimal(subtotal + item.cantidad * item.precio_unitario)
         if item.producto.producto.articulos.producto.producto.iva == True:
@@ -442,14 +475,21 @@ def oc_modal(request, pk):
                     )
                 email.content_subtype = "html " # Importante para que se interprete como HTML
                 email.send()
+                messages.success(request,f'{usuario.staff.first_name}, Has generado la OC {oc.get_folio} correctamente')
             except (BadHeaderError, SMTPException) as e:
                 error_message = f'{usuario.staff.first_name}, Has generado la OC {oc.get_folio} correctamente pero el correo de notificación no ha sido enviado debido a un error: {e}'
                 messages.warning(request, error_message)
             return redirect('requisicion-autorizada')
-
+        else:
+            for field, errors in form.errors.items():
+                error_messages[field] = errors.as_text()
 
     context= {
+        'comparativos_para_select2': comparativos_para_select2,
+        'productos_comp_to_function': productos_comp_to_function,
+        'error_messages': error_messages,
         'proveedores':proveedores,
+        'productos_para_select2':productos_para_select2,
         'req':req,
         'form':form,
         'oc':oc,
@@ -460,7 +500,7 @@ def oc_modal(request, pk):
         'subtotal':subtotal,
         'iva':iva,
         'total':total,
-        'colaborador_sel':colaborador_sel,
+        #'colaborador_sel':colaborador_sel,
         }
     return render(request, 'compras/oc.html',context)
 
@@ -1278,6 +1318,21 @@ def crear_comparativo(request):
     }
 
     return render(request, 'compras/crear_comparativo.html', context)
+
+#Ajax Select2
+def carga_proveedor(request):
+    #pk_perfil = request.session.get('selected_profile_id')
+    #colaborador_sel = Profile.objects.all()
+    #usuario = colaborador_sel.get(id = pk_perfil)
+    term = request.GET.get('term')      
+
+    proveedores = Proveedor_direcciones.objects.filter(
+        Q(estatus__nombre="NUEVO") | Q(estatus__nombre="APROBADO")| Q(estatus__nombre='PREAPROBADO'),
+        nombre__razon_social__icontains = term
+    ).values('id','nombre__razon_social','domicilio','estado__nombre','estatus__nombre','financiamiento','dias_credito')
+    data = list(proveedores)
+    #print(proveedores)
+    return JsonResponse(data, safe=False)
 
 @login_required(login_url='user-login')
 def editar_comparativo(request, pk):

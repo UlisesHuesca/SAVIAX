@@ -12,7 +12,7 @@ from solicitudes.models import Subproyecto, Proyecto
 from requisiciones.models import Salidas, ValeSalidas
 from compras.models import Compra
 from user.models import Profile, Distrito, Banco
-from .forms import ProductForm, Products_BatchForm, AddProduct_Form, Proyectos_Form, ProveedoresForm, Proyectos_Add_Form, Proveedores_BatchForm, ProveedoresDireccionesForm, Proveedores_Direcciones_BatchForm, Subproyectos_Add_Form, ProveedoresExistDireccionesForm, Add_ProveedoresDireccionesForm, DireccionComparativoForm, Revision_Calidad_Form
+from .forms import ProductForm, Products_BatchForm, AddProduct_Form, Proyectos_Form, ProveedoresForm, Proyectos_Add_Form, Proveedores_BatchForm, ProveedoresDireccionesForm, Proveedores_Direcciones_BatchForm, Subproyectos_Add_Form, ProveedoresExistDireccionesForm, Add_ProveedoresDireccionesForm, DireccionComparativoForm, Revision_Calidad_Form, PrecioMax_Form
 
 from .filters import ProductFilter, ProyectoFilter, ProveedorFilter, SubproyectoFilter
 
@@ -1068,6 +1068,29 @@ def product_update(request, pk):
         'item':item,
         }
     return render(request,'dashboard/product_update.html', context)
+
+
+@login_required(login_url='user-login')
+def precio_maximo(request, pk):
+#def product_update_modal(request, pk):
+
+    item = Product.objects.get(id=pk)
+
+    if request.method =='POST':
+        form = PrecioMax_Form(request.POST, request.FILES or None, instance=item, )
+        if form.is_valid():
+            form.save()
+            messages.success(request,f'Has actualizado correctamente el precio de referencia del producto {item.nombre}')
+            return redirect('dashboard-product')
+    else:
+        form = PrecioMax_Form(instance=item)
+
+
+    context = {
+        'form': form,
+        'item':item,
+        }
+    return render(request,'dashboard/precio_referencia.html', context)
 
 
 

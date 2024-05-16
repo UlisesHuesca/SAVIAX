@@ -56,6 +56,8 @@ class Product(models.Model):
     image = models.ImageField(null=True, blank=True, upload_to='product_images')
     completado = models.BooleanField(default = False)
     preevaluacion =  models.BooleanField(default=False)
+    preciomax = models.DecimalField(max_digits=14, decimal_places=2, null=True)
+    porcentaje = models.DecimalField(max_digits=4, decimal_places=2, null=True)
     #modificaciones para API
     critico = models.ForeignKey(Criticidad, on_delete = models.CASCADE, null=True)
     especs = models.TextField(blank=True, null=True)
@@ -70,7 +72,7 @@ class Product(models.Model):
 
 
     def __str__(self):
-        return f'{self.codigo}-{self.nombre}'
+        return f'{self.codigo}|{self.id}|{self.nombre}'
 
 
     @property
@@ -292,7 +294,7 @@ class ArticulosOrdenados(models.Model):
     comentario = models.TextField(max_length=100, null=True, blank=True)
 
     def __str__(self):
-        return f'{self.orden} - {self.producto}'
+        return f'{self.orden}|{self.producto}'
     
     @property
     def articulos_salidas(self):
