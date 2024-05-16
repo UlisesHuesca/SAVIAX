@@ -17,7 +17,7 @@
                 </div>
                 <form method="POST">
                     {% csrf_token %}
-                    {{form | crispy}}
+                    <!--{{form | crispy}}-->
                     <a class="btn btn" href="{% url 'dashboard-product' %}">Cancelar</a>
                     <input class="btn btn-outline-danger" type='submit' value="Confirmar">
                 </form>

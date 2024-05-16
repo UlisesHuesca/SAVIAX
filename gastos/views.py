@@ -747,11 +747,11 @@ def render_pdf_gasto(request, pk):
             c.drawString(350,caja_proveedor-40, "Sin registro")
     else:
         c.drawString(350,caja_proveedor-60,gasto.staff.staff.first_name+' '+ gasto.staff.staff.last_name)
-        if gasto.staff.staff.cuenta_bancaria:
+        if gasto.staff.cuenta_bancaria:
             c.drawString(350,caja_proveedor-20,str(gasto.staff.cuenta_bancaria))
         else:
             c.drawString(350,caja_proveedor-20, "Sin registro")
-        if gasto.staff.staff.clabe:
+        if gasto.staff.clabe:
             c.drawString(350,caja_proveedor-40,str(gasto.staff.clabe))
         else:
             c.drawString(350,caja_proveedor-40, "Sin registro")
