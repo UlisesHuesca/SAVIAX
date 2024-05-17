@@ -364,6 +364,15 @@
             </tbody>
             </table>
         </div>
+        <h6>&nbsp;</h6>
+        <div class="card" id="productosPreevaluados">
+            <div class ="card-header">
+                <h6>Productos Preevaluados para proveedor seleccionado</h6>
+            </div>
+            <div class="card-body">
+                <p></p>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -961,7 +970,8 @@ $(document).ready(function(){
                             status: item.estatus__nombre,
                             domicilio: item.domicilio,
                             financiamiento: item.financiamiento,
-                            dias_credito: item.dias_credito
+                            dias_credito: item.dias_credito,
+                            items: item.items_comparativos
                         };
                     })
 
@@ -1014,7 +1024,9 @@ $(document).ready(function(){
         var domicilio = data.domicilio;
         var status = data.status;
         var financiamiento = data.financiamiento;
+        var productos_comparativo = data.items;
         var dias = data.dias_credito;
+        //console.log(productos_comparativo)
         if (dias === ""){
             dias = 0
         }
@@ -1025,14 +1037,25 @@ $(document).ready(function(){
         var oc = encabezado.getAttribute("target"); 
         var dias_campo = $('#id_dias_de_credito');
         var lbl_dias = $('#credito_dias');
-        console.log(estado)
+        //console.log(estado)
         //var comparativo = document.getElementById("comparativo") 
         //localStorage.setItem("id_formulario_" + oc, JSON.stringify(object));
         $('#lbl_estado').text(estado);
         $('#lbl_domicilio').text(domicilio);
         $('#lbl_status').text(status);  
         $('#lbl_dias').attr('dias',dias)
-        
+        var productos_comparativo = data.items; // Esta es la variable que tienes desde AJAX
+        var cardBody = $('#productosPreevaluados .card-body');
+        // Limpia el contenido previo para evitar duplicados
+        cardBody.empty();
+        // Itera sobre cada producto y crea un elemento <p> para cada uno
+        productos_comparativo.forEach(function(item) {
+            var productoNombre = item.producto__producto__nombre; // Ajusta este campo según la estructura de tu objeto
+            var pElement = $('<p>').text(productoNombre); // Crea un elemento <p> con el nombre del producto
+            cardBody.append(pElement); // Añade el elemento <p> al div card-body
+        });
+
+
         if (data.financiamiento) {
             $('#id_cond_de_pago').val('2').trigger('change');
             lbl_dias.removeClass('d-none');

@@ -15,6 +15,9 @@ class ArticuloComprado_Admin(admin.ModelAdmin):
 class ProveedorAdmin(admin.ModelAdmin):
     search_fields = ('razon_social',)
 
+class Estatus_ProveedorAdmin(admin.ModelAdmin):
+    list_display = ('id','nombre')
+
 class Proveedor_direccionesAdmin(admin.ModelAdmin):
     search_fields = ('nombre__razon_social',)
 
@@ -29,7 +32,7 @@ admin.site.register(Proveedor, ProveedorAdmin)
 
 admin.site.register(Proveedor_direcciones, Proveedor_direccionesAdmin)
 
-admin.site.register(Estatus_proveedor)
+admin.site.register(Estatus_proveedor, Estatus_ProveedorAdmin)
 
 admin.site.register(Proveedor_Direcciones_Batch)
 

@@ -96,7 +96,7 @@ class Comparativo(models.Model):
         return f'{self.nombre}'
     
 class Preevaluacion(models.Model):
-    nombre = models.ForeignKey(Proveedor, on_delete=models.CASCADE, null=True, related_name = "preevaluacion")
+    nombre = models.ForeignKey(Proveedor, on_delete=models.CASCADE, null=True, related_name = "preevaluaciones")
     creado_por = models.ForeignKey(Profile, on_delete = models.CASCADE, null=True)
     creado_at = models.DateTimeField(auto_now_add=True)
     modified_at = models.DateTimeField(null=True)
@@ -151,7 +151,7 @@ class Moneda(models.Model):
 
 class Item_Comparativo(models.Model):
     producto = models.ForeignKey(Inventario, on_delete = models.CASCADE, null=True)
-    comparativo = models.ForeignKey(Comparativo, on_delete = models.CASCADE, null=True)
+    comparativo = models.ForeignKey(Comparativo, on_delete = models.CASCADE, null=True, related_name="items_comparativos")
     modelo = models.CharField(max_length=100, null=True, blank=True)
     marca = models.CharField(max_length=100, null=True, blank=True)
     cantidad = models.DecimalField(max_digits=14, decimal_places=2, default=0)

@@ -204,61 +204,58 @@ $(document).ready(function(){
 
 document.getElementById("id_tipo_evaluacion").addEventListener("change", function(){
     var valor = this.value
-    var simplificada = document.getElementsByClassName("simplificada");
-    var inicial = document.getElementsByClassName('inicial');
+    console.log(valor)
+    var simplificadas = document.getElementsByClassName("simplificada");
+    var iniciales = document.getElementsByClassName("inicial");
 
-    //console.log(simplificada)
-    if (valor == 2){
-        for (var i=0; i < simplificada.length; i++){
-          console.log( simplificada[i])
-          simplificada[i].classList.remove('d-none')
-        }
-        for (var i=0; i < inicial.length; i++){
-          inicial[i].classList.add('d-none')
-          var inputs = inicial[i].querySelectorAll('input');
-            //console.log(inputs)
-          
-            for( var j=0; j < inputs.length; j ++) {
-             inputs[j].value = ""
-            } 
-        }
-
-    }
-    else if (valor == 1){
-        for (var i=0; i < inicial.length; i++){
-          inicial[i].classList.remove('d-none')
-        }
-        for (var i=0; i < simplificada.length; i++){
-            simplificada[i].classList.add('d-none')
-            var inputs = simplificada[i].querySelectorAll('input');
-            //console.log(inputs)
-          
-            for( var j=0; j < inputs.length; j ++) {
-             inputs[j].value = ""
-            } 
-        }
+    if (valor == 2) {
+        // Mostrar elementos simplificados y ocultar elementos iniciales
+        Array.from(simplificadas).forEach(function(element) {
+            element.classList.remove('d-none');
+            // Restablecer todos los inputs dentro de los elementos simplificados
+            resetInputs(element);
+        });
+        Array.from(iniciales).forEach(function(element) {
+            element.classList.add('d-none');
+            // Restablecer todos los inputs dentro de los elementos iniciales
+            resetInputs(element);
+        });
+    } else if (valor == 1){
+        // Hacer lo opuesto si no es "Simplificada"
+        Array.from(iniciales).forEach(function(element) {
+            element.classList.remove('d-none');
+            resetInputs(element);
+        });
+        Array.from(simplificadas).forEach(function(element) {
+            element.classList.add('d-none');
+            resetInputs(element);
+        });
     } else {
-        for (var i=0; i < simplificada.length; i++){
-          console.log( simplificada[i])
-          simplificada[i].classList.add('d-none')
-          var inputs = simplificada[i].querySelectorAll('input');
-          for ( var j=0; j< inputs.length; j ++){
-            inputs[j].value = ""
-            }   
-        }
-        for (var i=0; i < inicial.length; i++){
-          inicial[i].classList.add('d-none')
-          var inputs = inicial[i].querySelectorAll('input');
-          for ( var j=0; j< inputs.length; j ++){
-            inputs[j].value = ""
-          }
-        }
+        Array.from(iniciales).forEach(function(element) {
+            element.classList.add('d-none');
+            resetInputs(element);
+        });
+        Array.from(simplificadas).forEach(function(element) {
+            element.classList.add('d-none');
+            resetInputs(element);
+        });
 
     }
-
 });
 
-
+function resetInputs(container) {
+    // Encuentra todos los elementos input y textarea dentro del contenedor
+    var inputs = container.querySelectorAll('input, textarea');
+    inputs.forEach(function(input) {
+        if (input.type === 'checkbox' || input.type === 'radio') {
+            // Desmarcar checkboxes y radios
+            input.checked = false;
+        } else {
+            // Limpiar campos de texto y textareas
+            input.value = '';
+        }
+    });
+}
 
 $(document).ready(function() {
     $('#id_comparativo_model').select2({
