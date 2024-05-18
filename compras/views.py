@@ -1396,18 +1396,20 @@ def carga_proveedor(request):
         # Aquí agregamos la lógica para extraer los items comparativos
         proveedor_id = Proveedor.objects.get(razon_social= prov['nombre__razon_social'])
         items = []
+        
         preevaluaciones = Preevaluacion.objects.filter(nombre_id=proveedor_id)
         #print('prov',prov)
-    
-        for preevaluacion in preevaluaciones:
-            #print('Preevaluación:', preevaluacion)
+        if preevaluaciones != None:
+            for preevaluacion in preevaluaciones:
+                #print('Preevaluación:', preevaluacion)
                 
-            comparativo_items = list(preevaluacion.comparativo_model.items_comparativos.values('producto__producto__nombre'))
-            items.extend(comparativo_items)
-            #print('Items del comparativo:', comparativo_items)
+                comparativo_items = list(preevaluacion.comparativo_model.items_comparativos.values('producto__producto__nombre'))
+                items.extend(comparativo_items)
+                #print('Items del comparativo:', comparativo_items)
         
-        prov['items_comparativos'] = items
-        
+            prov['items_comparativos'] = items
+        else:
+            prov['items_comparativos'] = " "
     #print(proveedores)
     return JsonResponse(data, safe=False)
 
