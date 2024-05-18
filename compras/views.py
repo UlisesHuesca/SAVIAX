@@ -3,7 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse, HttpResponse, FileResponse
 from django.contrib import messages
 from django.core.paginator import Paginator
-from django.db.models import F, Avg, Value, ExpressionWrapper, fields, Sum, Q, Case, When, DecimalField, Max
+from django.db.models import F, Avg, Value, ExpressionWrapper, fields, Sum, Q, Case, When, DecimalField, Max, Prefetch
 from django.db.models.functions import Concat, Coalesce
 from django.conf import settings
 from django.core.mail import EmailMessage, BadHeaderError
@@ -14,7 +14,7 @@ from user.models import Profile
 from tesoreria.models import Pago
 from requisiciones.views import get_image_base64
 from .filters import CompraFilter, ArticulosRequisitadosFilter,  ArticuloCompradoFilter, HistoricalArticuloCompradoFilter
-from .models import ArticuloComprado, Compra, Proveedor, Proveedor_direcciones, Cond_credito, Uso_cfdi, Moneda, Comparativo, Item_Comparativo, Preevaluacion
+from .models import ArticuloComprado, Compra, Proveedor, Proveedor_direcciones, Cond_credito, Uso_cfdi, Moneda, Comparativo, Item_Comparativo, Preevaluacion, Estatus_proveedor
 from tesoreria.models import Facturas
 from .forms import CompraForm, ArticuloCompradoForm, ArticulosRequisitadosForm, ComparativoForm, Item_ComparativoForm, Compra_ComentarioForm, PreevaluacionForm
 from requisiciones.forms import Articulo_Cancelado_Form
@@ -239,10 +239,48 @@ def compra_edicion(request, pk):
     productos_comp = ArticuloComprado.objects.filter(oc = oc)
     productos = ArticulosRequisitados.objects.filter(req = oc.req, sel_comp = False)
     req = Requis.objects.get(id = oc.req.id)
-    proveedores = Proveedor_direcciones.objects.filter(
-        Q(estatus__nombre='NUEVO') | Q(estatus__nombre='APROBADO') | Q(estatus__nombre='PREAPROBADO'))
+    comparativos = Comparativo.objects.filter(completo =True)
+    proveedores = Proveedor_direcciones.objects.filter(id = oc.proveedor.id)
     form_product = ArticuloCompradoForm()
     form = CompraForm(instance=oc)
+
+    proveedor_para_select2 = [
+        {
+            'id': proveedor.id, 
+            'text': proveedor.nombre.razon_social,
+            #'distrito': proveedor.
+        } for proveedor in proveedores
+    ]
+
+
+    productos_para_select2 = [
+        {
+            'id': producto.id,
+            'text': str(producto), 
+            'cantidad': str(producto.cantidad), 
+            'cantidad_pendiente': str(producto.cantidad_comprada),
+            'precioref': str(producto.producto.articulos.producto.producto.preciomax),
+            'porcentaje': str(producto.producto.articulos.producto.producto.porcentaje)
+        } for producto in productos
+    ]
+    
+        
+    productos_comp_to_function = [
+        {
+            'id': producto.id,
+            'precio': str(producto.precio_unitario),
+            'precio_ref': str(producto.producto.producto.articulos.producto.producto.preciomax),
+            'porcentaje': str(producto.producto.producto.articulos.producto.producto.porcentaje)
+        } for producto in productos_comp
+    ] 
+
+    comparativos_para_select2 = [
+        {
+            'id': comparativo.id, 
+            'text': str(comparativo.nombre)
+        } for comparativo in comparativos
+    ]
+
 
     tag = dof()
     subtotal = 0
@@ -293,11 +331,17 @@ def compra_edicion(request, pk):
             req.save()
             messages.success(request,f'{usuario.staff.first_name}, Has modificado la OC {oc.get_folio} correctamente')
             return redirect('compras-devueltas')
-
+    else:
+        for field, errors in form.errors.items():
+            error_messages[field] = errors.as_text()
 
 
     context= {
-        'proveedores':proveedores,
+        'comparativos_para_select2': comparativos_para_select2,
+        'proveedor_para_select2': proveedor_para_select2,
+        'productos_comp_to_function': productos_comp_to_function,
+        'productos_para_select2':productos_para_select2,
+        #'proveedores':proveedores,
         'productos':productos,
         'form':form,
         'oc':oc,
@@ -572,9 +616,16 @@ def autorizacion_preevaluacion(request):
 
 def autorizar_preevaluacion(request, pk):
     preevaluacion = Preevaluacion.objects.get(id = pk)
+    #proveedor = Proveedor.objects.get(id=preevaluacion.proveedor.id)
+    direcciones_prov = Proveedor_direcciones.objects.filter(nombre = preevaluacion.nombre.id, completo=True)
 
     if request.method == 'POST' and 'btn_autorizar' in request.POST:
         preevaluacion.resultado = True
+        for prov in direcciones_prov:
+            if prov.estatus.id == 2:
+                status = Estatus_proveedor.objects.get(id=5)
+                prov.estatus = status
+                prov.save()
         preevaluacion.save()
         messages.success(request,f'La preevaluacion {preevaluacion.id} ha sido autorizada')
         return redirect('autorizacion-preevaluacion')
@@ -1335,8 +1386,28 @@ def carga_proveedor(request):
     proveedores = Proveedor_direcciones.objects.filter(
         Q(estatus__nombre="NUEVO") | Q(estatus__nombre="APROBADO")| Q(estatus__nombre='PREAPROBADO'),
         nombre__razon_social__icontains = term
-    ).values('id','nombre__razon_social','domicilio','estado__nombre','estatus__nombre','financiamiento','dias_credito')
+    ).values(
+        'id','nombre__razon_social','domicilio','estado__nombre','estatus__nombre',
+        'financiamiento','dias_credito'
+    )
     data = list(proveedores)
+    #data = []
+    for prov in proveedores:
+        # Aquí agregamos la lógica para extraer los items comparativos
+        proveedor_id = Proveedor.objects.get(razon_social= prov['nombre__razon_social'])
+        items = []
+        preevaluaciones = Preevaluacion.objects.filter(nombre_id=proveedor_id)
+        #print('prov',prov)
+    
+        for preevaluacion in preevaluaciones:
+            #print('Preevaluación:', preevaluacion)
+                
+            comparativo_items = list(preevaluacion.comparativo_model.items_comparativos.values('producto__producto__nombre'))
+            items.extend(comparativo_items)
+            #print('Items del comparativo:', comparativo_items)
+        
+        prov['items_comparativos'] = items
+        
     #print(proveedores)
     return JsonResponse(data, safe=False)
 
