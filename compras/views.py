@@ -239,10 +239,48 @@ def compra_edicion(request, pk):
     productos_comp = ArticuloComprado.objects.filter(oc = oc)
     productos = ArticulosRequisitados.objects.filter(req = oc.req, sel_comp = False)
     req = Requis.objects.get(id = oc.req.id)
-    proveedores = Proveedor_direcciones.objects.filter(
-        Q(estatus__nombre='NUEVO') | Q(estatus__nombre='APROBADO') | Q(estatus__nombre='PREAPROBADO'))
+    comparativos = Comparativo.objects.filter(completo =True)
+    proveedores = Proveedor_direcciones.objects.filter(id = oc.proveedor.id)
     form_product = ArticuloCompradoForm()
     form = CompraForm(instance=oc)
+
+    proveedor_para_select2 = [
+        {
+            'id': proveedor.id, 
+            'text': proveedor.nombre.razon_social,
+            #'distrito': proveedor.
+        } for proveedor in proveedores
+    ]
+
+
+    productos_para_select2 = [
+        {
+            'id': producto.id,
+            'text': str(producto), 
+            'cantidad': str(producto.cantidad), 
+            'cantidad_pendiente': str(producto.cantidad_comprada),
+            'precioref': str(producto.producto.articulos.producto.producto.preciomax),
+            'porcentaje': str(producto.producto.articulos.producto.producto.porcentaje)
+        } for producto in productos
+    ]
+    
+        
+    productos_comp_to_function = [
+        {
+            'id': producto.id,
+            'precio': str(producto.precio_unitario),
+            'precio_ref': str(producto.producto.producto.articulos.producto.producto.preciomax),
+            'porcentaje': str(producto.producto.producto.articulos.producto.producto.porcentaje)
+        } for producto in productos_comp
+    ] 
+
+    comparativos_para_select2 = [
+        {
+            'id': comparativo.id, 
+            'text': str(comparativo.nombre)
+        } for comparativo in comparativos
+    ]
+
 
     tag = dof()
     subtotal = 0
@@ -293,11 +331,17 @@ def compra_edicion(request, pk):
             req.save()
             messages.success(request,f'{usuario.staff.first_name}, Has modificado la OC {oc.get_folio} correctamente')
             return redirect('compras-devueltas')
-
+    else:
+        for field, errors in form.errors.items():
+            error_messages[field] = errors.as_text()
 
 
     context= {
-        'proveedores':proveedores,
+        'comparativos_para_select2': comparativos_para_select2,
+        'proveedor_para_select2': proveedor_para_select2,
+        'productos_comp_to_function': productos_comp_to_function,
+        'productos_para_select2':productos_para_select2,
+        #'proveedores':proveedores,
         'productos':productos,
         'form':form,
         'oc':oc,
