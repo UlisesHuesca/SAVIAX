@@ -856,7 +856,10 @@ def requisicion_autorizar(request, pk):
     for producto in productos:
         costo_aprox = costo_aprox + producto.cantidad * producto.producto.articulos.producto.price
 
-    porcentaje = "{0:.2f}%".format((costo_aprox/requi.orden.subproyecto.presupuesto)*100)
+    if costo_aprox > 0:
+        porcentaje = "{0:.2f}%".format((costo_aprox/requi.orden.subproyecto.presupuesto)*100)
+    else:
+        porcentaje = "0"
     resta = requi.orden.subproyecto.presupuesto - requi.orden.subproyecto.gastado - costo_aprox
 
     if request.method == 'POST':

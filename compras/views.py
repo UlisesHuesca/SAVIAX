@@ -998,7 +998,10 @@ def autorizar_oc1(request, pk):
     suma_presupuesto = compra.req.orden.proyecto.subproyectos.aggregate(total_presupuesto=Sum('presupuesto'))['total_presupuesto']
     suma_presupuesto = suma_presupuesto if suma_presupuesto is not None else 0
     resta = suma_presupuesto - total_costo_pagado - costo_total
-    porcentaje = "{0:.2f}%".format((costo_oc/compra.req.orden.subproyecto.presupuesto)*100)
+    if costo_oc > 0 and compra.req.orden.subproyecto.presupuesto > 0:
+        porcentaje = "{0:.2f}%".format((costo_oc/compra.req.orden.subproyecto.presupuesto)*100)
+    else:
+        porcentaje = ""
 
 
     if request.method == 'POST':
@@ -1130,7 +1133,10 @@ def autorizar_oc2(request, pk):
     suma_presupuesto = compra.req.orden.proyecto.subproyectos.aggregate(total_presupuesto=Sum('presupuesto'))['total_presupuesto']
     suma_presupuesto = suma_presupuesto if suma_presupuesto is not None else 0
     resta = suma_presupuesto - total_costo_pagado - costo_total
-    porcentaje = "{0:.2f}%".format((costo_oc/compra.req.orden.subproyecto.presupuesto)*100)
+    if costo_oc > 0 and compra.req.orden.subproyecto.presupuesto > 0:
+        porcentaje = "{0:.2f}%".format((costo_oc/compra.req.orden.subproyecto.presupuesto)*100)
+    else:
+        porcentaje = ""
 
     if request.method == 'POST':
         compra.autorizado2 = True
