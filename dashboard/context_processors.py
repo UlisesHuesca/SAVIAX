@@ -100,7 +100,7 @@ def contadores_processor(request):
         entradas = Compra.objects.filter(Q(cond_de_pago__nombre ='CREDITO') | Q(pagada = True), solo_servicios= False, entrada_completa = False, autorizado2= True).order_by('-folio')
         conteo_entradas = entradas.count()
         
-        servicios = Compra.objects.filter(Q(cond_de_pago__nombre ='CREDITO') | Q(pagada = True), solo_servicios= True, entrada_completa = False, autorizado2= True, req__orden__staff = usuario).order_by('-folio')
+        servicios = Compra.objects.filter(Q(cond_de_pago__nombre ='CREDITO') | Q(pagada = True), solo_servicios= True, recepcion_completa = False, autorizado2= True, req__orden__staff = usuario).order_by('-folio')
         conteo_servicios = servicios.count()
 
 

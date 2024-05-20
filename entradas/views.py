@@ -67,7 +67,13 @@ def pendientes_recepcion(request):
 def recepcion_servicios(request):
     usuario = Profile.objects.get(staff__id=request.user.id)
 
-    compras = Compra.objects.filter(Q(cond_de_pago__nombre ='CREDITO') | Q(pagada = True), solo_servicios= True, entrada_completa = False, autorizado2= True, req__orden__staff = usuario).order_by('-autorizado_date2')
+    compras = Compra.objects.filter(
+        Q(cond_de_pago__nombre ='CREDITO') | Q(pagada = True), 
+        recepcion_completa = False,
+        solo_servicios= True, 
+        autorizado2= True, 
+        req__orden__staff = usuario
+    ).order_by('-autorizado_date2')
 
 
     myfilter = CompraFilter(request.GET, queryset=compras)
@@ -372,9 +378,6 @@ def articulos_recepcion_servicios(request, pk):
     usuario = Profile.objects.get(staff__id=request.user.id)
     compra = Compra.objects.get(id=pk)
     articulos = ArticuloComprado.objects.filter(oc=compra, entrada_completa = False, recepcion_completa = False, seleccionado = False, producto__producto__articulos__producto__producto__servicio = True)
-
-
-  
 
 
     entrada, created = Entrada.objects.get_or_create(oc=compra, almacenista= usuario, completo = False)
