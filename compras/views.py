@@ -1412,10 +1412,13 @@ def carga_proveedor(request):
             continue
             #print('Preevaluación:', preevaluacion)
 
-        for preevaluacion in preevaluaciones:    
-            comparativo_items = list(preevaluacion.comparativo_model.items_comparativos.values('producto__producto__nombre'))
-            items.extend(comparativo_items)
-            #print('Items del comparativo:', comparativo_items)
+        for preevaluacion in preevaluaciones:  
+            if preevaluacion.comparativo_model is not None:  
+                comparativo_items = list(preevaluacion.comparativo_model.items_comparativos.values('producto__producto__nombre'))
+                items.extend(comparativo_items)
+                #print('Items del comparativo:', comparativo_items)
+            else:
+                pass
         
         prov['items_comparativos'] = items
         data.append(prov)
