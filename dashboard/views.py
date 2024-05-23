@@ -3,19 +3,24 @@ from django.http import HttpResponse, JsonResponse
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
+from django.core.mail import EmailMessage, BadHeaderError
+from smtplib import SMTPException
 from django.forms import inlineformset_factory
 from django.db.models import Sum, Q, Prefetch, Avg, FloatField, Case, When, F,DecimalField, ExpressionWrapper, CharField, Value
 from django.db.models.functions import Concat
+from django.conf import settings
 from .models import Product, Subfamilia, Order, Products_Batch, Familia, Unidad, Inventario, Producto_Calidad
 from compras.models import Proveedor, Proveedor_Batch, Proveedor_Direcciones_Batch, Proveedor_direcciones, Estatus_proveedor, Estado
 from solicitudes.models import Subproyecto, Proyecto
 from requisiciones.models import Salidas, ValeSalidas
+from requisiciones.views import get_image_base64
 from compras.models import Compra
 from user.models import Profile, Distrito, Banco
 from .forms import ProductForm, Products_BatchForm, AddProduct_Form, Proyectos_Form, ProveedoresForm, Proyectos_Add_Form, Proveedores_BatchForm, ProveedoresDireccionesForm, Proveedores_Direcciones_BatchForm, Subproyectos_Add_Form, ProveedoresExistDireccionesForm, Add_ProveedoresDireccionesForm, DireccionComparativoForm, Revision_Calidad_Form, PrecioMax_Form
 
 from .filters import ProductFilter, ProyectoFilter, ProveedorFilter, SubproyectoFilter
 
+import os
 import csv
 from django.core.paginator import Paginator
 from datetime import date, datetime
@@ -1007,6 +1012,7 @@ def product_delete(request, pk):
 
 @login_required(login_url='user-login')
 def add_product(request):
+    usuario = Profile.objects.get(staff=request.user)
     item, created = Product.objects.get_or_create(completado=False)
     familias = Familia.objects.all()
 
@@ -1021,13 +1027,57 @@ def add_product(request):
 
     if request.method =='POST':
         form = AddProduct_Form(request.POST, request.FILES or None, instance = item)
-        #form.save(commit=False)
-        item.completado = True
         if form.is_valid():
-            form.save()
+            item = form.save(commit = False)
+            item.completado = True
+            item.updated_by = usuario
             item.save()
-            messages.success(request,f'Has agregado correctamente el producto {item.nombre}')
-            return redirect('dashboard-product')
+            
+            if item.critico.nombre == "Crítico":
+                calidad = Profile.objects.get(tipo__nombre = "Supervisor_Calidad" )
+                #print(calidad)
+                static_path = settings.STATIC_ROOT
+                img_path = os.path.join(static_path,'images','SAVIA_Logo.png')
+                img_path2 = os.path.join(static_path,'images','logo vordtec_documento.png')
+                image_base64 = get_image_base64(img_path)
+                logo_v_base64 = get_image_base64(img_path2)
+                # Crear el mensaje HTML
+                
+                html_message = f"""
+                <html>
+                    <head>
+                        <meta charset="UTF-8">
+                    </head>
+                    <body>
+                        <p><img src="data:image/jpeg;base64,{logo_v_base64}" alt="Imagen" style="width:100px;height:auto;"/></p>
+                        <p>Estimado {calidad.staff.first_name} {calidad.staff.last_name},</p>
+                        <p>Estás recibiendo este correo porque se ha dado de alta el producto: {item.codigo}|{item.nombre} con la característica de material crítico,</p>
+                        <p>creado por {item.updated_by.staff.first_name} {item.updated_by.staff.first_name}.</p>
+                        <p>Acción requerida: Llenar en el módulo de producto la sección de "Revisión Producto"</p>
+                        <p><img src="data:image/png;base64,{image_base64}" alt="Imagen" style="width:50px;height:auto;border-radius:50%"/></p>
+                        <p>Este mensaje ha sido automáticamente generado por SAVIA 2.0</p>
+                    </body>
+                </html>
+                """
+                try:
+                    email = EmailMessage(
+                        f'Alta de Material Crítico: {item.codigo} | {item.nombre}',
+                        body=html_message,
+                        #f'Estimado {requi.orden.staff.staff.staff.first_name} {requi.orden.staff.staff.staff.last_name},\n Estás recibiendo este correo porque tu solicitud: {requi.orden.folio}| Req: {requi.folio} ha sido autorizada,\n por {requi.requi_autorizada_por.staff.staff.first_name} {requi.requi_autorizada_por.staff.staff.last_name}.\n El siguiente paso del sistema: Generación de OC \n\n Este mensaje ha sido automáticamente generado por SAVIA VORDTEC',
+                        from_email = settings.DEFAULT_FROM_EMAIL,
+                        to= ['ulises_huesc@hotmail.com',calidad.staff.email],
+                        headers={'Content-Type': 'text/html'}
+                        )
+                    email.content_subtype = "html " # Importante para que se interprete como HTML
+                    email.send()
+                    messages.success(request,f'Has agregado correctamente el producto {item.nombre}')
+                except (BadHeaderError, SMTPException) as e:
+                    error_message = f'{usuario.staff.first_name}, Has dado de alta el producto {item.codigo} | {item.nombre} correctamente pero el correo de notificación no ha sido enviado debido a un error: {e}'
+                    messages.warning(request, error_message)
+                return redirect('dashboard-product')
+            else:
+                messages.success(request,f'Has actualizado correctamente el producto {item.nombre}')
+                return redirect('dashboard-product')
         else:
             for field, errors in form.errors.items():
                 error_messages[field] = errors.as_text()
@@ -1045,16 +1095,59 @@ def add_product(request):
 
 @login_required(login_url='user-login')
 def product_update(request, pk):
-#def product_update_modal(request, pk):
-
+    usuario = Profile.objects.get(staff=request.user)
     item = Product.objects.get(id=pk)
     error_messages = {}
     if request.method =='POST':
         form = AddProduct_Form(request.POST, request.FILES or None, instance=item, )
         if form.is_valid():
-            form.save()
-            messages.success(request,f'Has actualizado correctamente el producto {item.nombre}')
-            return redirect('dashboard-product')
+            item = form.save(commit = False)
+            item.updated_by = usuario
+            item.save()           
+            if item.critico.nombre == "Crítico":
+                calidad = Profile.objects.get(tipo__nombre = "Supervisor_Calidad" )
+                #print(calidad)
+                static_path = settings.STATIC_ROOT
+                img_path = os.path.join(static_path,'images','SAVIA_Logo.png')
+                img_path2 = os.path.join(static_path,'images','logo vordtec_documento.png')
+                image_base64 = get_image_base64(img_path)
+                logo_v_base64 = get_image_base64(img_path2)
+                # Crear el mensaje HTML    
+                html_message = f"""
+                <html>
+                    <head>
+                        <meta charset="UTF-8">
+                    </head>
+                    <body>
+                        <p><img src="data:image/jpeg;base64,{logo_v_base64}" alt="Imagen" style="width:100px;height:auto;"/></p>
+                        <p>Estimado {calidad.staff.first_name} {calidad.staff.last_name},</p>
+                        <p>Estás recibiendo este correo porque se ha actualizado el producto: {item.codigo}|{item.nombre} con la característica de material crítico,</p>
+                        <p>creado por {item.updated_by.staff.first_name} {item.updated_by.staff.first_name}.</p>
+                        <p>Acción requerida: Llenar en el módulo de producto la sección de "Revisión Producto"</p>
+                        <p><img src="data:image/png;base64,{image_base64}" alt="Imagen" style="width:50px;height:auto;border-radius:50%"/></p>
+                        <p>Este mensaje ha sido automáticamente generado por SAVIA 2.0</p>
+                    </body>
+                </html>
+                """
+                try:
+                    email = EmailMessage(
+                        f'Actualización de Material Crítico: {item.codigo} | {item.nombre}',
+                        body=html_message,
+                        #f'Estimado {requi.orden.staff.staff.staff.first_name} {requi.orden.staff.staff.staff.last_name},\n Estás recibiendo este correo porque tu solicitud: {requi.orden.folio}| Req: {requi.folio} ha sido autorizada,\n por {requi.requi_autorizada_por.staff.staff.first_name} {requi.requi_autorizada_por.staff.staff.last_name}.\n El siguiente paso del sistema: Generación de OC \n\n Este mensaje ha sido automáticamente generado por SAVIA VORDTEC',
+                        from_email = settings.DEFAULT_FROM_EMAIL,
+                        to= ['ulises_huesc@hotmail.com',calidad.staff.email],
+                        headers={'Content-Type': 'text/html'}
+                        )
+                    email.content_subtype = "html " # Importante para que se interprete como HTML
+                    email.send()
+                    messages.success(request,f'Has actualizado correctamente el producto {item.codigo} | {item.nombre}')
+                except (BadHeaderError, SMTPException) as e:
+                    error_message = f'{usuario.staff.first_name}, Has actualizado el producto {item.codigo} | {item.nombre} correctamente pero el correo de notificación no ha sido enviado debido a un error: {e}'
+                    messages.warning(request, error_message)
+                return redirect('dashboard-product')
+            else:
+                messages.success(request,f'Has actualizado correctamente el producto {item.codigo} | {item.nombre}')
+                return redirect('dashboard-product')
         else:
             for field, errors in form.errors.items():
                 error_messages[field] = errors.as_text()
