@@ -13,7 +13,7 @@ from requisiciones.models import Requis, ArticulosRequisitados
 from user.models import Profile
 from tesoreria.models import Pago
 from requisiciones.views import get_image_base64
-from .filters import CompraFilter, ArticulosRequisitadosFilter,  ArticuloCompradoFilter, HistoricalArticuloCompradoFilter
+from .filters import CompraFilter, ArticulosRequisitadosFilter,  ArticuloCompradoFilter, HistoricalArticuloCompradoFilter, ComparativoFilter
 from .models import ArticuloComprado, Compra, Proveedor, Proveedor_direcciones, Cond_credito, Uso_cfdi, Moneda, Comparativo, Item_Comparativo, Preevaluacion, Estatus_proveedor
 from tesoreria.models import Facturas
 from .forms import CompraForm, ArticuloCompradoForm, ArticulosRequisitadosForm, ComparativoForm, Item_ComparativoForm, Compra_ComentarioForm, PreevaluacionForm
@@ -1319,11 +1319,24 @@ def autorizar_oc2(request, pk):
 
     return render(request, 'compras/autorizar_oc2.html',context)
 
+@login_required(login_url='user-login')
 def comparativos(request):
+    usuario = Profile.objects.get(staff__id=request.user.id)
+    
+
     comparativos = Comparativo.objects.filter(completo = True)
+    myfilter = ComparativoFilter(request.GET, queryset=comparativos)
+    comparativos = myfilter.qs
+
+     #Set up pagination
+    p = Paginator(comparativos, 50)
+    page = request.GET.get('page')
+    comparativos_list = p.get_page(page)
     
     context= {
+        'myfilter':myfilter,
         'comparativos':comparativos,
+        'comparativos_list':comparativos_list,
     }
     return render(request,'compras/comparativos.html', context)
 

@@ -17,6 +17,9 @@ class Entrada_Gasto_Ajuste_Admin(admin.ModelAdmin):
 class Factura_Admin(admin.ModelAdmin):
     list_display = ('solicitud_gasto', 'fecha_subida')
 
+class Conceptos_Entradas_Admin(admin.ModelAdmin):
+    list_display =('id','entrada','concepto_material')
+
 admin.site.register(Solicitud_Gasto, Solicitud_Gasto_Admin)
 
 admin.site.register(Articulo_Gasto, Articulo_Gasto_Admin)
@@ -25,6 +28,6 @@ admin.site.register(Tipo_Gasto)
 
 admin.site.register(Entrada_Gasto_Ajuste, Entrada_Gasto_Ajuste_Admin)
 
-admin.site.register(Conceptos_Entradas)
+admin.site.register(Conceptos_Entradas, Conceptos_Entradas_Admin)
 
 admin.site.register(Factura, Factura_Admin)
