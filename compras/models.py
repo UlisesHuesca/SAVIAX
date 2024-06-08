@@ -223,7 +223,7 @@ class Compra(models.Model):
             total = self.costo_oc
             if self.impuestos_adicionales:
                 total = total + self.impuestos_adicionales
-            if self.flete:
+            if self.costo_fletes:
                 total = total + self.costo_fletes
         return total
 

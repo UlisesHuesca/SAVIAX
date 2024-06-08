@@ -364,7 +364,7 @@ def saldo_a_favor(request, pk):
 # Create your views here.
 @login_required(login_url='user-login')
 def matriz_pagos(request):
-    pagos = Pago.objects.filter(hecho=True)
+    pagos = Pago.objects.filter(hecho=True).order_by('-pagado_date')
     myfilter = Matriz_Pago_Filter(request.GET, queryset=pagos) 
 
     pagos = myfilter.qs
@@ -439,7 +439,7 @@ def matriz_facturas(request, pk):
 def matriz_facturas_nomodal(request, pk):
     compra = Compra.objects.get(id = pk)
     facturas = Facturas.objects.filter(oc = compra, hecho=True)
-    pagos = Pago.objects.filter(oc=compra)
+    pagos = Pago.objects.filter(oc=compra, hecho = True)
     form = Facturas_Completas_Form(instance=compra)
 
     if request.method == 'POST':
@@ -479,9 +479,11 @@ def factura_nueva(request, pk):
                 factura.subido_por =  usuario
                 form.save()
                 factura.save()
-                messages.success(request,'Las factura se registró de manera exitosa')
+                messages.success(request,'La factura se registró de manera exitosa')
             else:
                 messages.error(request,'No se pudo subir tu documento')
+        else:
+            messages.error(request,'No se pudo subir tu documento2')
 
 
     context={
