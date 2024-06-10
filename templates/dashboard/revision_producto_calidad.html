@@ -17,16 +17,32 @@
         <div class="col-md-6 offset-md-3">
             <div class="card">
                 <div class="card-header">
-                  <h3>Revisión Producto</h3>
+                  <h3>Revisión Producto| {{producto.codigo}} {{producto.nombre}}</h3>
                 </div>
-                <form method="POST" id='ProductForm' enctype='multipart/form-data'>
+                <div class="card-body">
+                    <form method="POST" id='ProductForm' enctype='multipart/form-data'>
                     {% csrf_token %}
                     {% if error_messages %}
                     <div class="alert alert-danger" role="alert">
                         {{error_messages}}
                     </div>
                     {% endif %}
-                    
+                        <div class ="row">
+                            <div class="alert alert-primary" role="alert">
+                                Descripción Específica:{% if producto.descripcion_especifica %} {{producto.descripcion_especifica}} {% else %} No hay datos {% endif %}
+                            </div>
+                        </div>
+                        <div class ="row">
+                            <div class="alert alert-primary" role="alert">
+                                Criterios de Aceptación:{% if producto.criterios_aceptacion %} {{producto.criterios_aceptacion}} {% else %} No hay datos {% endif %}
+                            </div>
+                        </div>
+                        <div class ="row">
+                            <div class="alert alert-primary" role="alert">
+                                Especs:{% if producto.especs %} {{producto.especs}}{% else %} No hay datos {% endif %}
+                            </div>
+                        </div>
+
                         <div class="row">
                             <div class="col-sm-12">
                                 <div class="input-group mb-3">
@@ -103,10 +119,10 @@
                       <a class="btn btn-outline-secondary" href="{% url 'dashboard-product' %}">Cancelar</a>
                       <input class="btn btn-outline-info" type='submit' value="Actualizar">
                     </div>
-                </form>
+                    </form>
+                </div>
             </div>
         </div>
-
     </div>
 </div>
 </body>

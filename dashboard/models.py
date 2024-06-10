@@ -103,6 +103,10 @@ class Producto_Calidad(models.Model):
     g_documental = models.ForeignKey(Grado_Control, on_delete = models.CASCADE, null=True, blank= True, related_name='documental')
     g_inspeccion = models.ForeignKey(Grado_Control, on_delete = models.CASCADE, null=True, blank=True,related_name='inspeccion')
     g_cumplimiento = models.ForeignKey(Grado_Control, on_delete = models.CASCADE, null=True, blank=True, related_name='cumplimiento')
+    hecho = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f'{self.producto}'
 
 class Products_Batch(models.Model):
     file_name = models.FileField(upload_to='product_bash', validators = [FileExtensionValidator(allowed_extensions=('csv',))])

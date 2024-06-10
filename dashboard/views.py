@@ -439,6 +439,7 @@ def revision_producto_calidad(request, pk):
             revision = form.save(commit=False)
             revision.updated_at = datetime.now()
             revision.updated_by = usuario
+            revision.hecho = True
             item.save()
             revision.save()
             messages.success(request, f'Has agregado requerimientos de calidad al {revision.producto.nombre} correctamente ')
@@ -1016,6 +1017,17 @@ def add_product(request):
     item, created = Product.objects.get_or_create(completado=False)
     familias = Familia.objects.all()
 
+    # Buscar el valor numérico disponible más bajo para el código
+    existing_codes = Product.objects.exclude(codigo__isnull=True).values_list('codigo', flat=True)
+    numeric_codes = [int(code) for code in existing_codes if code.isdigit()]
+    available_code = 1
+    while available_code in numeric_codes:
+        available_code += 1
+    
+
+    initial_codigo = str(available_code)  # Formatear como cadena de 6 caracteres, rellenando con ceros
+            
+
     familias_para_select2 = [
         {
             'id': item.id, 
@@ -1031,6 +1043,10 @@ def add_product(request):
             item = form.save(commit = False)
             item.completado = True
             item.updated_by = usuario
+           
+            
+            item.codigo = initial_codigo 
+            item.save()
             item.save()
             
             if item.critico.nombre == "Crítico":
@@ -1086,6 +1102,7 @@ def add_product(request):
 
 
     context = {
+        'initial_codigo':initial_codigo,
         'error_messages':error_messages,
         'familias_para_select2':familias_para_select2,
         'form': form,

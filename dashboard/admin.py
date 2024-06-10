@@ -37,6 +37,9 @@ class SubfamiliaAdmin(admin.ModelAdmin):
 
 class CriticidadAdmin(admin.ModelAdmin):
     list_display = ('id','nombre')
+
+class Grado_ControlAdmin(admin.ModelAdmin):
+    list_display = ('id', 'nombre')
 # Register your models here.
 admin.site.register(Familia)
 
@@ -66,6 +69,6 @@ admin.site.register(Tipo_Orden)
 
 admin.site.register(Producto_Calidad)
 
-admin.site.register(Grado_Control)
+admin.site.register(Grado_Control, Grado_ControlAdmin)
 
 admin.site.register(Criticidad, CriticidadAdmin)

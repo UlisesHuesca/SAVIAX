@@ -100,12 +100,15 @@
                 </form>
                     <ul class="nav nav-pills">
                         <li class="nav-item mx-2">
+                            {% if usuario.tipo.superintendente == True %}
                             <a type="button" class="btn btn-outline-light" style="background-color:#9a9b9d" data-bs-toggle="modal" data-bs-target='#dialog' hx-target="#document" hx-get="{% url 'upload_batch_products' %}">
                                 <i class="fa-solid fa-file-arrow-up"> Carga Masiva</i>
                             </a>
+                            
                             <a class="btn btn-outline-info" id="btnActualizar" type="button" href="{% url 'add-product' %}">
                                 <i class="fa-solid fa-plus"> Agregar Producto</i>
                             </a>
+                            {% endif %}
                         </li>
                     </ul>
             </div>
@@ -153,10 +156,17 @@
                         <td></td>
                         {% endif %}
                         <td>
-                        {% if usuario.tipo.nombre == "Supervisor_Calidad"  or usuario.tipo.nombre == "Admin"%}    
-                            {% if item.critico.id == 1 or item.critico.id == 2 %}
-                                <a class="btn btn-outline-danger" id="btnActualizar" type="button" href ="{% url 'revision-producto-calidad' item.id %}"><i class="fa-solid fa-q"></i></a>
+                        {% if usuario.tipo.nombre == "Supervisor_Calidad"  or usuario.tipo.nombre == "Admin"%} 
+                            {% if item.producto_calidad.hecho == False %}    
+                                {% if item.critico.id == 1 %}
+                                    <a class="btn btn-outline-danger" id="btnActualizar" type="button" href ="{% url 'revision-producto-calidad' item.id %}"><i class="fa-solid fa-q"></i></a>
+                                {% endif %}
+                            {% else %}
+                                {% if item.critico.id == 1 %}
+                                    <a class="btn btn-outline-success" id="btnActualizar" type="button" href ="{% url 'revision-producto-calidad' item.id %}"><i class="fa-solid fa-q"></i></a>
+                                {% endif %}
                             {% endif %}
+                        
                         {% endif %}
                         </td>
                         <td>

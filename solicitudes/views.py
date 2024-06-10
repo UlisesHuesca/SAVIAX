@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect
-from dashboard.models import Inventario, Order, ArticulosOrdenados, ArticulosparaSurtir, Inventario_Batch, Marca, Product, Tipo_Orden, Plantilla, ArticuloPlantilla
+from dashboard.models import Inventario, Order, ArticulosOrdenados, ArticulosparaSurtir, Inventario_Batch, Marca, Product, Tipo_Orden, Plantilla, ArticuloPlantilla, Producto_Calidad
 from requisiciones.models import Requis, ArticulosRequisitados, ValeSalidas
 from compras.models import Compra
 from tesoreria.models import Pago
@@ -198,6 +198,16 @@ def product_selection(request):
         }
     return render(request, 'solicitud/product_selection.html', context)
 
+@login_required(login_url='user-login')
+def select_product_quality(request, pk):
+    producto = Product.objects.get(id = pk)
+    calidad_producto = Producto_Calidad.objects.get(producto = producto)
+
+    context = {
+        'calidad_producto': calidad_producto,
+    }
+    return render(request, 'solicitud/select_product_quality.html', context)
+
 #Vista para crear solicitud
 @login_required(login_url='user-login')
 def checkout(request):
@@ -241,7 +251,7 @@ def checkout(request):
         cartItems = order.get_cart_quantity
 
     if request.method =='POST' and 'agregar' in request.POST:
-        form = OrderForm(request.POST, instance=order)
+        form = OrderForm(request.POST or None,request.FILES or None, instance=order)
         if form.is_valid():
             order = form.save(commit=False)
             order.created_at = date.today()

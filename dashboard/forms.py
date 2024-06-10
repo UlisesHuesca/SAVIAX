@@ -1,5 +1,5 @@
 from django import forms
-from .models import Product, Subfamilia, Products_Batch, Inventario_Batch, Familia, Producto_Calidad
+from .models import Product, Subfamilia, Products_Batch, Inventario_Batch, Familia, Producto_Calidad, Grado_Control
 from compras.models import Proveedor_Batch, Proveedor, Proveedor_direcciones, Proveedor_Direcciones_Batch
 from solicitudes.models import Proyecto, Subproyecto
 
@@ -32,7 +32,7 @@ class PrecioMax_Form(forms.ModelForm):
 class AddProduct_Form(forms.ModelForm):
     class Meta:
         model = Product
-        fields = ['codigo','nombre','unidad','familia','subfamilia','especialista','iva','activo','servicio','image','gasto','critico','especs','preevaluacion', 'descripcion_especifica','criterios_aceptacion']
+        fields = ['nombre','unidad','familia','subfamilia','especialista','iva','activo','servicio','image','gasto','critico','especs','preevaluacion', 'descripcion_especifica','criterios_aceptacion']
 
 #Sobreescribiendo el método __init__ y configurando el queryset para que esté vacío
     def __init__(self, *args, **kwargs):
@@ -57,6 +57,14 @@ class Revision_Calidad_Form(forms.ModelForm):
     class Meta:
         model = Producto_Calidad
         fields = ['requisitos', 'documental', 'inspeccion', 'cumplimiento','g_documental','g_inspeccion','g_cumplimiento']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Sobrescribe el queryset del campo 'grado_control' para que se ordene por ID
+        self.fields['g_documental'].queryset = Grado_Control.objects.all().order_by('id')
+        self.fields['g_inspeccion'].queryset = Grado_Control.objects.all().order_by('id')
+        self.fields['g_cumplimiento'].queryset = Grado_Control.objects.all().order_by('id')
+    
 
 class ProveedoresForm(forms.ModelForm):
     class Meta:

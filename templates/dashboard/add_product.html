@@ -26,14 +26,10 @@
                         {{error_messages}}
                     </div>
                     {% endif %}
-                    <div class="col-12">
-                      <div class="input-group mb-3">
-                      <span class="input-group-text" id="basic-addon1"><i class="fa-solid fa-list"></i></span>
-                          <div class="form-floating form-floating-group flex-grow-1">   
-                          {{form.codigo|add_class:"form-control"|append_attr:"placeholder=Código"}}
-                          <label for="id_razon_social">Código*</label>
-                          </div>
-                      </div>
+                    <div class ="col-12"> 
+                        <div class="alert alert-primary" role="alert">
+                            <h3>Código: {{initial_codigo}}</h3>
+                        </div>
                     </div>
                     <div class="col-12">
                       <div class="input-group mb-3">

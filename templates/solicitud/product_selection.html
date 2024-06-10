@@ -86,8 +86,8 @@
                     <h8>Disponible: {{producto.cantidad}}</h8>
                     
                     <hr>
-                    {% if producto.producto.critico %}
-                    <button type="button" class="btn btn-danger"><i class="fa-solid fa-q"></i></button>
+                    {% if producto.producto.critico and producto.producto.producto_calidad.hecho %}
+                    <button type="button" class = "btn btn-danger" data-bs-toggle="modal" data-bs-target="#dialog" hx-target="#document" hx-get="{% url 'select-product-quality' producto.producto.id %}"><i class="fa-solid fa-q"></i></button>
                     {% endif %}
                     <button data-product={{producto.id|unlocalize}} data-action="add" class="btn btn-outline-secondary add-btn update-cart">Agregar a Solicitud</button>
                     <!--<a class='btn btn-outline-info' href="#">Ver</a>-->
@@ -124,6 +124,12 @@
             {% endif %}
             </ul>
         </nav>
+<!--Este es el modal-->
+<div class="modal fade" id ="dialog" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg" id="document" role="document">
+
+    </div>
+</div>
 <!--AJAX CALL-->
 <script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
