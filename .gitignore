@@ -1,5 +1,5 @@
 .env
-debug.log
+*.log
 venv/
 media/
 *.sql

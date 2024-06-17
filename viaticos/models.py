@@ -27,7 +27,7 @@ class Solicitud_Viatico(models.Model):
     lugar_comision = models.CharField(max_length=20, null=True)
     transporte = models.CharField(max_length=40, null=True)
     hospedaje = models.BooleanField(default=False)
-    comentario = models.TextField(max_length=200, null=True)
+    comentario = models.TextField(null=True)
     approved_at = models.DateField(null=True)
     approved_at_time = models.TimeField(null=True)
     approved_at2 = models.DateField(null=True)

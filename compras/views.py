@@ -16,7 +16,7 @@ from requisiciones.views import get_image_base64
 from .filters import CompraFilter, ArticulosRequisitadosFilter,  ArticuloCompradoFilter, HistoricalArticuloCompradoFilter, ComparativoFilter
 from .models import ArticuloComprado, Compra, Proveedor, Proveedor_direcciones, Cond_credito, Uso_cfdi, Moneda, Comparativo, Item_Comparativo, Preevaluacion, Estatus_proveedor
 from tesoreria.models import Facturas
-from .forms import CompraForm, ArticuloCompradoForm, ArticulosRequisitadosForm, ComparativoForm, Item_ComparativoForm, Compra_ComentarioForm, PreevaluacionForm
+from .forms import CompraForm, ArticuloCompradoForm, ArticulosRequisitadosForm, ComparativoForm, Item_ComparativoForm, Compra_ComentarioForm, PreevaluacionForm, Compra_Comment_Form
 from requisiciones.forms import Articulo_Cancelado_Form
 from tesoreria.forms import Facturas_Form
 from entradas.models import Entrada, No_Conformidad
@@ -877,7 +877,9 @@ def cancelar_oc2(request, pk):
     usuario = Profile.objects.get(staff__id=request.user.id)
     compra = Compra.objects.get(id = pk)
     productos = ArticuloComprado.objects.filter(oc = pk)
-
+    form = Compra_Comment_Form(instance = compra)
+    
+    
     if compra.costo_fletes == None:
         costo_fletes = 0
     #Si hay tipo de cambio es porque la compra fue en dólares entonces multiplico por tipo de cambio la cantidad
@@ -897,15 +899,19 @@ def cancelar_oc2(request, pk):
 
 
     if request.method == 'POST':
-        compra.oc_autorizada_por2 = usuario
-        compra.autorizado2 = False
-        compra.autorizado_date2 = date.today()
-        compra.autorizado_hora2 = datetime.now().time()
-        compra.save()
-        messages.error(request,f'Has cancelado la compra con FOLIO: {compra.get_folio}')
-        return redirect('autorizacion-oc2')
+        form = Compra_Comment_Form(request.POST, instance=compra)
+        if form.is_valid():
+            compra = form.save(commit = False)
+            compra.oc_autorizada_por2 = usuario
+            compra.autorizado2 = False
+            compra.autorizado_date2 = date.today()
+            compra.autorizado_hora2 = datetime.now().time()
+            compra.save()
+            messages.success(request,f'Has cancelado la compra con FOLIO: {compra.get_folio}')
+            return HttpResponse(status=204)
 
     context = {
+        'form':form,
         'compra':compra,
         'productos': productos,
         'costo_oc':costo_oc,

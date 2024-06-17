@@ -175,6 +175,7 @@
                     <th class="d-none d-md-table-cell">Pagado</th>
                     <th class="d-none d-md-table-cell">Condiciones</th>
                     <th scope="col">Acción</th>
+                    <th>Cancelar</th>
                 </tr>
             </thead>
             <tbody>
@@ -205,7 +206,11 @@
                             <li class="nav-item m-1">
                                 <button id="myBtn2" type="button" class="btn btn-outline-info" data-bs-toggle="modal" data-bs-target="#dialog" hx-target="#document" hx-get="{% url 'saldo-a-favor' compra.id %}">Saldo a Favor</button>
                             </li>
+
                         </ul>
+                    </td>
+                    <td>
+                        <a type="button" class="btn btn-outline-danger btn-lg" data-bs-toggle="modal" data-bs-target="#dialog" hx-target="#document"  hx-swap="innerHTML" hx-get="{% url 'cancelar-oc2' compra.id %}"><i class="fa-solid fa-xmark"></i></a>
                     </td>
                 </tr>
                 {% endfor %}
@@ -214,6 +219,7 @@
         </div>
     </div>
 </div>
+
 
 <!--Este es el modal-->
 <div class="modal fade" id ="dialog" tabindex="-1" role="dialog">
@@ -230,14 +236,15 @@ dataSpyList.forEach(function (dataSpyEl) {
   bootstrap.ScrollSpy.getInstance(dataSpyEl)
     .refresh()
 });
-;(function(){
+(function(){
     const modal = new bootstrap.Modal(document.getElementById('dialog'))
 
     htmx.on('htmx:beforeSwap',(e)=>{
         if (e.detail.target.id === "document" && !e.detail.xhr.response)
         modal.hide()
-    })
-})()
+    });
+})();
+
 var myModal = document.getElementById('dialog')
 
 myModal.addEventListener('hidden.bs.modal', function (event) {
