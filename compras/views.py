@@ -2076,7 +2076,7 @@ def convert_excel_matriz_compras(compras):
 
      # Asumiendo que las filas de datos comienzan en la fila 2 y terminan en row_num
     ws.cell(row=9, column=columna_max + 1, value=f"=COUNTIFS(U:U, \"<>No Existe\", U:U, \"<>\")").style = body_style
-    ws.cell(row=10, column=columna_max + 1, value=f"=COUNTIF(W:W, \"Fuera de tiempo\")").style = body_style
+    ws.cell(row=10, column=columna_max + 1, value=f"=COUNTIF(X:X, \"Fuera de tiempo\")").style = body_style
     ws.cell(row=11, column=columna_max + 1, value=f"=1-({get_column_letter(columna_max+1)}10/{get_column_letter(columna_max+1)}9)").style = percent_style
 
     ws.cell(column = columna_max, row = 13, value='7.2.Porcentaje de productos o servicios recibidos sin no conformidades').style = messages_style
@@ -2086,7 +2086,7 @@ def convert_excel_matriz_compras(compras):
 
 
     ws.cell(row=14, column=columna_max + 1, value=f"=COUNTIF(S:S, \"Entregado\")").style = body_style
-    ws.cell(row=15, column=columna_max + 1, value=f"=COUNTIFS(X:X, \"<>No Existe\", X:X, \">0\")").style = body_style
+    ws.cell(row=15, column=columna_max + 1, value=f"=COUNTIFS(Y:Y, \"<>No Existe\", Y:Y, \">0\")").style = body_style
     ws.cell(row=16, column=columna_max + 1, value=f"=1-IFERROR(({get_column_letter(columna_max+1)}15/{get_column_letter(columna_max+1)}14), 0)").style = percent_style
 
     rows = []
