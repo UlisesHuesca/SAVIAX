@@ -98,7 +98,7 @@
                                 <a type="button" class="btn btn-outline-danger btn-lg" data-bs-toggle="modal" data-bs-target="#dialog" hx-target="#document" hx-get="{% url 'back-oc' compra.id %}">R<i class="fa-solid fa-backward"></i></a>
                             </li>
                             <li class="nav-item m-1">
-                                <a type="button" class="btn btn-outline-danger btn-lg" data-bs-toggle="modal" data-bs-target="#dialog" hx-target="#document" hx-get="{% url 'cancelar-oc2' compra.id %}"><i class="fa-solid fa-xmark"></i></a>
+                                <a type="button" class="btn btn-outline-danger btn-lg" data-bs-toggle="modal" data-bs-target="#dialog" hx-target="#document" hx-swap="innerHTML" hx-get="{% url 'cancelar-oc2' compra.id %}"><i class="fa-solid fa-xmark"></i></a>
                             </li>
                             {% if compra.proveedor.estatus.nombre == 'NUEVO' %}
                                 {% if compra.comparativo_model %}
@@ -118,11 +118,17 @@
     </div>
 </div>
 <!--Este es el modal-->
-<div class="modal fade" id ="dialog" data-bs-keyboard="false" tabindex="-1" role="dialog">
-    <div class="modal-dialog modal-xl modal-dialog-centered" id="document" role="document" hx-target="this">
+
+<div class="modal fade" id ="dialog" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg" id="document" role="document" hx-target="this">
 
     </div>
 </div>
+<!--<div class="modal fade" id ="dialog" data-bs-keyboard="false" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-xl modal-dialog-centered" id="document" role="document" hx-target="this">
+
+    </div>
+</div>-->
 
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
@@ -134,6 +140,21 @@ var dataSpyList = [].slice.call(document.querySelectorAll('[data-bs-spy="scroll"
 dataSpyList.forEach(function (dataSpyEl) {
   bootstrap.ScrollSpy.getInstance(dataSpyEl)
     .refresh()
+});
+
+(function(){
+    const modal = new bootstrap.Modal(document.getElementById('dialog'))
+
+    htmx.on('htmx:beforeSwap',(e)=>{
+        if (e.detail.target.id === "document" && !e.detail.xhr.response)
+        modal.hide()
+    });
+})();
+
+var myModal = document.getElementById('dialog')
+
+myModal.addEventListener('hidden.bs.modal', function (event) {
+  location.reload();
 })
 
 </script>

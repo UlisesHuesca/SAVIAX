@@ -134,6 +134,7 @@
                     <th scope="col">Acción</th>
                     <th scope="col">Comprobación</th>
                     <th>PDF</th>
+                    <th>Cancelar</th>
                 </tr>
             </thead>
             <tbody>
@@ -167,6 +168,9 @@
                             
                         </ul>
                     </td>
+                    <td>
+                        <a type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#dialog"  hx-swap="innerHTML" hx-target="#document" hx-get="{% url 'cancelar-gasto2' gasto.id %}"><i class="fa-solid fa-xmark"></i></a>
+                    </td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -183,14 +187,15 @@
 <script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script>
-;(function(){
+(function(){
     const modal = new bootstrap.Modal(document.getElementById('dialog'))
 
     htmx.on('htmx:beforeSwap',(e)=>{
         if (e.detail.target.id === "document" && !e.detail.xhr.response)
         modal.hide()
-    })
-})()
+    });
+})();
+
 var myModal = document.getElementById('dialog')
 
 myModal.addEventListener('hidden.bs.modal', function (event) {

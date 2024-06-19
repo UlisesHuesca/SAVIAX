@@ -53,3 +53,8 @@ class FacturaForm(forms.ModelForm):
     class Meta:
         model = Factura
         fields = ['archivo_pdf', 'archivo_xml']
+
+class Autorizacion_Gasto_Form(forms.ModelForm):
+    class Meta:
+        model = Solicitud_Gasto
+        fields = ['comentarios']

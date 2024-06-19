@@ -1,4 +1,4 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from datetime import date, datetime
 from django.contrib import messages
@@ -6,7 +6,7 @@ from django.core.mail import EmailMessage
 from user.models import Profile
 from solicitudes.models import Proyecto, Subproyecto, Operacion
 from dashboard.models import Inventario
-from django.http import HttpResponse
+from django.http import HttpResponse, FileResponse
 from tesoreria.models import Cuenta, Pago, Facturas
 from .models import Solicitud_Viatico, Concepto_Viatico, Viaticos_Factura
 from .forms import Solicitud_ViaticoForm, Concepto_ViaticoForm, Pago_Viatico_Form, Viaticos_Factura_Form
@@ -14,7 +14,21 @@ from tesoreria.forms import Facturas_Viaticos_Form
 from .filters import Solicitud_Viatico_Filter
 from django.core.paginator import Paginator
 
-# Create your views here.
+from decimal import Decimal, ROUND_HALF_UP
+
+import io
+#PDF generator
+from reportlab.pdfgen import canvas
+from reportlab.lib import colors
+from reportlab.lib.colors import Color, black, blue, red, white
+from reportlab.lib.units import cm
+from reportlab.lib.pagesizes import letter, portrait
+from reportlab.rl_config import defaultPageSize 
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.enums import TA_CENTER, TA_LEFT
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, Frame
+from bs4 import BeautifulSoup
+
 # Create your views here.
 @login_required(login_url='user-login')
 def solicitud_viatico(request):
@@ -531,3 +545,321 @@ def factura_viatico_edicion(request, pk):
     return render(request, 'viaticos/factura_viatico_edicion.html', context)
 
 
+def render_pdf_viatico(request, pk):
+    viatico = get_object_or_404(Solicitud_Viatico, id=pk)
+    buf = generar_pdf_viatico(viatico.id)
+    return FileResponse(buf, as_attachment=True, filename='V_' + str(viatico.id) + '.pdf')
+
+def attach_viatico_pdf(request, pk):
+    viatico = get_object_or_404(Solicitud_Viatico, id=pk)
+    buf = generar_pdf_viatico(viatico.id)
+
+    return buf.getvalue()
+
+def generar_pdf_viatico(pk):
+    #Configuration of the PDF object
+    buf = io.BytesIO()
+    c = canvas.Canvas(buf, pagesize=letter)
+    #Here ends conf.
+    viatico = Solicitud_Viatico.objects.get(id=pk)
+    conceptos = Concepto_Viatico.objects.filter(viatico = viatico)
+    
+    #Configuraciones por default 
+    styles = getSampleStyleSheet()
+    width, height = letter
+
+   #Azul Vordcab
+    prussian_blue = Color(0.0859375,0.1953125,0.30859375)
+    rojo = Color(0.59375, 0.05859375, 0.05859375)
+    #Encabezado
+    c.setFillColor(black)
+    c.setLineWidth(.2)
+    c.setFont('Helvetica',8)
+    caja_iso = 760
+    #Elaborar caja
+    #c.line(caja_iso,500,caja_iso,720)
+
+
+
+    #Encabezado
+    c.drawString(420,caja_iso,'Preparado por:')
+    c.drawString(420,caja_iso-10,'SUP. ADMON')
+    c.drawString(520,caja_iso,'Aprobación')
+    c.drawString(520,caja_iso-10,'SUB ADM')
+    #c.drawString(150,caja_iso-20,'Número de documento')
+    #c.drawString(160,caja_iso-30,'F-ADQ-N4-01.02')
+    #c.drawString(245,caja_iso-20,'Clasificación del documento')
+    #c.drawString(275,caja_iso-30,'Controlado')
+    #c.drawString(355,caja_iso-20,'Nivel del documento')
+    #c.drawString(380,caja_iso-30, 'N5')
+    #c.drawString(440,caja_iso-20,'Revisión No.')
+    #c.drawString(452,caja_iso-30,'000')
+    #c.drawString(510,caja_iso-20,'Fecha de Emisión')
+    #c.drawString(525,caja_iso-30,'01/2024')
+
+    caja_proveedor = caja_iso - 50
+    c.setFont('Helvetica',12)
+    c.setFillColor(prussian_blue)
+    # REC (Dist del eje Y, Dist del eje X, LARGO DEL RECT, ANCHO DEL RECT)
+    c.rect(150,750,250,20, fill=True, stroke=False) #Barra azul superior Solicitud
+    c.rect(20,caja_proveedor - 8,565,20, fill=True, stroke=False) #Barra azul superior Proveedor | Detalle
+    c.rect(20,460,565,2, fill=True, stroke=False) #Linea posterior horizontal 
+    c.setFillColor(white)
+    c.setLineWidth(.2)
+    c.setFont('Helvetica-Bold',14)
+    c.drawCentredString(280,755,'Comprobación de Viáticos')
+    c.setLineWidth(.3) #Grosor
+    c.line(20,caja_proveedor-8,20,460) #Eje Y donde empieza, Eje X donde empieza, donde termina eje y,donde termina eje x (LINEA 1 contorno)
+    c.line(585,caja_proveedor-8,585,460) #Linea 2 contorno
+    c.drawInlineImage('static/images/logo vordtec_documento.png',45,730, 3 * cm, 1.5 * cm) #Imagen vortec
+
+    c.setFillColor(white)
+    c.setFont('Helvetica-Bold',11)
+    #c.drawString(120,caja_proveedor,'Infor')
+    c.drawString(300,caja_proveedor, 'Detalles')
+    inicio_central = 300
+    #c.line(inicio_central,caja_proveedor-25,inicio_central,520) #Linea Central de caja Proveedor | Detalle
+    c.setFillColor(black)
+    c.setFont('Helvetica',9)
+    # Primera columna
+    c.drawString(30,caja_proveedor-20,'Solicitó:')
+    c.drawString(30,caja_proveedor-40,'Distrito:')
+    c.drawString(30,caja_proveedor-60,'Proyecto:')
+    c.drawString(30,caja_proveedor-80,'Subproyecto:')
+    c.drawString(30,caja_proveedor-100,'Lugar de partida:')
+    c.drawString(30,caja_proveedor-120,'Lugar de Comisión:')
+    c.drawString(30,caja_proveedor-140,'Fecha de partida:')
+    c.drawString(30,caja_proveedor-160,'Fecha de retorno:')
+    c.drawString(30,caja_proveedor-180,'Comisión:')
+    # Segunda columna del encabezado
+    c.drawString(320,caja_proveedor-20,'Banco:')
+    c.drawString(320,caja_proveedor-40,'Cuenta:')
+    c.drawString(320,caja_proveedor-60,'Clabe:')
+    c.drawString(320,caja_proveedor-80,'Colaborador:')
+    c.drawString(320,caja_proveedor-100,'Nivel:')
+    c.drawString(320, caja_proveedor-120,'Transporte:')
+    c.drawString(320, caja_proveedor-140,'Hospedaje:')
+
+    c.drawString(320,caja_proveedor-200,'Fecha de Elaboración:')
+
+
+
+    
+    c.setFont('Helvetica-Bold',12)
+    c.drawString(500,caja_proveedor-20,'FOLIO:')
+    c.setFillColor(rojo)
+    c.setFont('Helvetica-Bold',12)
+    c.drawString(540,caja_proveedor-20, str(viatico.id))
+
+    c.setFillColor(black)
+    c.setFont('Helvetica',9)
+    c.drawString(120,caja_proveedor-20, viatico.staff.staff.first_name+' '+ viatico.staff.staff.last_name)
+    c.drawString(120,caja_proveedor-40, viatico.staff.distrito.nombre)
+    c.drawString(120,caja_proveedor-60, viatico.proyecto.nombre)
+    c.drawString(120,caja_proveedor-80, viatico.subproyecto.nombre)
+   
+    c.drawString(120,caja_proveedor-100, viatico.lugar_partida)
+    #c.drawString(120,caja_proveedor-120, viatico.lugar_comision)
+    style = styles['Normal']
+    y_inicial = caja_proveedor - 120
+    paragraph = Paragraph(viatico.lugar_comision, style)
+    paragraph.wrapOn(c, 200, height)
+    longitud_umbral = 38
+    num_lineas_esperadas = len(viatico.lugar_comision) / longitud_umbral
+    if num_lineas_esperadas > 1:
+        y_inicial -= 10
+    paragraph.drawOn(c, 120, y_inicial)
+
+    
+    c.drawString(120,caja_proveedor-140, viatico.fecha_partida.strftime("%d/%m/%Y"))
+    
+    if viatico.fecha_retorno:
+        c.drawString(120,caja_proveedor-160, viatico.fecha_retorno.strftime("%d/%m/%Y"))
+    #if viatico.motivo:
+        #c.drawString(120,caja_proveedor-180, viatico.motivo)
+    #    y_inicial = caja_proveedor - 180
+    #    style = styles['Normal']
+    #    paragraph = Paragraph(viatico.motivo, style)
+    #    paragraph.wrapOn(c, 450, height)
+    #    longitud_umbral = 75
+    #    num_lineas_esperadas = len(viatico.motivo) / longitud_umbral
+    #    if num_lineas_esperadas > 1:
+    #        y_inicial -= 12
+    #    paragraph.drawOn(c, 120, y_inicial)
+    # Segunda Columna del encabezado
+   
+    if viatico.colaborador:
+        c.drawString(380, caja_proveedor-80, viatico.colaborador.staff.first_name+' '+viatico.colaborador.staff.last_name)
+        c.drawString(380, caja_proveedor-100, str(viatico.colaborador.nivel))
+        if viatico.colaborador.banco:
+            c.drawString(380,caja_proveedor-20, viatico.colaborador.banco.nombre)
+        else:
+            c.drawString(380,caja_proveedor-20, "Sin registro")
+        if viatico.colaborador.cuenta_bancaria:
+            c.drawString(380,caja_proveedor-40,viatico.colaborador.cuenta_bancaria)
+        else:
+            c.drawString(380,caja_proveedor-40, "Sin registro")
+        if viatico.colaborador.clabe:
+            c.drawString(380,caja_proveedor-60,viatico.colaborador.clabe)
+        else:
+            c.drawString(380,caja_proveedor-60, "Sin registro")
+    else:
+        c.drawString(380, caja_proveedor-80,'Solicitante')
+        c.drawString(380, caja_proveedor-100, viatico.staff.staff.first_name+' '+viatico.staff.staff.last_name)
+        if viatico.staff.banco:
+            c.drawString(380,caja_proveedor-20, viatico.staff.banco.nombre)
+        else:
+            c.drawString(380,caja_proveedor-20, "Sin registro")
+        if viatico.staff.cuenta_bancaria:
+            c.drawString(380,caja_proveedor-40,viatico.staff.cuenta_bancaria)
+        else:
+            c.drawString(380,caja_proveedor-40, "Sin registro")
+        if viatico.staff.clabe:
+            c.drawString(380,caja_proveedor-60,viatico.staff.clabe)
+        else:
+            c.drawString(380,caja_proveedor-60, "Sin registro")
+   
+    
+    #c.drawString(380, caja_proveedor-120, str(viatico.transporte))
+    style = styles['Normal']
+    y_inicial = caja_proveedor - 120
+    paragraph = Paragraph(viatico.transporte, style)
+    paragraph.wrapOn(c, 200, height)
+    longitud_umbral = 38
+    num_lineas_esperadas = len(viatico.transporte) / longitud_umbral
+    if num_lineas_esperadas > 1:
+        y_inicial -= 10
+    paragraph.drawOn(c, 380, y_inicial)
+    
+
+
+    if viatico.hospedaje:
+        c.drawString(380, caja_proveedor-140, "Requerido")
+    else:
+        c.drawString(380, caja_proveedor-140, "No Requerido")
+    c.drawString(430,caja_proveedor-200, viatico.approved_at.strftime("%d/%m/%Y"))
+
+
+    #Create blank list
+    data =[]
+
+    data.append(['''Código''', '''Nombre''', '''Cantidad''','''Precio''', '''Subtotal''','''Comentario'''])
+
+
+    high = 440
+    total = 0
+    for concepto in conceptos:
+         # Convert to Decimal and round to two decimal places
+        cantidad_redondeada = Decimal(concepto.cantidad).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+        precio_unitario_redondeado = Decimal(concepto.precio).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+        subtotal = Decimal(cantidad_redondeada * precio_unitario_redondeado).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+        total += subtotal
+        data.append([
+            concepto.producto.producto.codigo, 
+            concepto.producto.producto.nombre,
+            cantidad_redondeada, 
+            precio_unitario_redondeado,
+            subtotal, 
+            concepto.comentario,
+            ])
+        high = high - 18
+
+
+    c.setFillColor(prussian_blue)
+    c.rect(20,30,565,30, fill=True, stroke=False)
+    c.setFillColor(white)
+    #Primer renglón
+    c.drawCentredString(70,48,'Clasificación:')
+    c.drawCentredString(140,48,'Nivel:')
+    c.drawCentredString(240,48,'Preparado por:')
+    c.drawCentredString(350,48,'Aprobado:')
+    c.drawCentredString(450,48,'Fecha emisión:')
+    c.drawCentredString(550,48,'Rev:')
+    #Segundo renglón
+    c.drawCentredString(70,34,'Controlado')
+    c.drawCentredString(140,34,'N5')
+    c.drawCentredString(240,34,'SEOV-ALM-N4-01-01')
+    c.drawCentredString(350,34,'SUB ADM')
+    c.drawCentredString(450,34,'24/Oct/2018')
+    c.drawCentredString(550,34,'001')
+
+    c.setFillColor(black)
+    
+    
+    styleN = styles["BodyText"]
+
+    if viatico.comentario is not None:
+        comentario = viatico.comentario
+    else:
+        comentario = "No hay comentarios"
+
+    
+   
+    # Crear un marco (frame) en la posición específica
+    frame = Frame(20, 0, width-40, high-50, id='normal')
+    options_conditions_paragraph = Paragraph(comentario, styleN)
+    # Agregar el párrafo al marco
+    frame.addFromList([options_conditions_paragraph], c)
+    c.setFillColor(prussian_blue)
+    c.rect(20,30,500,30, fill=True, stroke=False)
+    c.setFillColor(white)
+    # Personalizar el estilo de los párrafos
+    custom_style = ParagraphStyle(
+    'CustomStyle',
+        parent=styles['BodyText'],
+        fontSize=6,  # Reducir el tamaño de la fuente a 6
+        leading=8,   # Aumentar el espacio entre líneas para asegurar que el texto no se superponga
+        alignment=TA_LEFT,  # Alineación del texto
+        # Puedes añadir más ajustes si es necesario
+    )
+    for i, row in enumerate(data):
+        for j, item in enumerate(row):
+            if i!=0 and j == 6:
+                data[i][j] = Paragraph(item, custom_style)
+
+    table = Table(data, colWidths=[1.5 * cm, 6.5 * cm, 2 * cm, 2 * cm, 1.7 * cm, 6 * cm,])
+    table_style = TableStyle([ #estilos de la tabla
+        ('INNERGRID',(0,0),(-1,-1), 0.25, colors.white),
+        ('BOX',(0,0),(-1,-1), 0.25, colors.black),
+        ('VALIGN',(0,0),(-1,-1),'MIDDLE'),
+        #ENCABEZADO
+        ('TEXTCOLOR',(0,0),(-1,0), white),
+        ('FONTSIZE',(0,0),(-1,0), 10),
+        ('BACKGROUND',(0,0),(-1,0), prussian_blue),
+        #CUERPO
+        ('TEXTCOLOR',(0,1),(-1,-1), colors.black),
+        ('FONTSIZE',(0,1),(-1,-1), 6),
+        ])
+    table.setStyle(table_style)
+
+    #pdf size
+    table.wrapOn(c, width, height)
+    table.drawOn(c, 20, high)
+    # Crear una lista de datos para la tabla secundaria
+    data_secundaria = []
+    data_secundaria.append(['Proyecto', 'Subproyecto'])  # Encabezados de la tabla secundaria
+
+    c.setFillColor(prussian_blue)
+    c.drawString(290, high-20, 'Total:')
+    c.drawString(320, high-20, '$' + str(total))
+   
+    c.rect(20,high-50,565,25, fill=True, stroke=False)
+    c.setFillColor(white)
+    c.drawCentredString(320,high-45,'Comentario General')
+    c.setFillColor(black)
+    c.drawCentredString(230,high-190, viatico.staff.staff.first_name +' '+ viatico.staff.staff.last_name)
+    c.line(180,high-195,280,high-195)
+    c.drawCentredString(230,high-205, 'Solicitado')
+   
+    c.setFillColor(black)
+    c.drawCentredString(410,high-190, viatico.superintendente.staff.first_name +' '+ viatico.superintendente.staff.last_name)
+    c.line(360,high-195,460,high-195)
+    c.drawCentredString(410,high-205,'Aprobado por')
+    
+    
+
+    c.showPage()
+    c.save()
+    buf.seek(0)
+
+    return buf

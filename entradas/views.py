@@ -215,7 +215,7 @@ def pendientes_entrada(request):
                             f'Compra Autorizada {compra.get_folio}',
                             f'Estimado *Inserte nombre de especialista*,\n Estás recibiendo este correo porque se ha recibido en almacén el producto código:{producto_surtir.articulos.producto.producto.codigo} descripción:{producto_surtir.articulos.producto.producto.nombre} el cual requiere la liberación de calidad\n Este mensaje ha sido automáticamente generado por SAVIA VORDTEC',
                             'savia@vordtec.com',
-                            ['ulises_huesc@hotmail.com'],
+                            ['ulises_huesc@hotmail.com'], #agregar correo de calidad
                             )
                     email.attach(f'OC_folio:{entrada_item.articulo_comprado.oc.folio}.pdf',archivo_oc,'application/pdf')
                     #email.send()

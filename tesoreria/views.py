@@ -469,7 +469,9 @@ def factura_nueva(request, pk):
     form = Facturas_Form()
 
     if request.method == 'POST':
+        print('post')
         if 'btn_registrar' in request.POST:
+            print('registrar')
             form = Facturas_Form(request.POST or None, request.FILES or None, instance = factura)
             if form.is_valid():
                 factura = form.save(commit=False)
