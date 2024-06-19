@@ -25,9 +25,9 @@ class Cuenta(models.Model):
 
 class Pago(models.Model):
     tesorero = models.ForeignKey(Profile, on_delete = models.CASCADE, null=True, related_name='Tesorero')
-    oc = models.ForeignKey(Compra, on_delete = models.CASCADE, null=True, blank=True)
-    gasto = models.ForeignKey(Solicitud_Gasto, on_delete = models.CASCADE, null=True, blank=True)
-    viatico = models.ForeignKey(Solicitud_Viatico, on_delete = models.CASCADE, null=True, blank=True)
+    oc = models.ForeignKey(Compra, on_delete = models.CASCADE, null=True, blank=True, related_name= 'pagos')
+    gasto = models.ForeignKey(Solicitud_Gasto, on_delete = models.CASCADE, null=True, blank=True, related_name ='pagosg')
+    viatico = models.ForeignKey(Solicitud_Viatico, on_delete = models.CASCADE, null=True, blank=True, related_name = 'pagosv')
     cuenta = models.ForeignKey (Cuenta, on_delete = models.CASCADE, null=True)
     monto = models.DecimalField(max_digits=14,decimal_places=4, null=True, default=0)
     distrito = models.ForeignKey(Distrito, on_delete = models.CASCADE, null=True)

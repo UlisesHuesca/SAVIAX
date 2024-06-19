@@ -7,7 +7,7 @@ from dashboard.models import Inventario, Order, ArticulosparaSurtir, ArticulosOr
 from solicitudes.models import Proyecto, Subproyecto, Operacion
 from tesoreria.models import Pago, Cuenta
 from .models import Solicitud_Gasto, Articulo_Gasto, Entrada_Gasto_Ajuste, Conceptos_Entradas, Factura
-from .forms import Solicitud_GastoForm, Articulo_GastoForm, Articulo_Gasto_Edit_Form, Pago_Gasto_Form, Articulo_Gasto_Factura_Form, Entrada_Gasto_AjusteForm, Conceptos_EntradasForm, FacturaForm 
+from .forms import Solicitud_GastoForm, Articulo_GastoForm, Articulo_Gasto_Edit_Form, Pago_Gasto_Form, Articulo_Gasto_Factura_Form, Entrada_Gasto_AjusteForm, Conceptos_EntradasForm, FacturaForm, Autorizacion_Gasto_Form
 from tesoreria.forms import Facturas_Gastos_Form 
 from compras.views import attach_oc_pdf
 from .filters import Solicitud_Gasto_Filter
@@ -320,6 +320,7 @@ def autorizar_gasto2(request, pk):
 
     if request.method =='POST' and 'btn_autorizar' in request.POST:
         gasto.autorizar2 = True
+        gasto.autorizado_por2 = perfil
         gasto.approbado_fecha2 = date.today()
         gasto.approved_at_time2 = datetime.now().time()
         gasto.save()
@@ -340,16 +341,24 @@ def cancelar_gasto2(request, pk):
     perfil = Profile.objects.get(staff__id=request.user.id)
     gasto = Solicitud_Gasto.objects.get(id = pk)
     productos = Articulo_Gasto.objects.filter(gasto = gasto)
+    form = Autorizacion_Gasto_Form(instance = gasto)
 
-    if request.method =='POST' and 'btn_cancelar' in request.POST:
-        gasto.autorizar2 = False
-        gasto.approbado_fecha2 = date.today()
-        gasto.approved_at_time2 = datetime.now().time()
-        gasto.save()
-        messages.info(request, f'{perfil.staff.first_name} {perfil.staff.last_name} has cancelado la solicitud {gasto.id}')
-        return redirect ('gastos-pendientes-autorizar2')
+    if request.method =='POST':
+        form = Autorizacion_Gasto_Form(request.POST, instance = gasto)
 
+        if form.is_valid():
+            gasto = form.save(commit = False)
+            gasto.autorizar2 = False
+            gasto.approbado_fecha2 = date.today()
+            gasto.approved_at_time2 = datetime.now().time()
+            gasto.autorizado_por2 = perfil
+            gasto.save()
+            messages.info(request, f'{perfil.staff.first_name} {perfil.staff.last_name} has cancelado la solicitud {gasto.id}')
+            return HttpResponse(status=204)
+
+    
     context = {
+        'form': form,
         'gasto': gasto,
         'productos': productos,
     }

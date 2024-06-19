@@ -23,6 +23,7 @@ class Solicitud_Gasto(models.Model):
     #subproyecto = models.ForeignKey(Subproyecto, on_delete = models.CASCADE, null=True)
     area = models.ForeignKey(Operacion, on_delete = models.CASCADE, null=True, blank=True)
     superintendente = models.ForeignKey(Profile, on_delete = models.CASCADE, null=True, related_name='superintendente')
+    autorizado_por2 = models.ForeignKey(Profile, on_delete = models.CASCADE, null=True, related_name='gerente')
     complete = models.BooleanField(null=True)
     tipo = models.ForeignKey(Tipo_Gasto, on_delete=models.CASCADE, null=True)
     pagada = models.BooleanField(default=False)
@@ -35,6 +36,7 @@ class Solicitud_Gasto(models.Model):
     approbado_fecha2 = models.DateField(null=True)
     approved_at_time2 = models.TimeField(null=True)
     facturas_completas = models.BooleanField(default=False)
+    comentarios = models.TextField(null=True, blank=True)
 
     @property
     def get_validado(self):
@@ -53,7 +55,7 @@ class Solicitud_Gasto(models.Model):
 
     @property
     def monto_pagado(self):
-        pagado = self.pago_set.all()
+        pagado = self.pagosg.all()
         pagado= pagado.filter(hecho=True)
         total = sum([pago.monto for pago in pagado])
         return total
