@@ -976,20 +976,22 @@ def render_pdf_view(request, pk):
 
 
     #Encabezado
-    c.drawString(420,caja_iso,'Preparado por:')
-    c.drawString(420,caja_iso-10,'SUP. ADMON')
+    c.drawString(410,caja_iso,'Preparado por:')
+    c.drawString(420,caja_iso-10,'Almacén')
     c.drawString(520,caja_iso,'Aprobación')
-    c.drawString(520,caja_iso-10,'SUB ADM')
-    c.drawString(150,caja_iso-20,'Número de documento')
-    c.drawString(160,caja_iso-30,'F-ADQ-N4-01.02')
-    c.drawString(245,caja_iso-20,'Clasificación del documento')
-    c.drawString(275,caja_iso-30,'Controlado')
-    c.drawString(355,caja_iso-20,'Nivel del documento')
-    c.drawString(380,caja_iso-30, 'N5')
-    c.drawString(440,caja_iso-20,'Revisión No.')
-    c.drawString(452,caja_iso-30,'000')
-    c.drawString(510,caja_iso-20,'Fecha de Emisión')
-    c.drawString(525,caja_iso-30,'1-Sep.-18')
+    c.drawString(490,caja_iso-10,'Subdirección Administrativa')
+    c.drawString(30,caja_iso-20,'Número de documento')
+    c.drawString(40,caja_iso-30,'F-ALM-N4-01.01')
+    c.drawString(125,caja_iso-20,'Clasificación del documento')
+    c.drawString(165,caja_iso-30,'Registro')
+    c.drawString(230,caja_iso-20,'Nivel del documento')
+    c.drawString(255,caja_iso-30, 'N5')
+    c.drawString(315,caja_iso-20,'Revisión No.')
+    c.drawString(327,caja_iso-30,'000')
+    c.drawString(385,caja_iso-20,'Fecha de Emisión')
+    c.drawString(395,caja_iso-30,'08/03/2024')
+    c.drawString(490,caja_iso-20,'Fecha última modificación')
+    c.drawString(525,caja_iso-30,'08/03/2024')
 
     caja_proveedor = caja_iso - 65
     c.setFont('Helvetica',12)
@@ -1005,7 +1007,7 @@ def render_pdf_view(request, pk):
     c.setLineWidth(.3) #Grosor
     c.line(20,caja_proveedor-8,20,575) #Eje Y donde empieza, Eje X donde empieza, donde termina eje y,donde termina eje x (LINEA 1 contorno)
     c.line(585,caja_proveedor-8,585,575) #Linea 2 contorno
-    c.drawInlineImage('static/images/logo vordtec_documento.png',45,730, 3 * cm, 1.5 * cm) #Imagen vortec
+    c.drawInlineImage('static/images/logo vordtec_documento.png',45,747, 1.5 * cm, 0.75 * cm) #Imagen vortec
 
     c.setFillColor(white)
     c.setFont('Helvetica-Bold',11)
@@ -1014,23 +1016,21 @@ def render_pdf_view(request, pk):
     inicio_central = 300
     #c.line(inicio_central,caja_proveedor-25,inicio_central,520) #Linea Central de caja Proveedor | Detalle
     c.setFillColor(black)
+    c.setFont('Helvetica-Bold',11)
+    c.drawString(30,caja_proveedor-20,'Vordtec de México S.A. de C.V.')
     c.setFont('Helvetica',9)
-    c.drawString(30,caja_proveedor-20,'Solicitó:')
-    c.drawString(30,caja_proveedor-40,'Distrito:')
     c.drawString(30,caja_proveedor-60,'Proyecto')
     c.drawString(30,caja_proveedor-80,'Subproyecto:')
     c.drawString(30,caja_proveedor-100,'Fecha:')
     
     c.setFont('Helvetica-Bold',12)
-    c.drawString(500,caja_proveedor-20,'FOLIO:')
-    c.setFillColor(rojo)
+    c.drawString(500,caja_proveedor-20,'Folio:')
+    #c.setFillColor(rojo)
     c.setFont('Helvetica-Bold',12)
     c.drawString(540,caja_proveedor-20, orden.folio)
 
     c.setFillColor(black)
     c.setFont('Helvetica',9)
-    c.drawString(100,caja_proveedor-20, orden.staff.staff.first_name+' '+ orden.staff.staff.last_name)
-    c.drawString(100,caja_proveedor-40, orden.staff.distrito.nombre)
     c.drawString(100,caja_proveedor-60, orden.proyecto.nombre)
     c.drawString(100,caja_proveedor-80, orden.subproyecto.nombre)
     c.drawString(100,caja_proveedor-100, orden.approved_at.strftime("%d/%m/%Y"))
@@ -1047,66 +1047,18 @@ def render_pdf_view(request, pk):
         high = high - 18
 
 
-    c.setFillColor(prussian_blue)
-    c.rect(20,high-50,565,25, fill=True, stroke=False)
-    c.setFillColor(white)
-    c.drawCentredString(320,high-45,'Observaciones')
-    c.setFillColor(black)
-    c.drawCentredString(230,high-190, orden.staff.staff.first_name +' '+ orden.staff.staff.last_name)
-    c.line(180,high-195,280,high-195)
-    c.drawCentredString(230,high-205, 'Solicitado')
-    #if orden.sol_autorizada_por == None:
-    #    c.setFillColor(rojo)
-    #    c.drawCentredString(410, high-190, '{Esta orden no ha sido autorizada}')
-    #    c.drawString(370,680, 'No aprobada')
-    #else:
-    #    c.setFillColor(black)
-    #    c.drawCentredString(410,high-190, orden.sol_autorizada_por.staff.first_name+' '+ orden.staff.staff.last_name)
-    #    c.drawString(370,680, 'Aprobada')
-    c.setFillColor(black)
-    c.line(360,high-195,460,high-195)
-    c.drawCentredString(410,high-205,'Aprobado por')
-
-
-
-    c.setFillColor(prussian_blue)
-    c.rect(20,30,565,30, fill=True, stroke=False)
-    c.setFillColor(white)
-    #Primer renglón
-    c.drawCentredString(70,48,'Clasificación:')
-    c.drawCentredString(140,48,'Nivel:')
-    c.drawCentredString(240,48,'Preparado por:')
-    c.drawCentredString(350,48,'Aprobado:')
-    c.drawCentredString(450,48,'Fecha emisión:')
-    c.drawCentredString(550,48,'Rev:')
-    #Segundo renglón
-    c.drawCentredString(70,34,'Controlado')
-    c.drawCentredString(140,34,'N5')
-    c.drawCentredString(240,34,'SEOV-ALM-N4-01-01')
-    c.drawCentredString(350,34,'SUB ADM')
-    c.drawCentredString(450,34,'24/Oct/2018')
-    c.drawCentredString(550,34,'001')
+   
+    
+    
 
     c.setFillColor(black)
     width, height = letter
     styles = getSampleStyleSheet()
     styleN = styles["BodyText"]
 
-    if orden.comentario is not None:
-        comentario = orden.comentario
-    else:
-        comentario = "No hay comentarios"
+    
 
-    options_conditions_paragraph = Paragraph(comentario, styleN)
-    # Crear un marco (frame) en la posición específica
-    frame = Frame(50, 0, width, high-50, id='normal')
-
-    # Agregar el párrafo al marco
-    frame.addFromList([options_conditions_paragraph], c)
-    c.setFillColor(prussian_blue)
-    c.rect(20,30,565,30, fill=True, stroke=False)
-    c.setFillColor(white)
-
+    
     table = Table(data, colWidths=[1.2 * cm, 12 * cm, 1.5 * cm, 5.2 * cm,])
     table_style = TableStyle([ #estilos de la tabla
         ('INNERGRID',(0,0),(-1,-1), 0.25, colors.white),
@@ -1121,16 +1073,113 @@ def render_pdf_view(request, pk):
         ('FONTSIZE',(0,1),(-1,-1), 6),
         ])
     table.setStyle(table_style)
+    table_style2 = TableStyle([ #estilos de la tabla
+        ('INNERGRID',(0,0),(-1,-1), 0.25, colors.white),
+        ('BOX',(0,0),(-1,-1), 0.25, colors.black),
+        ('VALIGN',(0,0),(-1,-1),'MIDDLE'),
+        #ENCABEZADO
+        ('TEXTCOLOR',(0,0),(-1,0), colors.black),
+        ('FONTSIZE',(0,0),(-1,0), 6),
+        #('BACKGROUND',(0,0),(-1,0), prussian_blue),
+        #CUERPO
+        ('TEXTCOLOR',(0,1),(-1,-1), colors.black),
+        ('FONTSIZE',(0,1),(-1,-1), 6),
+        ])
+    table.setStyle(table_style)
+    
+    rows_per_page = 20
+    total_rows = len(data) - 1  # Excluye el encabezado
+    remaining_rows = total_rows - rows_per_page
 
-    #pdf size
-    table.wrapOn(c, width, height)
-    table.drawOn(c, 20, high)
+    if remaining_rows <= 0:
+        # Si no hay suficientes filas para una segunda página, dibujar la tabla completa en la primera página
+        table.wrapOn(c, c._pagesize[0], c._pagesize[1])
+        table.drawOn(c, 20, high)  # Posición en la primera página
+        c.setFillColor(prussian_blue)
+
+        #La parte de los comentarios
+        c.setFillColor(black)
+        c.drawString(100,high-95, orden.staff.staff.first_name +' '+ orden.staff.staff.last_name)
+        c.drawString(100,high-115, orden.supervisor.staff.first_name +' '+ orden.supervisor.staff.last_name)
+        c.setFillColor(prussian_blue)
+        c.rect(20,30,565,30, fill=True, stroke=False)
+        c.rect(20,high-100,70,15, fill=True, stroke=False)
+        c.rect(20,high-120,70,15, fill=True, stroke=False)
+        c.setFillColor(white)
+        c.drawString(25,high-95,'Solicitado por:')
+        c.drawString(25,high-115, 'Aprobado por')
+        
+        c.setFillColor(prussian_blue)
+        c.rect(20,high-40,565,25, fill=True, stroke=False)
+        c.setFillColor(white)
+        c.drawCentredString(320,high-30,'Observaciones')
+        if orden.comentario is not None:
+            comentario = orden.comentario
+        else:
+            comentario = "No hay comentarios"
+
+        options_conditions_paragraph = Paragraph(comentario, styleN)
+        # Crear un marco (frame) en la posición específica
+        frame = Frame(25, 0, width, high-40, id='normal')
+        # Agregar el párrafo al marco
+        frame.addFromList([options_conditions_paragraph], c)
+        c.setFillColor(prussian_blue)
+        c.rect(20,30,565,20, fill=True, stroke=False)
+        c.setFillColor(white)
+
+    else:
+    # Dibujar las primeras 15 filas en la primera página
+        first_page_data = data[:rows_per_page + 1]  # Incluye el encabezado
+        first_page_table = Table(first_page_data, colWidths=[1.2 * cm, 12 * cm, 1.5 * cm, 5.2 * cm,])
+        first_page_table.setStyle(table_style)
+        first_page_table.wrapOn(c, c._pagesize[0], c._pagesize[1])
+        #adjusted_high = c._pagesize[1] - h - 36  # 70 puede ser un margen superior que desees mantener
+        first_page_table.drawOn(c, 20, high + 190)  # Posición en la primera página
+        
+        #La parte de los comentarios
+        c.setFillColor(black)
+        c.drawString(100,high+75, orden.staff.staff.first_name +' '+ orden.staff.staff.last_name)
+        c.drawString(100,high+95, orden.supervisor.staff.first_name +' '+ orden.supervisor.staff.last_name)
+        c.setFillColor(prussian_blue)
+        c.rect(20,30,565,30, fill=True, stroke=False)
+        c.rect(20,high+70,70,15, fill=True, stroke=False)
+        c.rect(20,high+90,70,15, fill=True, stroke=False)
+        c.setFillColor(white)
+        c.drawString(25,high+75,'Solicitado por:')
+        c.drawString(25,high+95, 'Aprobado por')
+        
+        c.setFillColor(prussian_blue)
+        c.rect(20,high+155,565,25, fill=True, stroke=False)
+        c.setFillColor(white)
+        c.drawCentredString(320,high+145,'Observaciones')
+        if orden.comentario is not None:
+            comentario = orden.comentario
+        else:
+            comentario = "No hay comentarios"
+
+        options_conditions_paragraph = Paragraph(comentario, styleN)
+        # Crear un marco (frame) en la posición específica
+        frame = Frame(25, 0, width, high+160, id='normal')
+        # Agregar el párrafo al marco
+        frame.addFromList([options_conditions_paragraph], c)
+        c.setFillColor(prussian_blue)
+        c.rect(20,30,565,20, fill=True, stroke=False)
+        c.setFillColor(white)
+        # Agregar una nueva página y dibujar las filas restantes en la segunda página
+        c.showPage()
+        remaining_data = data[rows_per_page + 1:]
+        remaining_table = Table(remaining_data, colWidths=[1.2 * cm, 12 * cm, 1.5 * cm, 5.2 * cm,])
+        remaining_table.setStyle(table_style2)
+        remaining_table.wrapOn(c, c._pagesize[0], c._pagesize[1])
+        remaining_table_height = len(remaining_data) * 18
+        remaining_table_y = c._pagesize[1] - 70 - remaining_table_height - 10  # Espacio para el encabezado
+        remaining_table.drawOn(c, 20, remaining_table_y)  # Posición en la segunda página
 
     c.showPage()
     c.save()
     buf.seek(0)
 
-    return FileResponse(buf, as_attachment=True, filename='reporte_' + str(orden.folio) +'.pdf')
+    return FileResponse(buf, as_attachment=True, filename='Solicitud_' + str(orden.folio) +'.pdf')
 
 def reporte_entradas(request):
     entradas = EntradaArticulo.objects.filter(entrada__completo = True, articulo_comprado__producto__producto__articulos__producto__producto__servicio = False, almacenado = True)

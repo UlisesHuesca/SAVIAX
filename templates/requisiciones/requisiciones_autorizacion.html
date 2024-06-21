@@ -62,6 +62,7 @@
                     <th class="d-none d-lg-table-cell">Área</th>
                     <th class="d-none d-lg-table-cell">Creado</th>
                     <th scope="col">Acción</th>
+                    <th>Soporte</th>
                 </tr>
             </thead>
             <tbody>
@@ -87,6 +88,10 @@
                                 </a>
                             </li>
                         </ul>
+                    </td>
+                    <td>
+                        {% if req.orden.soporte %}<a href="{{req.orden.soporte.url}}" download class="btn btn-outline-info"><i class="fa-solid fa-file-invoice-dollar"></i></a>
+                        {%else%}NS{% endif %}
                     </td>
                 </tr>
                 {% endfor %}

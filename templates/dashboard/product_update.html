@@ -36,8 +36,8 @@
                       <div class="input-group mb-3">
                       <span class="input-group-text" id="basic-addon1"><i class="fa-solid fa-list"></i></span>
                           <div class="form-floating form-floating-group flex-grow-1">   
-                          {{form.nombre|add_class:"form-control"|append_attr:"placeholder=Nombre"}}
-                          <label for="id_razon_social">Nombre*</label>
+                          {{form.nombre|add_class:"form-control"|append_attr:"placeholder=Descripción General"}}
+                          <label for="id_razon_social">Descripción General*</label>
                           </div>
                       </div>
                     </div>
@@ -120,10 +120,6 @@
                     <div class="form-check form-switch col-sm-3">
                       <label for="form.impuesto" class="form-check-label"><strong>Activo</strong></label>
                           {{form.activo|add_class:"form-check-input"}}
-                    </div>
-                    <div class="form-check form-switch col-sm-3">
-                      <label for="form.impuesto" class="form-check-label"><strong>Especialista</strong></label>
-                          {{form.especialista|add_class:"form-check-input"}}
                     </div>
                     <div class="form-check form-switch col-sm-3">
                         <label for="form.impuesto" class="form-check-label"><strong>Preevaluación</strong></label>
