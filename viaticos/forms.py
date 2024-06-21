@@ -24,3 +24,7 @@ class Viaticos_Factura_Form(forms.ModelForm):
         model = Viaticos_Factura
         fields = ['factura_pdf','factura_xml','comentario']
 
+class Cancelacion_viatico_Form(forms.ModelForm):
+    class Meta:
+        model = Solicitud_Viatico
+        fields = ['comentarios_cancelacion']

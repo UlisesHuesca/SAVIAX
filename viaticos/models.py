@@ -14,6 +14,7 @@ class Solicitud_Viatico(models.Model):
     proyecto = models.ForeignKey(Proyecto, on_delete = models.CASCADE, null=True)
     subproyecto = models.ForeignKey(Subproyecto, on_delete = models.CASCADE, null=True)
     superintendente = models.ForeignKey(Profile, on_delete = models.CASCADE, null=True, related_name='Autorizacion')
+    gerente = models.ForeignKey(Profile, on_delete = models.CASCADE, null=True, related_name='AutorizacionG')
     montos_asignados = models.BooleanField(default=False)
     complete = models.BooleanField(default=False)
     pagada = models.BooleanField(default=False)
@@ -33,6 +34,8 @@ class Solicitud_Viatico(models.Model):
     approved_at2 = models.DateField(null=True)
     approved_at_time2 = models.TimeField(null=True)
     facturas_completas = models.BooleanField(default=False)
+    motivo = models.TextField(null =True, blank=False)
+    comentarios_cancelacion = models.TextField(null =True, blank=False)
 
     @property
     def get_total(self):
@@ -43,7 +46,7 @@ class Solicitud_Viatico(models.Model):
 
     @property
     def monto_pagado(self):
-        pagado = self.pago_set.all()
+        pagado = self.pagosv.all()
         pagado = pagado.filter(hecho = True)
         total = sum([pago.monto for pago in pagado])
         return total

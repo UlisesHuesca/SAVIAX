@@ -4,7 +4,7 @@
 {% load widget_tweaks %}
 <html>
 <head>
-{% block title %}Página de Actualización de Producto{% endblock %}
+{% block title %}Actualización de Producto{% endblock %}
 </head>
 <body>
 {% block content %}
@@ -13,9 +13,11 @@
 <div class="container">
     <div class="row mt-5">
         <div class="col-md-6 offset-md-3">
-            <div class="border bg-white p-3">
+            <div class="card">
+                <div class="card-header">
                 <h3>Actualizar Artículo</h3>
-                <hr>
+                </div>
+                <div class="card-body">
                 <form method="POST" id='ProductForm' enctype='multipart/form-data' data-subfamilias-url="{% url 'ajax_load_subfamilias' %}" novalidate>
                     {% csrf_token %}
                     {% if error_messages %}
@@ -23,18 +25,12 @@
                         {{error_messages}}
                     </div>
                     {% endif %}
-                    <label for="form.codigo" class="col-auto col-form-label"><strong>Código: {{item.codigo}}</strong></label>
-                    <br>
-                    <label for="form.nombre" class="col-auto col-form-label"><strong>Producto: {{item.nombre}}</strong></label>
-                    <br>
-                    <div class="col-12">
-                      <div class="input-group mb-3">
-                      <span class="input-group-text" id="basic-addon1"><i class="fa-solid fa-list"></i></span>
-                          <div class="form-floating form-floating-group flex-grow-1">   
-                          {{form.codigo|add_class:"form-control"|append_attr:"placeholder=Código"}}
-                          <label for="id_razon_social">Código*</label>
-                          </div>
-                      </div>
+                    <div class="alert alert-primary" role="alert">
+                        <strong>Código: {{item.codigo}}</strong>
+                    </div>
+                    
+                    <div class="alert alert-primary" role="alert">
+                        <strong>Producto: {{item.nombre}}</strong>
                     </div>
                     <div class="col-12">
                       <div class="input-group mb-3">
@@ -141,9 +137,9 @@
                     <a class="btn btn-outline-secondary" href="{% url 'dashboard-product' %}">Cancelar</a>
                     <input class="btn btn-outline-info" type='submit' value="Actualizar">
                 </form>
+                </div>
             </div>
         </div>
-
     </div>
 </div>
 </body>
