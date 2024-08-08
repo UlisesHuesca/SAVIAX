@@ -188,7 +188,7 @@ def compras_pagos(request, pk):
                             f'Compra Autorizada {compra.get_folio}|SAVIA',
                             body=html_message2,
                             from_email =settings.DEFAULT_FROM_EMAIL,
-                            to= ['ulises_huesc@hotmail.com', compra.creada_por.staff.email, compra.proveedor.email],
+                            to= ['ulises_huesc@hotmail.com', compra.creada_por.staff.email, compra.proveedor.email, 'lizeth.ojeda@vordtec.com'],
                             headers={'Content-Type': 'text/html'}
                             )
                             email.content_subtype = "html " # Importante para que se interprete como HTML

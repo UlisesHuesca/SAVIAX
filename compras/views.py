@@ -622,7 +622,7 @@ def autorizar_preevaluacion(request, pk):
     if request.method == 'POST' and 'btn_autorizar' in request.POST:
         preevaluacion.resultado = True
         for prov in direcciones_prov:
-            if prov.estatus.id == 2:
+            if prov.estatus.id == 2 or prov.estatus is None:
                 status = Estatus_proveedor.objects.get(id=5)
                 prov.estatus = status
                 prov.save()
@@ -1230,7 +1230,7 @@ def autorizar_oc2(request, pk):
                 f'Compra Autorizada {compra.get_folio}|SAVIA',
                 body=html_message2,
                 from_email =settings.DEFAULT_FROM_EMAIL,
-                to= ['ulises_huesc@hotmail.com', compra.creada_por.staff.email, compra.proveedor.email],
+                to= ['ulises_huesc@hotmail.com', compra.creada_por.staff.email, compra.proveedor.email, 'lizeth.ojeda@vordtec.com'],
                 headers={'Content-Type': 'text/html'}
                 )
                 email.content_subtype = "html " # Importante para que se interprete como HTML

@@ -1777,25 +1777,28 @@ def render_salida_pdf(request, pk):
 
 
     c.drawString(420,caja_iso,'Preparado por:')
-    c.drawString(420,caja_iso-10,'SUP. ADMON')
-    c.drawString(520,caja_iso,'Aprobación')
-    c.drawString(520,caja_iso-10,'SUB ADM')
-    c.drawString(150,caja_iso-20,'Número de documento')
-    c.drawString(160,caja_iso-30,'F-ALM-N4-01.02')
-    c.drawString(245,caja_iso-20,'Clasificación del documento')
-    c.drawString(275,caja_iso-30,'Controlado')
-    c.drawString(355,caja_iso-20,'Nivel del documento')
-    c.drawString(380,caja_iso-30, 'N5')
-    c.drawString(440,caja_iso-20,'Revisión No.')
-    c.drawString(452,caja_iso-30,'000')
-    c.drawString(510,caja_iso-20,'Fecha de Emisión')
-    c.drawString(525,caja_iso-30,'1-Sep.-18')
+    c.drawString(430,caja_iso-10,'Almacén')
+    c.drawString(510,caja_iso,'Aprobación')
+    c.drawString(480,caja_iso-10,'Subdirección Admninistrativa')
+    
+    c.drawString(50,caja_iso-30,'Número de documento')
+    c.drawString(60,caja_iso-40,'F-ALM-N4-01.02')
+    c.drawString(145,caja_iso-30,'Clasificación del documento')
+    c.drawString(175,caja_iso-40,'Registro')
+    c.drawString(255,caja_iso-30,'Nivel del documento')
+    c.drawString(280,caja_iso-40, 'N5')
+    c.drawString(340,caja_iso-30,'Revisión No.')
+    c.drawString(352,caja_iso-40,'001')
+    c.drawString(400,caja_iso-30,'Fecha de Emisión')
+    c.drawString(415,caja_iso-40,'01/09/2018')
+    c.drawString(490,caja_iso-30,'Fecha última modificación')
+    c.drawString(522,caja_iso-40,'08/03/2024')
 
 
-    c.drawString(510,caja_iso-50,'Folio: ')
-    c.drawString(530,caja_iso-50, str(vale.id))
-    c.drawString(510,caja_iso-60,'Fecha:')
-    c.drawString(540,caja_iso-60,vale.created_at.strftime("%d/%m/%Y"))
+    c.drawString(510,caja_iso-60,'Folio: ')
+    c.drawString(530,caja_iso-60, str(vale.id))
+    c.drawString(510,caja_iso-70,'Fecha:')
+    c.drawString(540,caja_iso-70,vale.created_at.strftime("%d/%m/%Y"))
 
 
     c.setFont('Helvetica',12)
@@ -1809,7 +1812,7 @@ def render_salida_pdf(request, pk):
     c.drawCentredString(280,caja_iso-10,'Vale de Salida Almacén')
     c.setLineWidth(.3) #Grosor
 
-    c.drawInlineImage('static/images/logo vordtec_documento.png',45,caja_iso-40, 3 * cm, 1.5 * cm) #Imagen vortec
+    c.drawInlineImage('static/images/logo vordtec_documento.png',30,caja_iso-22, 2 * cm, 1 * cm) #Imagen vortec
 
 
     data =[]
