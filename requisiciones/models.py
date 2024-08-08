@@ -140,6 +140,8 @@ class Devolucion(models.Model):
     tipo = models.ForeignKey(Tipo_Devolucion, on_delete = models.CASCADE, null=True)
     salida = models.ForeignKey(Salidas, on_delete = models.CASCADE, null=True, blank=True)
 
+    def __str__(self):
+        return f'{self.id}|{self.solicitud.folio}'
 
 class Devolucion_Articulos(models.Model):
     vale_devolucion = models.ForeignKey(Devolucion, on_delete = models.CASCADE, null=True)
