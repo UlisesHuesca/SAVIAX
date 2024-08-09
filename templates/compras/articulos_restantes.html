@@ -46,10 +46,11 @@
                                 <td scope="col"><p class='quantity' id='prod_quantity'>{{producto.cantidad}}</p></td>
                                 <td scope="col">{{producto.producto.articulos.producto.producto.codigo}}</td>
                                 <td scope="col">{{producto.producto.articulos.producto.producto.nombre}}</td>
-                                <td scope="col">{{producto.producto.articulos.producto.producto.unidad}}</td>
                                 <td scope="col">{% if producto.producto.articulos.producto.producto.servicio %} Servicio {% else %} Producto {% endif %}</td>
-                                <td>{{producto.producto.articulos.producto.producto.especs}}</td>
-                                <td>{% if producto.producto.articulos.comentario %}{{producto.producto.articulos.comentario}} {% endif %}</td>
+                                <td scope="col">{{producto.producto.articulos.producto.producto.unidad}}</td>
+                                <td>{% if producto.producto.articulos.comentario %}{{producto.producto.articulos.comentario}}{% else %} NR {% endif %}</td>
+                                <td>{% if producto.producto.articulos.producto.producto.especs %} {{producto.producto.articulos.producto.producto.especs}} {% else %} NR {% endif %}</td>
+                                <td>{% if producto.producto.articulos.producto.producto.critico %}{{producto.producto.articulos.producto.producto.critico}} {% else %} NE {% endif %}</td>
                                 {% if producto.producto.articulos.producto.producto.critico.nombre == "Crítico" %}
                                 <td>
                                     <button type="button" class="btn btn-danger"><i class="fa-solid fa-q"></i></button>

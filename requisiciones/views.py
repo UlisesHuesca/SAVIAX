@@ -570,7 +570,7 @@ def update_salida(request):
                     inv_del_producto.cantidad_entradas = inv_del_producto.cantidad_entradas - salida.cantidad
                     #inv_del_producto.cantidad = inv_del_producto.cantidad - salida.cantidad si hago una salida que proviene de entradas voy a obtener un inv_del_producto negativo
                     inv_del_producto.save()
-        elif entrada_res:   #si hay resurtimiento
+        elif entrada_res.exists():   #si hay resurtimiento
             for entrada in entrada_res:
                 if producto.cantidad > 0:
                     salida, created = Salidas.objects.get_or_create(producto=producto, vale_salida = vale_salida, complete=False)
@@ -601,7 +601,7 @@ def update_salida(request):
             salida.precio = inv_del_producto.price
             inv_del_producto._change_reason = f'Esta es la salida de inventario de un artículo'
             #inv_del_producto.cantidad = inv_del_producto.cantidad - salida.cantidad
-        inv_del_producto.cantidad_apartada = inv_del_producto.cantidad_apartada - salida.cantidad
+        #inv_del_producto.cantidad_apartada = inv_del_producto.cantidad_apartada - salida.cantidad
         producto.save()
         inv_del_producto.save()
         salida.save()
@@ -624,8 +624,6 @@ def update_salida(request):
         producto.seleccionado = False
         producto.salida= False
         producto.cantidad = producto.cantidad + item.cantidad
-        #if vale_salida.solicitud.tipo.tipo == "resurtimiento":
-            #producto.cantidad_requisitar = producto.cantidad_requisitar - item.cantidad
         inv_del_producto._change_reason = f'Esta es una cancelación de un artìculo en una salida {item.id}'
         producto.save()
         inv_del_producto.save()
