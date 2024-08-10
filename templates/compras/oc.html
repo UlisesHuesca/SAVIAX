@@ -208,12 +208,6 @@
                     <label for="form.tesoreria_local" class="form-check-label"><strong>Tesorería Matriz</strong></label>
                         {{form.tesoreria_matriz|add_class:"form-check-input"}}
                     </div>
-                </div>
-                <div class="row ms-3 my-2">
-                    <div class="form-check form-switch col-sm">
-                    <label for="form.tesoreria_local" class="form-check-label"><strong>Incluir comentario solicitud</strong></label>
-                        {{form.comentario_solicitud|add_class:"form-check-input"}}
-                    </div>
                 </div>-->
                 <div class="row my-2">
                     <div id="etiqueta_domicilio" class="col-12">
@@ -229,6 +223,17 @@
                             <span class="input-group-text d-lg-block d-none" id="basic-addon1">Opciones y Condiciones</span>
                             <div class="form-floating form-floating-group flex-grow-1">   
                                 {{form.opciones_condiciones|add_class:"form-control"|append_attr:"type=text"}}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row my-2">
+                    <div class="col-sm-12">
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1"><i class="fa-regular fa-message"></i></span>
+                            <span class="input-group-text d-lg-block d-none" id="basic-addon1">Comentario para Gerencia</span>
+                            <div class="form-floating form-floating-group flex-grow-1">   
+                                {{form.comentario_gerencia|add_class:"form-control"|append_attr:"type=text"}}
                             </div>
                         </div>
                     </div>

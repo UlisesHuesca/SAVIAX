@@ -56,6 +56,12 @@
                             <th scope="col"  style="color:#3e92cc" id="subproyecto">Esta OC se depositará a la cuenta del colaborador(a): {{compra.deposito_colaborador.staff.first_name}} {{compra.deposito_colaborador.staff.last_name}}</th>
                         </tr>
                         {% endif %}
+                        {% if compra.comentario_gerencia %}
+                        <tr>
+                            <th scope="col">Comentario de Compras</th>
+                            <th scope="col">{{compra.comentario_gerencia}}</th>
+                        </tr>
+                        {% endif %}
                         <tr style="color:#3e92cc">
                             <th scope="col">Importe OC:</th>
                             <th scope="col">${{costo_oc}}</th>

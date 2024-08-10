@@ -77,6 +77,12 @@
                             <th scope="col">Proveedor</th>
                             <th scope="col">{{compra.proveedor}}</th>
                         </tr>
+                        {% if compra.comentario_gerencia %}
+                        <tr>
+                            <th scope="col">Comentario de Compras</th>
+                            <th scope="col">{{compra.comentario_gerencia}}</th>
+                        </tr>
+                        {% endif %}
                         {% if compra.deposito_comprador %}
                         <tr>
                             <th scope="col">Comentario:</th>

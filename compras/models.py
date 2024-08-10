@@ -215,6 +215,7 @@ class Compra(models.Model):
     regresar_oc = models.BooleanField(default=False)
     comentarios = models.TextField(max_length=400, null=True)
     saldo_a_favor = models.DecimalField(max_digits=14,decimal_places=2, default=0)
+    comentario_gerencia = models.TextField(null=True, blank=True)
 
     @property
     def costo_plus_adicionales(self):
