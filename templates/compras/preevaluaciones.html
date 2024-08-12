@@ -85,6 +85,7 @@
                     <th scope="col">Fecha</th>
                     <th>Comparativo</th>
                     <th>Status</th>
+                    <th>Registro</th>
                     <!--<th scope="col">Edición</th>-->
                 </tr>
             </thead>
@@ -100,11 +101,9 @@
                     <td>
                         {% if item.resultado %} <span class="badge bg-primary">Autorizado</span> {% elif item.resultado == False %} <span class="badge bg-danger">Cancelado</span>{% else %} <span class="badge bg-warning">No Autorizado Aún</span> {% endif %}</td></td>
                     </td>
-                    <!--<td>  
-                       
-                        <a class="btn btn-outline-info" id="btnActualizar" type="button" href=""><i class="fa-solid fa-pen-to-square"></i></a>
-                        
-                    </td>-->
+                    <td>  
+                        <a class="btn btn-outline-info" id="btnActualizar" type="button" href="{% url 'preevaluacion-pdf' item.id %}"><i class="fa-solid fa-file-pdf"></i></a>    
+                    </td>
                 </tr>
                 {% endfor %}
             </tbody>

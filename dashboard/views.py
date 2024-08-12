@@ -468,6 +468,7 @@ def proveedores(request):
     #proveedores_dir = Proveedor_direcciones.objects.filter(Q(estatus__nombre='NUEVO') | Q(estatus__nombre='APROBADO'))
     proveedores_ids = proveedores_dir.values_list('nombre', flat=True).distinct()
     proveedores = Proveedor.objects.filter(completo=True)
+    #cantidad_preevaluaciones = proveedor.prevaluaciones.count()
 
     total_prov = proveedores.count()
 

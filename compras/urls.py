@@ -36,6 +36,7 @@ urlpatterns = [
     path('editar_comparativo/<int:pk>/', views.editar_comparativo, name='editar-comparativo'),
     path('compras/preevaluacion/<int:pk>', views.preevaluacion, name='preevaluacion'),
     path('compras/preevaluaciones/<int:pk>', views.preevaluaciones, name='preevaluaciones'),
+    path('compras/preevaluacion_pdf/<int:pk>', views.preevaluacion_pdf, name='preevaluacion-pdf'),
     path('compras/autorizacion_preevaluaciones', views.autorizacion_preevaluacion, name='autorizacion-preevaluacion'),
     path('compras/autorizar_preevaluacion/<int:pk>', views.autorizar_preevaluacion, name='autorizar-preevaluacion'),
     path('compras/cancelar_preevaluacion/<int:pk>', views.cancelar_preevaluacion, name='cancelar-preevaluacion'),
