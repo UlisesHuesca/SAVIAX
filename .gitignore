@@ -5,3 +5,4 @@ media/
 *.sql
 *.sql.gz
 middleware.log
+.venv-old

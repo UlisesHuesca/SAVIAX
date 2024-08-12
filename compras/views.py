@@ -622,7 +622,7 @@ def autorizar_preevaluacion(request, pk):
     if request.method == 'POST' and 'btn_autorizar' in request.POST:
         preevaluacion.resultado = True
         for prov in direcciones_prov:
-            if prov.estatus.id == 2 or prov.estatus is None:
+            if not prov.estatus or prov.estatus.id == 2:
                 status = Estatus_proveedor.objects.get(id=5)
                 prov.estatus = status
                 prov.save()
@@ -1246,7 +1246,7 @@ def autorizar_oc2(request, pk):
                     <body>
                         <p><img src="data:image/jpeg;base64,{logo_v_base64}" alt="Imagen" style="width:100px;height:auto;"/></p>
                         <p>Estimado {compra.req.orden.staff.staff.first_name} {compra.req.orden.staff.staff.last_name},</p>
-                        <p>Estás recibiendo este correo porque tu OC {compra.get_folio} | RQ: {compra.req.folio} |Sol: {compra.req.orden.folio} ha sido autorizada por {compra.oc_autorizada_por2.staff.staff.first_name} {compra.oc_autorizada_por2.staff.staff.last_name},</p>
+                        <p>Estás recibiendo este correo porque tu OC {compra.get_folio} | RQ: {compra.req.folio} |Sol: {compra.req.orden.folio} ha sido autorizada por {compra.oc_autorizada_por2.staff.first_name} {compra.oc_autorizada_por2.staff.last_name},</p>
                         <p>El siguiente paso del sistema: Recepción por parte de Almacén |Compra a crédito</p>
                         <p><img src="data:image/png;base64,{image_base64}" alt="Imagen" style="width:50px;height:auto;border-radius:50%"/></p>
                         <p>Este mensaje ha sido automáticamente generado por SAVIA 2.0</p>
