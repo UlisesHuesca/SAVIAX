@@ -169,8 +169,17 @@
                         <a class="btn btn-outline-info" id="btnProveedorDirecciones" type="button" href="{% url 'proveedor-direcciones' proveedor.id %}"><i class="fa-solid fa-location-dot"></i></a>
                     </td>
                     <td>
-                        <a class="btn btn-outline-info" id="btnEvaluacion" type="button" href="{% url 'preevaluaciones' proveedor.id %}"><i class="fa-solid fa-list-check"></i></a>
+                        {% if proveedor.preevaluaciones.exists %}
+                        <a class="btn btn-outline-info" id="btnEvaluacion" type="button" href="{% url 'preevaluaciones' proveedor.id %}">
+                            <i class="fa-solid fa-list-check"></i>
+                        </a>
+                        {% else %}
+                        <a class="btn btn-outline-danger" id="btnEvaluacion" type="button" href="{% url 'preevaluaciones' proveedor.id %}">
+                            <i class="fa-solid fa-list-check"></i>
+                        </a>
+                        {% endif %}
                     </td>
+
                 </tr>
                 {% endfor %}
             </tbody>
