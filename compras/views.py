@@ -1537,7 +1537,10 @@ def descargar_pdf(request, pk):
 
 def preevaluacion_pdf(request, pk):
     preevaluacion = get_object_or_404(Preevaluacion, id=pk)
-    buf = generar_preevaluacion_pdf(preevaluacion)
+    if preevaluacion.tipo_evaluacion.nombre == 'Inicial':
+        buf = generar_preevaluacion_inicial_pdf(preevaluacion)
+    else:
+        buf = generar_preevaluacion_pdf(preevaluacion)
     return FileResponse(buf, as_attachment=True, filename='Preevaluacion_' + str(preevaluacion.id) + '.pdf')
 
 def attach_oc_pdf(request, pk):
@@ -2484,14 +2487,305 @@ def convert_excel_productos_requisitados(articulos):
 
     return(response)
 
+def generar_preevaluacion_inicial_pdf(preevaluacion):
+    gerente = Profile.objects.get(tipo__nombre='Gerente')
+
+    #Configuration of the PDF object
+    buf = io.BytesIO()
+    c = canvas.Canvas(buf, pagesize=letter)
+
+    #Azul Vordcab
+    prussian_blue = Color(0.0859375,0.1953125,0.30859375)
+    rojo = Color(0.59375, 0.05859375, 0.05859375)
+    #Encabezado
+    c.setFillColor(black)
+    c.setLineWidth(.2)
+    c.setFont('Helvetica-Bold',8)
+    caja_iso = 760
+    c.drawString(410,caja_iso + 10,'Preparado por:')
+    c.drawString(510,caja_iso + 10,'Aprobación')
+    c.drawString(20,caja_iso-20,'Número de documento')
+    c.drawString(125,caja_iso-20,'Clasificación del documento')
+    c.drawString(250,caja_iso-20,'Nivel del documento')
+    c.drawString(345,caja_iso-20,'Revisión No.')
+    c.drawString(410,caja_iso-20,'Fecha de Emisión')
+    c.drawString(500,caja_iso-20,'Fecha de Modificación')
+    #Elaborar caja
+    #c.line(caja_iso,500,caja_iso,720)
+    c.setFont('Helvetica',8)
+    c.drawString(415,caja_iso,'Adquisiciones')
+    c.drawString(485,caja_iso,'Subdirección Administrativa')
+    c.drawString(30,caja_iso-30,'F-ADQ-N4-01.03')
+    c.drawString(160,caja_iso-30,'Registro')
+    c.drawString(280,caja_iso-30, 'N5')
+    c.drawString(355,caja_iso-30,'000')
+    c.drawString(425,caja_iso-30,'02/01/2024')
+    c.drawString(520,caja_iso-30,'02/01/2024')
+
+    caja_proveedor = caja_iso - 50
+    c.setFont('Helvetica',12)
+    c.setFillColor(prussian_blue)
+    # REC (Dist del eje Y, Dist del eje X, LARGO DEL RECT, ANCHO DEL RECT)
+    c.rect(100,750,300,30, fill=True, stroke=False) #Barra azul superior Orden de Compra
+    c.rect(20,caja_proveedor,565,10, fill=True, stroke=False) #Barra azul superior Proveedor | Detalle
+
+    c.setFillColor(white)
+    c.setLineWidth(.2)
+    c.setFont('Helvetica-Bold',14)
+    c.drawCentredString(250,760,'Reporte de evaluación inicial')
+    c.setLineWidth(.3) #Grosor
+
+    c.drawInlineImage('static/images/logo vordtec_documento.png',40,755, 1.5 * cm, 0.75 * cm) #Imagen vortec
+
+    c.setFillColor(white)
+    c.setFont('Helvetica-Bold',9)
+    c.drawString(250,caja_proveedor+1,'Información General')
+
+    c.setFillColor(black)
+    c.setFont('Helvetica-Bold',8)
+    c.drawString(40,caja_proveedor-15,'Fecha de Evaluación:')
+    c.line(133,caja_proveedor-16,330,caja_proveedor-16)
+    c.drawString(40,caja_proveedor-35,'Nombre del Proveedor:')
+    c.line(133,caja_proveedor-36,330,caja_proveedor-36)
+    c.drawString(40,caja_proveedor-55,'Número de identificación del proveedor:')
+    c.line(198,caja_proveedor-56,330,caja_proveedor-56)
+
+    c.setFont('Helvetica',8)
+    c.drawString(135,caja_proveedor-15, str(preevaluacion.creado_at.strftime("%d/%m/%Y %H:%M")))
+    c.drawString(135,caja_proveedor-35, preevaluacion.nombre.razon_social)
+    c.drawString(200,caja_proveedor-55, str(preevaluacion.nombre.id))
+
+    c.setFont('Helvetica',12)
+    c.setFillColor(prussian_blue)
+    #c.rect(20,caja_proveedor-90,565,10, fill=True, stroke=False) #Segunda caja
+
+    c.setFillColor(white)
+    c.setFont('Helvetica-Bold',9)
+    #c.drawString(90,caja_proveedor-89,'')
+
+
+    data =[]
+    data1 =[] 
+    high = 530
+    item = 0
+    
+
+    styles = getSampleStyleSheet()
+    custom_style = ParagraphStyle(
+        'CustomStyle',
+        parent = styles['Normal'],
+        fontName = 'Helvetica',
+        fontSize=6,
+        leaging = 10,
+        wordWrap='CJK',
+        alignment=TA_CENTER,  # Centrar el texto
+        )
+    
+    custom_style_tight = ParagraphStyle(
+        'CustomTight',
+        parent=styles['Normal'],
+        leading=8,  # Ajusta este valor según el espaciado que desees
+        fontSize=5,
+        textColor=colors.black,
+    )
+
+    # Definición del texto para los párrafos
+    text_1 = "Nota: Para los proveedores de productos y servicios criticos, se requiere el cumplimiento total de los criterios para obtener la pre aprobación."
+    text_2 = "La documentación de respaldo debe adjuntarse con la evaluación, incluyendo un detalle especifico de los productos evaluados."
+    combined_text = f"{text_1} {text_2}"
+    note_combined = Paragraph(combined_text, style=custom_style_tight)
+
+    text = "Verificación de Cumplimiento del Sistema de Gestión de la Calidad del Proveedor"
+    a2 = Paragraph(text, style=custom_style)
+    text2 = "Control en la Cadena de Suministro del Proveedor"
+    a3 = Paragraph(text2, style=custom_style)
+    text1 = "Evaluación de la Capacidad del Proveedor"
+    a1 = Paragraph(text1, style=custom_style)
+
+    if preevaluacion.verif_calidad_b is True:
+        text = "Cumple con las condiciones"
+    else:
+        text = "No cumple con las condiciones"
+    a7 = Paragraph(text, style=custom_style)
+
+    if preevaluacion.control_cadena_b is True:
+        text = "Cumple con las condiciones"
+    else:
+        text = "No cumple con las condiciones"
+    a8 = Paragraph(text, style=custom_style)
+
+    if preevaluacion.capacidad_proveedor_b is True:
+        text = "Cumple con las condiciones"
+    else:
+        text = "No cumple con las condiciones"
+    a9 = Paragraph(text, style=custom_style)
+
+    calidad = preevaluacion.verif_calidad
+    suministro = preevaluacion.control_cadena_suministro
+    capacidad = preevaluacion.capacidad_proveedor
+
+    if calidad is None:
+        calidad = ' '
+    if suministro is None:
+        suministro = ' '
+    if capacidad is None:
+        capacidad = ' '
+    a4 = Paragraph(calidad, style=custom_style)
+    a5 = Paragraph(suministro, style=custom_style)
+    a6 = Paragraph(capacidad, style=custom_style)
+    # Datos de la tabla
+    data = [
+        [''' ''', '''Criterios para la Evaluación Inicial de proveedores - compras criticas ''', '''Cumple o no cumple'''], 
+        [a2, a4, a7],
+        [a3, a5, a8],
+        [a1, a6, a9],
+        ['',note_combined,''],
+    ]
+
+    text_3 = "Nota: Para los proveedores de productos y servicios no criticos, se requiere el cumplimiento de al menos uno de los requisitos para obtener la pre aprobación."
+    text_4 = "La documentación de respaldo debe adjuntarse con la evaluación, incluyendo un detalle especifico de los productos evaluados."
+    combined_text2 = f"{text_3} {text_4}"
+    note_combined1 = Paragraph(combined_text2, style=custom_style_tight)
+
+    text3 = "Verificación de Cumplimiento del Sistema de Gestión de la Calidad del Proveedor"
+    b = Paragraph(text3, style=custom_style)
+    text4 = "Evaluación del proveedor para que cumpla con los requisitos de compra de la organización"
+    b1 = Paragraph(text4, style=custom_style)
+    text5 = "Evaluación del producto luego de la entrega o actividades de una vez finalizadas"
+    b2 = Paragraph(text5, style=custom_style)
+
+    if preevaluacion.sgc_b is True:
+        text = "Cumple con las condiciones"
+    else:
+        text = "No cumple con las condiciones"
+    b6 = Paragraph(text, style=custom_style)
+
+    if preevaluacion.eval_compra_b is True:
+        text = "Cumple con las condiciones"
+    else:
+        text = "No cumple con las condiciones"
+    b7 = Paragraph(text, style=custom_style)
+
+    if preevaluacion.eval_actividades_b is True:
+        text = "Cumple con las condiciones"
+    else:
+        text = "No cumple con las condiciones"
+    b8 = Paragraph(text, style=custom_style)
+
+    requisito_sgc = preevaluacion.requisitos_sgc_ver
+    requisito_compra = preevaluacion.eval_compra
+    producto_eval = preevaluacion.eval_actividades
+
+    if requisito_sgc is None:
+        requisito_sgc = ' '
+    if requisito_compra is None:
+        requisito_compra = ' '
+    if producto_eval is None:
+        producto_eval = ' '
+    b3 = Paragraph(requisito_sgc, style=custom_style)
+    b4 = Paragraph(requisito_compra, style=custom_style)
+    b5 = Paragraph(producto_eval, style=custom_style)
+
+    data1 = [
+        [''' ''', '''Criterios para la Evaluación Inicial de proveedores - compras  no criticas ''', '''Cumple o no cumple'''], 
+        [b, b3, b6],
+        [b1, b4, b7],
+        [b2, b5, b8],
+        ['',note_combined1,''],
+    ]
+
+    c.setFillColor(prussian_blue)
+    # REC (Dist del eje Y, Dist del eje X, LARGO DEL RECT, ANCHO DEL RECT)
+    c.rect(50,145,200,15, fill=True, stroke=False) #Barra azul superior Orden de Compra
+    c.rect(350,145,200,15, fill=True, stroke=False) #Barra azul superior Orden de Compra
+
+    c.setFillColor(white)
+    width, height = letter
+    styles = getSampleStyleSheet()
+    styleN = styles["BodyText"]
+    c.drawCentredString(150,150,'Realizador de la Evaluación')
+    c.drawCentredString(450,150,'Autorización del Gerente General')
+    c.setFillColor(black)
+    c.drawString(100,100,'Jefe de adquisiciones')
+    c.drawCentredString(150,115,preevaluacion.creado_por.staff.first_name + ' ' + preevaluacion.creado_por.staff.last_name)
+    c.line(60,110,240,110)
+    c.drawString(420,100,'Gerente General')
+    c.drawCentredString(450,115,str(gerente.staff.first_name + ' ' + gerente.staff.last_name))
+    c.line(360,110,540,110)
+
+    c.setFillColor(prussian_blue)
+    c.rect(20,30,565,30, fill=True, stroke=False)#Caja de hasta abajo
+    c.setFillColor(white)
+
+    table = Table(data, colWidths=[3 * cm, 14* cm, 3 * cm,])
+    table_style = TableStyle([
+        ('INNERGRID', (0, 0), (-1, -2), 0.25, colors.black),  # Líneas internas, excepto en la última fila
+        ('BOX', (0, 0), (-1, -1), 0.25, colors.black),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            # Línea divisoria entre filas, excepto la última fila
+        ('LINEBELOW', (0, 0), (-1, 0), 0.5, colors.black),
+        ('LINEBELOW', (0, 1), (-1, 1), 0.5, colors.black),
+        ('LINEBELOW', (0, 2), (-1, 2), 0.5, colors.black),
+        ('LINEBELOW', (0, 3), (-1, 3), 0.5, colors.black),
+        # ENCABEZADO
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+        ('FONTSIZE', (0, 0), (-1, 0), 7),
+        ('FONT', (0, 0), (-1, 0), 'Helvetica-Bold'),  # Fuente en negrita
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#003153')),  # Usando un color azul prusia
+        ('ALIGN', (0, 0), (-1, 0), 'CENTER'),  # Centrar el texto del encabezado
+        # CUERPO
+        ('TEXTCOLOR', (0, 1), (-1, -1), colors.black),
+        ('FONTSIZE', (0, 1), (-1, -1), 5),
+    ])
+
+    table1 = Table(data1, colWidths=[3 * cm, 14* cm, 3 * cm,])
+    table1_style = TableStyle([
+        ('INNERGRID', (0, 0), (-1, -2), 0.25, colors.black),  # Líneas internas, excepto en la última fila
+        ('BOX', (0, 0), (-1, -1), 0.25, colors.black),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            # Línea divisoria entre filas, excepto la última fila
+        ('LINEBELOW', (0, 0), (-1, 0), 0.5, colors.black),
+        ('LINEBELOW', (0, 1), (-1, 1), 0.5, colors.black),
+        ('LINEBELOW', (0, 2), (-1, 2), 0.5, colors.black),
+        ('LINEBELOW', (0, 3), (-1, 3), 0.5, colors.black),
+        # ENCABEZADO
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+        ('FONTSIZE', (0, 0), (-1, 0), 7),
+        ('FONT', (0, 0), (-1, 0), 'Helvetica-Bold'),  # Fuente en negrita
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#003153')),  # Usando un color azul prusia
+        ('ALIGN', (0, 0), (-1, 0), 'CENTER'),  # Centrar el texto del encabezado
+        # CUERPO
+        ('TEXTCOLOR', (0, 1), (-1, -1), colors.black),
+        ('FONTSIZE', (0, 1), (-1, -1), 5),
+    ])
+       
+    table.setStyle(table_style)
+    table.wrapOn(c, width, height)
+    table.drawOn(c, 20, 490) 
+    table1.setStyle(table_style)
+    table1.wrapOn(c, width, height)
+    table1.drawOn(c, 20, 210) 
+
+    c.setFillColor(black)
+    c.setLineWidth(.2)
+    c.setFont('Helvetica',8)
+
+    caja_proveedor = caja_iso - 65
+    c.setFont('Helvetica', 12)
+    c.setFillColor(prussian_blue)
+   
+    c.showPage()
+    
+    c.save()
+    buf.seek(0)
+    return buf
+
 def generar_preevaluacion_pdf(preevaluacion):
     gerente = Profile.objects.get(tipo__nombre='Gerente')
 
     #Configuration of the PDF object
     buf = io.BytesIO()
     c = canvas.Canvas(buf, pagesize=letter)
-    #doc = SimpleDocTemplate(buf, pagesize=letter)
-    #Here ends conf.
 
     #Azul Vordcab
     prussian_blue = Color(0.0859375,0.1953125,0.30859375)
@@ -2527,23 +2821,19 @@ def generar_preevaluacion_pdf(preevaluacion):
     # REC (Dist del eje Y, Dist del eje X, LARGO DEL RECT, ANCHO DEL RECT)
     c.rect(100,750,300,30, fill=True, stroke=False) #Barra azul superior Orden de Compra
     c.rect(20,caja_proveedor,565,10, fill=True, stroke=False) #Barra azul superior Proveedor | Detalle
-    #c.setFillColor(colors.gray)  # Un gris estándar
-    #c.rect(20,570,565,2, fill=True, stroke=False) #Linea posterior horizontal
+
     c.setFillColor(white)
     c.setLineWidth(.2)
     c.setFont('Helvetica-Bold',14)
     c.drawCentredString(250,760,'Reporte de evaluación inicial simplificada')
     c.setLineWidth(.3) #Grosor
-    #c.line(20,caja_proveedor,20,570) #Eje Y donde empieza, Eje X donde empieza, donde termina eje y,donde termina eje x (LINEA 1 contorno)
-    #c.line(585,caja_proveedor,585,570) #Linea derecha caja arriba inf general
+
     c.drawInlineImage('static/images/logo vordtec_documento.png',40,755, 1.5 * cm, 0.75 * cm) #Imagen vortec
 
     c.setFillColor(white)
     c.setFont('Helvetica-Bold',9)
     c.drawString(250,caja_proveedor+1,'Información General')
-    #c.drawString(400,caja_proveedor+1, 'Datos de Proveedor')
-    #inicio_central = 300
-    #c.line(inicio_central,caja_proveedor,inicio_central,570) #Linea Central de caja Proveedor | Detalle
+
     c.setFillColor(black)
     c.setFont('Helvetica-Bold',8)
     c.drawString(40,caja_proveedor-15,'Fecha de Evaluación:')
@@ -2552,23 +2842,11 @@ def generar_preevaluacion_pdf(preevaluacion):
     c.line(133,caja_proveedor-36,330,caja_proveedor-36)
     c.drawString(40,caja_proveedor-55,'Número de identificación del proveedor:')
     c.line(198,caja_proveedor-56,330,caja_proveedor-56)
-    #c.drawRightString(130,caja_proveedor-40,'Proyecto/Orden de Trabajo:')
-    #c.drawRightString(130,caja_proveedor-50,'Subproyecto:')
-    #c.drawRightString(130,caja_proveedor-60,'Elaboró:')
-    #c.drawRightString(130,caja_proveedor-70,'Autorizó:')
-    #c.drawRightString(130,caja_proveedor-80,'Fecha:')
+
     c.setFont('Helvetica',8)
     c.drawString(135,caja_proveedor-15, str(preevaluacion.creado_at.strftime("%d/%m/%Y %H:%M")))
     c.drawString(135,caja_proveedor-35, preevaluacion.nombre.razon_social)
-    c.drawString(200,caja_proveedor-55, preevaluacion.nombre.rfc)
-    #c.drawString(135,caja_proveedor-20, preevaluacion.req.folio)
-    #c.drawString(135,caja_proveedor-30, preevaluacion.get_folio) #podría ser folio también
-    #c.drawString(135,caja_proveedor-40, preevaluacion.req.orden.proyecto.nombre)
-    #c.drawString(135,caja_proveedor-50, preevaluacion.req.orden.subproyecto.nombre)
-    #c.drawString(135,caja_proveedor-60, preevaluacion.req.orden.staff.staff.first_name+' '+preevaluacion.req.orden.staff.staff.last_name)
-    #if preevaluacion.oc_autorizada_por2:
-    #    c.drawString(135,caja_proveedor-70, preevaluacion.oc_autorizada_por2.staff.first_name+' '+ preevaluacion.oc_autorizada_por2.staff.last_name)
-    #c.drawString(135,caja_proveedor-80, str(preevaluacion.autorizado_date2))
+    c.drawString(200,caja_proveedor-55, str(preevaluacion.nombre.id))
 
     c.setFont('Helvetica',12)
     c.setFillColor(prussian_blue)
@@ -2624,8 +2902,14 @@ def generar_preevaluacion_pdf(preevaluacion):
     else:
         text5 = "No cumple con las condiciones"
     a5 = Paragraph(text5, style=custom_style)
-    a6 = Paragraph(preevaluacion.especs_ver, style=custom_style)
-    a7 = Paragraph(preevaluacion.precios_ver, style=custom_style)
+    especs = preevaluacion.especs_ver
+    precios = preevaluacion.precios_ver
+    if especs is None:
+        especs = ' '
+    if precios is None:
+        precios = ' '
+    a6 = Paragraph(especs, style=custom_style)
+    a7 = Paragraph(precios, style=custom_style)
     # Datos de la tabla
     data = [
         [''' ''', '''Criterios para la Evaluación Inicial de proveedores - productos generales''', '''Cumple o no cumple'''], 
@@ -2652,15 +2936,6 @@ def generar_preevaluacion_pdf(preevaluacion):
     c.drawString(420,150,'Gerente General')
     c.drawCentredString(450,165,str(gerente.staff.first_name + ' ' + gerente.staff.last_name))
     c.line(360,160,540,160)
-
-
-    #if preevaluacion.opciones_condiciones is not None:
-    #    options_conditions = preevaluacion.opciones_condiciones
-    #else:
-    #options_conditions = "NA"
-
-    #options_conditions_paragraph = Paragraph(options_conditions, styleN)
-
 
     # Crear un marco (frame) en la posición específica
     frame = Frame(135, 0, width-145, height-648, id='normal')

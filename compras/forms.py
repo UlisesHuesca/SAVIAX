@@ -69,8 +69,11 @@ class Compra_ComentarioForm(forms.ModelForm):
 class PreevaluacionForm(forms.ModelForm):
     class Meta:
         model = Preevaluacion
-        fields = ['tipo_evaluacion','comparativo_model','especs_ver','especs_b','precios_ver','precios_b','control_cadena_suministro',
-                  'control_cadena_b','capacidad_proveedor','capacidad_proveedor_b','requisitos_sgc_ver','sgc_b']
+        fields = ['tipo_evaluacion',
+                  'especs_ver','especs_b','precios_ver','precios_b', #Para simplificado
+                  'verif_calidad','verif_calidad_b','control_cadena_suministro','control_cadena_b','capacidad_proveedor','capacidad_proveedor_b', #Inicial critico
+                  'requisitos_sgc_ver','sgc_b','eval_compra','eval_compra_b','eval_actividades','eval_actividades_b',#No critico
+                  'comparativo_model',]
 
 
 class Compra_Comment_Form(forms.ModelForm):

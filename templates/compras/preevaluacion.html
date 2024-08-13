@@ -108,15 +108,20 @@
                               {{form.precios_b|add_class:"form-check-input"}}
                         </div>
                     </div>
-                      
                     <div class="alert alert-primary inicial d-none" role="alert">
-                        1. Verificación de cumplimiento del Sistema de Gestión de la Calidad del Proveedor
+                    <div class="title" align="center">
+                        Criterios de la Evaluación (Compras críticas)
+                    </div>
+                    <hr>
+                        <div class="content">
+                            1. Verificación de cumplimiento del Sistema de Gestión de la Calidad del Proveedor
+                        </div>
                     </div>
                     <div class="col-12 inicial d-none">
                         <div class="input-group mb-3">
                         <span class="input-group-text" id="basic-addon1"><i class="fa-solid fa-list" ></i></span>
                             <div class="form-floating form-floating-group flex-grow-1">   
-                                {{form.requisitos_sgc_ver|add_class:"form-control"|append_attr:"placeholder=Detalles"}}
+                                {{form.verif_calidad|add_class:"form-control"|append_attr:"placeholder=Detalles"}}
                                 <label for="id_razon_social">Detalles*</label>
                             </div>
                             <button type="button"  class="btn btn-primary" data-toggle="popover" title="Cumplimiento | SGC" data-bs-content="Detalles sobre cómo se verifica el cumplimiento de los requisitos del sistema de calidad de la organización, como una lista de verificación">
@@ -126,7 +131,7 @@
                     </div>
                     <div class="form-check form-switch col-sm-3 inicial d-none">
                         <label for="form.impuesto" class="form-check-label"><strong>Cumple</strong></label>
-                              {{form.sgc_b|add_class:"form-check-input"}}
+                              {{form.verif_calidad_b|add_class:"form-check-input"}}
                     </div>  
                     <div class="alert alert-primary inicial d-none" role="alert">
                         2. Control en la Cadena de Suministro del Proveedor
@@ -164,10 +169,75 @@
                                 </button>  
                         </div>
                         <div class="form-check form-switch col-sm-3 inicial d-none">
-                            <label for="form.impuesto" class="form-check-label"><strong>Cumple</strong></label>
+                            <label for="form.capacidad_proveedor_b" class="form-check-label"><strong>Cumple</strong></label>
                                   {{form.capacidad_proveedor_b|add_class:"form-check-input"}}
                         </div>
                     </div>
+                    <div class="alert alert-primary inicial d-none" role="alert">
+                    <div class="title" align="center">
+                        Criterios de la Evaluación (Compras no críticas)
+                    </div>
+                    <hr>
+                        <div class="content">
+                            1. Verificación de Cumplimiento del Sistema de Gestión de la Calidad del Proveedor
+                        </div>
+                    </div>
+                    <div class="col-12 inicial d-none">
+                        <div class="input-group mb-3">
+                        <span class="input-group-text" id="basic-addon1"><i class="fa-solid fa-list" ></i></span>
+                            <div class="form-floating form-floating-group flex-grow-1">   
+                                {{form.requisitos_sgc_ver|add_class:"form-control"|append_attr:"placeholder=Detalles"}}
+                                <label for="id_razon_social">Detalles*</label>
+                            </div>
+                            <button type="button"  class="btn btn-primary" data-toggle="popover" title="Cumplimiento | SGC" data-bs-content="Detalles sobre cómo se verifica el cumplimiento de los requisitos del sistema de calidad de la organización, como una lista de verificación">
+                                <i class="fa-solid fa-circle-info"></i>
+                            </button>  
+                        </div>
+                    </div>
+                    <div class="form-check form-switch col-sm-3 inicial d-none">
+                        <label for="form.impuesto" class="form-check-label"><strong>Cumple</strong></label>
+                              {{form.sgc_b|add_class:"form-check-input"}}
+                    </div>  
+                    <div class="alert alert-primary inicial d-none" role="alert">
+                        2. Evaluación del proveedor para que cumpla con los requisitos de compra de la organización
+                    </div>
+                    <div class="col-12 inicial d-none">
+                        <div class="input-group mb-3">
+                        <span class="input-group-text" id="basic-addon1"><i class="fa-solid fa-list" ></i></span>
+                            <div class="form-floating form-floating-group flex-grow-1">   
+                                {{form.eval_compra|add_class:"form-control"|append_attr:"placeholder=Detalles"}}
+                                <label for="id_razon_social">Detalles*</label>
+                            </div>
+                            <button type="button"  class="btn btn-primary" data-toggle="popover" title="Cumplimiento | Requisitos de Compra" data-bs-content="Plazos de entrega, especificaciones de productos, 
+                            precios acordados, términos de pago, garantía y politica de devolución">
+                                <i class="fa-solid fa-circle-info"></i>
+                            </button>  
+                        </div>
+                    </div>
+                    <div class="form-check form-switch col-sm-3 inicial d-none">
+                        <label for="form.impuesto" class="form-check-label"><strong>Cumple</strong></label>
+                              {{form.eval_compra_b|add_class:"form-check-input"}}
+                    </div>
+                    <div class="alert alert-primary inicial d-none" role="alert">
+                        3. Evaluación del producto luego de la entrega o actividades una vez finalizadas
+                    </div>
+                    <div class="col-12 inicial d-none">
+                        <div class="input-group mb-3">
+                        <span class="input-group-text" id="basic-addon1"><i class="fa-solid fa-list" ></i></span>
+                            <div class="form-floating form-floating-group flex-grow-1">   
+                                {{form.eval_actividades|add_class:"form-control"|append_attr:"placeholder=Detalles"}}
+                                <label for="id_razon_social">Detalles*</label>
+                            </div>
+                            <button type="button"  class="btn btn-primary" data-toggle="popover" title="Cumplimiento | Calidad del Producto" data-bs-content="Resultados de inspecciones pruebas o revisión de documentación post-entrega">
+                                <i class="fa-solid fa-circle-info"></i>
+                            </button>  
+                        </div>
+                    </div>
+                    <div class="form-check form-switch col-sm-3 inicial d-none">
+                        <label for="form.impuesto" class="form-check-label"><strong>Cumple</strong></label>
+                              {{form.eval_actividades_b|add_class:"form-check-input"}}
+                    </div>
+
                         <div id="comparativo" class="row my-2">
                             <div class="col-12">
                                 <div class="input-group mb-3">

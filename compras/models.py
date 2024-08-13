@@ -102,17 +102,27 @@ class Preevaluacion(models.Model):
     modified_at = models.DateTimeField(null=True)
     tipo_evaluacion = models.ForeignKey(Tipo_Evaluacion, on_delete= models.CASCADE, null=True)
     criticidad = models.ForeignKey(Criticidad, on_delete= models.CASCADE, null=True)
-    requisitos_sgc_ver = models.CharField(max_length=255, null=True, blank=True)  #Campo para la evaluacion inicial
-    sgc_b = models.BooleanField(default=False)  #Campo para la evaluacion inicial 
+
     especs_ver = models.CharField(max_length=255, null=True, blank=True) #Campo para la evaluacion inicial simplificada
     especs_b = models.BooleanField(default=False) #Campo para la evaluacion inicial simplificada
     precios_ver = models.CharField(max_length=255, null=True, blank=True) #Campo para la evaluacion inicial simplificada
     precios_b = models.BooleanField(default = False) #Campo para la evaluacion inicial simplificada
-    control_cadena_suministro = models.CharField(max_length=255, null=True, blank=True)  #Campo para la evaluacion inicial
-    control_cadena_b= models.BooleanField(default = False) #Campo para la evaluacion inicial simplificada
+
+    verif_calidad = models.CharField(max_length=255, null=True, blank=True) #Campo para la evaluacion inicial (campo 1)
+    verif_calidad_b= models.BooleanField(default = False)
+    control_cadena_suministro = models.CharField(max_length=255, null=True, blank=True)  #Campo para la evaluacion inicial (campo 2)
+    control_cadena_b= models.BooleanField(default = False) #Campo para la evaluacion inicial simplificada (boleano 2)
+    capacidad_proveedor = models.CharField(max_length=255, null=True, blank=True)  #Campo para la evaluacion inicial (campo 3)
+    capacidad_proveedor_b= models.BooleanField(default = False) #Campo para la evaluacion inicial (boleano 3)
+    
+    requisitos_sgc_ver = models.CharField(max_length=255, null=True, blank=True)  #Campo para la evaluacion inicial (campo 4)
+    sgc_b = models.BooleanField(default=False)  #Campo para la evaluacion inicial (boleano 4)
+    eval_compra = models.CharField(max_length=255, null=True, blank=True)
+    eval_compra_b= models.BooleanField(default = False)
+    eval_actividades = models.CharField(max_length=255, null=True, blank=True) #Campo para la evaluacion inicial (campo 6)
+    eval_actividades_b= models.BooleanField(default = False)
+
     resultado = models.BooleanField(default= None, null=True)
-    capacidad_proveedor = models.CharField(max_length=255, null=True, blank=True)  #Campo para la evaluacion inicial 
-    capacidad_proveedor_b= models.BooleanField(default = False) #Campo para la evaluacion inicial
     areas_exito = models.CharField(max_length=255, null=True, blank=True)
     areas_oportunidad = models.CharField(max_length=255, null=True, blank=True)
     history = HistoricalRecords(history_change_reason_field=models.TextField(null=True))
