@@ -258,14 +258,6 @@
                             </a>
                         <div class="dropdown-divider"></div>
                     </div>
-
-                    <h6 class="dropdown-header">Requisiciones</h6>
-                        <div class="dropdown-divider"></div>
-                        <a class="dropdown-item" href="{% url 'requisiciones-status' %}">Solicitudes</a>
-                        <!--<a class="dropdown-item" href="{% url 'requisiciones-status' %}">Matriz Requisiciones-->
-                    </a>
-                    <div class="dropdown-divider"></div>
-
                     {% if usuario.tipo.autorizacion == False %}
                     <div class="d-none">
                     {% else %}
@@ -372,6 +364,7 @@
                     <div>
                     {% endif %}
                         <a class="dropdown-item" href="{% url 'solicitud-matriz' %}">Matriz Solicitudes</a>
+                        <a class="dropdown-item" href="{% url 'requisiciones-status' %}">Solicitudes</a>
                         {% if usuario.tipo.almacen == True or usuario.tipo.nombre == "Gerente" or usuario.tipo.compras == True  or usuario.tipo.superintendente == True %}
                             <div>
                         {% else %}
