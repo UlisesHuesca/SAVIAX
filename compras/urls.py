@@ -40,6 +40,7 @@ urlpatterns = [
     path('compras/autorizacion_preevaluaciones', views.autorizacion_preevaluacion, name='autorizacion-preevaluacion'),
     path('compras/autorizar_preevaluacion/<int:pk>', views.autorizar_preevaluacion, name='autorizar-preevaluacion'),
     path('compras/cancelar_preevaluacion/<int:pk>', views.cancelar_preevaluacion, name='cancelar-preevaluacion'),
+    path('compras/articulos_restantes/<int:pk>', views.articulos_restantes, name='articulos-restantes'),
     ]
 
 if settings.DEBUG:

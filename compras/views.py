@@ -155,10 +155,12 @@ def articulos_restantes(request, pk):
     productos = ArticulosRequisitados.objects.filter(req = pk, cantidad_comprada__lt = F("cantidad"), cancelado=False)
     #productos = ArticulosRequisitados.objects.filter(req = pk, cantidad_comprada__lt = F("cantidad"))
     requis = Requis.objects.get(id = pk)
+    next_url = request.GET.get('next','requisiciones-status')
 
     context = {
         'productos': productos,
         'requis': requis,
+        'next_url': next_url,
         }
 
     return render(request,'compras/articulos_restantes.html', context)
@@ -2983,3 +2985,4 @@ def generar_preevaluacion_pdf(preevaluacion):
     c.save()
     buf.seek(0)
     return buf
+

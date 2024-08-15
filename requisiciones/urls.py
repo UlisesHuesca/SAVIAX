@@ -1,4 +1,4 @@
-from django.urls import path
+from django.urls import path, include
 from . import views
 
 
@@ -32,4 +32,7 @@ urlpatterns = [
     path('salidas/historico_salidas/', views.historico_salidas, name='historico-salidas'),
     path('salida_material/salida_pdf/<int:pk>/', views.render_salida_pdf, name='vale-salida-pdf'),
     path('entrada_material/entrada_pdf/<int:pk>/', views.render_entrada_pdf, name='vale-entrada-pdf'),
+
+    path('requisiciones/estatus', views.requisiciones_status, name='requisiciones-status'),
+    path('requisicion_pdf/<int:pk>/', views.render_requisicion_pdf_view, name='requisicion-pdf'),
     ]
