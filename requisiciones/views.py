@@ -48,7 +48,7 @@ from reportlab.lib.units import cm
 from reportlab.lib.pagesizes import letter, portrait
 from reportlab.rl_config import defaultPageSize
 
-from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.enums import TA_CENTER
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, Frame
 from bs4 import BeautifulSoup
@@ -1925,40 +1925,54 @@ def render_requisicion_pdf_view(request, pk):
     #Configuration of the PDF object
     buf = io.BytesIO()
     c = canvas.Canvas(buf, pagesize=letter)
+
     #Here ends conf.
     requisicion = Requis.objects.get(id=pk)
     productos = ArticulosRequisitados.objects.filter(req=pk)
     #salidas = Salidas.objects.filter(producto__articulos__orden__id=pk)
-
-
    #Azul Vordcab
     prussian_blue = Color(0.0859375,0.1953125,0.30859375)
     rojo = Color(0.59375, 0.05859375, 0.05859375)
     #Encabezado
     c.setFillColor(black)
     c.setLineWidth(.2)
-    c.setFont('Helvetica',8)
+    c.setFont('Helvetica-Bold',8)
     caja_iso = 760
     #Elaborar caja
     #c.line(caja_iso,500,caja_iso,720)
 
+    if requisicion.colocada:
+        estado = 'Colocada'
+        color = prussian_blue
+    elif requisicion.autorizar:
+        estado = 'Autorizada'
+        color = Color(0.0, 0.39, 0.0)
+    elif requisicion.autorizar == False:
+        estado = 'Cancelada'
+        color = rojo
+    else:
+        estado = 'No Autorizado Aún'
+        color = prussian_blue
 
-
+    c.drawInlineImage('static/images/logo vordtec_documento.png',45,730, 3 * cm, 1.5 * cm) #Imagen vortec
     #Encabezado
-    c.drawString(420,caja_iso,'Preparado por:')
-    c.drawString(420,caja_iso-10,'SUP. ADMON')
-    c.drawString(520,caja_iso,'Aprobación')
-    c.drawString(520,caja_iso-10,'SUB ADM')
-    c.drawString(150,caja_iso-20,'Número de documento')
-    c.drawString(160,caja_iso-30,'SEOV-ADQ-N4-01.01')
-    c.drawString(245,caja_iso-20,'Clasificación del documento')
-    c.drawString(275,caja_iso-30,'Controlado')
-    c.drawString(355,caja_iso-20,'Nivel del documento')
-    c.drawString(380,caja_iso-30, 'N5')
-    c.drawString(440,caja_iso-20,'Revisión No.')
-    c.drawString(452,caja_iso-30,'000')
-    c.drawString(510,caja_iso-20,'Fecha de Emisión')
-    c.drawString(525,caja_iso-30,'22-Nov.-17')
+    c.drawString(415,caja_iso-5,'Preparado por:')
+    c.drawString(515,caja_iso-5,'Aprobación')
+    c.drawString(20,caja_iso-35,'Número de documento')
+    c.drawString(125,caja_iso-35,'Clasificación del documento')
+    c.drawString(245,caja_iso-35,'Nivel del documento')
+    c.drawString(335,caja_iso-35,'Revisión No.')
+    c.drawString(400,caja_iso-35,'Fecha de Emisión')
+    c.drawString(485,caja_iso-35,'Fecha última modificación')
+    c.setFont('Helvetica',8)
+    c.drawString(485,caja_iso-15,'Subdirección administrativa')
+    c.drawString(30,caja_iso-45,'F-ADQ-N4-01.01')
+    c.drawString(158,caja_iso-45,'Registro')
+    c.drawString(415,caja_iso-15,'Adquisiciones')
+    c.drawString(273,caja_iso-45, 'N5')
+    c.drawString(347,caja_iso-45,'001')
+    c.drawString(415,caja_iso-45,'22-Nov.-17')
+    c.drawString(510,caja_iso-45,'22-Nov.-17')
 
     caja_proveedor = caja_iso - 65
     c.setFont('Helvetica',12)
@@ -1974,53 +1988,142 @@ def render_requisicion_pdf_view(request, pk):
     c.setLineWidth(.3) #Grosor
     c.line(20,caja_proveedor-8,20,575) #Eje Y donde empieza, Eje X donde empieza, donde termina eje y,donde termina eje x (LINEA 1 contorno)
     c.line(585,caja_proveedor-8,585,575) #Linea 2 contorno
-    c.drawInlineImage('static/images/logo vordtec_documento.png',45,730, 3 * cm, 1.5 * cm) #Imagen vortec
+    
 
     c.setFillColor(white)
     c.setFont('Helvetica-Bold',11)
-    #c.drawString(120,caja_proveedor,'Infor')
-    c.drawString(300,caja_proveedor, 'Detalles')
-    inicio_central = 300
-    #c.line(inicio_central,caja_proveedor-25,inicio_central,520) #Linea Central de caja Proveedor | Detalle
-    c.setFillColor(black)
-    c.setFont('Helvetica',9)
-    c.drawString(30,caja_proveedor-20,'Solicitó:')
-    c.drawString(30,caja_proveedor-40,'Distrito:')
-    c.drawString(30,caja_proveedor-60,'Proyecto')
-    c.drawString(30,caja_proveedor-80,'Subproyecto:')
-    c.drawString(30,caja_proveedor-100,'Fecha de Aprobación:')
-    
-    c.setFont('Helvetica-Bold',12)
-    c.drawString(500,caja_proveedor-20,'FOLIO:')
-    c.setFillColor(rojo)
-    c.setFont('Helvetica-Bold',12)
-    c.drawString(540,caja_proveedor-20, str(requisicion.folio))
+    c.drawCentredString(296,caja_proveedor, 'Detalles')
 
     c.setFillColor(black)
     c.setFont('Helvetica',9)
-    almacenista = Profile.objects.filter(tipo__almacenista = True).first()
-    if requisicion.orden.staff:
-        c.drawString(130,caja_proveedor-20, requisicion.orden.staff.staff.first_name+' '+ requisicion.orden.staff.staff.last_name)
-    else:    
-        c.drawString(130,caja_proveedor-20, almacenista.staff.last_name+' '+ almacenista.staff.last_name)
-    c.drawString(130,caja_proveedor-40, requisicion.orden.staff.distrito.nombre)
-    c.drawString(130,caja_proveedor-60, requisicion.orden.proyecto.nombre)
-    c.drawString(130,caja_proveedor-80, requisicion.orden.subproyecto.nombre)
-    if requisicion.approved_at:
-        c.drawString(130,caja_proveedor-100, requisicion.approved_at.strftime("%d/%m/%Y"))
+    c.drawRightString(140, caja_proveedor - 20, 'Folio de solicitud:')
+    c.drawString(142, caja_proveedor - 20, requisicion.orden.folio)
+    c.drawRightString(140,caja_proveedor-35,'Folio de requisición:')
+    c.drawString(142, caja_proveedor - 35, requisicion.folio)
+    c.drawRightString(140,caja_proveedor-50,'Proyecto/Orden de Trabajo:')
+    c.drawString(142, caja_proveedor - 50, requisicion.orden.proyecto.nombre)
+    c.drawRightString(140,caja_proveedor-65,'Subproyecto:')
+    c.drawString(142, caja_proveedor - 65, requisicion.orden.subproyecto.nombre)
+    c.drawRightString(140,caja_proveedor-80,'Área o Departamento:')
+    c.drawString(142, caja_proveedor - 80, requisicion.orden.area.nombre)
+    c.drawRightString(140,caja_proveedor-95,'Requisitó:')
+    if requisicion.orden.staff is None:
+        c.drawString(142, caja_proveedor - 95, 'N/A')
     else:
-        c.setFillColor(rojo)
-        c.drawString(130,caja_proveedor-100, "No Aprobado aún")
-    #Create blank list
-    data =[]
+        c.drawString(142, caja_proveedor - 95, requisicion.orden.staff.staff.first_name + ' ' + requisicion.orden.staff.staff.last_name)
+    c.drawRightString(140,caja_proveedor-110,'Autorizó:')
+    if requisicion.requi_autorizada_por is None:
+        c.drawString(142, caja_proveedor - 110, 'N/A')
+    else:
+        c.drawString(142, caja_proveedor - 110, requisicion.requi_autorizada_por.staff.first_name + ' ' + requisicion.requi_autorizada_por.staff.last_name)
+    #str(preevaluacion.creado_at.strftime("%d/%m/%Y %H:%M"))
+    c.drawString(270,caja_proveedor-20,'Fecha de elaboración:')
+    c.drawString(365,caja_proveedor-20,str(requisicion.created_at.strftime("%d/%m/%Y %H:%M")))
+    c.drawString(270,caja_proveedor-35,'Almacen que recibe:')
+    c.drawString(355,caja_proveedor-35,requisicion.orden.subproyecto.nombre)
+    c.drawString(270,caja_proveedor-50,'Archivo adjunto:')
+    file_name = os.path.basename(requisicion.orden.soporte.name)
+    if file_name is None:
+        c.drawString(340,caja_proveedor-50,'N/A')
+    else:
+        c.drawString(340,caja_proveedor-50,str(file_name))
+    
+    c.setFillColor(black)
+    c.setFont('Helvetica-Bold',11)
+    almacenista = Profile.objects.filter(tipo__almacenista = True).first()
+    #if requisicion.orden.staff:
+    #    c.drawString(130,caja_proveedor-20, requisicion.orden.staff.staff.first_name+' '+ requisicion.orden.staff.staff.last_name)
+    #else:    
+    #    c.drawString(130,caja_proveedor-20, almacenista.staff.last_name+' '+ almacenista.staff.last_name)
+    #c.drawString(130,caja_proveedor-40, requisicion.orden.staff.distrito.nombre)
+    #c.drawString(130,caja_proveedor-60, requisicion.orden.proyecto.nombre)
+    #c.drawString(130,caja_proveedor-80, requisicion.orden.subproyecto.nombre)
+    c.drawCentredString(300,caja_proveedor-80, 'Estado:')
+    if requisicion.approved_at:
+        c.setFillColor(color)
+        c.drawString(325,caja_proveedor-80, estado +' '+ requisicion.approved_at.strftime("%d/%m/%Y %H:%M"))
+    else:
+        c.setFillColor(color)
+        c.drawString(325,caja_proveedor-80, estado)
+        # Datos de la tabla
 
-    encabezado = [['''Código''', '''Nombre''', '''Cantidad''','''Comentario''']]
+    styles = getSampleStyleSheet()
+    custom_style = ParagraphStyle(
+        'CustomStyle',
+        parent=styles['Normal'],
+        fontName='Helvetica-Bold',
+        fontSize=6,
+        leading=10,
+        alignment=1,  # Centrar el texto
+        wordWrap='CJK',
+        textColor=colors.white,
+    )
+    data = [
+        ['', '', '', '', '', '', 'Detalle de productos y servicios', '', ''],
+    ]
 
+    data.append([
+        Paragraph('#', custom_style),
+        Paragraph('Cantidad', custom_style),
+        Paragraph('Codigo producto', custom_style),
+        Paragraph('Producto o Servicio', custom_style),
+        Paragraph('Unidad de medida', custom_style),
+        Paragraph('Criticidad', custom_style),
+        Paragraph('Descripción general', custom_style),
+        Paragraph('Descripción especifica', custom_style),
+        Paragraph('Descripción técnica', custom_style),
+        Paragraph('Criterios aceptación', custom_style),
+    ])
 
-    high = 540
+    styles = getSampleStyleSheet()
+    custom_style = ParagraphStyle(
+        'CustomStyle',
+        parent=styles['Normal'],
+        fontName='Helvetica',
+        fontSize=6,
+        leading=10,
+        alignment=1,  # Centrar el texto
+        wordWrap='CJK'
+    )
+    number=1
     for producto in productos:
-        data.append([producto.producto.articulos.producto.producto.codigo, producto.producto.articulos.producto.producto.nombre,producto.cantidad, producto.producto.articulos.comentario])
-        high = high - 18
+        if producto.producto.articulos.producto.producto.servicio == True:
+            tipo = 'Servicio'
+        else:
+            tipo = 'Producto'
+        if producto.producto.articulos.producto.producto.unidad.nombre is None:
+            name = 'N/A'
+        else:
+            name = producto.producto.articulos.producto.producto.unidad.nombre
+        if producto.producto.articulos.producto.producto.critico is None:
+            critico = 'N/A'
+        else:
+            critico = producto.producto.articulos.producto.producto.critico.nombre
+        if producto.producto.articulos.producto.producto.descripcion_especifica is None:
+            especifico = 'N/A'
+        else:
+            especifico = producto.producto.articulos.producto.producto.descripcion_especifica
+        if producto.producto.articulos.producto.producto.criterios_aceptacion is None:
+            criterios = 'N/A'
+        else:
+            criterios = producto.producto.articulos.producto.producto.criterios_aceptacion
+        if producto.producto.articulos.producto.producto.especs is None:
+            especs = 'N/A'
+        else:
+            especs = producto.producto.articulos.producto.producto.especs
+        data.append([
+            Paragraph(str(number), custom_style),
+            Paragraph(str(producto.cantidad), custom_style),
+            Paragraph(producto.producto.articulos.producto.producto.codigo, custom_style),
+            Paragraph(tipo, custom_style),
+            Paragraph(name, custom_style),
+            Paragraph(critico, custom_style),
+            Paragraph(producto.producto.articulos.producto.producto.nombre, custom_style),
+            Paragraph(especifico, custom_style),
+            Paragraph(especs, custom_style),
+            Paragraph(criterios, custom_style)
+        ])
+        number +=1
 
 
     c.setFillColor(prussian_blue)
@@ -2052,12 +2155,12 @@ def render_requisicion_pdf_view(request, pk):
         comentario = "No hay comentarios"
 
     c.setFillColor(prussian_blue)
-    c.rect(20,230,565,25, fill=True, stroke=False)
+    c.rect(40,135,530,15, fill=True, stroke=False)
     c.setFillColor(white)
-    c.drawCentredString(320,235,'Observaciones')
+    c.drawCentredString(296,140,'Observaciones')
     options_conditions_paragraph = Paragraph(comentario, styleN)
     # Crear un marco (frame) en la posición específica
-    frame = Frame(20, -110, width-40, high-50, id='normal')
+    frame = Frame(40, -60, 530, 200, id='normal')
     # Agregar el párrafo al marco
     frame.addFromList([options_conditions_paragraph], c)
     c.setFillColor(prussian_blue)
@@ -2065,79 +2168,69 @@ def render_requisicion_pdf_view(request, pk):
     c.setFillColor(white)
 
     c.setFillColor(black)
-    if requisicion.orden:
-        c.drawCentredString(180,high-240, requisicion.orden.staff.staff.first_name +' '+ requisicion.orden.staff.staff.last_name)
-    else:    
-         c.drawCentredString(180,high-240, almacenista.staff.last_name+' '+ almacenista.staff.last_name)
+    #if requisicion.orden:
+    #    c.drawCentredString(180,high-240, requisicion.orden.staff.staff.first_name +' '+ requisicion.orden.staff.staff.last_name)
+    #else:    
+    #     c.drawCentredString(180,high-240, almacenista.staff.last_name+' '+ almacenista.staff.last_name)
     #c.drawCentredString(180,high-240, requisicion.created_by.staff.staff.first_name +' '+ requisicion.created_by.staff.staff.last_name)
-    c.line(140,high-241,220,high-241)
-    c.drawCentredString(180,high-250, 'Solicitado')
-    if requisicion.autorizar == False:
-        c.setFillColor(rojo)
-        c.drawCentredString(410, high-240, '{Esta requisicion ha sido Cancelada}')
-        c.setFont('Helvetica-Bold',14)
-        c.drawString(370,670, 'CANCELADA')
-    elif requisicion.autorizar:
-        c.setFillColor(prussian_blue)
-        c.drawCentredString(410,high-240, requisicion.orden.superintendente.staff.first_name+' '+ requisicion.orden.superintendente.staff.last_name)
-        c.setFont('Helvetica-Bold',14)
-        c.drawString(370,670, 'APROBADA')
-    else:
-        c.setFillColor(rojo)
-        c.drawCentredString(410,high-240, requisicion.orden.superintendente.staff.first_name+' '+ requisicion.orden.superintendente.staff.last_name)
-        c.setFont('Helvetica-Bold',22)
-        c.saveState()
+    ##c.line(140,high-241,220,high-241)
+    #c.drawCentredString(180,high-250, 'Solicitado')
+    #if requisicion.autorizar == False:
+    #    c.setFillColor(rojo)
+    #    c.drawCentredString(410, high-240, '{Esta requisicion ha sido Cancelada}')
+    #    c.setFont('Helvetica-Bold',14)
+    #    c.drawString(370,670, 'CANCELADA')
+    #elif requisicion.autorizar:
+    #    c.setFillColor(prussian_blue)
+    #    c.drawCentredString(410,high-240, requisicion.orden.superintendente.staff.first_name+' '+ requisicion.orden.superintendente.staff.last_name)
+    #    c.setFont('Helvetica-Bold',14)
+    #    c.drawString(370,670, 'APROBADA')
+    #else:
+    #    c.setFillColor(rojo)
+    #    c.drawCentredString(410,high-240, requisicion.orden.superintendente.staff.first_name+' '+ requisicion.orden.superintendente.staff.last_name)
+    #    c.setFont('Helvetica-Bold',22)
+        #c.saveState()
         # Trasladar el origen del canvas al punto (370, 670)
-        c.translate(200, 300)
+        #c.translate(200, 300)
         # Rotar el canvas 45 grados en sentido horario
-        c.rotate(45)
-        c.drawString(30,0, 'NO AUTORIZADA AÚN')
-        c.restoreState()
-    c.setFillColor(black)
-    c.setFont('Helvetica',12)
-    c.line(360,high-241,460,high-241)
-    c.drawCentredString(410,high-250,'Superintendente')
+        #c.rotate(45)
+        #c.drawString(30,0, 'NO AUTORIZADA AÚN')
+        #c.restoreState()
+    #c.setFillColor(black)
+    #c.setFont('Helvetica',12)
+    #c.line(360,high-241,460,high-241)
+    #c.drawCentredString(410,high-250,'Superintendente')
 
-    #table = Table(data, colWidths=[1.2 * cm, 12 * cm, 1.5 * cm, 5.2 * cm,])
-    table_style = TableStyle([ #estilos de la tabla
-        ('INNERGRID',(0,0),(-1,-1), 0.25, colors.white),
-        ('BOX',(0,0),(-1,-1), 0.25, colors.black),
-        ('VALIGN',(0,0),(-1,-1),'MIDDLE'),
-        #ENCABEZADO
-        ('TEXTCOLOR',(0,0),(-1,0), white),
-        ('FONTSIZE',(0,0),(-1,0), 8),
-        ('BACKGROUND',(0,0),(-1,0), prussian_blue),
-        #CUERPO
-        ('TEXTCOLOR',(0,1),(-1,-1), colors.black),
-        ('FONTSIZE',(0,1),(-1,-1), 6),
-        ])
-    #table.setStyle(table_style)
-    rows_per_page = 15
-    data_len = len(data) 
-    for page_start in range(0, data_len, rows_per_page):
-        page_end = min(page_start + rows_per_page, data_len)
-        #page_data = data[page_start:page_end + 1]  # +1 para incluir el encabezado en cada página
-        page_data = encabezado + data[page_start:page_end] 
-        table = Table(page_data, colWidths=[1.2 * cm, 12 * cm, 1.5 * cm, 5.2 * cm])
-        table.setStyle(table_style)
-         # Calcular el alto de la tabla para la página actual
-        table_height = data_len * 18 #espacio_por_fila
-        # Calcular la posición 'y' inicial para la tabla basada en el alto de la tabla
-        table_y_position = height - table_height - 30 - (210 if page_start == 0 else 0)  # Ajustar el margen superior
-        #table_y_position = height - 30 - (210 if page_start == 0 else 0)  # Ajustar el margen superior
-        
+    # Definición de la tabla        1       2           3       4       5           6          7        8        9      10
+    table = Table(data, colWidths=[0.8 * cm, 1.5 * cm, 1.6 * cm, 1.5 * cm, 1.7 * cm, 1.5 * cm, 3 * cm, 2.8 * cm, 2.9 * cm, 2.8 * cm])
+    # Estilos de la tabla
+    table_style = TableStyle([
+        # Estilo general
+        ('INNERGRID', (0, 2), (-1, -1), 0.25, colors.black),  # Celdas de los datos
+        ('BOX', (0, 0), (-1, -1), 0.25, colors.black),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        # Encabezado principal (primera fila)
+        #('SPAN', (0, 0), (-1, 0)),
+        ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#003153')),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+        ('FONTSIZE', (0, 0), (-1, 0), 8),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        # Encabezado de columnas (segunda fila)
+        ('BACKGROUND', (0, 1), (-1, 1), colors.HexColor('#003153')),
+        ('TEXTCOLOR', (0, 1), (-1, 1), colors.white),
+        ('FONTSIZE', (0, 1), (-1, 1), 8),
+        ('FONTNAME', (0, 1), (-1, 1), 'Helvetica-Bold'),
+        ('ALIGN', (0, 1), (-1, 1), 'CENTER'),  # Centrar el texto del encabezado de columnas
+        # Cuerpo de la tabla
+        ('TEXTCOLOR', (0, 2), (-1, -1), colors.black),
+        ('FONTSIZE', (0, 2), (-1, -1), 6),
+    ])
 
-        table.wrapOn(c, width, height)  # Preparar la tabla
-        table.drawOn(c, 20, table_y_position)  # Dibujar la tabla en la posición calculada
-
-        if page_end < data_len:  # Si hay más páginas, preparar una nueva página
-            c.showPage()
-    
-   
-    
-    #pdf size
-    #table.wrapOn(c, width, height)
-    #table.drawOn(c, 20, high)
+    table.setStyle(table_style)
+    width, height = letter
+    frame = Frame(20, -120, width - 40, height - 100, id='normal')
+    frame.addFromList([table], c)
 
     #c.showPage()
     c.save()
