@@ -41,6 +41,7 @@ urlpatterns = [
     path('compras/autorizar_preevaluacion/<int:pk>', views.autorizar_preevaluacion, name='autorizar-preevaluacion'),
     path('compras/cancelar_preevaluacion/<int:pk>', views.cancelar_preevaluacion, name='cancelar-preevaluacion'),
     path('compras/articulos_restantes/<int:pk>', views.articulos_restantes, name='articulos-restantes'),
+    path('compras/oc_comparativa_pdf/<int:pk>/', views.generar_oc_comparativa_pdf, name='oc-comparativa-pdf'),
     ]
 
 if settings.DEBUG:
