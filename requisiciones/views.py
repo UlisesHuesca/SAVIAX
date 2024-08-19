@@ -2022,8 +2022,14 @@ def render_requisicion_pdf_view(request, pk):
     c.drawString(270,caja_proveedor-35,'Almacen que recibe:')
     c.drawString(355,caja_proveedor-35,requisicion.orden.subproyecto.nombre)
     c.drawString(270,caja_proveedor-50,'Archivo adjunto:')
-    file_name = os.path.basename(requisicion.orden.soporte.name)
-    if file_name is None:
+    try:
+        soporte_name = requisicion.orden.soporte.name
+        if soporte_name:  # Verifica si soporte_name no es None ni una cadena vacía
+            file_name = os.path.basename(soporte_name)
+        else:
+            file_name = None
+    except AttributeError:
+        file_name = None
         c.drawString(340,caja_proveedor-50,'N/A')
     else:
         c.drawString(340,caja_proveedor-50,str(file_name))
