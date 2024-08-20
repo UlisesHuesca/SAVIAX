@@ -10,14 +10,18 @@ from requisiciones.models import Salidas, ArticulosRequisitados, Requis
 from .models import Entrada, EntradaArticulo, Reporte_Calidad, No_Conformidad, NC_Articulo
 from .forms import EntradaArticuloForm, Reporte_CalidadForm, NoConformidadForm, NC_ArticuloForm
 from user.models import Profile
+from smtplib import SMTPException
 import json
 from django.db.models import Sum
 from django.contrib import messages
 from django.http import JsonResponse, HttpResponse
 from datetime import date, datetime
 import decimal
-from django.core.mail import EmailMessage
+from django.core.mail import EmailMessage, BadHeaderError
 from django.core.paginator import Paginator
+from django.conf import settings
+import os
+from requisiciones.views import get_image_base64
 
 @login_required(login_url='user-login')
 def pendientes_recepcion(request):
@@ -108,7 +112,7 @@ def pendientes_entrada(request):
     usuario = Profile.objects.get(staff__id=request.user.id)
     
     if usuario.tipo.almacen == True:
-        articulos_recepcionados = EntradaArticulo.objects.filter(recepcion = True, almacenado = False, articulo_comprado__producto__producto__articulos__producto__producto__servicio=False)
+        articulos_recepcionados = EntradaArticulo.objects.filter(recepcion = True, almacenado = False, articulo_comprado__producto__producto__articulos__producto__producto__servicio=False).order_by('-id')
 
     myfilter = EntradaArticuloFilter(request.GET, queryset=articulos_recepcionados)
     articulos_recepcionados = myfilter.qs
@@ -242,6 +246,7 @@ def pendientes_entrada(request):
                 producto_comprado.save()
                 producto_inv.save()
                 entrada.save()
+
                 producto_surtir.save()
                 #Se guardan todas las bases de datos
           
@@ -260,6 +265,67 @@ def pendientes_entrada(request):
             compra.save()
             producto_comprado.save()
             producto_inv.save()
+            static_path = settings.STATIC_ROOT
+            img_path = os.path.join(static_path,'images','SAVIA_Logo.png')
+            img_path2 = os.path.join(static_path,'images','logo vordtec_documento.png')
+            image_base64 = get_image_base64(img_path)
+            logo_v_base64 = get_image_base64(img_path2)
+            html_message = f"""
+            <html>
+                <head>
+                    <meta charset="UTF-8">
+                </head>
+                <body style="font-family: Arial, sans-serif; color: #333; background-color: #f4f4f4; margin: 0; padding: 0;">
+                    <table width="100%" cellspacing="0" cellpadding="0" style="background-color: #f4f4f4; padding: 20px;">
+                        <tr>
+                            <td align="center">
+                                <table width="600px" cellspacing="0" cellpadding="0" style="background-color: #ffffff; padding: 20px; border-radius: 10px;">
+                                    <tr>
+                                        <td align="center">
+                                            <img src="data:image/jpeg;base64,{logo_v_base64}" alt="Logo" style="width: 100px; height: auto;" />
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 20px;">
+                                            <p style="font-size: 18px; text-align: justify;">
+                                                Estimado {compra.req.orden.staff.staff.first_name} {compra.req.orden.staff.staff.last_name},
+                                            </p>
+                                            <p style="font-size: 16px; text-align: justify;">
+                                                Estás recibiendo este correo porque tu OC <strong>{compra.get_folio}</strong> | RQ: <strong>{compra.req.folio}</strong> |Sol: <strong>{compra.req.orden.folio}</strong> ha sido recibida en el módulo de entrada por el 
+                                                <strong>Almacen.</strong>
+                                            </p>
+                                            <p style="font-size: 16px; text-align: justify;">
+                                                El siguiente paso del sistema: 'Salida' Puede ir por su material.
+                                            </p>
+                                            <p style="text-align: center; margin: 20px 0;">
+                                                <img src="data:image/png;base64,{image_base64}" alt="Imagen" style="width: 50px; height: auto; border-radius: 50%;" />
+                                            </p>
+                                            <p style="font-size: 14px; color: #999; text-align: justify;">
+                                                Este mensaje ha sido automáticamente generado por SAVIA 2.0
+                                            </p>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </td>
+                        </tr>
+                    </table>
+                </body>
+            </html>
+            """
+            try:
+                email = EmailMessage(
+                    f'OC Autorizada {compra.get_folio}|RQ: {compra.req.folio} |Sol: {compra.req.orden.folio}',
+                    body=html_message,
+                    from_email = settings.DEFAULT_FROM_EMAIL,
+                    to= [compra.req.orden.staff.staff.email,compra.creada_por.staff.email,'ulises_huesc@hotmail.com'],
+                    headers={'Content-Type': 'text/html'}
+                    )
+                email.content_subtype = "html " # Importante para que se interprete como HTML
+                email.send()
+                messages.success(request, f'{usuario.staff.first_name} has autorizado la solicitud {compra.get_folio}')
+            except (BadHeaderError, SMTPException) as e:
+                error_message = f'{usuario.staff.first_name}, Has generado Recepción correctamente pero el correo de notificación no ha sido enviado debido a un error: {e}'
+                messages.warning(request, error_message)
             messages.success(request,'Haz agregado exitosamente un producto')
         return redirect('pendientes-entrada')
         
@@ -355,8 +421,68 @@ def articulos_recepcion(request, pk):
         articulos_recepcionados = articulos_comprados.filter(recepcion_completa = True)
         num_art_recepcionados = articulos_recepcionados.count()
         if num_art_recepcionados >= num_art_comprados:
-            compra.recepcion_completa = True
-        
+            compra.recepcion_completa = True  
+        static_path = settings.STATIC_ROOT
+        img_path = os.path.join(static_path,'images','SAVIA_Logo.png')
+        img_path2 = os.path.join(static_path,'images','logo vordtec_documento.png')
+        image_base64 = get_image_base64(img_path)
+        logo_v_base64 = get_image_base64(img_path2)
+        html_message = f"""
+        <html>
+            <head>
+                <meta charset="UTF-8">
+            </head>
+            <body style="font-family: Arial, sans-serif; color: #333; background-color: #f4f4f4; margin: 0; padding: 0;">
+                <table width="100%" cellspacing="0" cellpadding="0" style="background-color: #f4f4f4; padding: 20px;">
+                    <tr>
+                        <td align="center">
+                            <table width="600px" cellspacing="0" cellpadding="0" style="background-color: #ffffff; padding: 20px; border-radius: 10px;">
+                                <tr>
+                                    <td align="center">
+                                        <img src="data:image/jpeg;base64,{logo_v_base64}" alt="Logo" style="width: 100px; height: auto;" />
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 20px;">
+                                        <p style="font-size: 18px; text-align: justify;">
+                                            Estimado {compra.req.orden.staff.staff.first_name} {compra.req.orden.staff.staff.last_name},
+                                        </p>
+                                        <p style="font-size: 16px; text-align: justify;">
+                                            Estás recibiendo este correo porque tu OC <strong>{compra.get_folio}</strong> | RQ: <strong>{compra.req.folio}</strong> |Sol: <strong>{compra.req.orden.folio}</strong> ha sido recibida en el módulo de recepción por el 
+                                            <strong>Departamento de Compras.</strong>
+                                        </p>
+                                        <p style="font-size: 16px; text-align: justify;">
+                                            El siguiente paso del sistema: Entrada por parte del Almacén.
+                                        </p>
+                                        <p style="text-align: center; margin: 20px 0;">
+                                            <img src="data:image/png;base64,{image_base64}" alt="Imagen" style="width: 50px; height: auto; border-radius: 50%;" />
+                                        </p>
+                                        <p style="font-size: 14px; color: #999; text-align: justify;">
+                                            Este mensaje ha sido automáticamente generado por SAVIA 2.0
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                </table>
+            </body>
+        </html>
+        """
+        try:
+            email = EmailMessage(
+                f'OC Autorizada {compra.get_folio}|RQ: {compra.req.folio} |Sol: {compra.req.orden.folio}',
+                body=html_message,
+                from_email = settings.DEFAULT_FROM_EMAIL,
+                to= [compra.req.orden.staff.staff.email,compra.creada_por.staff.email,'ulises_huesc@hotmail.com'],
+                headers={'Content-Type': 'text/html'}
+                )
+            email.content_subtype = "html " # Importante para que se interprete como HTML
+            email.send()
+            messages.success(request, f'{usuario.staff.first_name} has autorizado la solicitud {compra.get_folio}')
+        except (BadHeaderError, SMTPException) as e:
+            error_message = f'{usuario.staff.first_name}, Has generado Recepción correctamente pero el correo de notificación no ha sido enviado debido a un error: {e}'
+            messages.warning(request, error_message)
         entrada.save()
         compra.save()
         messages.success(request, f'La entrada-recepcion {entrada.id} se ha realizado con éxito')
