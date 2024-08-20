@@ -3000,11 +3000,10 @@ def safe_string(value, default=''):
 
 def generar_oc_comparativa_pdf(request, pk):
     hoy = datetime.today().strftime("%d/%m/%Y %H:%M")
+
     compra = Compra.objects.get(id=pk)
     comparativo = Comparativo.objects.get(id=compra.comparativo_model.id)
-    
-
-    gerente = Profile.objects.get(tipo__nombre='Gerente')
+    productos = Item_Comparativo.objects.get(comparativo = comparativo)
 
     #Configuration of the PDF object
     buf = io.BytesIO()
@@ -3023,31 +3022,32 @@ def generar_oc_comparativa_pdf(request, pk):
     c.setFont('Helvetica',8)
     c.drawString(505,caja_iso,str(hoy))
 
-    caja_proveedor = caja_iso - 50
+    caja_proveedor = caja_iso - 40
     c.setFont('Helvetica',12)
     c.setFillColor(prussian_blue)
     # REC (Dist del eje Y, Dist del eje X, LARGO DEL RECT, ANCHO DEL RECT)
-    c.rect(100,750,300,30, fill=True, stroke=False) #Barra azul superior Orden de Compra
-    c.rect(20,caja_proveedor,565,10, fill=True, stroke=False) #Barra azul superior Proveedor | Detalle
+    c.rect(100,750,400,30, fill=True, stroke=False) #Barra azul superior Orden de Compra
+    c.rect(20,caja_proveedor,565,14, fill=True, stroke=False) #Barra azul superior Proveedor | Detalle
 
     c.setFillColor(white)
     c.setLineWidth(.2)
     c.setFont('Helvetica-Bold',14)
-    c.drawCentredString(250,760,'Registro Comparativo OC')
+    c.drawCentredString(310,760,'Registro Comparativo OC')
     c.setLineWidth(.3) #Grosor
 
     c.drawInlineImage('static/images/logo vordtec_documento.png',40,755, 1.5 * cm, 0.75 * cm) #Imagen vortec
 
     c.setFillColor(white)
     c.setFont('Helvetica-Bold',9)
-    c.drawString(250,caja_proveedor+1,'Información General')
+    c.drawString(250,caja_proveedor+4,'Información General')
     c.setFillColor(black)
     c.setFont('Helvetica-Bold',8)
     c.drawString(40,caja_proveedor-15,'Folio de la OC:')
     c.drawString(40,caja_proveedor-35,'Creada por:')
     c.drawString(40,caja_proveedor-55,'Creada el:')
-    c.drawString(40,caja_proveedor-75,'Superintendente:')
-    c.drawString(40,caja_proveedor-95,'Autorizada el:')
+    c.drawString(40,caja_proveedor-75,'Nombre comparativa:')
+    c.drawString(40,caja_proveedor-95,'Superintendente:')
+    c.drawString(40,caja_proveedor-115,'Autorizada el:')
 
     c.drawString(300,caja_proveedor-15,'Gerente:')
     c.drawString(300,caja_proveedor-35,'Autorizada el:')
@@ -3063,19 +3063,24 @@ def generar_oc_comparativa_pdf(request, pk):
     else:
         c.drawString(100,caja_proveedor-35,'N/A')
     c.drawString(100,caja_proveedor-55,compra.created_at.strftime("%d/%m/%Y %H:%M"))
+    c.drawString(130,caja_proveedor-75,str(comparativo))
     if compra.oc_autorizada_por is not None:
-        c.drawString(120,caja_proveedor-75,compra.oc_autorizada_por.staff.first_name + ' ' + compra.oc_autorizada_por.staff.last_name)
+        c.drawString(120,caja_proveedor-95,compra.oc_autorizada_por.staff.first_name + ' ' + compra.oc_autorizada_por.staff.last_name)
     else:
-        c.drawString(120,caja_proveedor-75,'No autorizado aún')
+        c.setFillColor(red)
+        c.drawString(120,caja_proveedor-95,'No autorizado aún')
+        c.setFillColor(black)
     if compra.autorizado_date1 is not None:
-        c.drawString(120,caja_proveedor-95,compra.autorizado_date1.strftime("%d/%m/%Y %H:%M"))
+        c.drawString(120,caja_proveedor-115,compra.autorizado_date1.strftime("%d/%m/%Y %H:%M"))
     else:
-        c.drawString(120,caja_proveedor-95,'N/A')
-
+        c.drawString(120,caja_proveedor-115,'N/A')
+    
     if compra.oc_autorizada_por2 is not None:
         c.drawString(360,caja_proveedor-15,compra.oc_autorizada_por2.staff.first_name + ' ' + compra.oc_autorizada_por2.staff.last_name)
     else:
+        c.setFillColor(red)
         c.drawString(360,caja_proveedor-15,'No autorizado aún')
+        c.setFillColor(black)
     if compra.autorizado_date2 is not None:
         c.drawString(360,caja_proveedor-35,compra.autorizado_date2.strftime("%d/%m/%Y %H:%M"))
     else:
@@ -3100,7 +3105,6 @@ def generar_oc_comparativa_pdf(request, pk):
         textColor=colors.black,
     )
 
-    productos = Item_Comparativo.objects.get(comparativo = comparativo)
     if productos.comparativo.cotizacion is not None:
         coti1= 'Si'
     else:
@@ -3143,7 +3147,7 @@ def generar_oc_comparativa_pdf(request, pk):
     precio2 = Paragraph(precio2, style=custom_style_tight)
     precio3 = Paragraph(precio3, style=custom_style_tight)
     data = [
-        ['''''','''''', str(comparativo), '''''','''''',''''''], 
+        ['''''','''''', 'Tabla comparativa', '''''','''''',''''''], 
         ['''Producto''','''Proveedor''', '''Modelo''', '''Marca''','''Precio''','''Cotización'''], 
         [nombre, proveedor1, modelo1, marca1, precio1, coti1],
         [nombre, proveedor2, modelo2, marca2, precio2, coti2],
@@ -3192,3 +3196,168 @@ def generar_oc_comparativa_pdf(request, pk):
 
     #return FileResponse(buf, as_attachment=True, filename='Comparativa_' + str(compras.folio) +'.pdf')
     return FileResponse(buf, as_attachment=True, filename='Comparativa_prueba'  +'.pdf')
+
+def generar_oc_comparativas_pdf(request, pk):
+    hoy = datetime.today().strftime("%d/%m/%Y %H:%M")
+
+    comparativo = Comparativo.objects.get(id=pk)
+    productos = Item_Comparativo.objects.filter(comparativo = comparativo)
+
+    #Configuration of the PDF object
+    buf = io.BytesIO()
+    c = canvas.Canvas(buf, pagesize=letter)
+
+    #Azul Vordcab
+    prussian_blue = Color(0.0859375,0.1953125,0.30859375)
+    rojo = Color(0.59375, 0.05859375, 0.05859375)
+    #Encabezado
+    c.setFillColor(black)
+    c.setLineWidth(.2)
+    c.setFont('Helvetica-Bold',8)
+    caja_iso = 760
+    #c.drawString(410,caja_iso + 10,'Preparado por:')
+    c.drawString(510,caja_iso + 10,'Fecha reporte')
+    c.setFont('Helvetica',8)
+    c.drawString(505,caja_iso,str(hoy))
+
+    caja_proveedor = caja_iso - 40
+    c.setFont('Helvetica',12)
+    c.setFillColor(prussian_blue)
+    # REC (Dist del eje Y, Dist del eje X, LARGO DEL RECT, ANCHO DEL RECT)
+    c.rect(100,750,400,30, fill=True, stroke=False) #Barra azul superior Orden de Compra
+    c.rect(20,caja_proveedor,565,14, fill=True, stroke=False) #Barra azul superior Proveedor | Detalle
+
+    c.setFillColor(white)
+    c.setLineWidth(.2)
+    c.setFont('Helvetica-Bold',14)
+    c.drawCentredString(310,760,'Registro Comparativo OC')
+    c.setFont('Helvetica-Bold',10)
+    c.drawCentredString(310,caja_proveedor+4,str(comparativo))
+    c.setLineWidth(.3) #Grosor
+
+    c.drawInlineImage('static/images/logo vordtec_documento.png',40,755, 1.5 * cm, 0.75 * cm) #Imagen vortec
+
+    width, height = letter
+    data =[]
+    styles = getSampleStyleSheet()
+    header_style = ParagraphStyle(
+        name="header_style",
+        fontName="Helvetica-Bold",
+        fontSize=7,
+        textColor=colors.white,
+        alignment=1,  # Centrado
+    )
+    custom_style_tight = ParagraphStyle(
+        'CustomTight',
+        parent=styles['Normal'],
+        leading=8,  # Ajusta este valor según el espaciado que desees
+        fontSize=5,
+        textColor=colors.black,
+        )
+
+    header = [
+        Paragraph('Nombre', style=header_style),
+        Paragraph('Proveedor 1', style=header_style),
+        #Paragraph('Modelo 1', style=header_style),
+        #Paragraph('Marca 1', style=header_style),
+        Paragraph('Precio 1', style=header_style),
+        Paragraph('Cotización 1', style=header_style),
+        Paragraph('Proveedor 2', style=header_style),
+        #Paragraph('Modelo 2', style=header_style),
+        #Paragraph('Marca 2', style=header_style),
+        Paragraph('Precio 2', style=header_style),
+        Paragraph('Cotización 2', style=header_style),
+        Paragraph('Proveedor 3', style=header_style),
+        #Paragraph('Modelo 3', style=header_style),
+        #Paragraph('Marca 3', style=header_style),
+        Paragraph('Precio 3', style=header_style),
+        Paragraph('Cotización 3', style=header_style),
+    ]
+
+    # Inserta el encabezado al inicio de los datos
+    data.insert(0, header)
+    for producto in productos:
+        # Usar la función safe_string para manejar None
+        nombre =  safe_string(producto.producto.producto.nombre)
+        proveedor1 = safe_string(producto.comparativo.proveedor.nombre.razon_social)
+        proveedor2 = safe_string(producto.comparativo.proveedor2.nombre.razon_social)
+        proveedor3 = safe_string(producto.comparativo.proveedor3.nombre.razon_social)
+        modelo1 = safe_string(producto.modelo)
+        modelo2 = safe_string(producto.modelo2)
+        modelo3 = safe_string(producto.modelo3)
+        marca1 = safe_string(producto.marca)
+        marca2 = safe_string(producto.marca2)
+        marca3 = safe_string(producto.marca3)
+        precio1 = safe_string(str(producto.precio))
+        precio2 = safe_string(str(producto.precio2))
+        precio3 = safe_string(str(producto.precio3))
+
+        # Verificar si hay cotización o no
+        coti1 = 'Si' if producto.comparativo.cotizacion is not None else 'Sin documento'
+        coti2 = 'Si' if producto.comparativo.cotizacion is not None else 'Sin documento'
+        coti3 = 'Si' if producto.comparativo.cotizacion is not None else 'Sin documento'
+        # Convertir todos los valores a Paragraph
+        nombre = Paragraph(nombre, style=custom_style_tight)
+        proveedor1 = Paragraph(proveedor1, style=custom_style_tight)
+        proveedor2 = Paragraph(proveedor2, style=custom_style_tight)
+        proveedor3 = Paragraph(proveedor3, style=custom_style_tight)
+        modelo1 = Paragraph(modelo1, style=custom_style_tight)
+        modelo2 = Paragraph(modelo2, style=custom_style_tight)
+        modelo3 = Paragraph(modelo3, style=custom_style_tight)
+        marca1 = Paragraph(marca1, style=custom_style_tight)
+        marca2 = Paragraph(marca2, style=custom_style_tight)
+        marca3 = Paragraph(marca3, style=custom_style_tight)
+        precio1 = Paragraph('$'+precio1, style=custom_style_tight)
+        precio2 = Paragraph('$'+precio2, style=custom_style_tight)
+        precio3 = Paragraph('$'+precio3, style=custom_style_tight)
+        coti1 = Paragraph(coti1, style=custom_style_tight)
+        coti2 = Paragraph(coti2, style=custom_style_tight)
+        coti3 = Paragraph(coti3, style=custom_style_tight)
+
+        # Agregar los datos a la tabla en una sola fila
+        #data.append([
+        #    nombre, proveedor1, modelo1, marca1, precio1, coti1,
+        #    proveedor2, modelo2, marca2, precio2, coti2,
+        #    proveedor3, modelo3, marca3, precio3, coti3
+        #])
+        data.append([
+            nombre, proveedor1, precio1, coti1,
+            proveedor2, precio2, coti2,
+            proveedor3, precio3, coti3
+        ])
+                                #4
+    table = Table(data, colWidths=[2 * cm] * 10)
+    table_style = TableStyle([
+        ('INNERGRID', (0, 1), (-1, -1), 0.25, colors.black),
+        ('BOX', (0, 0), (-1, -1), 0.25, colors.black),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+
+        # Estilo para el encabezado
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#003153')),
+        ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
+
+        # Estilo para el cuerpo de la tabla
+        ('TEXTCOLOR', (0, 1), (-1, -1), colors.black),
+        ('FONTSIZE', (0, 1), (-1, -1), 5),
+    ])
+    
+    frame = Frame(135, 0, width-145, height-648, id='normal')   
+    table.setStyle(table_style)
+    table.wrapOn(c, width, height)
+    table.drawOn(c, 20, 550) 
+    c.setFillColor(black)
+    c.setLineWidth(.2)
+    c.setFont('Helvetica',8)
+    
+    caja_proveedor = caja_iso - 65
+    c.setFont('Helvetica', 12)
+    c.setFillColor(prussian_blue)
+    c.rect(20,30,565,30, fill=True, stroke=False)
+
+    c.showPage()
+    
+    c.save()
+    buf.seek(0)
+
+    #return FileResponse(buf, as_attachment=True, filename='Comparativa_' + str(compras.folio) +'.pdf')
+    return FileResponse(buf, as_attachment=True, filename='Comparativas_prueba'  +'.pdf')
