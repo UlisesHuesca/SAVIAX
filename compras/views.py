@@ -1879,7 +1879,7 @@ def generar_pdf(compra):
     table.wrapOn(c, width, height)
     table.drawOn(c, 20, high)
 
-    high = 650
+    high = 630
     remaining_data = data[rows_per_page_first + 1:]
 
     while remaining_data:
@@ -1938,7 +1938,7 @@ def generar_pdf(compra):
     # Define el número de filas por página
     rows_per_page_first = 20
     rows_per_page_subsequent = 20
-    high = 680
+    high = 630
     # Estilos para los párrafos
     styles = getSampleStyleSheet()
     header_style = ParagraphStyle(
@@ -1974,12 +1974,13 @@ def generar_pdf(compra):
             Paragraph(producto.producto.producto.articulos.producto.producto.codigo if producto.producto.producto.articulos.producto.producto.codigo else ' ', styleN),
             Paragraph('Servicio' if producto.producto.producto.articulos.producto.producto.servicio else 'Producto', styleN),
             Paragraph(producto.producto.producto.articulos.producto.producto.critico.nombre if producto.producto.producto.articulos.producto.producto.critico else 'ND', styleN),
-            Paragraph(producto.producto.producto.articulos.producto.producto.nombre if producto.producto.producto.articulos.producto.producto.nombre else ' ', styleN),
+            #Paragraph(producto.producto.producto.articulos.producto.producto.nombre if producto.producto.producto.articulos.producto.producto.nombre else ' ', styleN),
+            Paragraph('AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA', styleN),
             Paragraph(producto.producto.producto.articulos.producto.producto.especs if producto.producto.producto.articulos.producto.producto.especs else ' ', styleN),
             Paragraph(producto_calidad if producto_calidad else ' ', styleN)
         ])
         if count < max_count:
-            high -= 18
+            high -= 21
             count += 1
     # Dibuja la primera página
     first_page_data = data_c[:rows_per_page_first + 1]  # Incluye encabezado
@@ -1994,7 +1995,7 @@ def generar_pdf(compra):
 
     while remaining_data:
         c.showPage()
-        high = 750
+        high = 630
         c.setFillColor(black)
         c.setLineWidth(.2)
         c.setFont('Helvetica',8)
@@ -2016,7 +2017,7 @@ def generar_pdf(compra):
         remaining_data = remaining_data[rows_per_page_subsequent:]
         # Calcula la altura total de la tabla en función de las filas
         num_rows_current_page = len(current_page_data) - 1  # Excluye el encabezado de la cuenta
-        total_table_height = 18 * num_rows_current_page  # Altura de cada fila
+        total_table_height = 21 * num_rows_current_page  # Altura de cada fila
 
         # Dibuja la tabla
         table = Table(current_page_data, colWidths=[1.2 * cm, 1.5 * cm, 2 * cm, 1.5 * cm, 1.3 * cm, 9.5 * cm, 1.5 * cm, 1.5 * cm])
