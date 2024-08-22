@@ -1974,8 +1974,8 @@ def generar_pdf(compra):
             Paragraph(producto.producto.producto.articulos.producto.producto.codigo if producto.producto.producto.articulos.producto.producto.codigo else ' ', styleN),
             Paragraph('Servicio' if producto.producto.producto.articulos.producto.producto.servicio else 'Producto', styleN),
             Paragraph(producto.producto.producto.articulos.producto.producto.critico.nombre if producto.producto.producto.articulos.producto.producto.critico else 'ND', styleN),
-            #Paragraph(producto.producto.producto.articulos.producto.producto.nombre if producto.producto.producto.articulos.producto.producto.nombre else ' ', styleN),
-            Paragraph('AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA', styleN),
+            Paragraph(producto.producto.producto.articulos.producto.producto.nombre if producto.producto.producto.articulos.producto.producto.nombre else ' ', styleN),
+            #Paragraph('AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA', styleN),
             Paragraph(producto.producto.producto.articulos.producto.producto.especs if producto.producto.producto.articulos.producto.producto.especs else ' ', styleN),
             Paragraph(producto_calidad if producto_calidad else ' ', styleN)
         ])
