@@ -1936,8 +1936,8 @@ def generar_pdf(compra):
     c.drawCentredString(280, 760, 'Orden de compra')
     c.drawInlineImage('static/images/logo vordtec_documento.png',40,755, 1.5 * cm, 0.75 * cm) #Imagen vortec
     # Define el número de filas por página
-    rows_per_page_first = 25
-    rows_per_page_subsequent = 25
+    rows_per_page_first = 20
+    rows_per_page_subsequent = 20
     high = 680
     # Estilos para los párrafos
     styles = getSampleStyleSheet()
@@ -1960,7 +1960,7 @@ def generar_pdf(compra):
     ]
     item = 0
     count = 0
-    max_count = 25 
+    max_count = 20 
     for producto in productos:
         item = item + 1
         try:
