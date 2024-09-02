@@ -62,6 +62,7 @@ class Product(models.Model):
     critico = models.ForeignKey(Criticidad, on_delete = models.CASCADE, null=True)
     especs = models.TextField(blank=True, null=True)
     rev_calidad = models.BooleanField(default = False) 
+    caducidad = models.BooleanField(default = False) 
     updated_by = models.ForeignKey(Profile, on_delete = models.CASCADE, null=True)
     
    

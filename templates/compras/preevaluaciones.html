@@ -96,8 +96,14 @@
                     <td>{{item.tipo_evaluacion}}</td>
                     <td>{{item.creado_por.staff.first_name}} {{item.creado_por.staff.last_name}}</td>
                     <td>{{item.creado_at}}</td>
-                    <td>{{item.comparativo_model}}</td>
-                    
+                    <td>
+                        {{ item.comparativo_model }}
+                        {% if item.comparativo_model %}
+                            <a class="btn btn-outline-info" href="{% url 'comparativas-pdf' item.comparativo_model.id %}">
+                                <i class="fa-solid fa-file-pdf"></i>
+                            </a>
+                        {% endif %}
+                    </td>
                     <td>
                         {% if item.resultado %} <span class="badge bg-primary">Autorizado</span> {% elif item.resultado == False %} <span class="badge bg-danger">Cancelado</span>{% else %} <span class="badge bg-warning">No Autorizado Aún</span> {% endif %}</td></td>
                     </td>

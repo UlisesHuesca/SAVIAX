@@ -3,6 +3,7 @@ from dashboard.models import Inventario, Order, ArticulosOrdenados, Articulospar
 from requisiciones.models import Requis, ArticulosRequisitados, ValeSalidas
 from compras.models import Compra
 from tesoreria.models import Pago
+from django.http import StreamingHttpResponse
 from solicitudes.models import Subproyecto, Operacion, Proyecto
 from entradas.models import EntradaArticulo, Entrada
 from requisiciones.views import get_image_base64
@@ -14,6 +15,7 @@ from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse, HttpResponse
 from django.conf import settings
 import json
+import io
 from django.db.models import Sum, Value, F, Sum, When, Case, DecimalField, Q
 from .filters import InventoryFilter, SolicitudesFilter, SolicitudesProdFilter, InventarioFilter, HistoricalInventarioFilter, HistoricalProductoFilter
 from django.contrib import messages
@@ -571,6 +573,8 @@ def solicitud_pendiente(request):
         ordenes = Order.objects.filter(complete=True, staff__distrito=perfil.distrito).order_by('-folio')
     elif perfil.tipo.supervisor == True:
         ordenes = Order.objects.filter(complete=True, staff__distrito=perfil.distrito, supervisor=perfil).order_by('-folio')
+    elif perfil.tipo.nombre == "Almacen":
+        ordenes = Order.objects.filter(complete=True).order_by('-folio')
     else:
         ordenes = Order.objects.filter(complete=True, staff = perfil).order_by('-folio')
 
@@ -739,6 +743,8 @@ def solicitud_matriz_productos(request):
         productos = ArticulosOrdenados.objects.filter(orden__complete=True, orden__staff__distrito=perfil.distrito).order_by('-orden__folio')
     elif perfil.tipo.supervisor == True:
         productos = ArticulosOrdenados.objects.filter(orden__complete=True, orden__staff__distrito=perfil.distrito, orden__supervisor=perfil).order_by('-orden__folio')
+    elif perfil.tipo.nombre == "Almacen":
+        productos = ArticulosOrdenados.objects.filter(orden__complete=True).order_by('-orden__folio')
     else:
         productos = ArticulosOrdenados.objects.filter(orden__complete=True, orden__staff = perfil).order_by('-orden__folio')
 
@@ -1379,127 +1385,152 @@ def convert_excel_inventario(existencia, valor_inventario, dict_entradas, dict_r
     return(response)
 
 def convert_excel_solicitud_matriz_productos(productos):
-    response= HttpResponse(content_type = "application/ms-excel")
-    response['Content-Disposition'] = 'attachment; filename = Solicitudes_por_producto_' + str(dt.date.today())+'.xlsx'
+    # Crear un flujo en memoria para el archivo Excel
+    output = io.BytesIO()
+
+    # Obtener la suma total de todos los productos en todas las órdenes
+    articulos_cantidad = productos.count()
+    total_productos = productos.aggregate(total=Sum('cantidad'))['total']
+
+    # Configurar la respuesta HTTP
+    response = HttpResponse(content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+    response['Content-Disposition'] = f'attachment; filename=Solicitudes_por_producto_{dt.date.today()}.xlsx'
+    response.set_cookie('descarga_iniciada', 'true', max_age=10)  # La cookie expira en 20 segundos
+
+    # Crear un nuevo libro de trabajo y hoja de trabajo
     wb = Workbook()
-    ws = wb.create_sheet(title='Solicitudes')
-    #Comenzar en la fila 1
-    row_num = 1
+    ws = wb.active
+    ws.title = 'Solicitudes'
 
-    #Create heading style and adding to workbook | Crear el estilo del encabezado y agregarlo al Workbook
-    head_style = NamedStyle(name = "head_style")
-    head_style.font = Font(name = 'Arial', color = '00FFFFFF', bold = True, size = 11)
-    head_style.fill = PatternFill("solid", fgColor = '00003366')
-    wb.add_named_style(head_style)
-    #Create body style and adding to workbook
-    body_style = NamedStyle(name = "body_style")
-    body_style.font = Font(name ='Calibri', size = 10)
-    wb.add_named_style(body_style)
-    #Create messages style and adding to workbook
-    messages_style = NamedStyle(name = "mensajes_style")
-    messages_style.font = Font(name="Arial Narrow", size = 11)
-    wb.add_named_style(messages_style)
-    #Create date style and adding to workbook
-    date_style = NamedStyle(name='date_style', number_format='DD/MM/YYYY')
-    date_style.font = Font(name ='Calibri', size = 10)
-    wb.add_named_style(date_style)
-    money_style = NamedStyle(name='money_style', number_format='$ #,##0.00')
-    money_style.font = Font(name ='Calibri', size = 10)
-    wb.add_named_style(money_style)
-    money_resumen_style = NamedStyle(name='money_resumen_style', number_format='$ #,##0.00')
-    money_resumen_style.font = Font(name ='Calibri', size = 14, bold = True)
-    wb.add_named_style(money_resumen_style)
+    # Definir estilos
+    styles = {
+        'head_style': NamedStyle(name="head_style", font=Font(name='Arial', color='00FFFFFF', bold=True, size=11), fill=PatternFill("solid", fgColor='00003366')),
+        'body_style': NamedStyle(name="body_style", font=Font(name='Calibri', size=10)),
+        'messages_style': NamedStyle(name="messages_style", font=Font(name="Arial Narrow", size=11)),
+        'date_style': NamedStyle(name='date_style', number_format='DD/MM/YYYY', font=Font(name='Calibri', size=10))
+    }
+    
+    for style in styles.values():
+        wb.add_named_style(style)
+    
+    # Configurar encabezados de columna
+    columns = ['Folio', 'Solicitante', 'Proyecto', 'Subproyecto', 'Operación', 'Cantidad', 'Código', 'Producto', 'Creado']
+    
+    for col_num, column_title in enumerate(columns, start=1):
+        cell = ws.cell(row=1, column=col_num, value=column_title)
+        cell.style = styles['head_style']
+        # Ajustar el ancho de las columnas
+        ws.column_dimensions[get_column_letter(col_num)].width = 25 if col_num in {5, 8} else 16
 
-    columns = ['Folio','Solicitante','Proyecto','Subproyecto','Operación','Cantidad','Código', 'Producto','Creado']
+    # Agregar mensajes
+    max_col = len(columns) + 2
+    ws.cell(row=1, column=max_col, value='{Reporte Creado Automáticamente por Savia X. UH}').style = styles['messages_style']
+    ws.cell(row=2, column=max_col, value='{Software desarrollado por Vordcab S.A. de C.V.}').style = styles['messages_style']
+    ws.cell(row=3, column=max_col, value=f'Productos totales entre todas las solicitudes: {total_productos}').style = styles['messages_style']
+    ws.cell(row=4, column=max_col, value=f'Número de artículos ordenados: {articulos_cantidad}').style = styles['messages_style']
+    ws.column_dimensions[get_column_letter(max_col)].width = 20
 
-    for col_num in range(len(columns)):
-        (ws.cell(row = row_num, column = col_num+1, value=columns[col_num])).style = head_style
-        ws.column_dimensions[get_column_letter(col_num + 1)].width = 16
-        if col_num == 4 or col_num == 7:
-            ws.column_dimensions[get_column_letter(col_num + 1)].width = 25
-
-
-
-    columna_max = len(columns)+2
-
-    (ws.cell(column = columna_max, row = 1, value='{Reporte Creado Automáticamente por Savia X. UH}')).style = messages_style
-    (ws.cell(column = columna_max, row = 2, value='{Software desarrollado por Vordcab S.A. de C.V.}')).style = messages_style
-    ws.column_dimensions[get_column_letter(columna_max)].width = 20
-
-    rows = productos.values_list('orden__id',Concat('orden__staff__staff__first_name',Value(' '),'orden__staff__staff__last_name'),'orden__proyecto__nombre','orden__subproyecto__nombre',
-                                'orden__operacion__nombre','cantidad','producto__producto__codigo','producto__producto__nombre','orden__created_at')
-
-    for row in rows:
-        row_num += 1
-        for col_num in range(len(row)):
-            (ws.cell(row = row_num, column = col_num+1, value=str(row[col_num]))).style = body_style
+    # Agregar datos
+    rows = productos.values_list(
+        'orden__id',
+        Concat('orden__staff__staff__first_name', Value(' '), 'orden__staff__staff__last_name'),
+        'orden__proyecto__nombre',
+        'orden__subproyecto__nombre',
+        'orden__area__nombre',
+        'cantidad',
+        'producto__producto__codigo',
+        'producto__producto__nombre',
+        'orden__created_at'
+    )
+    
+    for row_num, row in enumerate(rows, start=2):
+        for col_num, value in enumerate(row, start=1):
+            cell = ws.cell(row=row_num, column=col_num, value=str(value))
             if col_num == 5:
-                (ws.cell(row = row_num, column = col_num+1, value=row[col_num])).style = body_style
-            if col_num == 8:
-                (ws.cell(row = row_num, column = col_num+1, value=row[col_num])).style = date_style
-    sheet = wb['Sheet']
-    wb.remove(sheet)
-    wb.save(response)
-
-    return(response)
-
+                cell.style = styles['body_style']
+            elif col_num == 9:
+                cell.style = styles['date_style']
+            else:
+                cell.style = styles['body_style']
+    
+    # Eliminar la hoja predeterminada y guardar el archivo en el objeto BytesIO
+    if 'Sheet' in wb.sheetnames:
+        wb.remove(wb['Sheet'])
+    
+    wb.save(output)
+    output.seek(0)  # Asegurarse de que el puntero esté al principio del flujo de bytes
+    
+    # Establecer el contenido del archivo en la respuesta HTTP
+    response.write(output.getvalue())
+    output.close()
+    
+    return response
 def convert_excel_solicitud_matriz(ordenes):
-    response= HttpResponse(content_type = "application/ms-excel")
-    response['Content-Disposition'] = 'attachment; filename = Solicitudes_' + str(dt.date.today())+'.xlsx'
+    # Crear un flujo en memoria para el archivo Excel
+    output = io.BytesIO()
+
+    # Configurar la respuesta HTTP
+    response = HttpResponse(content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+    response['Content-Disposition'] = f'attachment; filename=Solicitudes_{dt.date.today()}.xlsx'
+    response.set_cookie('descarga_iniciada', 'true', max_age=10)  # La cookie expira en 20 segundos
+
+    # Crear un nuevo libro de trabajo y hoja de trabajo
     wb = Workbook()
-    ws = wb.create_sheet(title='Solicitudes')
-    #Comenzar en la fila 1
-    row_num = 1
+    ws = wb.active
+    ws.title = 'Solicitudes'
 
-    #Create heading style and adding to workbook | Crear el estilo del encabezado y agregarlo al Workbook
-    head_style = NamedStyle(name = "head_style")
-    head_style.font = Font(name = 'Arial', color = '00FFFFFF', bold = True, size = 11)
-    head_style.fill = PatternFill("solid", fgColor = '00003366')
-    wb.add_named_style(head_style)
-    #Create body style and adding to workbook
-    body_style = NamedStyle(name = "body_style")
-    body_style.font = Font(name ='Calibri', size = 10)
-    wb.add_named_style(body_style)
-    #Create messages style and adding to workbook
-    messages_style = NamedStyle(name = "mensajes_style")
-    messages_style.font = Font(name="Arial Narrow", size = 11)
-    wb.add_named_style(messages_style)
-    #Create date style and adding to workbook
-    date_style = NamedStyle(name='date_style', number_format='DD/MM/YYYY')
-    date_style.font = Font(name ='Calibri', size = 10)
-    wb.add_named_style(date_style)
-    money_style = NamedStyle(name='money_style', number_format='$ #,##0.00')
-    money_style.font = Font(name ='Calibri', size = 10)
-    wb.add_named_style(money_style)
-    money_resumen_style = NamedStyle(name='money_resumen_style', number_format='$ #,##0.00')
-    money_resumen_style.font = Font(name ='Calibri', size = 14, bold = True)
-    wb.add_named_style(money_resumen_style)
+    # Definir estilos
+    styles = {
+        'head_style': NamedStyle(name="head_style", font=Font(name='Arial', color='00FFFFFF', bold=True, size=11), fill=PatternFill("solid", fgColor='00003366')),
+        'body_style': NamedStyle(name="body_style", font=Font(name='Calibri', size=10)),
+        'messages_style': NamedStyle(name="messages_style", font=Font(name="Arial Narrow", size=11)),
+        'date_style': NamedStyle(name='date_style', number_format='DD/MM/YYYY', font=Font(name='Calibri', size=10))
+    }
+    
+    for style in styles.values():
+        wb.add_named_style(style)
+    
+    # Configurar encabezados de columna
+    columns = ['Folio', 'Solicitante', 'Proyecto', 'Subproyecto', 'Operación', 'Creado']
+    
+    for col_num, column_title in enumerate(columns, start=1):
+        cell = ws.cell(row=1, column=col_num, value=column_title)
+        cell.style = styles['head_style']
+        ws.column_dimensions[get_column_letter(col_num)].width = 25 if col_num == 6 else 16
 
-    columns = ['Folio','Solicitante','Proyecto','Subproyecto','Operación','Creado']
+    # Agregar mensajes
+    max_col = len(columns) + 2
+    ws.cell(row=1, column=max_col, value='{Reporte Creado Automáticamente por Savia X. UH}').style = styles['messages_style']
+    ws.cell(row=2, column=max_col, value='{Software desarrollado por Vordcab S.A. de C.V.}').style = styles['messages_style']
+    ws.column_dimensions[get_column_letter(max_col)].width = 20
 
-    for col_num in range(len(columns)):
-        (ws.cell(row = row_num, column = col_num+1, value=columns[col_num])).style = head_style
-        ws.column_dimensions[get_column_letter(col_num + 1)].width = 16
-        if col_num == 5:
-            ws.column_dimensions[get_column_letter(col_num + 1)].width = 25
-
-    columna_max = len(columns)+2
-
-    (ws.cell(column = columna_max, row = 1, value='{Reporte Creado Automáticamente por Savia X. UH}')).style = messages_style
-    (ws.cell(column = columna_max, row = 2, value='{Software desarrollado por Vordcab S.A. de C.V.}')).style = messages_style
-    ws.column_dimensions[get_column_letter(columna_max)].width = 20
-
-    rows = ordenes.values_list('folio',Concat('staff__staff__first_name',Value(' '),'staff__staff__last_name'),'proyecto__nombre','subproyecto__nombre',
-                                'area__nombre','created_at')
-
-    for row in rows:
-        row_num += 1
-        for col_num in range(len(row)):
-            (ws.cell(row = row_num, column = col_num+1, value=str(row[col_num]))).style = body_style
-            if col_num == 5:
-                (ws.cell(row = row_num, column = col_num+1, value=row[col_num])).style = date_style
-    sheet = wb['Sheet']
-    wb.remove(sheet)
-    wb.save(response)
-
-    return(response)
+    # Agregar datos
+    rows = ordenes.values_list(
+        'folio',
+        Concat('staff__staff__first_name', Value(' '), 'staff__staff__last_name'),
+        'proyecto__nombre',
+        'subproyecto__nombre',
+        'area__nombre',
+        'created_at'
+    )
+    
+    for row_num, row in enumerate(rows, start=2):
+        for col_num, value in enumerate(row, start=1):
+            cell = ws.cell(row=row_num, column=col_num, value=str(value))
+            if col_num == 6:  # Columna "Creado"
+                cell.style = styles['date_style']
+            else:
+                cell.style = styles['body_style']
+    
+    # Eliminar la hoja predeterminada y guardar el archivo en el objeto BytesIO
+    if 'Sheet' in wb.sheetnames:
+        wb.remove(wb['Sheet'])
+    
+    wb.save(output)
+    output.seek(0)  # Asegurarse de que el puntero esté al principio del flujo de bytes
+    
+    # Establecer el contenido del archivo en la respuesta HTTP
+    response.write(output.getvalue())
+    output.close()
+    
+    return response
