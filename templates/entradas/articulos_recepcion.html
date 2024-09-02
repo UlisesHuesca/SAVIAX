@@ -71,7 +71,7 @@
                                 <select style="font-size:16px" class="form-select form-select-sm" placeholder="Subproyecto" id="producto">
                                     <option style="color:gray;" value="" selected disabled>Producto</option>
                                     {% for articulo in articulos %}
-                                    <option id="js" target="{{articulo.id|unlocalize}}" producto="{{articulo.producto.producto.articulos.id|unlocalize}}" cantidad="{{articulo.cantidad_pendiente|unlocalize}}">
+                                    <option id="js" target="{{articulo.id|unlocalize}}" producto="{{articulo.producto.producto.articulos.id|unlocalize}}" cantidad="{{articulo.cantidad|unlocalize}}" recepcionados="{{articulo.suma_entrada_articulos|unlocalize}}" nc="{{articulo.suma_nc_articulos|unlocalize}}">
                                         {{articulo.producto.producto.articulos.producto}}
                                     </option>
                                     {% endfor %}
@@ -82,6 +82,16 @@
                     <div id="etiqueta_solicitado" class="col-lg-4 col-sm-12">
                         <div class="alert alert-secondary" role="alert">
                         <h6>Solicitado:</h6><h6 style="color: #121212;" id="solicitado"></h6>   
+                        </div>
+                    </div>
+                    <div class="col-lg-4 col-sm-12">
+                    <div class="alert alert-secondary" role="alert">
+                            <h6>Recepcionados:</h6><h6 style="color: #121212;" id="recepcionados"></h6>   
+                        </div>
+                    </div>
+                    <div class="col-lg-4 col-sm-12">
+                        <div class="alert alert-secondary" role="alert">
+                            <h6>NC:</h6><h6 style="color: #121212;" id="nc"></h6>   
                         </div>
                     </div>
                 </div>
@@ -156,7 +166,7 @@
         <form id="myForm2" method="POST">
             {% csrf_token %}
             <button id="Btn_Crear" type="submit" class="btn btn-success"  name="entrada_articulo">Crear</button>
-            <a id="cerrar" type="button" class="btn btn-secondary cerrar"  href="entrada_articulo">Cerrar</a>
+            <a id="cerrar" type="button" class="btn btn-secondary cerrar"  href="{% url 'pendientes-recepcion' %}">Cerrar</a>
         </form>
         </div>
     </form>
@@ -167,17 +177,17 @@
 <script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-        const form2 = document.getElementById('myForm2');
-        const btnCrear = document.getElementById('Btn_Crear');
-        const form = document.getElementById('myForm');
-        const btn = document.getElementById('update');
+    const form2 = document.getElementById('myForm2');
+    const btnCrear = document.getElementById('Btn_Crear');
+    const form = document.getElementById('myForm');
+    const btn = document.getElementById('update');
 
-        form2.addEventListener('submit', function() {
-           preventDoubleClick(btnCrear)
-        });
-        btn.addEventListener('click', function(){
-            preventDoubleClick(btn);
-        });
+    form2.addEventListener('submit', function() {
+        preventDoubleClick(btnCrear);
+    });
+    btn.addEventListener('click', function() {
+        preventDoubleClick(btn);
+    });
 });
 
 function preventDoubleClick(button) {
@@ -228,48 +238,44 @@ for(var i=0; i< cerrarBtn.length; i++){
 };
 
 
-document.getElementById("producto").addEventListener("change", function(element){
+document.getElementById("producto").addEventListener("change", function(element) {
     var select = document.getElementById('producto');
     var current_option = select.options[select.selectedIndex];
-    let target = current_option.getAttribute('target')
-    //var other_select = document.getElementById('id_articulo_comprado')
-    //other_select.value = target
-    let cantidad =  current_option.getAttribute('cantidad')
+    
+    let target = current_option.getAttribute('target');
+    let cantidad = current_option.getAttribute('cantidad');
+    let recepcionados = current_option.getAttribute('recepcionados');  // Nuevo atributo
+    let nc = current_option.getAttribute('nc');  // Nuevo atributo
+
     var solicitado = document.getElementById('solicitado');
+    var recepcionadosElement = document.getElementById('recepcionados');
+    var ncElement = document.getElementById('nc');
+
     solicitado.innerHTML = cantidad;
-    //console.log(target);
-    //console.log(other_select);
+    recepcionadosElement.innerHTML = recepcionados || '0';  // Valor por defecto si no está definido
+    ncElement.innerHTML = nc || '0';  // Valor por defecto si no está definido
 });
 
-document.getElementById('id_cantidad').addEventListener('change', function(){
-var cantidad = document.getElementById('id_cantidad');
-var checkref = document.getElementById("SwitchReferencia");
-var select = document.getElementById('producto');
-var current_option = select.options[select.selectedIndex];
-let solicitado_obj =  document.getElementById('solicitado');
-let solicitado = Number(solicitado_obj.innerHTML)
-var boton =document.getElementById('update');
-console.log(cantidad.value)
-console.log(solicitado)
-if (cantidad.value <= solicitado){
-    boton.classList.remove('d-none')
-} else if (cantidad.value == 0){
-    boton.classList.add('d-none')
-} else if (cantidad.value > solicitado){
-    boton.classList.add('d-none')
-}
+document.getElementById('id_cantidad').addEventListener('change', function() {
+    var cantidad = document.getElementById('id_cantidad');
+    var checkref = document.getElementById("SwitchReferencia");
+    var select = document.getElementById('producto');
+    var current_option = select.options[select.selectedIndex];
+    let solicitado_obj = document.getElementById('solicitado');
+    let solicitado = Number(solicitado_obj.innerHTML);
+    var boton = document.getElementById('update');
 
-if (checkref.checked){
-    if (cantidad.value > 1){
-        Swal.fire({
-                "title":"Error",
-                "text":"Cuando tienes seleccionada la referencia la cantidad no puede ser mayor a 1",
-                "icon":"error",
-            })
-        cantidad.value = 1
+    console.log(cantidad.value);
+    console.log(solicitado);
+
+    if (cantidad.value <= solicitado) {
+        boton.classList.remove('d-none');
+    } else if (cantidad.value == 0) {
+        boton.classList.add('d-none');
+    } else if (cantidad.value > solicitado) {
+        boton.classList.add('d-none');
     }
-}
-})
+});
 
 
 
@@ -355,11 +361,39 @@ document.getElementById("SwitchReferencia").addEventListener("change", function(
 });
 
 
+document.getElementById('Btn_Crear').addEventListener('click', function(event) {
+    // Evita el envío del formulario si hay cantidades de 0
+    const rows = document.querySelectorAll('#mytbl tr');
+    let hasZeroQuantity = false;
+
+    rows.forEach(row => {
+        const quantityCell = row.cells[1]; // Asumiendo que la cantidad está en la segunda columna
+        const quantity = parseFloat(quantityCell.textContent.replace(',', '.'));
+
+        if (quantity === 0) {
+            hasZeroQuantity = true;
+        }
+    });
+
+    if (hasZeroQuantity) {
+        Swal.fire({
+            title: "Error",
+            text: "No puedes enviar el formulario con productos que tengan cantidad 0.",
+            icon: "error"
+        });
+        event.preventDefault(); // Previene el envío del formulario
+    } else {
+        // Continúa con el envío del formulario si no hay cantidades de 0
+        this.setAttribute('name', 'entrada');
+    }
+});
 
 //ActualizarArticulos(array_id_prod)
 
     function ActualizarArticulos(producto, cantidad_ingresada, action, entrada_id, referencia){
         console.log('User is logged in, sending data...' )
+
+    cantidad_ingresada = cantidad_ingresada.replace(',','.');
 
     var url = '/entradas/update_recepcion/'
 

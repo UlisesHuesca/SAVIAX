@@ -1938,7 +1938,7 @@ def generar_pdf(compra):
     # Define el número de filas por página
     rows_per_page_first = 20
     rows_per_page_subsequent = 20
-    high = 630
+    high = 620
     # Estilos para los párrafos
     styles = getSampleStyleSheet()
     header_style = ParagraphStyle(
@@ -1949,7 +1949,7 @@ def generar_pdf(compra):
         alignment=1,  # 1 es para centrar el texto
     )
     data_c = [
-        [Paragraph('Partida', header_style),
+        [Paragraph('#', header_style),
         Paragraph('Cantidad', header_style),
         Paragraph('Código', header_style),
         Paragraph('Producto/Servicio', header_style),
@@ -1984,7 +1984,7 @@ def generar_pdf(compra):
             count += 1
     # Dibuja la primera página
     first_page_data = data_c[:rows_per_page_first + 1]  # Incluye encabezado
-    table = Table(first_page_data, colWidths=[1.3 * cm, 1.5 * cm, 2 * cm, 1.5 * cm, 1.5 * cm, 9.2 * cm, 1.5 * cm, 1.5 * cm])
+    table = Table(first_page_data, colWidths=[0.5 * cm, 1.5 * cm, 2 * cm, 1.5 * cm, 1.5 * cm, 6.3 * cm, 5.2 * cm, 1.5 * cm])
     table.setStyle(table_style)
     table.wrapOn(c, width, height)
     table.drawOn(c, 20, high)
