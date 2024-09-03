@@ -13,7 +13,7 @@ from .forms import EntradaArticuloForm, Reporte_CalidadForm, NoConformidadForm, 
 from user.models import Profile
 from smtplib import SMTPException
 import json
-from django.db.models import Sum, OuterRef, Subquery
+from django.db.models import Sum, OuterRef, Subquery, DecimalField
 from django.contrib import messages
 from django.http import JsonResponse, HttpResponse
 from datetime import date, datetime
@@ -112,7 +112,33 @@ def pendientes_entrada(request):
     usuario = Profile.objects.get(staff__id=request.user.id)
     
     if usuario.tipo.almacen == True:
-        articulos_recepcionados = EntradaArticulo.objects.filter(recepcion = True,cantidad__gt=0, almacenado = False, articulo_comprado__producto__producto__articulos__producto__producto__servicio=False).order_by('-id')
+        # Subconsulta para total_recepcionado
+        subquery_total_recepcionado = EntradaArticulo.objects.filter(
+            articulo_comprado=OuterRef('articulo_comprado'),
+            entrada__oc=OuterRef('entrada__oc'),
+            recepcion=True
+        ).values('articulo_comprado').annotate(
+            total_recepcionado=Sum('cantidad')
+        ).values('total_recepcionado')
+
+        # Subconsulta para total_nc
+        subquery_total_nc = NC_Articulo.objects.filter(
+            articulo_comprado=OuterRef('articulo_comprado'),
+            nc__oc=OuterRef('entrada__oc')
+        ).values('articulo_comprado').annotate(
+            total_nc=Sum('cantidad')
+        ).values('total_nc')
+
+        # Consulta principal
+        articulos_recepcionados = EntradaArticulo.objects.filter(
+            recepcion=True,
+            cantidad__gt=0,
+            almacenado=False,
+            articulo_comprado__producto__producto__articulos__producto__producto__servicio=False
+        ).annotate(
+            total_recepcionado=Subquery(subquery_total_recepcionado, output_field=DecimalField(max_digits=14, decimal_places=2)),
+            total_nc=Subquery(subquery_total_nc, output_field=DecimalField(max_digits=14, decimal_places=2))
+        ).order_by('-id')
 
     myfilter = EntradaArticuloFilter(request.GET, queryset=articulos_recepcionados)
     articulos_recepcionados = myfilter.qs
@@ -144,7 +170,6 @@ def pendientes_entrada(request):
         #error
         pendientes_surtir = aggregation['suma_cantidad_por_surtir'] or 0 #La cantidad por surtir es la cantidad a la que no se le ha dado salida aún
         producto_inv = Inventario.objects.get(producto = producto_comprado.producto.producto.articulos.producto.producto)
-
 
         if entrada.oc.req.orden.tipo.tipo == 'resurtimiento': #si es resurtimiento
             try:
@@ -260,6 +285,7 @@ def pendientes_entrada(request):
                 
                 if producto_comprado.cantidad_pendiente <= 0:
                     producto_comprado.entrada_completa = True
+                    producto_comprado.recepcion_completa = True
                 messages.success(request,'Haz agregado exitosamente un producto')
                 entrada_item.save()
                 producto_comprado.save()
@@ -280,6 +306,7 @@ def pendientes_entrada(request):
             #num_art_entregados = productos_comprados.filter(entrada_completa=True).count()
             if num_art_comprados == num_art_entregados:
                 compra.entrada_completa = True
+                compra.recepcion_completa = True
             compra.save()
 
 
@@ -401,15 +428,30 @@ def articulos_recepcion(request, pk):
 
     usuario = Profile.objects.get(staff=request.user.id)
     if usuario.tipo.compras == True:
+        # Subconsulta para la suma de NC en artículos
+        subquery_suma_nc_articulos = NC_Articulo.objects.filter(
+            articulo_comprado=OuterRef('pk')
+        ).values('articulo_comprado').annotate(
+            total_nc=Sum('cantidad')
+        ).values('total_nc')
+
+        # Subconsulta para la suma de entradas en artículos
+        subquery_suma_entrada_articulos = EntradaArticulo.objects.filter(
+            articulo_comprado=OuterRef('pk')
+        ).values('articulo_comprado').annotate(
+            total_entrada=Sum('cantidad')
+        ).values('total_entrada')
+
+        # Consulta principal
         articulos = ArticuloComprado.objects.filter(
-            oc=pk, 
-            recepcion_completa=False, 
-            entrada_completa=False, 
-            seleccionado=False, 
+            oc=pk,
+            recepcion_completa=False,
+            entrada_completa=False,
+            seleccionado=False,
             producto__producto__articulos__producto__producto__servicio=False
         ).annotate(
-            suma_nc_articulos=Sum('nc_articulo__cantidad'),  # Sumatoria de 'cantidad' en NC_Articulo
-            suma_entrada_articulos=Sum('entradaarticulo__cantidad')  # Sumatoria de 'cantidad' en EntradaArticulo
+            suma_nc_articulos=Subquery(subquery_suma_nc_articulos, output_field=DecimalField(max_digits=14, decimal_places=2)),
+            suma_entrada_articulos=Subquery(subquery_suma_entrada_articulos, output_field=DecimalField(max_digits=14, decimal_places=2))
         )
 
     compra = Compra.objects.get(id=pk)
@@ -727,13 +769,20 @@ def update_cantidad(request):
     dato = data["dato"]
     entrada = EntradaArticulo.objects.get(id=pk)
     producto_comprado = ArticuloComprado.objects.get(id = entrada.articulo_comprado.id)
-    entrada.cantidad = dato
+    anterior = entrada.cantidad
+    entrada.cantidad = dato #Cantidad
     entrada.cantidad_por_surtir = dato
-    if not producto_comprado.cantidad == entrada.cantidad:
+    oc = Compra.objects.get(id = producto_comprado.oc.id)
+            #Logica para establecer la recepción en el producto y la oc por si se regresa una cantidad a una OC ya recepcionada
+    #if not producto_comprado.cantidad == entrada.cantidad:
+    #    producto_comprado.recepcion_completa = False
+    #    producto_comprado.seleccionado = False
+    if anterior > dato:
         producto_comprado.recepcion_completa = False
-        producto_comprado.seleccionado = False
+        oc.recepcion_completa = False
     producto_comprado.save()
     entrada.save()
+    oc.save()
     # Construye un objeto de respuesta que incluya el dato y el tipo.
     response_data = {
         'dato': dato,
@@ -759,16 +808,18 @@ def update_recepcion_articulos(request):
         suma_cantidad = Sum('cantidad'),
         suma_cantidad_por_surtir = Sum('cantidad_por_surtir')
     )
+    nc_producto = NC_Articulo.objects.filter(articulo_comprado = producto_comprado, nc__oc = producto_comprado.oc, nc__completo = True).aggregate(Sum('cantidad'))
+    suma_nc_producto = nc_producto['cantidad__sum'] or 0
 
     suma_cantidad = aggregation['suma_cantidad'] or 0
     #pendientes_surtir = aggregation['suma_cantidad_por_surtir'] or 0
     entrada_item, created = EntradaArticulo.objects.get_or_create(entrada = entrada, articulo_comprado = producto_comprado)
 
     if action == "add":
-        total_entradas = suma_cantidad + cantidad
+        total_entradas = suma_cantidad + cantidad + suma_nc_producto
         tolerance = decimal.Decimal('0.01')
         if total_entradas > (producto_comprado.cantidad + tolerance):
-            messages.error(request, f'La cantidad recibida sobrepasa la cantidad comprada, Ya Ingresado: {suma_cantidad} Ingresando: {cantidad} Comprado: {producto_comprado.cantidad}')
+            messages.error(request, f'La cantidad recibida sobrepasa la cantidad comprada, Ya Ingresado: {suma_cantidad + suma_nc_producto} Ingresando: {cantidad} Comprado: {producto_comprado.cantidad}')
         else:
             entrada_item.cantidad = cantidad               #Se define por primera vez la variable cantidad de la entrada del producto
             entrada_item.cantidad_por_surtir = cantidad    #Se define por primera vez la variable cantidad_por_surtir de la entrada del producto
@@ -923,10 +974,31 @@ def no_conformidad(request, pk):
     # Obtén la compra y el perfil asociado con la sesión actual
     compra = Compra.objects.get(id=pk)
     perfil = Profile.objects.get(staff__id = request.user.id)
-    articulos = ArticuloComprado.objects.filter(oc=pk, entrada_completa = False, recepcion_completa=False, seleccionado = False, producto__producto__articulos__producto__producto__servicio = False).annotate(
-            suma_nc_articulos=Sum('nc_articulo__cantidad'),  # Sumatoria de 'cantidad' en NC_Articulo
-            suma_entrada_articulos=Sum('entradaarticulo__cantidad')  # Sumatoria de 'cantidad' en EntradaArticulo
-        )
+    # Subconsulta para la suma de NC en artículos
+    subquery_suma_nc_articulos = NC_Articulo.objects.filter(
+        articulo_comprado=OuterRef('pk')
+    ).values('articulo_comprado').annotate(
+        total_nc=Sum('cantidad')
+    ).values('total_nc')
+
+    # Subconsulta para la suma de entradas en artículos
+    subquery_suma_entrada_articulos = EntradaArticulo.objects.filter(
+        articulo_comprado=OuterRef('pk')
+    ).values('articulo_comprado').annotate(
+        total_entrada=Sum('cantidad')
+    ).values('total_entrada')
+
+    # Consulta principal
+    articulos = ArticuloComprado.objects.filter(
+        oc=pk,
+        entrada_completa=False,
+        recepcion_completa=False,
+        seleccionado=False,
+        producto__producto__articulos__producto__producto__servicio=False
+    ).annotate(
+        suma_nc_articulos=Subquery(subquery_suma_nc_articulos, output_field=DecimalField(max_digits=14, decimal_places=2)),
+        suma_entrada_articulos=Subquery(subquery_suma_entrada_articulos, output_field=DecimalField(max_digits=14, decimal_places=2))
+    )
         #Pasa por todos estableciendo la cantidad pendiente como la cantidad solicitada
     for articulo in articulos:
         if articulo.cantidad_pendiente == None:

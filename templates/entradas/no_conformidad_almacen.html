@@ -138,6 +138,19 @@ $(document).ready(function() {
         placeholder: 'Tipo NC',
     });
 });
+
+function preventDoubleClick(button) {
+    setTimeout(function() {
+        button.disabled = true;
+    }, 50);
+}
+    // Añadir el evento de clic para el botón "Crear NC"
+    $('#BtnCrear').click(function(event) {
+        preventDoubleClick(this);
+        // Enviar el formulario
+        $('#form_crear').submit();
+    });
+
 </script>
 {% endblock %}
 </body>

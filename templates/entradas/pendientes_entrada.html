@@ -166,7 +166,12 @@
                         {% endif %}
                     
                         <td>{{item.articulo_comprado.producto.producto.articulos.producto}}</td>
-                        <td class="" id="cantidad_{{item.id|unlocalize}}" cantidad_compra="{{ item.articulo_comprado.cantidad_pendiente}}" >{{item.cantidad}}</td>
+                        <td class="" id="cantidad_{{item.id|unlocalize}}"
+                            cantidad_compra="{{ item.articulo_comprado.cantidad }}"
+                            data-total_recepcionado="{{ item.total_recepcionado }}"
+                            data-total_nc="{{ item.total_nc }}">
+                            {{ item.cantidad }}
+                        </td>
                         <td class="d-none" id="form_cantidad_{{item.id|unlocalize}}">
                             <input type="number"  class="form-control" id="cantidad-input_{{ item.id|unlocalize }}" value="{{ item.cantidad }}">
                         </td>
@@ -192,8 +197,8 @@
                                 </li>
                                 <!-- Añadir el botón de NC aquí -->
                                 <li class="nav-item m-1">
-                                <a id="ncBtn" type="button" class="btn btn-outline-warning btn-lg" href="{% url 'no-conformidad-almacen' item.id%}">NC</a>
-                                </li> 
+                                <a id="ncBtn" type="button" class="btn btn-outline-warning btn-lg" href="{% url 'no-conformidad-almacen' item.id%}">NC</a> 
+                                </li> <!-- NC: {{item.total_nc}} Ent: {{item.total_recepcionado}} -->
                             </ul>
                             </form>
                         </td>
@@ -213,7 +218,7 @@
                 <li class="page-item"><a class="page-link" style="color:#3E92CC" href="{% my_url  articulos_recepcionados_list.previous_page_number  'page' request.GET.urlencode %}"><i class="fa-solid fa-angle-left"></i></a></li>
             {% endif %}
 
-            {% for item in  articulos_recepcionados_list.paginator.page_range %}
+            {% for item in  articuloys_recepcionados_list.paginator.page_range %}
                 {% if  articulos_recepcionados_list.number == item %}
                     <li class="page-item active"><a href="#" class="page-link bg-dark">{{item}}</a></li>
                 {% elif item >  articulos_recepcionados_list.number|add:'-2' and item <  articulos_recepcionados_list.number|add:'2' %}
@@ -297,59 +302,90 @@ function cancelar_edicion2(productoId){
     save_cantidad.classList.add("d-none");
 };
 
-function aceptar_edicion2(productoId){
-    var form_tag = document.getElementById("form_cantidad_"+productoId);
-    var cantidad = document.getElementById("cantidad_"+productoId);
-    var cantidad_compra = cantidad.getAttribute('cantidad_compra')
-    var edit_quantity = document.getElementById("edit_quantity_"+productoId);
-    //var modificar_comentario = document.getElementById("modificar_comentario_"+productoId);
-    var delete_row = document.getElementById("delete_row_"+productoId);
-    var cancel_edit = document.getElementById("cancel_edit2_"+productoId);
-    var save_cantidad = document.getElementById("save_cantidad_"+productoId);
-    var pk = productoId
-    var inputElement = document.getElementById('cantidad-input_' + productoId).value;
-    //var form_comentario = document.getElementById('id_form_comentario-comentario').value
-    console.log(cantidad_compra)
-    console.log(inputElement)
-    if (inputElement <= cantidad_compra){
-        ActualizarCantidad(pk,inputElement)
+function aceptar_edicion2(productoId) {
+    var form_tag = document.getElementById("form_cantidad_" + productoId);
+    var cantidad = document.getElementById("cantidad_" + productoId);
+    var cantidad_compra = parseFloat(cantidad.getAttribute('cantidad_compra'));
+    var edit_quantity = document.getElementById("edit_quantity_" + productoId);
+    var cancel_edit = document.getElementById("cancel_edit2_" + productoId);
+    var save_cantidad = document.getElementById("save_cantidad_" + productoId);
+    var inputElement = parseFloat(document.getElementById('cantidad-input_' + productoId).value);
+
+    // Obtener total recepcionado y total NC de los atributos del DOM
+    var total_recepcionado = parseFloat(cantidad.getAttribute('data-total_recepcionado'));
+    var total_nc = parseFloat(cantidad.getAttribute('data-total_nc'));
+
+    // Si total_recepcionado o total_nc es None, asignarles el valor de 0
+    total_recepcionado = isNaN(total_recepcionado) ? 0 : total_recepcionado;
+    total_nc = isNaN(total_nc) ? 0 : total_nc;
+
+    // Calcular la diferencia
+    var diferencia = inputElement - parseFloat(cantidad.innerHTML);
+
+    // Imprimir valores para depuración
+    //console.log("Producto ID:", productoId);
+    console.log("Cantidad Compra:", cantidad_compra);
+    //console.log("Input Element:", inputElement);
+    console.log("Total Recepcionado:", total_recepcionado);
+    console.log("Total NC:", total_nc);
+    //console.log("Cantidad Actual (innerHTML):", parseFloat(cantidad.innerHTML));
+    //console.log("Diferencia:", diferencia);
+    //console.log("Validación (total_recepcionado + total_nc + diferencia):", (total_recepcionado + total_nc + diferencia));
+    console.log("Validación (total_recepcionado + total_nc + diferencia <= cantidad_compra):", (total_recepcionado + total_nc + diferencia) <= cantidad_compra);
+
+    // Validar la nueva cantidad
+    if ((total_recepcionado + total_nc + diferencia) <= cantidad_compra) {
+        // Actualizar el valor de total_recepcionado
+        total_recepcionado += diferencia;
+        cantidad.setAttribute('data-total_recepcionado', total_recepcionado);
+        
+        // Llamar a la función para actualizar la cantidad
+        ActualizarCantidad(productoId, inputElement);
+
+        // Ocultar y mostrar los elementos apropiados
         form_tag.classList.add("d-none");
         cantidad.classList.remove("d-none");
         edit_quantity.classList.remove("d-none");
-        //delete_row.classList.remove("d-none");
-        //modificar_comentario.classList.remove("d-none");
         cancel_edit.classList.add("d-none");
         save_cantidad.classList.add("d-none");
+        
+        // Imprimir nuevo total_recepcionado para depuración
+        console.log("Nuevo Total Recepcionado:", total_recepcionado);
     } else { 
         Swal.fire({
-                    "title":"Error",
-                    "text":"La cantidad de entrada no puede ser mayor que la cantidad pendiente",
-                    "icon":"error",
-                })
-
+            "title": "Error",
+            "text": "La cantidad de entrada no puede ser mayor que la cantidad pendiente",
+            "icon": "error"
+        });
     }
-};
+}
 
-function ActualizarCantidad(solicitud_id,dato){
+function ActualizarCantidad(solicitud_id, dato){
     console.log('User is logged in, sending data...' )
     var url = '/entradas/update_cantidad/'
-    fetch( url, {
-        method:'POST',
-        headers:{
-            'Content-Type':'application/json',
+    fetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
             'X-CSRFToken': csrftoken,
         },
-        body:JSON.stringify({'solicitud_id':solicitud_id, 'dato':dato})
+        body: JSON.stringify({'solicitud_id': solicitud_id, 'dato': dato})
     })
-    .then((response)=>{
+    .then((response) => {
         return response.json()
     })
-    .then((data)=>{
+    .then((data) => {
         console.log('data:', data)
-            let cantidadFormateada = parseFloat(data.dato).toFixed(2);
-            console.log(cantidadFormateada)
-            document.getElementById('cantidad_'+solicitud_id).innerHTML = cantidadFormateada;
+        let cantidadFormateada = parseFloat(data.dato).toFixed(2);
+        console.log(cantidadFormateada)
+        document.getElementById('cantidad_' + solicitud_id).innerHTML = cantidadFormateada;
+        
+        // Recargar la página después de actualizar el dato
+        window.location.reload();
     })
+    .catch((error) => {
+        console.error('Error:', error);
+    });
 }
 
 </script>
