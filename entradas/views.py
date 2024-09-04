@@ -55,7 +55,7 @@ def pendientes_recepcion(request):
     compras = myfilter.qs
 
     #Set up pagination
-    p = Paginator(compras, 50)
+    p = Paginator(compras, 25)
     page = request.GET.get('page')
     compras_list = p.get_page(page)
 
