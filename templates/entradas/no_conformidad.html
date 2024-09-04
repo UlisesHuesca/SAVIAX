@@ -322,6 +322,7 @@ document.getElementById('BtnCrear').addEventListener('click', function(event) {
     } else {
         // Continúa con el envío del formulario si no hay cantidades de 0
         this.setAttribute('name', 'entrada');
+        preventDoubleClick(this); // Llama a la función para prevenir doble clic
     }
 });
 function ActualizarArticulos(producto, cantidad_ingresada, action, nc_id) {
