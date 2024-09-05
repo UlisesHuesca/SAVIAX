@@ -9,7 +9,7 @@ from dashboard.models import Inventario, Order, ArticulosparaSurtir, Producto_Ca
 from requisiciones.models import Salidas, ArticulosRequisitados, Requis
 from django.core.exceptions import ObjectDoesNotExist
 from .models import Entrada, EntradaArticulo, Reporte_Calidad, No_Conformidad, NC_Articulo
-from .forms import EntradaArticuloForm, Reporte_CalidadForm, NoConformidadForm, NC_ArticuloForm, NC_Almacen_ArticuloForm
+from .forms import EntradaArticuloForm, Reporte_CalidadForm, NoConformidadForm, NC_ArticuloForm, NC_Almacen_ArticuloForm, Cierre_NCForm
 from user.models import Profile
 from smtplib import SMTPException
 import json
@@ -123,7 +123,7 @@ def pendientes_entrada(request):
 
         # Subconsulta para total_nc
         subquery_total_nc = NC_Articulo.objects.filter(
-            articulo_comprado=OuterRef('articulo_comprado'),
+            articulo_comprado=OuterRef('articulo_comprado'), resuelto=False,
             nc__oc=OuterRef('entrada__oc')
         ).values('articulo_comprado').annotate(
             total_nc=Sum('cantidad')
@@ -162,7 +162,7 @@ def pendientes_entrada(request):
         )
         suma_cantidad = aggregation['suma_cantidad'] or 0   #Este es el resultado de la suma de las entradas
 
-        nc_producto = NC_Articulo.objects.filter(articulo_comprado = producto_comprado, nc__oc = compra).aggregate(Sum('cantidad')) 
+        nc_producto = NC_Articulo.objects.filter(resuelto=False, articulo_comprado = producto_comprado, nc__oc = compra).aggregate(Sum('cantidad')) 
         suma_nc_producto = nc_producto['cantidad__sum'] #Este es el resultado de la suma de las entradas por nc
         if suma_nc_producto is None:
             suma_nc_producto = 0
@@ -429,7 +429,7 @@ def articulos_recepcion(request, pk):
     usuario = Profile.objects.get(staff=request.user.id)
     if usuario.tipo.compras == True:
         # Subconsulta para la suma de NC en artículos
-        subquery_suma_nc_articulos = NC_Articulo.objects.filter(
+        subquery_suma_nc_articulos = NC_Articulo.objects.filter(resuelto = False,
             articulo_comprado=OuterRef('pk')
         ).values('articulo_comprado').annotate(
             total_nc=Sum('cantidad')
@@ -474,7 +474,7 @@ def articulos_recepcion(request, pk):
         for articulo in articulos_entrada:
             articulo_comprado = articulos_comprados.get(id = articulo.articulo_comprado.id)
             #Valen como entradas y recepciones
-            nc_producto = NC_Articulo.objects.filter(articulo_comprado = articulo_comprado, nc__oc = compra).aggregate(Sum('cantidad')) 
+            nc_producto = NC_Articulo.objects.filter(resuelto = False, articulo_comprado = articulo_comprado, nc__oc = compra).aggregate(Sum('cantidad')) 
             #Valen como entradas
             entradas_producto = EntradaArticulo.objects.filter(articulo_comprado = articulo_comprado, entrada__oc = compra, almacenado = True).aggregate(Sum('cantidad'))#Busca la cantidad de entradas para ese producto añadiendo la cantidad para cada dato
             #Valen recepcionados
@@ -768,19 +768,37 @@ def update_cantidad(request):
     pk = data["solicitud_id"]
     dato = data["dato"]
     entrada = EntradaArticulo.objects.get(id=pk)
-    producto_comprado = ArticuloComprado.objects.get(id = entrada.articulo_comprado.id)
+    articulo_comprado = ArticuloComprado.objects.get(id = entrada.articulo_comprado.id)
     anterior = entrada.cantidad
     entrada.cantidad = dato #Cantidad
     entrada.cantidad_por_surtir = dato
-    oc = Compra.objects.get(id = producto_comprado.oc.id)
+    oc = Compra.objects.get(id = articulo_comprado.oc.id)
+    dif = dato - anterior  
             #Logica para establecer la recepción en el producto y la oc por si se regresa una cantidad a una OC ya recepcionada
     #if not producto_comprado.cantidad == entrada.cantidad:
     #    producto_comprado.recepcion_completa = False
     #    producto_comprado.seleccionado = False
     if anterior > dato:
-        producto_comprado.recepcion_completa = False
+        articulo_comprado.recepcion_completa = False
         oc.recepcion_completa = False
-    producto_comprado.save()
+    elif anterior < dato:
+        # Calcular el total_recepcionado
+        total_recepcionado = EntradaArticulo.objects.filter(
+            articulo_comprado=entrada.articulo_comprado,
+            entrada__oc=entrada.entrada.oc,
+            recepcion=True
+        ).aggregate(total_recepcionado=Sum('cantidad'))['total_recepcionado'] or 0.00
+
+        # Calcular el total_nc
+        total_nc = NC_Articulo.objects.filter(
+            articulo_comprado=entrada.articulo_comprado,
+            nc__oc=entrada.entrada.oc, resuelto = False,
+        ).aggregate(total_nc=Sum('cantidad'))['total_nc'] or 0.00
+        total_recepcionado = decimal.Decimal(total_recepcionado)
+        total_nc = decimal.Decimal(total_nc)
+        if (total_recepcionado + total_nc + dif) == entrada.articulo_comprado.cantidad:
+            articulo_comprado.recepcion_completa = True
+    articulo_comprado.save()
     entrada.save()
     oc.save()
     # Construye un objeto de respuesta que incluya el dato y el tipo.
@@ -808,7 +826,7 @@ def update_recepcion_articulos(request):
         suma_cantidad = Sum('cantidad'),
         suma_cantidad_por_surtir = Sum('cantidad_por_surtir')
     )
-    nc_producto = NC_Articulo.objects.filter(articulo_comprado = producto_comprado, nc__oc = producto_comprado.oc, nc__completo = True).aggregate(Sum('cantidad'))
+    nc_producto = NC_Articulo.objects.filter(resuelto = False, articulo_comprado = producto_comprado, nc__oc = producto_comprado.oc, nc__completo = True).aggregate(Sum('cantidad'))
     suma_nc_producto = nc_producto['cantidad__sum'] or 0
 
     suma_cantidad = aggregation['suma_cantidad'] or 0
@@ -975,7 +993,7 @@ def no_conformidad(request, pk):
     compra = Compra.objects.get(id=pk)
     perfil = Profile.objects.get(staff__id = request.user.id)
     # Subconsulta para la suma de NC en artículos
-    subquery_suma_nc_articulos = NC_Articulo.objects.filter(
+    subquery_suma_nc_articulos = NC_Articulo.objects.filter(resuelto = False,
         articulo_comprado=OuterRef('pk')
     ).values('articulo_comprado').annotate(
         total_nc=Sum('cantidad')
@@ -1012,7 +1030,7 @@ def no_conformidad(request, pk):
         completo = False,
     )
 
-    articulos_nc = NC_Articulo.objects.filter(nc = no_conformidad, ) #Aqui se buscan las NC_articulo para cada articulo
+    articulos_nc = NC_Articulo.objects.filter(nc = no_conformidad,resuelto = False) #Aqui se buscan las NC_articulo para cada articulo
     form = NC_ArticuloForm()
     form2 = NoConformidadForm()
 
@@ -1038,7 +1056,7 @@ def no_conformidad(request, pk):
             for articulo in articulos_nc: #Aqui se pasa por cada NC articulos de la orden NC
                 articulo_comprado = articulos_comprados.get(producto=articulo.articulo_comprado.producto) #Se busca el articulo comprado para tener la cantidad y pendiente
                 #Valen como entradas y recepciones
-                nc_producto = NC_Articulo.objects.filter(articulo_comprado = articulo_comprado, nc__oc = compra).aggregate(Sum('cantidad')) 
+                nc_producto = NC_Articulo.objects.filter(resuelto = False, articulo_comprado = articulo_comprado, nc__oc = compra).aggregate(Sum('cantidad')) 
                 #Valen como entradas                           #### Ojoooo no tiene complete entrada o nc creo se arregla con borrar el commit para que ya la guarde nada más mandar el form ya que no se hace más cuentas
                 entradas_producto = EntradaArticulo.objects.filter(articulo_comprado = articulo_comprado, entrada__oc = compra, almacenado = True).aggregate(Sum('cantidad'))#Busca la cantidad de entradas para ese producto añadiendo la cantidad para cada dato
                 #Valen recepcionados
@@ -1133,7 +1151,7 @@ def update_no_conformidad(request):
     #referencia = data["referencia"]
     producto_comprado = ArticuloComprado.objects.get(id = producto_id) #Saca el producto
     nc = No_Conformidad.objects.get(id = pk, completo = False) #Saca el NC
-    nc_producto = NC_Articulo.objects.filter(articulo_comprado = producto_comprado, nc__oc = producto_comprado.oc, nc__completo = True).aggregate(Sum('cantidad')) #Saca el NC_Articulo con la cantidad del producto
+    nc_producto = NC_Articulo.objects.filter(resuelto = False, articulo_comprado = producto_comprado, nc__oc = producto_comprado.oc, nc__completo = True).aggregate(Sum('cantidad')) #Saca el NC_Articulo con la cantidad del producto
     entradas_producto = EntradaArticulo.objects.filter(articulo_comprado = producto_comprado, entrada__oc = producto_comprado.oc, entrada__completo = True).aggregate(Sum('cantidad'))#Busca la cantidad de entradas para ese producto añadiendo la cantidad para cada dato
     suma_entradas = entradas_producto['cantidad__sum']#Saca la suma de la cantidad total de las entradas de ese producto
     suma_nc_producto = nc_producto['cantidad__sum']#Saca la cantidad del producto en la NC_Articulo
@@ -1243,7 +1261,7 @@ def no_conformidad_almacen(request, pk):
 
                 #Logica update
                 articulo_comprado = articulo
-                nc_producto = NC_Articulo.objects.filter(articulo_comprado = articulo_comprado, nc__oc = compra).aggregate(Sum('cantidad')) 
+                nc_producto = NC_Articulo.objects.filter(resuelto = False, articulo_comprado = articulo_comprado, nc__oc = compra).aggregate(Sum('cantidad')) 
                 #Valen como entradas                           #### Ojoooo no tiene complete entrada o nc creo se arregla con borrar el commit para que ya la guarde nada más mandar el form ya que no se hace más cuentas
                 entradas_producto = EntradaArticulo.objects.filter(articulo_comprado = articulo_comprado, entrada__oc = compra, almacenado = True).aggregate(Sum('cantidad'))#Busca la cantidad de entradas para ese producto añadiendo la cantidad para cada dato
                 #Valen recepcionados
@@ -1332,3 +1350,72 @@ def no_conformidad_almacen(request, pk):
     }
 
     return render(request, 'entradas/no_conformidad_almacen.html', context)
+
+def productos_nc(request, pk):
+    perfil = Profile.objects.get(staff__id=request.user.id)
+    articulos_nc = NC_Articulo.objects.filter(nc = pk)
+
+    context = {
+        'articulos_nc': articulos_nc,
+    }
+
+    return render(request, 'entradas/productos_nc.html', context)
+
+def cierre_nc(request, pk):
+    perfil = Profile.objects.get(staff__id=request.user.id)
+    nc = No_Conformidad.objects.get(id = pk)
+    #articulos_nc = NC_Articulo.objects.filter(nc = pk).first()
+    articulos_nc = NC_Articulo.objects.filter(nc = pk)
+    form = Cierre_NCForm(instance = nc)
+
+    if request.method == "POST":
+        #and 'BtnCrear' in request.POST:
+        form = Cierre_NCForm(request.POST, request.FILES, instance = nc)
+
+        if form.is_valid():
+            nc = form.save(commit=False)
+            nc.fecha_cierre = date.today()
+            nc.save()
+            oc = Compra.objects.get(id = nc.oc.id)
+            if nc.cierre.id == 3:
+                oc.entrada_completa = False
+                oc.recepcion_completa = False
+            for dato in articulos_nc:
+                producto = ArticuloComprado.objects.get(id = dato.articulo_comprado.id)
+                articulo = NC_Articulo.objects.get(resuelto = False, articulo_comprado = producto, nc__oc = oc)
+                articulo.resuelto = True
+                if nc.cierre.id == 3:
+                    #Se debería de reactivas la OC, en la variable entrada_completa = False
+                    producto.entrada_completa = False
+                    producto.recepcion_completa = False
+                    producto.cantidad_pendiente = producto.cantidad_pendiente + dato.cantidad
+                    articulo.save()
+                    producto.save()
+            oc.save()
+            if nc.cierre.id == 3:
+                messages.success(request, 'Has reactivado correctamente la entrada del articulo')
+            else:
+                messages.success(request, 'Se a realizado correctamente el cierre del articulo')
+            return redirect('entradas_nc')
+
+    context = {
+        'form': form,
+        'nc': nc,
+        'articulos_nc': articulos_nc,
+    }
+
+    return render(request, 'entradas/cierre_nc.html', context)
+ 
+def entradas_nc(request):
+    perfil = Profile.objects.get(staff__id=request.user.id)
+    ncs= No_Conformidad.objects.filter(completo = True, oc__req__orden__distrito = perfil.distrito)
+    
+
+    context = {
+        #'form': form,
+        'ncs': ncs,
+        #'restantes_liberacion': restantes_liberacion,
+        }
+
+    return render(request,'entradas/entradas_nc.html',context)
+

@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Entrada, EntradaArticulo, Reporte_Calidad, No_Conformidad, NC_Articulo, Resultado_Evaluacion, Tipo_Nc
+from .models import Entrada, EntradaArticulo, Reporte_Calidad, No_Conformidad, NC_Articulo, Resultado_Evaluacion, Tipo_Nc, Cierre_Nc
 
 # Register your models here.
 class EntradaAdmin(admin.ModelAdmin):
@@ -23,6 +23,9 @@ class No_ConformidadAdmin(admin.ModelAdmin):
     search_fields = ['oc']
     raw_id_fields = ('almacenista','oc')
 
+class Cierre_NcAdmin(admin.ModelAdmin):
+    list_display = ('id', 'nombre',)
+
 admin.site.register(Entrada, EntradaAdmin)
 
 admin.site.register(EntradaArticulo, EntradaArticuloAdmin)
@@ -36,3 +39,5 @@ admin.site.register(NC_Articulo, NC_ArticuloAdmin)
 admin.site.register(Resultado_Evaluacion)
 
 admin.site.register(Tipo_Nc)
+
+admin.site.register(Cierre_Nc,Cierre_NcAdmin)

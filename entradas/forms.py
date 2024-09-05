@@ -36,3 +36,8 @@ class NC_Almacen_ArticuloForm(forms.ModelForm):
     class Meta:
         model = NC_Articulo
         fields = ['cantidad']
+        
+class Cierre_NCForm(forms.ModelForm):
+    class Meta:
+        model = No_Conformidad
+        fields = ['cierre','image']

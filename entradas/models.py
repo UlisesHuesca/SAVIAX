@@ -89,6 +89,7 @@ class NC_Articulo(models.Model):
     entrada_articulo = models.ForeignKey(EntradaArticulo, on_delete=models.CASCADE, null=True, related_name='nc_articulos', blank=True)
     history = HistoricalRecords(history_change_reason_field=models.TextField(null=True))
     created_at = models.DateTimeField(auto_now_add=True)
+    resuelto = models.BooleanField(default=False)
     #folio = models.CharField(max_length=50, null=True, blank=True)
 
     def __str__(self):

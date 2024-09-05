@@ -85,7 +85,7 @@
                         </div>
                     </div>
                     <div class="col-lg-4 col-sm-12">
-                    <div class="alert alert-secondary" role="alert">
+                        <div class="alert alert-secondary" role="alert">
                             <h6>Recepcionados:</h6><h6 style="color: #121212;" id="recepcionados"></h6>   
                         </div>
                     </div>
@@ -186,16 +186,21 @@ document.addEventListener('DOMContentLoaded', function() {
         preventDoubleClick(btnCrear);
     });
     btn.addEventListener('click', function() {
-        preventDoubleClick(btn);
+        preventDoubleClickk(btn);
     });
 });
 
 function preventDoubleClick(button) {
     setTimeout(function() {
         button.disabled = true;
-    }, 50);
+    }, 1);
 }
-
+function preventDoubleClickk(button) {
+    button.disabled = true;
+    setTimeout(function() {
+        button.disabled = false; // Habilita el botón después de 1 segundo
+    }, 1000);
+}
 var rows = document.getElementById("mytbl").rows.length
 var CrearBtn = document.getElementById('Btn_Crear')
 console.log('rows',rows)
@@ -247,6 +252,10 @@ document.getElementById("producto").addEventListener("change", function(element)
     let recepcionados = current_option.getAttribute('recepcionados');  // Nuevo atributo
     let nc = current_option.getAttribute('nc');  // Nuevo atributo
 
+    // Si recepcionados o nc son 'None', los sustituimos por '0'
+    recepcionados = (recepcionados === 'None' || recepcionados === null) ? '0.00' : recepcionados;
+    nc = (nc === 'None' || nc === null) ? '0.00' : nc;
+
     var solicitado = document.getElementById('solicitado');
     var recepcionadosElement = document.getElementById('recepcionados');
     var ncElement = document.getElementById('nc');
@@ -265,8 +274,8 @@ document.getElementById('id_cantidad').addEventListener('change', function() {
     let solicitado = Number(solicitado_obj.innerHTML);
     var boton = document.getElementById('update');
 
-    console.log(cantidad.value);
-    console.log(solicitado);
+    //console.log(cantidad.value);
+    //console.log(solicitado);
 
     if (cantidad.value <= solicitado) {
         boton.classList.remove('d-none');
@@ -303,7 +312,17 @@ document.getElementById('id_cantidad').addEventListener('change', function() {
         cantidad_ingresada = cantidad_form.value;
 
         var referencia = referencia_div.value
-        //console.log(referencia)
+        var recepcionados = current_option.getAttribute('recepcionados');
+        var nc = current_option.getAttribute('nc');
+        // Reemplazar 'None' con '0' y asegurarse de que las variables sean números
+        recepcionados = recepcionados === 'None' || recepcionados === null ? 0 : parseFloat(recepcionados);
+        nc = nc === 'None' || nc === null ? 0 : parseFloat(nc);
+
+        // Sumar 'recepcionados' y 'nc'
+        var max_permitido = current_cantidad - recepcionados - nc;
+        //console.log(max_permitido)
+        //console.log(recepcionados)
+        //console.log(nc)
         action = "add"
         
 
@@ -326,6 +345,12 @@ document.getElementById('id_cantidad').addEventListener('change', function() {
                     "text":"La cantidad ingresada debe ser mayor que 0",
                     "icon":"error",
                 })
+        } else if (Number(cantidad_ingresada) > max_permitido) {
+            Swal.fire({
+                "title": "Error",
+                "text": "La cantidad ingresada es mayor que la suma de productos recepcionados y no conformes. Máximo permitido: " + max_permitido,
+                "icon": "error",
+            });
         } else {
             count += 1;
             current_option.classList.add("d-none");
