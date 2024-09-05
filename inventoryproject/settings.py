@@ -245,7 +245,7 @@ AUTHENTICATION_BACKENDS = ['user.backends.EmailBackend']
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 #DEFAULT_FROM_EMAIL = os.getenv('EMAIL_HOST_USER')
-DEFAULT_FROM_EMAIL = 'savia@grupovordcab.com.mx'
+DEFAULT_FROM_EMAIL = 'savia@vordtec.com'
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 #EMAIL_HOST = 'smtp.gmail.com'
@@ -256,10 +256,10 @@ EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 #EMAIL_USE_SSL = False
 
 
-EMAIL_HOST ='mail.grupovordcab.com.mx' #'smtp.gmail.com' 
+EMAIL_HOST ='mail.vordtec.com' #'smtp.gmail.com' 
 EMAIL_PORT ='26'#'465'
-EMAIL_HOST_USER ='savia@grupovordcab.com.mx'
-EMAIL_HOST_PASSWORD = '78UjYgAH-+/7857/*'
+EMAIL_HOST_USER ='savia@vordtec.com'
+EMAIL_HOST_PASSWORD = '**_VOrQjP=-T'
 EMAIL_USE_TLS = True
 
 USE_THOUSAND_SEPARATOR = True

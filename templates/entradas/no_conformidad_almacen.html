@@ -1,0 +1,157 @@
+{% extends 'partials/base.html' %}
+{% load crispy_forms_tags %}
+{% load static %}
+{% load widget_tweaks %}
+{% load l10n %}
+<html>
+<head>
+    {% block title %}NC|Rechazo de Artículo{% endblock %}
+</head>
+<body>
+{% block content %}
+<h6>&nbsp;</h6>
+<h6>&nbsp;</h6>
+<h6>&nbsp;</h6>
+<!-- Mensajes de notificación con Sweet Alert -->
+<div>
+    <script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    {% if messages %}
+        {% for message in messages %}
+            {% if message.tags == "error" %}
+            <script>
+            Swal.fire({
+                "title":"Error",
+                "text":"{{message}}",
+                "icon":"error",
+            })
+            </script>
+            {% else %}
+            <script>
+            Swal.fire({
+                "title":"Excelente",
+                "text":"{{message}}",
+                "icon":"success",
+            })
+            </script>
+            {% endif %}
+        {% endfor %}
+    {% endif %}
+</div>
+
+<div class="row">
+    <div class="col-lg-8 offset-md-2">
+        <div class="card ">
+            <div class="card-header">   
+                <h5 class="modal-title" id="no_conformidad" value="{{no_conformidad.id}}">
+                    NC: {{no_conformidad.id}}&ensp;&ensp; Folio: {{compra.get_folio}}
+                </h5>
+            </div>
+            <div class="card-body">
+                <table class='table table-striped'>
+                    <thead>
+                        <tr>
+                            <th scope="col">Proveedor:</th>
+                            <th scope="col">{{compra.proveedor.nombre.razon_social}}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <th scope="col">RFC:</th>
+                            <th scope="col">{{compra.proveedor.nombre.rfc}}</th>
+                        </tr>
+                    </tbody>
+                </table>
+                <form id="form_crear" method="POST">
+                    {% csrf_token %}
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="form-group row">
+                                <label class="col-sm-2 col-form-label font-weight-bold">Producto:</label>
+                                <div class="col-sm-10">
+                                    <p class="form-control-plaintext font-weight-bold">{{ objeto_nc.articulo_comprado.producto.producto.articulos.producto }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-lg-4 col-md-12">
+                            <div class="alert alert-secondary" role="alert">
+                                <h6>Comprado:</h6>
+                                <h6 style="color: #121212;">{{objeto_nc.cantidad}}</h6>   
+                            </div>
+                        </div>  
+                        <div class="col-lg-5 col-sm-12 mt-2">
+                            <div class="input-group mb-3">
+                                <span class="input-group-text" id="basic-addon1">
+                                    <i class="fa-solid fa-gear"></i>
+                                </span>
+                                <div class="form-floating form-floating-group flex-grow-1">   
+                                    {{form.cantidad|add_class:"form-control"|append_attr:"placeholder=Cantidad"}}
+                                    <label style="color: #121212;" for="id_cantidad">Cantidad</label>
+                                </div>
+                            </div>
+                        </div>    
+                    </div>
+                    <div class="row">
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1"><i class="fa-solid fa-gear"></i></span>
+                            <div class="form-floating form-floating-group flex-grow-1"> 
+                                {{ form2.tipo_nc }}
+                            </div>
+                        </div>
+                        <div class="col-sm-12">
+                            <div class="input-group mb-3">
+                                <span class="input-group-text" id="basic-addon1">
+                                    <i class="fa-regular fa-message"></i>
+                                </span>
+                                <span class="input-group-text d-lg-block d-none" id="basic-addon1">
+                                    Comentario
+                                </span>
+                                <div class="form-floating form-floating-group flex-grow-1">   
+                                    {{form2.comentario|add_class:"form-control"|append_attr:"type=text"}}
+                                </div>
+                            </div>
+                        </div>
+                    </div>  
+                    <div class="container-fluid text-end">
+                        <button type="submit" name="BtnCrear" id="BtnCrear" class="btn btn-outline-success btn-lg">
+                            Crear NC
+                        </button>
+                        <a id="cerrar" type="button" class="btn btn-outline-secondary btn-lg cerrar" href="{% url 'pendientes-entrada' %}">
+                            Cerrar
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+$(document).ready(function() {
+    $('#id_tipo_nc').select2({
+        allowClear: true,
+        width: '100%',
+        placeholder: 'Tipo NC',
+    });
+});
+
+function preventDoubleClick(button) {
+    setTimeout(function() {
+        button.disabled = true;
+    }, 50);
+}
+    // Añadir el evento de clic para el botón "Crear NC"
+    $('#BtnCrear').click(function(event) {
+        preventDoubleClick(this);
+        // Enviar el formulario
+        $('#form_crear').submit();
+    });
+
+</script>
+{% endblock %}
+</body>
+</html>

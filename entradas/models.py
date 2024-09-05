@@ -53,14 +53,30 @@ class Reporte_Calidad(models.Model):
     def __str__(self):
         return f'{self.id} - {self.articulo} - {self.completo} - {self.autorizado}'
 
+class Tipo_Nc(models.Model):
+    nombre = models.CharField(max_length=25, null=True)
+
+    def __str__(self):
+        return f'{self.nombre}'
+    
+class Cierre_Nc(models.Model):
+    nombre = models.CharField(max_length=25, null=True)
+
+    def __str__(self):
+        return f'{self.nombre}'
+    
 class No_Conformidad(models.Model):
     almacenista = models.ForeignKey(Profile, on_delete = models.CASCADE, null=True, blank=True)
     oc = models.ForeignKey(Compra, on_delete = models.CASCADE, null=True)
     comentario = models.TextField(max_length=250, null=True)
+    tipo_nc = models.ForeignKey(Tipo_Nc, on_delete = models.CASCADE, null=True)
     nc_date = models.DateField(null=True, blank=True)
     nc_hora = models.TimeField(null=True, blank=True)
     history = HistoricalRecords(history_change_reason_field=models.TextField(null=True))
     completo = models.BooleanField(default=False)
+    cierre =  models.ForeignKey(Cierre_Nc, on_delete = models.CASCADE, null=True)
+    fecha_cierre = models.DateField(null=True, blank=True)
+    image = models.ImageField(null=True, blank=True, upload_to='calidad')
 
     def __str__(self):
         return f'{self.id} - {self.oc} - {self.completo}'
@@ -70,8 +86,10 @@ class NC_Articulo(models.Model):
     cantidad = models.DecimalField(max_digits=14, decimal_places=2, default=0)
     #cantidad_por_surtir = models.DecimalField(max_digits=14, decimal_places=2, default=0)
     articulo_comprado = models.ForeignKey(ArticuloComprado, on_delete = models.CASCADE, null=True)
+    entrada_articulo = models.ForeignKey(EntradaArticulo, on_delete=models.CASCADE, null=True, related_name='nc_articulos', blank=True)
     history = HistoricalRecords(history_change_reason_field=models.TextField(null=True))
     created_at = models.DateTimeField(auto_now_add=True)
+    resuelto = models.BooleanField(default=False)
     #folio = models.CharField(max_length=50, null=True, blank=True)
 
     def __str__(self):
