@@ -154,8 +154,8 @@ def pendientes_entrada(request):
         #print(entrada_item.cantidad)
         #print(producto_comprado.cantidad_pendiente)
         if abs(entrada_item.cantidad_por_surtir - entrada_item.cantidad) > tolerance: #Si la cantidad de las entradas es mayor a la cantidad de la compra se rechaza
-            print('Que?')
-            messages.error(request,f'La cantidad de entradas sobrepasa la cantidad comprada {entrada_item.cantidad} > {producto_comprado.cantidad_pendiente}') 
+            diferencia = entrada_item.cantidad_por_surtir - entrada_item.cantidad
+            messages.error(request,f'La cantidad de entradas sobrepasa la cantidad comprada {entrada_item.cantidad} mayor que {producto_comprado.cantidad_pendiente} = {diferencia}') 
         
             #messages.error(request,f'La cantidad de entradas sobrepasa la cantidad comprada {suma_cantidad} > {entrada_item.cantidad}')
         else:   #En caso de que NO sea un RESURMIENTO
@@ -729,7 +729,7 @@ def update_recepcion_articulos(request):
             producto_comprado.cantidad_pendiente = producto_comprado.cantidad         #Si no existe, la cantidad de la OC se convierte en el producto pendiente 
         tolerance = 0.01
         if abs(entrada_item.cantidad - producto_comprado.cantidad_pendiente) > tolerance: #Si la cantidad de las entradas es mayor a la cantidad de la compra se rechaza
-            messages.error(request,f'La cantidad de entradas sobrepasa la cantidad comprada {entrada_item.cantidad} > {producto_comprado.cantidad_pendiente}')
+            messages.error(request,f'La cantidad de entradas sobrepasa la cantidad comprada {entrada_item.cantidad} mayor que {producto_comprado.cantidad_pendiente} {tolerance}')
         else: #Esta parte afecta a la OC en cantidades, no creo que sea conveniente en la recepción afectar cantidades de inventario ni de OC, aunque eso podría afectar el
             #ciclo de entradas 
             messages.success(request,'Haz agregado exitosamente un producto')
@@ -978,7 +978,7 @@ def update_no_conformidad(request):
         total_entradas_nc = pendientes_surtir + suma_nc_producto + nc_item.cantidad
 
         if total_entradas_nc > producto_comprado.cantidad: #Si la cantidad de las entradas es mayor a la cantidad de la compra se rechaza
-            messages.error(request,f'La cantidad de entradas sobrepasa la cantidad comprada {suma_entradas} > {cantidad}')
+            messages.error(request,f'La cantidad de entradas sobrepasa la cantidad comprada {suma_entradas} mayor que {cantidad}')
         else:
             #producto_comprado.cantidad_pendiente = producto_comprado.cantidad - total_entradas_nc
             #Cree una variable booleana temporal para quitarlo del seleccionable
