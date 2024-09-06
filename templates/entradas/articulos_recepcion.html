@@ -121,7 +121,7 @@
                 </div>
                 <div class="row">
                     <div class="col-sm-1">
-                        <button type="button" class="btn btn-success d-none" id='update' name='update'>
+                        <button type="button" class="btn btn-success " id='update' name='update'>
                         Agregar
                         </button>
                     </div>
@@ -265,29 +265,6 @@ document.getElementById("producto").addEventListener("change", function(element)
     ncElement.innerHTML = nc || '0';  // Valor por defecto si no está definido
 });
 
-document.getElementById('id_cantidad').addEventListener('change', function() {
-    var cantidad = document.getElementById('id_cantidad');
-    var checkref = document.getElementById("SwitchReferencia");
-    var select = document.getElementById('producto');
-    var current_option = select.options[select.selectedIndex];
-    let solicitado_obj = document.getElementById('solicitado');
-    let solicitado = Number(solicitado_obj.innerHTML);
-    var boton = document.getElementById('update');
-
-    //console.log(cantidad.value);
-    //console.log(solicitado);
-
-    if (cantidad.value <= solicitado) {
-        boton.classList.remove('d-none');
-    } else if (cantidad.value == 0) {
-        boton.classList.add('d-none');
-    } else if (cantidad.value > solicitado) {
-        boton.classList.add('d-none');
-    }
-});
-
-
-
 //var updateBtn = document.getElementById('update')
 
     let count=0;
@@ -358,7 +335,9 @@ document.getElementById('id_cantidad').addEventListener('change', function() {
 
             console.log(JSON.stringify({ 'producto': producto, 'cantidad_ingresada': cantidad_ingresada, 'action': action, 'entrada_id':entrada_id, 'referencia': new String(referencia)}));
             ActualizarArticulos(producto, cantidad_ingresada, action, entrada_id, referencia);
-       
+            
+            // Restablecer el select a la opción por defecto
+            select.value = "";  // Esto selecciona la opción deshabilitada con `value=""`
             } 
     });
 
