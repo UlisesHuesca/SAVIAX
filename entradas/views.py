@@ -1382,7 +1382,7 @@ def cierre_nc(request, pk):
                 oc.recepcion_completa = False
             for dato in articulos_nc:
                 producto = ArticuloComprado.objects.get(id = dato.articulo_comprado.id)
-                articulo = NC_Articulo.objects.get(resuelto = False, articulo_comprado = producto, nc__oc = oc)
+                articulo = NC_Articulo.objects.get(id = dato.id)
                 articulo.resuelto = True
                 if nc.cierre.id == 3:
                     #Se debería de reactivas la OC, en la variable entrada_completa = False

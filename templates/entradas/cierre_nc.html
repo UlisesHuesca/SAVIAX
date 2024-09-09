@@ -44,10 +44,10 @@
             </div>
             <div class="class-body">
                 {% csrf_token %}
-                <div class="alert alert-danger d-none" role="alert" id="alert">
-                   Debes agregar un documento soporte
-                </div>
                 &nbsp;
+                <div class="alert alert-primary mx-3" role="alert">
+                    <h6><strong>OC: {{nc.oc.id}}</strong></h6>
+                </div>
                 <div class="alert alert-primary mx-3" role="alert">
                     <h6><strong>Folio NC: {{nc.id}}</strong></h6>
                 </div>
@@ -80,7 +80,9 @@
                 <div class="col-10 mb-3 mx-3">
                     {{ form.cierre|add_class:"form-control"}}
                 </div>
-
+                <div class="alert alert-danger d-none" role="alert" id="alert">
+                   Debes agregar un documento soporte
+                </div>
                 <label for="form.cantidad" class="col-auto col-form-label mx-4"><strong>Imagen:</strong></label>
                 <div class="col-10 mb-3 mx-3">
                     {{form.image|add_class:"form-control"}}
