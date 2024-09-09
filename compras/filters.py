@@ -1,6 +1,6 @@
 import django_filters
 from requisiciones.models import ArticulosRequisitados
-from .models import Compra, ArticuloComprado, Comparativo
+from .models import Compra, ArticuloComprado, Comparativo, Item_Comparativo
 from django_filters import CharFilter, DateFilter
 from django.db.models import Q
 
@@ -67,3 +67,12 @@ class ComparativoFilter(django_filters.FilterSet):
 
     def creador(self, queryset, name, value):
         return queryset.filter(Q(creada_por__staff__staff__first_name__icontains = value) | Q(creada_por__staff__staff__last_name__icontains = value))
+    
+class Item_ComparativoFilter(django_filters.FilterSet):
+    producto = CharFilter(field_name='producto__producto__nombre', lookup_expr='icontains')
+    comparativo = CharFilter(field_name='comparativo__nombre', lookup_expr='icontains')
+    codigo = CharFilter(field_name='producto__producto__codigo', lookup_expr='icontains')
+
+    class Meta:
+        model = Item_Comparativo
+        fields = ['producto','comparativo']

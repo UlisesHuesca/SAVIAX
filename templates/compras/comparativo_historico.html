@@ -1,0 +1,226 @@
+{% extends 'partials/base.html' %}
+{% load crispy_forms_tags %}
+{% load static %}
+{% load widget_tweaks %}
+{% load tt_extras %}
+<html>
+<head>
+{% block title %}Comparativo Historico{% endblock %}
+</head>
+<body>
+{% block content %}
+<br>
+<br>
+<!-- Esta es la zona donde se crean los mensajes excitantes con sweet alert -->
+<div class="row my-4">
+    <div class="col-md-4">
+    <script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+        {% if messages %}
+            {% for message in messages %}
+                {% if message.tags == "error" %}
+                <script>
+                Swal.fire({
+                    "title":"Error",
+                    "text":"{{message}}",
+                    "icon":"error",
+                })
+                </script>
+                {% else %}
+                <script>
+                Swal.fire({
+                    "title":"Excelente",
+                    "text":"{{message}}",
+                    "icon":"success",
+                })
+                </script>
+                {% endif %}
+            {% endfor %}
+        {% endif %}
+    </div>
+</div>
+
+<div class="col-10">
+    <div class="card">
+        <div class="card-header">
+            <h5 class="card-title">Filtros</h5>
+        </div>
+        <div class="card-body">
+            {% csrf_token %}
+            <form method="GET">
+            <div class="row g-12">
+                <div class="col-lg-4 col-sm-12">
+                    <div class="input-group mb-3">
+                    <span class="input-group-text" id="basic-addon1"><i class="fa-solid fa-hashtag"></i></span>
+                        <div class="form-floating form-floating-group flex-grow-1">   
+                            {{myfilter.form.producto|add_class:"form-control"|append_attr:"placeholder= Nombre"}}
+                            <label style="color: #121212;" for="id_nombre">Producto</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-sm-12">
+                    <div class="input-group mb-3">
+                    <span class="input-group-text" id="basic-addon1"><i class="fa-solid fa-user"></i></span>
+                        <div class="form-floating form-floating-group flex-grow-1">   
+                            {{myfilter.form.comparativo|add_class:"form-control"|append_attr:"placeholder= Proveedor"}}
+                            <label style="color: #121212;" for="id_id">Comparativo</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-sm-12">
+                    <div class="input-group mb-3">
+                    <span class="input-group-text" id="basic-addon1"><i class="fa-solid fa-user"></i></span>
+                        <div class="form-floating form-floating-group flex-grow-1">   
+                            {{myfilter.form.codigo|add_class:"form-control"|append_attr:"placeholder= Proveedor"}}
+                            <label style="color: #121212;" for="id_id">Codigo Producto</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-2">
+                    <!--onclick="regenerar()"-->
+                    <button id="btnBuscar" class="btn btn-outline-success btn-block btn-lg"  onclick="guardar_variable();" type="submit" value="Buscar"><i class="fa-solid fa-magnifying-glass"></i></button>
+                </div>
+            </div>
+            <hr>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class = "row mt-2">
+    <div class="col-md-12">
+        <table class="table bg-white">
+            <thead class="text-black" style="background-color: #F5F5F5;">
+                <tr>
+                    <th scope="col">Codigo Producto</th>
+                    <th scope="col">Producto Comparativo</th>
+                    <th scope="col">Creado</th>
+                    <th scope="col">Comparativo</th>
+                    <th scope="col">Precio 1</th>
+                    <th scope="col">Precio 2</th>
+                    <th scope="col">Precio 3</th>
+                    <th scope="col">Proveedor 1</th>
+                    <th scope="col">Proveedor 2</th>
+                    <th scope="col">Proveedor 3</th>
+                    <th scope="col">Preevaluación</th> 
+                    <th scope="col">Creador</th> 
+                    <th scope="col">Fecha</th> 
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in item_list %}
+                <tr>
+                    <th scope="row">{{ item.producto.producto.codigo }}</th>
+                    <td>{{ item.producto.producto.nombre }}</td>
+                    <td>{{ item.created_at }}</td>
+                    <td>{{ item.comparativo.nombre }}</td>
+                    <td>{{ item.precio|floatformat:2 }}</td>
+                    <td>{{ item.precio2|floatformat:2 }}</td>
+                    <td>{{ item.precio3|floatformat:2 }}</td>
+                    <td>{{ item.comparativo.proveedor }}</td>
+                    <td>{{ item.comparativo.proveedor2 }}</td>
+                    <td>{{ item.comparativo.proveedor3 }}</td>
+                    <td>
+                        {% if item.comparativo.preevaluaciones_comparativo.all %}
+                            <ul>
+                                {% for preevaluacion in item.comparativo.preevaluaciones_comparativo.all %}
+                                    <li>{{ preevaluacion.nombre.razon_social }}</li> <!-- Muestra el nombre de cada preevaluación -->
+                                {% endfor %}
+                            </ul>
+                        {% else %}
+                            N/A
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if item.comparativo.preevaluaciones_comparativo.all %}
+                            <ul>
+                                {% for preevaluacion in item.comparativo.preevaluaciones_comparativo.all %}
+                                    <li>{{ preevaluacion.creado_por.staff.first_name }}</li> <!-- Muestra el nombre del creador de cada preevaluación -->
+                                {% endfor %}
+                            </ul>
+                        {% else %}
+                            N/A
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if item.comparativo.preevaluaciones_comparativo.all %}
+                            <ul>
+                                {% for preevaluacion in item.comparativo.preevaluaciones_comparativo.all %}
+                                    <li>{{ preevaluacion.creado_at|date:"d/m/Y H:i" }}</li> <!-- Muestra la fecha de creación -->
+                                {% endfor %}
+                            </ul>
+                        {% else %}
+                            N/A
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <nav aria-label="Page navigation example">
+            <ul class="pagination justify-content-center">
+                {% if item_list.has_previous %}
+                    <li class="page-item"><a class="page-link" style="color:#3E92CC" href="{% my_url 1 'page' request.GET.urlencode %}"><i class="fa-solid fa-angles-left"></i></a></li>
+                    <li class="page-item"><a class="page-link" style="color:#3E92CC" href="{% my_url item_list.previous_page_number  'page' request.GET.urlencode %}"><i class="fa-solid fa-angle-left"></i></a></li>
+                {% endif %}
+
+                {% for item in item_list.paginator.page_range %}
+                    {% if item_list.number == item %}
+                        <li class="page-item active"><a href="#" class="page-link bg-dark">{{item}}</a></li>
+                    {% elif item > item_list.number|add:'-2' and item < item_list.number|add:'2' %}
+                        <li class="page-item "><a class="page-link" style="color:#3E92CC" href="{% my_url item 'page' request.GET.urlencode %}" class="page-link">{{item}}</a></li>
+                    {% endif %}
+                {% endfor %}
+
+                {% if item_list.paginator.num_pages > item_list.number|add:'2' %}
+                <li><a class="page-link" style="color:#3E92CC" href="?page={{item_list.number|add:'2'}}">&hellip;</a></li>
+                <li><a style="color:#3E92CC" href="?page={{ item }}">{{item}}</a></li>
+                <li><a class="page-link" style="color:#3E92CC" href="{% my_url item_list.paginator.num_pages 'page' request.GET.urlencode %}">{{preevaluacion_list.paginator.num_pages}}</a></li>
+                {% endif %}
+
+                {% if item_list.has_next %}
+                    <li class="page-item"><a class="page-link" style="color:#3E92CC" href="{% my_url item_list.next_page_number 'page' request.GET.urlencode %}"><i class="fa-solid fa-chevron-right"></i></a></li>
+                    <li class="page-item"><a class="page-link" style="color:#3E92CC" href="{% my_url item_list.paginator.num_pages 'page' request.GET.urlencode %}"><i class="fa-solid fa-angles-right"></i></a></a></li>
+                {% endif %}
+            </ul>
+        </nav>
+
+    </div>
+
+<!--Este es el modal-->
+<div class="modal fade" id ="dialog" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg-12 modal-dialog-centered" id="document" role="document" hx-target="this">
+
+    </div>
+</div>
+
+
+</div>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+var dataSpyList = [].slice.call(document.querySelectorAll('[data-bs-spy="scroll"]'))
+dataSpyList.forEach(function (dataSpyEl) {
+  bootstrap.ScrollSpy.getInstance(dataSpyEl)
+    .refresh()
+});
+
+;(function(){
+    const modal = new bootstrap.Modal(document.getElementById('dialog'))
+
+    htmx.on('htmx:beforeSwap',(e)=>{
+        if (e.detail.target.id === "document" && !e.detail.xhr.response)
+        modal.hide()
+    })
+})()
+
+var myModal = document.getElementById('dialog')
+
+myModal.addEventListener('hidden.bs.modal', function (event) {
+  location.reload();
+})
+
+</script>
+{% endblock %}
+</body>
+</html>
