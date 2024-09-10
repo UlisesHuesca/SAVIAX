@@ -968,10 +968,6 @@ def render_pdf_view(request, pk):
     c.setLineWidth(.2)
     c.setFont('Helvetica',8)
     caja_iso = 760
-    #Elaborar caja
-    #c.line(caja_iso,500,caja_iso,720)
-
-
 
     #Encabezado
     c.drawString(410,caja_iso,'Preparado por:')
@@ -1043,20 +1039,16 @@ def render_pdf_view(request, pk):
     for producto in productos:
         data.append([producto.producto.producto.codigo, producto.producto.producto.nombre,producto.cantidad, producto.comentario])
         high = high - 18
-
-
-   
-    
-    
+    if high<0:
+        high=0
+    #print('alturaaaaaaaa')
+    #print(high)
 
     c.setFillColor(black)
     width, height = letter
     styles = getSampleStyleSheet()
     styleN = styles["BodyText"]
 
-    
-
-    
     table = Table(data, colWidths=[1.2 * cm, 12 * cm, 1.5 * cm, 5.2 * cm,])
     table_style = TableStyle([ #estilos de la tabla
         ('INNERGRID',(0,0),(-1,-1), 0.25, colors.white),
@@ -1085,17 +1077,19 @@ def render_pdf_view(request, pk):
         ])
     table.setStyle(table_style)
     
-    rows_per_page = 20
+    rows_per_page_first_page = 20
+    rows_per_page_other_pages = 35
+
     total_rows = len(data) - 1  # Excluye el encabezado
-    remaining_rows = total_rows - rows_per_page
+    remaining_rows = total_rows - rows_per_page_first_page
 
     if remaining_rows <= 0:
-        # Si no hay suficientes filas para una segunda página, dibujar la tabla completa en la primera página
+        # Dibujar la tabla completa en la primera página si no hay suficientes filas para otra página
         table.wrapOn(c, c._pagesize[0], c._pagesize[1])
         table.drawOn(c, 20, high)  # Posición en la primera página
         c.setFillColor(prussian_blue)
 
-        #La parte de los comentarios
+        # Parte de los comentarios en la primera página
         c.setFillColor(black)
         c.drawString(100,high-95, orden.staff.staff.first_name +' '+ orden.staff.staff.last_name)
         c.drawString(100,high-115, orden.supervisor.staff.first_name +' '+ orden.supervisor.staff.last_name)
@@ -1106,35 +1100,27 @@ def render_pdf_view(request, pk):
         c.setFillColor(white)
         c.drawString(25,high-95,'Solicitado por:')
         c.drawString(25,high-115, 'Aprobado por')
-        
         c.setFillColor(prussian_blue)
         c.rect(20,high-40,565,25, fill=True, stroke=False)
         c.setFillColor(white)
-        c.drawCentredString(320,high-30,'Observaciones')
-        if orden.comentario is not None:
-            comentario = orden.comentario
-        else:
-            comentario = "No hay comentarios"
-
+        c.drawCentredString(320,high-40,'Observaciones')
+        comentario = orden.comentario if orden.comentario else "No hay comentarios"
         options_conditions_paragraph = Paragraph(comentario, styleN)
-        # Crear un marco (frame) en la posición específica
         frame = Frame(25, 0, width, high-40, id='normal')
-        # Agregar el párrafo al marco
         frame.addFromList([options_conditions_paragraph], c)
         c.setFillColor(prussian_blue)
         c.rect(20,30,565,20, fill=True, stroke=False)
         c.setFillColor(white)
 
     else:
-    # Dibujar las primeras 15 filas en la primera página
-        first_page_data = data[:rows_per_page + 1]  # Incluye el encabezado
-        first_page_table = Table(first_page_data, colWidths=[1.2 * cm, 12 * cm, 1.5 * cm, 5.2 * cm,])
+        # Dibujar las primeras 20 filas en la primera página
+        first_page_data = data[:rows_per_page_first_page + 1]  # Incluye el encabezado
+        first_page_table = Table(first_page_data, colWidths=[1.2 * cm, 12 * cm, 1.5 * cm, 5.2 * cm])
         first_page_table.setStyle(table_style)
         first_page_table.wrapOn(c, c._pagesize[0], c._pagesize[1])
-        #adjusted_high = c._pagesize[1] - h - 36  # 70 puede ser un margen superior que desees mantener
-        first_page_table.drawOn(c, 20, high + 190)  # Posición en la primera página
-        
-        #La parte de los comentarios
+        first_page_table.drawOn(c, 20, high + 190)
+
+        # Parte de los comentarios en la primera página
         c.setFillColor(black)
         c.drawString(100,high+75, orden.staff.staff.first_name +' '+ orden.staff.staff.last_name)
         c.drawString(100,high+95, orden.supervisor.staff.first_name +' '+ orden.supervisor.staff.last_name)
@@ -1145,35 +1131,70 @@ def render_pdf_view(request, pk):
         c.setFillColor(white)
         c.drawString(25,high+75,'Solicitado por:')
         c.drawString(25,high+95, 'Aprobado por')
-        
         c.setFillColor(prussian_blue)
         c.rect(20,high+155,565,25, fill=True, stroke=False)
         c.setFillColor(white)
-        c.drawCentredString(320,high+145,'Observaciones')
-        if orden.comentario is not None:
-            comentario = orden.comentario
-        else:
-            comentario = "No hay comentarios"
-
+        c.drawCentredString(310,high+165,'Observaciones')
+        comentario = orden.comentario if orden.comentario else "No hay comentarios"
         options_conditions_paragraph = Paragraph(comentario, styleN)
-        # Crear un marco (frame) en la posición específica
         frame = Frame(25, 0, width, high+160, id='normal')
-        # Agregar el párrafo al marco
         frame.addFromList([options_conditions_paragraph], c)
         c.setFillColor(prussian_blue)
         c.rect(20,30,565,20, fill=True, stroke=False)
         c.setFillColor(white)
-        # Agregar una nueva página y dibujar las filas restantes en la segunda página
-        c.showPage()
-        remaining_data = data[rows_per_page + 1:]
-        remaining_table = Table(remaining_data, colWidths=[1.2 * cm, 12 * cm, 1.5 * cm, 5.2 * cm,])
-        remaining_table.setStyle(table_style2)
-        remaining_table.wrapOn(c, c._pagesize[0], c._pagesize[1])
-        remaining_table_height = len(remaining_data) * 18
-        remaining_table_y = c._pagesize[1] - 70 - remaining_table_height - 10  # Espacio para el encabezado
-        remaining_table.drawOn(c, 20, remaining_table_y)  # Posición en la segunda página
 
-    c.showPage()
+        # Agregar una nueva página y dibujar las filas restantes en las siguientes páginas
+        remaining_data = data[rows_per_page_first_page + 1:]
+        pages_needed = (len(remaining_data) + rows_per_page_other_pages - 1) // rows_per_page_other_pages
+        
+        for page in range(pages_needed):
+            c.showPage()
+            page_start = page * rows_per_page_other_pages
+            page_end = page_start + rows_per_page_other_pages
+            page_data = remaining_data[page_start:page_end]
+            
+            if page_data:
+                remaining_table = Table(page_data, colWidths=[1.2 * cm, 12 * cm, 1.5 * cm, 5.2 * cm])
+                remaining_table.setStyle(table_style2)
+                remaining_table.wrapOn(c, c._pagesize[0], c._pagesize[1])
+                remaining_table_height = len(page_data) * 18
+                remaining_table_y = c._pagesize[1] - 70 - remaining_table_height - 10
+                remaining_table.drawOn(c, 20, remaining_table_y)  # Posición en las páginas adicionales
+            caja_proveedor = caja_iso - 65
+            c.setFont('Helvetica',12)
+            c.setFillColor(prussian_blue)
+            # REC (Dist del eje Y, Dist del eje X, LARGO DEL RECT, ANCHO DEL RECT)
+            c.rect(150,750,250,20, fill=True, stroke=False) #Barra azul superior Solicitud
+            c.setFillColor(white)
+            c.setLineWidth(.2)
+            c.setFont('Helvetica-Bold',14)
+            c.drawCentredString(280,755,'Solicitud')
+            c.setLineWidth(.3) #Grosor
+            c.drawInlineImage('static/images/logo vordtec_documento.png',45,747, 1.5 * cm, 0.75 * cm) #Imagen vortec
+            #Encabezado
+            c.setFillColor(black)
+            c.setLineWidth(.2)
+            c.setFont('Helvetica',8)
+            caja_iso = 760
+
+            #Encabezado
+            c.drawString(410,caja_iso,'Preparado por:')
+            c.drawString(420,caja_iso-10,'Almacén')
+            c.drawString(520,caja_iso,'Aprobación')
+            c.drawString(490,caja_iso-10,'Subdirección Administrativa')
+            c.drawString(30,caja_iso-20,'Número de documento')
+            c.drawString(40,caja_iso-30,'F-ALM-N4-01.01')
+            c.drawString(125,caja_iso-20,'Clasificación del documento')
+            c.drawString(165,caja_iso-30,'Registro')
+            c.drawString(230,caja_iso-20,'Nivel del documento')
+            c.drawString(255,caja_iso-30, 'N5')
+            c.drawString(315,caja_iso-20,'Revisión No.')
+            c.drawString(327,caja_iso-30,'000')
+            c.drawString(385,caja_iso-20,'Fecha de Emisión')
+            c.drawString(395,caja_iso-30,'08/03/2024')
+            c.drawString(490,caja_iso-20,'Fecha última modificación')
+            c.drawString(525,caja_iso-30,'08/03/2024')
+
     c.save()
     buf.seek(0)
 
