@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q, DecimalField, F
-from .filters import EntradaArticuloFilter
+from .filters import EntradaArticuloFilter, No_ConformidadFilter
 from compras.models import Compra, ArticuloComprado
 from compras.filters import CompraFilter
 from compras.views import attach_oc_pdf
@@ -105,6 +105,20 @@ def devolucion_a_proveedor(request):
         'articulos':articulos,
         }
 
+
+def update_fecha(request):
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        producto_id = data.get('productoId')
+        nueva_fecha = data.get('nuevaFecha')
+
+        # Realiza la lógica para actualizar la fecha del producto
+        producto = EntradaArticulo.objects.get(id=producto_id)
+        producto.fecha_caducidad = nueva_fecha
+        producto.save()
+
+        return JsonResponse({'nuevaFecha': nueva_fecha})
+    return JsonResponse({'error': 'Método no permitido'}, status=405)
 
 # Create your views here.
 @login_required(login_url='user-login')
@@ -1410,12 +1424,40 @@ def entradas_nc(request):
     perfil = Profile.objects.get(staff__id=request.user.id)
     ncs= No_Conformidad.objects.filter(completo = True, oc__req__orden__distrito = perfil.distrito)
     
+    myfilter = No_ConformidadFilter(request.GET, queryset=ncs)
+    ncs = myfilter.qs
+
+    #Set up pagination
+    p = Paginator(ncs, 50)
+    page = request.GET.get('page')
+    entradas_list = p.get_page(page)
 
     context = {
-        #'form': form,
+        'myfilter': myfilter,
         'ncs': ncs,
-        #'restantes_liberacion': restantes_liberacion,
+        'entradas_list': entradas_list,
         }
 
     return render(request,'entradas/entradas_nc.html',context)
 
+def entradas_con_caducidad(request):
+    perfil = Profile.objects.get(staff__id=request.user.id)
+    entradas = EntradaArticulo.objects.filter(
+        articulo_comprado__producto__producto__articulos__producto__producto__caducidad=True
+    ).exclude(fecha_caducidad__isnull=True).exclude(cantidad_por_surtir=0).order_by('fecha_caducidad')
+    
+    myfilter = EntradaArticuloFilter(request.GET, queryset=entradas)
+    entradas = myfilter.qs
+
+    #Set up pagination
+    p = Paginator(entradas, 50)
+    page = request.GET.get('page')
+    entradas_list = p.get_page(page)
+
+    context = {
+        'myfilter':myfilter,
+        'entradas': entradas,
+        'entradas_list':entradas_list,
+        }
+
+    return render(request,'entradas/entradas_con_caducidad.html',context)

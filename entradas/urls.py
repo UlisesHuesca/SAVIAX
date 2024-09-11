@@ -19,7 +19,10 @@ urlpatterns = [
     path('entradas/recepcion_servicios', views.recepcion_servicios, name='recepcion-servicios'),
     path('entradas/articulos_recepcion_servicios/<int:pk>', views.articulos_recepcion_servicios, name='articulos-recepcion-servicios'),
     path('update_cantidad/', views.update_cantidad, name='update_cantidad'),
+    path('update_fecha/', views.update_fecha, name='update_fecha'),
     path('productos/nc/<int:pk>', views.productos_nc, name="productos_nc"),
     path('entradas/nc', views.entradas_nc, name='entradas_nc'),
     path('cierre/nc/<int:pk>', views.cierre_nc, name="cierre_nc"),
+    path('entradas/caducidad', views.entradas_con_caducidad, name='entradas_caducidad'),
+
 ]

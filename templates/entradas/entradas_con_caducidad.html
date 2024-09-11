@@ -4,10 +4,9 @@
 {% load widget_tweaks %}
 {% load tt_extras %}
 {% load l10n %}
-
 <html>
 <head>
-{% block title %}Matriz Producto NC{% endblock %}
+{% block title %}Entradas Caducidad{% endblock %}
 </head>
 <body>
 {% block content %}
@@ -15,71 +14,88 @@
 <hr>
 <h6>&nbsp;</h6>
 <h6>&nbsp;</h6>
-<div class="row">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-header">
-                <h5>Entradas Producto NC</h5>
-            </div>
-            <div class="card-body">
+<div class = "row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                <h5>Entradas Productos con Caducidad</h5>
+                </div>
+                <br>
                 <form method="GET">
                     {% csrf_token %}
                     <div class="row">
-                        <!-- Filtro de Orden de Compra (oc) -->
                         <div class="col-lg-3 col-sm-12">
                             <div class="input-group mb-3">
-                                <span class="input-group-text" id="basic-addon1"><i class="fa-solid fa-hashtag"></i></span>
-                                <div class="form-floating form-floating-group flex-grow-1">
-                                    {{ myfilter.form.oc|add_class:"form-control"|append_attr:"placeholder= Folio OC" }}
-                                    <label style="color: #121212;" for="id_oc">Folio OC</label>
+                            <span class="input-group-text" id="basic-addon1"><i class="fa-solid fa-hashtag"></i></span>
+                                <div class="form-floating form-floating-group flex-grow-1">   
+                                    {{myfilter.form.oc|add_class:"form-control"|append_attr:"placeholder= Folio OC"}}
+                                    <label style="color: #121212;" for="id_staff">Folio OC</label>
                                 </div>
                             </div>
                         </div>
-                        
-                        <!-- Filtro de Tipo de NC (tipo_nc) -->
                         <div class="col-lg-3 col-sm-12">
                             <div class="input-group mb-3">
-                                <span class="input-group-text" id="basic-addon1"><i class="fa-solid fa-clipboard-list"></i></span>
-                                <div class="form-floating form-floating-group flex-grow-1">
-                                    {{ myfilter.form.tipo_nc|add_class:"form-control"|append_attr:"placeholder= Tipo NC" }}
-                                    <label style="color: #121212;" for="id_tipo_nc">Tipo NC</label>
+                            <span class="input-group-text" id="basic-addon1"><i class="fa-solid fa-user"></i></span>
+                                <div class="form-floating form-floating-group flex-grow-1">   
+                                    {{myfilter.form.proveedor|add_class:"form-control"|append_attr:"placeholder= Proveedor"}}
+                                    <label style="color: #121212;" for="id_staff">Proveedor</label>
                                 </div>
                             </div>
                         </div>
-
-                        <!-- Filtro de Fecha (nc_date) -->
-                        <div class="col-lg-3 col-sm-12">
+                        <!--<div class="col-lg-3 col-sm-12">
                             <div class="input-group mb-3">
-                                <span class="input-group-text" id="basic-addon1"><i class="fa-regular fa-calendar"></i></span>
-                                <div class="form-floating form-floating-group flex-grow-1">
-                                    {% render_field myfilter.form.nc_date type="date" class="form-control" %}
-                                    <label style="color: #121212;" for="id_nc_date">Fecha NC</label>
+                            <span class="input-group-text" id="basic-addon1"><i class="fa-solid fa-hashtag"></i></span>
+                                <div class="form-floating form-floating-group flex-grow-1">   
+                                    {{myfilter.form.req|add_class:"form-control"|append_attr:"placeholder= Requisición"}}
+                                    <label style="color: #121212;" for="id_staff">Requisición</label>
                                 </div>
                             </div>
                         </div>
-
-                        <!-- Filtro de Cierre NC -->
                         <div class="col-lg-3 col-sm-12">
                             <div class="input-group mb-3">
-                                <span class="input-group-text" id="basic-addon1"><i class="fa-solid fa-check"></i></span>
-                                <div class="form-floating form-floating-group flex-grow-1">
-                                    {{ myfilter.form.cierre|add_class:"form-control"|append_attr:"placeholder= Cierre NC" }}
-                                    <label style="color: #121212;" for="id_cierre">Cierre NC</label>
+                            <span class="input-group-text" id="basic-addon1"><i class="fa-solid fa-diagram-project"></i></span>
+                                <div class="form-floating form-floating-group flex-grow-1">   
+                                    {{myfilter.form.proyecto|add_class:"form-control"|append_attr:"placeholder= Proyecto"}}
+                                    <label style="color: #121212;" for="id_proyecto">Proyecto</label>
+                                </div>
+                            </div>
+                        </div>       
+                    </div>
+                    <div class="row">
+                        <div class="col-lg-3 col-sm-12">
+                            <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1"><i class="fa-solid fa-diagram-project"></i></span>
+                                <div class="form-floating form-floating-group flex-grow-1">   
+                                    {{myfilter.form.subproyecto|add_class:"form-control"|append_attr:"placeholder= Subproyecto"}}
+                                    <label style="color: #121212;" for="id_proyecto">Subproyecto</label>
+                                </div>
+                            </div>
+                        </div>-->
+                        <div id="serie" class="col-lg-2 col-md-auto col-sm-auto">
+                            <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1"><i class="fa-regular fa-calendar"></i></span>
+                                <div class="form-floating form-floating-group flex-grow-1">   
+                                    {% render_field myfilter.form.start_date type="date" class="form-control" %}
+                                <label style="color: #121212;" for="id_subproyecto">Desde:</label>
                                 </div>
                             </div>
                         </div>
-                        
-                        <!-- Botón de búsqueda -->
-                        <div class="col-lg-2 col-sm-12">
-                            <button class="btn btn-outline-success btn-block btn-lg mt-1" type="submit" value="Buscar">
-                                <i class="fa-solid fa-magnifying-glass"></i> Buscar
-                            </button>
+                        <div id="serie" class="col-lg-2 col-md-auto col-sm-auto">
+                            <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1"><i class="fa-regular fa-calendar"></i></span>
+                                <div class="form-floating form-floating-group flex-grow-1">   
+                                    {% render_field myfilter.form.end_date type="date" class="form-control" %}
+                                <label style="color: #121212;" for="id_subproyecto">Hasta:</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-2">
+                            <button class="btn btn-outline-success btn-block btn-lg mt-1" type="submit" value="Buscar"><i class="fa-solid fa-magnifying-glass"></i></button>
                         </div>
                     </div>
-                </form>
+                </div>
             </div>
         </div>
-    </div>
 </div>
     <!-- Aquí terminan el encabezado de los filtros -->
 
@@ -116,39 +132,35 @@
         <table class="table bg-white">
             <thead class="text-black" style="background-color: #F5F5F5;">
                 <tr>
-                    <th>ID</th>
-                    <th scope="col">Compra</th>
+                    <th>ID Entrada</th>
+                    <th>OC</th>
+                    <th scope="col">Producto</th>
                     <th scope="col">Proveedor</th>
-                    <th scope="col">Tipo</th>
-                    <th scope="col">Generada por:</th>
+                    <th scope="col">Cantidad</th>
+                    <th scope="col">Cantidad por surtir</th>
+                    <th scope="col">Fecha entrada</th>
                     <th scope="col">Comentario</th>
-                    <th scope="col">Fecha</th>
-                    <th scope="col">Productos</th>
-                    <th>Cierre</th>
+                    <th scope="col">Fecha caducidad</th>
+                    <th scope="col">Almacenista</th>
                 </tr>
             </thead>
             <tbody>
-                {% for nc in entradas_list %}
+                {% for entrada in entradas_list %}
                 <tr>
-                    <td>{{nc.id}}</td>
-                    <td scope="col">{{nc.oc.id}}</th>
-                    <td scope="col">{{nc.oc.proveedor}}</td>
-                    <td scope="col">{{nc.tipo_nc.nombre}}</td>
-                    <td>{{nc.almacenista.staff.first_name}} {{nc.almacenista.staff.last_name}}</td>
-                    <td>{{nc.comentario}}</td>
-                    <td>{{nc.nc_date}} </td>
-                    <td>
-                        <a class="btn btn-outline-info btn-block mx-auto" type="button" data-bs-toggle="modal" data-bs-target="#dialog" hx-target="#document" hx-get="{% url 'productos_nc' nc.id %}"><i class="fa-solid fa-list-ul"></i></a>
-                    </td>
-                    <td>
-                        {% if nc.cierre != None %}
-                        <a class="btn btn-outline-info btn-block mx-auto" type="button"><i class="fa-solid fa-lock"></i></a>
-                        {% elif usuario.tipo.compras == True%}
-                        <a class="btn btn-outline-warning btn-block mx-auto" type="button" href="{% url 'cierre_nc' nc.id %}"><i class="fa-solid fa-lock-open"></i></a>
-                        {% elif usuario.tipo.compras == False%}
-                        <a class="btn btn-outline-warning btn-block mx-auto" type="button"><i class="fa-solid fa-lock-open"></i></a>
-                        {% endif %}
-                    </td>
+                    <td>{{entrada.id}}</td>
+                    <td>{{entrada.entrada.oc.id}}</td>
+                    <td scope="col">{{entrada.articulo_comprado.producto.producto.articulos.producto.producto.nombre}}</th>
+                    <td scope="col">{{entrada.entrada.oc.proveedor.nombre}}</td>
+                    <td scope="col">{{entrada.cantidad}}</td>
+                    <td scope="col">{{entrada.cantidad_por_surtir}}</td>
+                    <td>{{entrada.entrada.entrada_date}}</td>
+                    {% if entrada.comentario is None %}
+                        <td></td>
+                    {% else %}
+                        <td>{{entrada.entrada.comentario}}</td>
+                    {% endif %}
+                    <td>{{entrada.fecha_caducidad}} </td>
+                    <td>{{entrada.entrada.almacenista.staff.first_name}} {{entrada.entrada.almacenista.staff.last_name}}</td>
                 </tr>
                 {% endfor %}
             </tbody>
