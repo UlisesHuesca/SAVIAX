@@ -24,5 +24,9 @@ urlpatterns = [
     path('entradas/nc', views.entradas_nc, name='entradas_nc'),
     path('cierre/nc/<int:pk>', views.cierre_nc, name="cierre_nc"),
     path('entradas/caducidad', views.entradas_con_caducidad, name='entradas_caducidad'),
+    path('calidad/entradas', views.calidad_entradas, name='calidad_entradas'),
+    path('calidad/update_comentario/', views.update_comentario, name='update_comentario'),
+    path('actualizar_calidad/', views.autorizar_calidad, name='autorizar_calidad'),
+    path('calidad/entradas/autorizadas', views.calidad_entradas_autorizadas, name='calidad_entradas_autorizadas'),
 
 ]

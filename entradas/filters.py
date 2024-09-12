@@ -1,7 +1,7 @@
-import django_filters
+import django_filters 
 from requisiciones.models import ArticulosRequisitados
-from .models import Entrada, EntradaArticulo, No_Conformidad, Tipo_Nc, Cierre_Nc
-from django_filters import CharFilter, DateFilter
+from .models import Entrada, EntradaArticulo, No_Conformidad, Tipo_Nc, Cierre_Nc, Reporte_Calidad
+from django_filters import CharFilter, DateFilter, ChoiceFilter
 from django.db.models import Q
 
 class EntradaArticuloFilter(django_filters.FilterSet):
@@ -28,3 +28,24 @@ class No_ConformidadFilter(django_filters.FilterSet):
     class Meta:
         model = No_Conformidad
         fields = ['oc','tipo_nc','nc_date','cierre',]
+
+class Reporte_CalidadFilter(django_filters.FilterSet):
+    autorizado_choices = [
+            (True, 'Autorizado'),
+            (False, 'No Autorizado'),
+        ]
+   
+    #producto = CharFilter(field_name='articulo_comprado__producto__producto__articulos__producto__producto__nombre', lookup_expr='icontains')
+    proveedor = CharFilter(field_name='articulo__entrada__oc__proveedor__nombre__razon_social', lookup_expr='icontains')
+    oc = CharFilter(field_name='articulo__entrada__oc__id', lookup_expr='icontains')
+    req = CharFilter(field_name='articulo__entrada__oc__req__id', lookup_expr='icontains')
+    start_date = DateFilter(field_name = 'reporte_date', lookup_expr='gte')
+    end_date = DateFilter(field_name='reporte_date',lookup_expr='lte')
+    proyecto = CharFilter(field_name='articulo__entrada__oc__req__orden__proyecto__nombre', lookup_expr='icontains')
+    subproyecto = CharFilter(field_name='articulo__entrada__oc__req__orden__subproyecto__nombre', lookup_expr='icontains')
+    autorizado = ChoiceFilter(choices=autorizado_choices, empty_label='Todos', field_name='articulo__calidad')
+
+
+    class Meta:
+        model = Reporte_Calidad
+        fields = ['articulo','reporte_date','autorizado'] #'producto'
