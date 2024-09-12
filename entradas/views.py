@@ -1513,6 +1513,7 @@ def autorizar_calidad(request):
         reporte_calidad.reporte_date = datetime.now().date()  # Fecha actual
         reporte_calidad.reporte_hora = datetime.now().time()  # Hora actual
         reporte_calidad.cantidad = entrada_articulo.cantidad
+        reporte_calidad.completo = True
         entrada_articulo.save()
         reporte_calidad.save()
 
