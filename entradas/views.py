@@ -1428,7 +1428,7 @@ def cierre_nc(request, pk):
     }
 
     return render(request, 'entradas/cierre_nc.html', context)
- 
+
 def entradas_nc(request):
     perfil = Profile.objects.get(staff__id=request.user.id)
     ncs= No_Conformidad.objects.filter(completo = True, oc__req__orden__distrito = perfil.distrito)
