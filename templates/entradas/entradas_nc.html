@@ -139,15 +139,29 @@
                     <td>{{nc.nc_date}} </td>
                     <td>
                         <a class="btn btn-outline-info btn-block mx-auto" type="button" data-bs-toggle="modal" data-bs-target="#dialog" hx-target="#document" hx-get="{% url 'productos_nc' nc.id %}"><i class="fa-solid fa-list-ul"></i></a>
-                    </td>
                     <td>
-                        {% if nc.cierre != None %}
-                        <a class="btn btn-outline-info btn-block mx-auto" type="button"><i class="fa-solid fa-lock"></i></a>
-                        {% elif usuario.tipo.compras == True%}
-                        <a class="btn btn-outline-warning btn-block mx-auto" type="button" href="{% url 'cierre_nc' nc.id %}"><i class="fa-solid fa-lock-open"></i></a>
-                        {% elif usuario.tipo.compras == False%}
-                        <a class="btn btn-outline-warning btn-block mx-auto" type="button"><i class="fa-solid fa-lock-open"></i></a>
-                        {% endif %}
+                    {% if nc.cierre != None %}
+                    <button class="btn btn-outline-info btn-block mx-auto" type="button" data-bs-toggle="modal" data-bs-target="#infoModal" 
+                        onclick="loadNcInfo(
+                        {{ nc.id }}, 
+                        '{{ nc.oc.id }}', 
+                        '{{ nc.comentario }}', 
+                        '{{ nc.cierre }}', 
+                        '{{ nc.fecha_cierre }}', 
+                        {% if nc.image %}'{{ nc.image.url }}'{% else %}null{% endif %},
+                        '{{ nc.tipo_nc.nombre }}'
+                        )">
+                        <i class="fa-solid fa-lock"></i>
+                    </button>
+                    {% elif usuario.tipo.compras == True %}
+                    <a class="btn btn-outline-warning btn-block mx-auto" type="button" href="{% url 'cierre_nc' nc.id %}">
+                        <i class="fa-solid fa-lock-open"></i>
+                    </a>
+                    {% elif usuario.tipo.compras == False %}
+                    <button class="btn btn-outline-warning btn-block mx-auto" type="button">
+                        <i class="fa-solid fa-lock-open"></i>
+                    </button>
+                    {% endif %}
                     </td>
                 </tr>
                 {% endfor %}
@@ -188,7 +202,25 @@
 
     </div>
 </div>
-
+<div class="modal fade" id="infoModal" tabindex="-1" aria-labelledby="infoModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="infoModalLabel">Información de NC</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <!-- Aquí se inyectará dinámicamente la información de NC -->
+        <div id="modalContent">
+          <!-- El contenido será cargado desde el script -->
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+      </div>
+    </div>
+  </div>
+</div>
 <script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script>
@@ -210,7 +242,35 @@ var myModal = document.getElementById('dialog')
 myModal.addEventListener('hidden.bs.modal', function (event) {
   location.reload();
 })
-
+function loadNcInfo(ncId, ocId, comentario, cierre, fechaCierre, imageUrl, tipoNcNombre) {
+    var modalContent = `
+        <div class="alert alert-primary mx-3" role="alert">
+            <h6><strong>OC: ${ocId}</strong></h6>
+        </div>
+        <div class="alert alert-primary mx-3" role="alert">
+            <h6><strong>Folio NC: ${ncId}</strong></h6>
+        </div>
+        <div class="alert alert-primary mx-3" role="alert">
+            <h6><strong>Comentario NC: ${comentario}</strong></h6>
+        </div>
+        <div class="alert alert-primary mx-3" role="alert">
+            <h6><strong>Tipo NC: ${tipoNcNombre}</strong></h6>
+        </div>
+        <div class="alert alert-primary mx-3" role="alert">
+            <h6><strong>Cierre: ${cierre ? cierre : 'Sin cierre'}</strong></h6>
+        </div>
+        <div class="alert alert-primary mx-3" role="alert">
+            <h6><strong>Fecha de Cierre: ${fechaCierre ? fechaCierre : 'No disponible'}</strong></h6>
+        </div>
+        ${imageUrl ? `
+        <div class="alert alert-primary mx-3" role="alert">
+            <h6><strong>Imagen de Calidad:</strong></h6>
+            <img src="${imageUrl}" class="img-fluid" alt="Imagen de Cierre">
+        </div>
+        ` : ''}
+    `;
+    document.getElementById('modalContent').innerHTML = modalContent;
+}
 </script>
 {% endblock %}
 </body>
