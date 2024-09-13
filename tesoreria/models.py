@@ -11,7 +11,7 @@ from django.core.validators import FileExtensionValidator
 
 
 class Cuenta(models.Model):
-    cuenta = models.CharField(max_length=13, null=True)
+    cuenta = models.CharField(max_length=16, null=True)
     clabe = models.CharField(max_length=22, null=True)
     distrito = models.ForeignKey(Distrito, on_delete = models.CASCADE, null=True)
     encargado = models.ForeignKey(Profile, on_delete = models.CASCADE, null=True)
