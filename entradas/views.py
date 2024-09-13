@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q, DecimalField, F
-from .filters import EntradaArticuloFilter
+from .filters import EntradaArticuloFilter, No_ConformidadFilter, Reporte_CalidadFilter
 from compras.models import Compra, ArticuloComprado
 from compras.filters import CompraFilter
 from compras.views import attach_oc_pdf
@@ -23,6 +23,7 @@ from django.core.paginator import Paginator
 from django.conf import settings
 import os
 from requisiciones.views import get_image_base64
+from django.shortcuts import get_object_or_404
 
 @login_required(login_url='user-login')
 def pendientes_recepcion(request):
@@ -106,6 +107,20 @@ def devolucion_a_proveedor(request):
         }
 
 
+def update_fecha(request):
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        producto_id = data.get('productoId')
+        nueva_fecha = data.get('nuevaFecha')
+
+        # Realiza la lógica para actualizar la fecha del producto
+        producto = EntradaArticulo.objects.get(id=producto_id)
+        producto.fecha_caducidad = nueva_fecha
+        producto.save()
+
+        return JsonResponse({'nuevaFecha': nueva_fecha})
+    return JsonResponse({'error': 'Método no permitido'}, status=405)
+
 # Create your views here.
 @login_required(login_url='user-login')
 def pendientes_entrada(request):
@@ -135,6 +150,14 @@ def pendientes_entrada(request):
             cantidad__gt=0,
             almacenado=False,
             articulo_comprado__producto__producto__articulos__producto__producto__servicio=False
+        ).filter(
+            # Filtro condicional usando Q
+            Q(
+                articulo_comprado__producto__producto__articulos__producto__producto__critico__in=[1, 2], 
+                calidad=True
+            ) | Q(
+                ~Q(articulo_comprado__producto__producto__articulos__producto__producto__critico__in=[1, 2])  # Excluye critico en [1, 2]
+            )
         ).annotate(
             total_recepcionado=Subquery(subquery_total_recepcionado, output_field=DecimalField(max_digits=14, decimal_places=2)),
             total_nc=Subquery(subquery_total_nc, output_field=DecimalField(max_digits=14, decimal_places=2))
@@ -1410,12 +1433,168 @@ def entradas_nc(request):
     perfil = Profile.objects.get(staff__id=request.user.id)
     ncs= No_Conformidad.objects.filter(completo = True, oc__req__orden__distrito = perfil.distrito)
     
+    myfilter = No_ConformidadFilter(request.GET, queryset=ncs)
+    ncs = myfilter.qs
+
+    #Set up pagination
+    p = Paginator(ncs, 50)
+    page = request.GET.get('page')
+    entradas_list = p.get_page(page)
 
     context = {
-        #'form': form,
+        'myfilter': myfilter,
         'ncs': ncs,
-        #'restantes_liberacion': restantes_liberacion,
+        'entradas_list': entradas_list,
         }
 
     return render(request,'entradas/entradas_nc.html',context)
 
+def entradas_con_caducidad(request):
+    perfil = Profile.objects.get(staff__id=request.user.id)
+    entradas = EntradaArticulo.objects.filter(
+        articulo_comprado__producto__producto__articulos__producto__producto__caducidad=True
+    ).exclude(fecha_caducidad__isnull=True).exclude(cantidad_por_surtir=0).order_by('fecha_caducidad')
+    
+    myfilter = EntradaArticuloFilter(request.GET, queryset=entradas)
+    entradas = myfilter.qs
+
+    #Set up pagination
+    p = Paginator(entradas, 50)
+    page = request.GET.get('page')
+    entradas_list = p.get_page(page)
+
+    context = {
+        'myfilter':myfilter,
+        'entradas': entradas,
+        'entradas_list':entradas_list,
+        }
+
+    return render(request,'entradas/entradas_con_caducidad.html',context)
+
+# Función para actualizar o crear el comentario
+def update_comentario(request):
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        entrada_articulo_id = data['entradaArticuloId']
+        nuevo_comentario = data['nuevoComentario']
+
+        entrada_articulo = get_object_or_404(EntradaArticulo, id=entrada_articulo_id)
+
+        # Verifica si el Reporte_Calidad ya existe, si no lo crea
+        reporte_calidad, created = Reporte_Calidad.objects.get_or_create(articulo=entrada_articulo)
+
+        # Actualiza el comentario
+        reporte_calidad.comentarios = nuevo_comentario
+        reporte_calidad.completo = True
+        reporte_calidad.cantidad = entrada_articulo.cantidad
+        reporte_calidad.save()
+
+        return JsonResponse({'status': 'success', 'nuevoComentario': nuevo_comentario})
+
+def autorizar_calidad(request):
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        entrada_articulo_id = data['entradaArticuloId']
+        autorizado = data['autorizado']  # True para palomita, False para tache
+
+        entrada_articulo = get_object_or_404(EntradaArticulo, id=entrada_articulo_id)
+        
+        # Verifica si el Reporte_Calidad ya existe, si no lo crea
+        reporte_calidad, created = Reporte_Calidad.objects.get_or_create(articulo=entrada_articulo)
+
+        # Actualiza los campos de EntradaArticulo y Reporte_Calidad
+        if autorizado:
+            entrada_articulo.calidad = True
+            reporte_calidad.autorizado = True
+        else:
+            entrada_articulo.calidad = False
+            reporte_calidad.autorizado = True
+        # Asigna la fecha y hora actual
+        reporte_calidad.reporte_date = datetime.now().date()  # Fecha actual
+        reporte_calidad.reporte_hora = datetime.now().time()  # Hora actual
+        reporte_calidad.cantidad = entrada_articulo.cantidad
+        reporte_calidad.completo = True
+        entrada_articulo.save()
+        reporte_calidad.save()
+
+        return JsonResponse({'status': 'success', 'autorizado': autorizado})
+    
+@login_required(login_url='user-login')
+def calidad_entradas(request):
+    usuario = Profile.objects.get(staff__id=request.user.id)
+    
+    if usuario.tipo.calidad == True:
+        # Subconsulta para total_recepcionado
+        subquery_total_recepcionado = EntradaArticulo.objects.filter(
+            articulo_comprado=OuterRef('articulo_comprado'),
+            entrada__oc=OuterRef('entrada__oc'),
+            recepcion=True
+        ).values('articulo_comprado').annotate(
+            total_recepcionado=Sum('cantidad')
+        ).values('total_recepcionado')
+
+        # Subconsulta para total_nc
+        subquery_total_nc = NC_Articulo.objects.filter(
+            articulo_comprado=OuterRef('articulo_comprado'), resuelto=False,
+            nc__oc=OuterRef('entrada__oc')
+        ).values('articulo_comprado').annotate(
+            total_nc=Sum('cantidad')
+        ).values('total_nc')
+
+        # Consulta principal
+        articulos_recepcionados = EntradaArticulo.objects.filter(
+            recepcion=True,
+            cantidad__gt=0,
+            almacenado=False,
+            articulo_comprado__producto__producto__articulos__producto__producto__servicio=False,
+            articulo_comprado__producto__producto__articulos__producto__producto__critico__in=[1, 2]  # Filtro para id 1 y 2 
+        ).exclude(
+            reportes_calidad__autorizado=True  # Excluye aquellos que tienen un Reporte_Calidad con autorizado=True
+        ).annotate(
+            total_recepcionado=Subquery(subquery_total_recepcionado, output_field=DecimalField(max_digits=14, decimal_places=2)),
+            total_nc=Subquery(subquery_total_nc, output_field=DecimalField(max_digits=14, decimal_places=2))
+        ).order_by('-id')
+
+        myfilter = EntradaArticuloFilter(request.GET, queryset=articulos_recepcionados)
+        articulos_recepcionados = myfilter.qs
+        #Set up pagination
+        p = Paginator(articulos_recepcionados, 50)
+        page = request.GET.get('page')
+        articulos_recepcionados_list = p.get_page(page)
+    else:
+        articulos_recepcionados = None
+        articulos_recepcionados_list = None
+
+    context = {
+        'articulos_recepcionados':articulos_recepcionados,
+        'myfilter':myfilter,
+        'articulos_recepcionados_list':articulos_recepcionados_list,
+        }
+
+    return render(request, 'entradas/calidad_entradas.html', context)
+
+@login_required(login_url='user-login')
+def calidad_entradas_autorizadas(request):
+    usuario = Profile.objects.get(staff__id=request.user.id)
+    
+    if usuario.tipo.calidad == True:
+        # Consulta principal
+        articulos_recepcionados = Reporte_Calidad.objects.filter(completo=True, autorizado=True).order_by('-id')
+
+        myfilter = Reporte_CalidadFilter(request.GET, queryset=articulos_recepcionados)
+        articulos_recepcionados = myfilter.qs
+        #Set up pagination
+        p = Paginator(articulos_recepcionados, 50)
+        page = request.GET.get('page')
+        articulos_recepcionados_list = p.get_page(page)
+    else:
+        articulos_recepcionados = None
+        articulos_recepcionados_list = None
+
+    context = {
+        'articulos_recepcionados':articulos_recepcionados,
+        'myfilter':myfilter,
+        'articulos_recepcionados_list':articulos_recepcionados_list,
+        }
+
+    return render(request, 'entradas/calidad_entradas_autorizadas.html', context)

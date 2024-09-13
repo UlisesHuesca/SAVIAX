@@ -145,14 +145,16 @@
                         <th scope="col">Proveedor</th>
                         <th>Concepto</th>
                         <th>Cantidad</th>
-                        <th scope="col">Edición</th>
+                        <th scope="col">Edición cantidad</th>
+                        <th>Fecha Caducidad</th>
+                        <th>Edición caducidad</th>
                         <th>Entrada Almacén</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for item in articulos_recepcionados_list %}
                     <tr>
-                        <td scope="col">{{item.entrada.oc.get_folio}}</th>
+                        <td scope="col">{{item.entrada.oc.get_folio}}</td>
                         <td class="d-none d-lg-table-cell">{{item.entrada.oc.req.folio}}</td>
                         <td scope="col">{{item.entrada.oc.req.orden.folio}}</td>
                         <td class="d-none d-lg-table-cell">{{item.entrada.oc.req.orden.staff.staff.first_name}} {{item.entrada.oc.req.orden.staff.staff.last_name}}</td>
@@ -160,7 +162,17 @@
                         <td class="d-none d-lg-table-cell">{{item.entrada.oc.req.orden.subproyecto.nombre}}</td>
                         <td class="d-none d-lg-table-cell">{{item.fecha_recepcion}} </td>
                         {% if compra.proveedor.nombre.razon_social == "COLABORADOR" %}
-                        <td>{{compra.deposito_comprador.staff.first_name}} {{compra.deposito_comprador.staff.last_name}}</td>
+                        <td>
+                            <a id="edit_expiration_{{item.id|unlocalize}}" class="btn btn-lg btn-outline-info m-1" onclick="modificar_fecha('{{item.id|unlocalize}}')">
+                                <i class="fa-solid fa-calendar"></i> <!-- Icono de calendario -->
+                            </a>
+                            <button type="button" id="save_fecha_{{item.id|unlocalize}}" onclick="aceptar_edicion_fecha('{{item.id|unlocalize}}')" class="btn btn-outline-primary d-none">
+                                <i class="fa-regular fa-circle-check"></i> <!-- Icono de confirmación -->
+                            </button>
+                            <button id="cancel_edit_fecha_{{item.id|unlocalize}}" type="button" class="btn add-btn d-none" onclick="cancelar_edicion_fecha('{{item.id|unlocalize}}')" style="color:ghostwhite; background-color:#980F0F ;">
+                                <i class="fa-solid fa-circle-xmark"></i> <!-- Icono de cancelar -->
+                            </button>
+                        </td>
                         {% else %}
                         <td>{{item.entrada.oc.proveedor}}</td>
                         {% endif %}
@@ -175,27 +187,59 @@
                         <td class="d-none" id="form_cantidad_{{item.id|unlocalize}}">
                             <input type="number"  class="form-control" id="cantidad-input_{{ item.id|unlocalize }}" value="{{ item.cantidad }}">
                         </td>
-                        <td><a id="edit_quantity_{{item.id|unlocalize}}" class="btn btn-lg btn-outline-info m-1" onclick="modificar_cantidad('{{item.id|unlocalize}}')">
+                        <td>
+                            <a id="edit_quantity_{{item.id|unlocalize}}" class="btn btn-lg btn-outline-info m-1" onclick="modificar_cantidad('{{item.id|unlocalize}}')">
                                 <i class="fa-solid fa-pen-to-square"></i>
                             </a>
-                            <button type="button" id="save_cantidad_{{item.id|unlocalize}}" onclick="aceptar_edicion2('{{item.id|unlocalize}}')"    class="btn btn-outline-primary d-none">
+                            <button type="button" id="save_cantidad_{{item.id|unlocalize}}" onclick="aceptar_edicion2('{{item.id|unlocalize}}')" class="btn btn-outline-primary d-none">
                                 <i class="fa-regular fa-circle-check"></i>
                             </button>
                             <button id="cancel_edit2_{{item.id|unlocalize}}" type="button" class="btn add-btn d-none" onclick="cancelar_edicion2('{{item.id|unlocalize}}')" style="color:ghostwhite; background-color:#980F0F ;">
                                 <i class="fa-solid fa-circle-xmark"></i>
                             </button>
                         </td>
-                    
+                        {% if item.articulo_comprado.producto.producto.articulos.producto.producto.caducidad %}
+                            <td id="fecha_{{item.id|unlocalize}}">
+                                {{ item.fecha_caducidad }}
+                                <!-- Formulario de edición de la fecha -->
+                                <td id="form_fecha_{{item.id|unlocalize}}" class="d-none">
+                                    <input type="date" id="fecha-input_{{item.id|unlocalize}}" value="{{ item.fecha_caducidad }}">
+                                </td>
+                            </td>
+                            <td>
+                                <!-- Botones para la edición de la fecha -->
+                                <a id="edit_expiration_{{item.id|unlocalize}}" class="btn btn-lg btn-outline-info m-1" onclick="modificar_fecha('{{item.id|unlocalize}}')">
+                                    <i class="fa-solid fa-calendar"></i>
+                                </a>
+                                <button type="button" id="save_fecha_{{item.id|unlocalize}}" onclick="aceptar_edicion_fecha('{{item.id|unlocalize}}')" class="btn btn-outline-primary d-none">
+                                    <i class="fa-regular fa-circle-check"></i>
+                                </button>
+                                <button id="cancel_edit_fecha_{{item.id|unlocalize}}" type="button" class="btn add-btn d-none" onclick="cancelar_edicion_fecha('{{item.id|unlocalize}}')" style="color:ghostwhite; background-color:#980F0F ;">
+                                    <i class="fa-solid fa-circle-xmark"></i>
+                                </button>
+                            </td>
+                        {% else %}
+                            <td>No caduca</td>
+                            <td>
+                                <!--<button class="btn btn-outline-secondary" disabled>
+                                    <i class="fa-solid fa-calendar"></i> 
+                                </button>-->
+                            </td>
+                        {% endif %}
                         <td>
                             <form method="POST" id="myForm">
                             {% csrf_token %}
                             <input type="hidden" name="entrada_articulo_id" value="{{item.id|unlocalize}}">
-                            <ul class="nav nav-pills">
-                                
+                            <ul class="nav nav-pills">       
                                 <li class="nav-item m-1">
-                                    <button id="myBtn" type="submit" name="entrada" class="btn btn-outline-success btn-lg"><i class="fa-solid fa-check"></i></button>
+                                    <button id="myBtn" type="submit" name="entrada" class="btn btn-outline-success btn-lg"
+                                        {% if item.articulo_comprado.producto.producto.articulos.producto.producto.caducidad and not item.fecha_caducidad %}
+                                            disabled
+                                            title="Caducidad pendiente"
+                                        {% endif %}>
+                                        <i class="fa-solid fa-check"></i>
+                                    </button>
                                 </li>
-                                <!-- Añadir el botón de NC aquí -->
                                 <li class="nav-item m-1">
                                 <a id="ncBtn" type="button" class="btn btn-outline-warning btn-lg" href="{% url 'no-conformidad-almacen' item.id%}">NC</a> 
                                 </li>  <!--NC: {{item.total_nc}} Ent: {{item.total_recepcionado}} -->
@@ -206,9 +250,7 @@
                     {% endfor %}
                 </tbody>
             </table>
-
         </div>
-   
     </div>
 </div>
     <nav aria-label="Page navigation example">
@@ -218,7 +260,7 @@
                 <li class="page-item"><a class="page-link" style="color:#3E92CC" href="{% my_url  articulos_recepcionados_list.previous_page_number  'page' request.GET.urlencode %}"><i class="fa-solid fa-angle-left"></i></a></li>
             {% endif %}
 
-            {% for item in  articuloys_recepcionados_list.paginator.page_range %}
+            {% for item in  articulos_recepcionados_list.paginator.page_range %}
                 {% if  articulos_recepcionados_list.number == item %}
                     <li class="page-item active"><a href="#" class="page-link bg-dark">{{item}}</a></li>
                 {% elif item >  articulos_recepcionados_list.number|add:'-2' and item <  articulos_recepcionados_list.number|add:'2' %}
@@ -385,6 +427,84 @@ function ActualizarCantidad(solicitud_id, dato){
     })
     .catch((error) => {
         console.error('Error:', error);
+    });
+}
+
+function modificar_fecha(productoId) {
+    var form_fecha = document.getElementById("form_fecha_" + productoId);
+    var fecha = document.getElementById("fecha_" + productoId);
+    var edit_expiration = document.getElementById("edit_expiration_" + productoId);
+    var cancel_edit = document.getElementById("cancel_edit_fecha_" + productoId);
+    var save_fecha = document.getElementById("save_fecha_" + productoId);
+
+    form_fecha.classList.remove("d-none");
+    fecha.classList.add("d-none");
+    edit_expiration.classList.add("d-none");
+    cancel_edit.classList.remove("d-none");
+    save_fecha.classList.remove("d-none");
+};
+
+function cancelar_edicion_fecha(productoId) {
+    var form_fecha = document.getElementById("form_fecha_" + productoId);
+    var fecha = document.getElementById("fecha_" + productoId);
+    var edit_expiration = document.getElementById("edit_expiration_" + productoId);
+    var cancel_edit = document.getElementById("cancel_edit_fecha_" + productoId);
+    var save_fecha = document.getElementById("save_fecha_" + productoId);
+
+    form_fecha.classList.add("d-none");
+    fecha.classList.remove("d-none");
+    edit_expiration.classList.remove("d-none");
+    cancel_edit.classList.add("d-none");
+    save_fecha.classList.add("d-none");
+};
+
+function aceptar_edicion_fecha(productoId) {
+    var form_tag = document.getElementById("form_fecha_" + productoId);
+    var fecha = document.getElementById("fecha_" + productoId);
+    var edit_expiration = document.getElementById("edit_expiration_" + productoId);
+    var cancel_edit = document.getElementById("cancel_edit_fecha_" + productoId);
+    var save_fecha = document.getElementById("save_fecha_" + productoId);
+    var inputElement = document.getElementById('fecha-input_' + productoId).value;
+
+    // Aquí puedes agregar validaciones para la fecha si es necesario
+
+    // Llamar a la función para actualizar la fecha
+    ActualizarFecha(productoId, inputElement);
+
+    // Ocultar y mostrar los elementos apropiados
+    form_tag.classList.add("d-none");
+    fecha.classList.remove("d-none");
+    edit_expiration.classList.remove("d-none");
+    cancel_edit.classList.add("d-none");
+    save_fecha.classList.add("d-none");
+}
+
+function ActualizarFecha(productoId, nuevaFecha) {
+    console.log('Actualizando la fecha de caducidad...');
+
+    var url = '/entradas/update_fecha/';
+    fetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrftoken,
+        },
+        body: JSON.stringify({'productoId': productoId, 'nuevaFecha': nuevaFecha})
+    })
+    .then((response) => {
+        return response.json();
+    })
+    .then((data) => {
+        console.log('Fecha actualizada:', data);
+
+        // Actualiza la fecha mostrada en la página
+        document.getElementById('fecha_' + productoId).innerHTML = data.nuevaFecha;
+        
+        // Recargar la página después de actualizar la fecha (opcional)
+        window.location.reload();
+    })
+    .catch((error) => {
+        console.error('Error al actualizar la fecha:', error);
     });
 }
 

@@ -13,7 +13,7 @@ from requisiciones.models import Requis, ArticulosRequisitados
 from user.models import Profile
 from tesoreria.models import Pago
 from requisiciones.views import get_image_base64
-from .filters import CompraFilter, ArticulosRequisitadosFilter,  ArticuloCompradoFilter, HistoricalArticuloCompradoFilter, ComparativoFilter
+from .filters import CompraFilter, ArticulosRequisitadosFilter,  ArticuloCompradoFilter, HistoricalArticuloCompradoFilter, ComparativoFilter, Item_ComparativoFilter
 from .models import ArticuloComprado, Compra, Proveedor, Proveedor_direcciones, Cond_credito, Uso_cfdi, Moneda, Comparativo, Item_Comparativo, Preevaluacion, Estatus_proveedor
 from tesoreria.models import Facturas
 from .forms import CompraForm, ArticuloCompradoForm, ArticulosRequisitadosForm, ComparativoForm, Item_ComparativoForm, Compra_ComentarioForm, PreevaluacionForm, Compra_Comment_Form
@@ -3452,3 +3452,24 @@ def generar_oc_comparativas_pdf(request, pk):
 
     #return FileResponse(buf, as_attachment=True, filename='Comparativa_' + str(compras.folio) +'.pdf')
     return FileResponse(buf, as_attachment=True, filename='Comparativas_prueba'  +'.pdf')
+
+@login_required(login_url='user-login')
+def comparativo_historico(request):
+    usuario = Profile.objects.get(staff__id=request.user.id)
+    
+    items_comparativos = Item_Comparativo.objects.filter(completo=True).select_related('comparativo').prefetch_related('comparativo__preevaluaciones_comparativo').order_by('-comparativo__id')
+    myfilter = Item_ComparativoFilter(request.GET, queryset=items_comparativos)
+
+    itemss = myfilter.qs
+
+     #Set up pagination
+    p = Paginator(itemss, 50)
+    page = request.GET.get('page')
+    item_list = p.get_page(page)
+    
+    context= {
+        'myfilter':myfilter,
+        'itemss':itemss,
+        'item_list':item_list,
+    }
+    return render(request,'compras/comparativo_historico.html', context)

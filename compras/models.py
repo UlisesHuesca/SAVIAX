@@ -123,7 +123,7 @@ class Preevaluacion(models.Model):
     areas_oportunidad = models.CharField(max_length=255, null=True, blank=True)
     history = HistoricalRecords(history_change_reason_field=models.TextField(null=True))
     completo = models.BooleanField(default=False)
-    comparativo_model = models.ForeignKey(Comparativo, on_delete = models.CASCADE, null=True, blank=True)
+    comparativo_model = models.ForeignKey(Comparativo, on_delete = models.CASCADE, null=True, blank=True, related_name="preevaluaciones_comparativo")
 
     def __str__(self):
         return f'{self.id} - {self.nombre}'

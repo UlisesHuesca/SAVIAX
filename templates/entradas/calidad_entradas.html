@@ -1,0 +1,345 @@
+{% extends 'partials/base.html' %}
+{% load crispy_forms_tags %}
+{% load static %}
+{% load widget_tweaks %}
+{% load tt_extras %}
+{% load l10n %}
+<html>
+<head>
+{% block title %}Calidad Entradas{% endblock %}
+</head>
+<body>
+{% block content %}
+<hr>
+<hr>
+<hr>
+<h6>&nbsp;</h6>
+<h6 class="d-lg-none">&nbsp;</h6>
+<div class = "col bg-white" id="response-div">
+    <div class="card">
+        <div class="card-header">
+            <h5>Entradas Calidad</h5>
+        </div>
+        
+        <div class="card-body">
+            <form method="GET">
+                {% csrf_token %}
+                <div class="row">
+                    <div class="col-lg-3 col-sm-12">
+                        <div class="input-group mb-3">
+                        <span class="input-group-text" id="basic-addon1"><i class="fa-solid fa-hashtag"></i></span>
+                            <div class="form-floating form-floating-group flex-grow-1">   
+                                {{myfilter.form.oc|add_class:"form-control"|append_attr:"placeholder= Folio OC"}}
+                                <label style="color: #121212;" for="id_staff">Folio OC</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-3 col-sm-12">
+                        <div class="input-group mb-3">
+                        <span class="input-group-text" id="basic-addon1"><i class="fa-solid fa-user"></i></span>
+                            <div class="form-floating form-floating-group flex-grow-1">   
+                                {{myfilter.form.proveedor|add_class:"form-control"|append_attr:"placeholder= Proveedor"}}
+                                <label style="color: #121212;" for="id_staff">Proveedor</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-3 col-sm-12">
+                        <div class="input-group mb-3">
+                        <span class="input-group-text" id="basic-addon1"><i class="fa-solid fa-hashtag"></i></span>
+                            <div class="form-floating form-floating-group flex-grow-1">   
+                                {{myfilter.form.req|add_class:"form-control"|append_attr:"placeholder= Requisición"}}
+                                <label style="color: #121212;" for="id_staff">Requisición</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-3 col-sm-12">
+                        <div class="input-group mb-3">
+                        <span class="input-group-text" id="basic-addon1"><i class="fa-solid fa-diagram-project"></i></span>
+                            <div class="form-floating form-floating-group flex-grow-1">   
+                                {{myfilter.form.proyecto|add_class:"form-control"|append_attr:"placeholder= Proyecto"}}
+                                <label style="color: #121212;" for="id_proyecto">Proyecto</label>
+                            </div>
+                        </div>
+                    </div>       
+                </div>
+                <div class="row">
+                    <div class="col-lg-3 col-sm-12">
+                        <div class="input-group mb-3">
+                        <span class="input-group-text" id="basic-addon1"><i class="fa-solid fa-diagram-project"></i></span>
+                            <div class="form-floating form-floating-group flex-grow-1">   
+                                {{myfilter.form.subproyecto|add_class:"form-control"|append_attr:"placeholder= Subproyecto"}}
+                                <label style="color: #121212;" for="id_proyecto">Subproyecto</label>
+                            </div>
+                        </div>
+                    </div>  
+                    <div id="serie" class="col-lg-2 col-md-auto col-sm-auto">
+                        <div class="input-group mb-3">
+                        <span class="input-group-text" id="basic-addon1"><i class="fa-regular fa-calendar"></i></span>
+                            <div class="form-floating form-floating-group flex-grow-1">   
+                                {% render_field myfilter.form.start_date type="date" class="form-control" %}
+                            <label style="color: #121212;" for="id_subproyecto">Desde:</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="serie" class="col-lg-2 col-md-auto col-sm-auto">
+                        <div class="input-group mb-3">
+                        <span class="input-group-text" id="basic-addon1"><i class="fa-regular fa-calendar"></i></span>
+                            <div class="form-floating form-floating-group flex-grow-1">   
+                                {% render_field myfilter.form.end_date type="date" class="form-control" %}
+                            <label style="color: #121212;" for="id_subproyecto">Hasta:</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-2">
+                        <button class="btn btn-outline-success btn-block btn-lg mt-1" type="submit" value="Buscar"><i class="fa-solid fa-magnifying-glass"></i></button>
+                    </div>
+                </div>
+            <hr>
+            </form>
+        </div>
+    </div>      
+</div>
+    <!-- Aquí terminan el encabezado de los filtros -->
+
+<!-- Esta es la zona donde se crean los mensajes perrones con sweet alert -->
+<div class="row my-4">
+    <div class="col-md-4">
+    <script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+        {% if messages %}
+            {% for message in messages %}
+                {% if message.tags == "error" %}
+                <script>
+                Swal.fire({
+                    "title":"Error",
+                    "text":"{{message}}",
+                    "icon":"error",
+                })
+                </script>
+                {% else %}
+                <script>
+                Swal.fire({
+                    "title":"Excelente",
+                    "text":"{{message}}",
+                    "icon":"success",
+                })
+                </script>
+                {% endif %}
+            {% endfor %}
+        {% endif %}
+    </div>
+</div>
+
+<div class = "col">
+    <div class="card">
+        <div class ="table-responsive-sm">
+            <table class="table bg-white">
+                <thead class="text-black" style="background-color: #F5F5F5;">
+                    <tr>
+                        <th scope="col">Compra</th>
+                        <th scope="col">Entrada</th>
+                        <th class="d-none d-lg-table-cell">Req.</th>
+                        <th class="d-none d-lg-table-cell">Solicitado por</th>
+                        <th scope="col">Proyecto</th>
+                        <th class="d-none d-lg-table-cell">Subproyecto</th>
+                        <th class="d-none d-lg-table-cell">Fecha Recepción</th>
+                        <th scope="col">Proveedor</th>
+                        <th>Concepto</th>
+                        <th>Criticidad</th>
+                        <th>Cantidad</th>
+                        <th>Comentario Calidad</th>
+                        <th>Editar comentario</th>
+                        <th>Autorización</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in articulos_recepcionados_list %}
+                    <tr>
+                        <td scope="col">{{item.entrada.oc.get_folio}}</td>
+                        <td scope="col">{{item.id}}</td>
+                        <td class="d-none d-lg-table-cell">{{item.entrada.oc.req.folio}}</td>
+                        <td class="d-none d-lg-table-cell">{{item.entrada.oc.req.orden.staff.staff.first_name}} {{item.entrada.oc.req.orden.staff.staff.last_name}}</td>
+                        <td>{{item.entrada.oc.req.orden.proyecto.nombre}}</td>
+                        <td class="d-none d-lg-table-cell">{{item.entrada.oc.req.orden.subproyecto.nombre}}</td>
+                        <td class="d-none d-lg-table-cell">{{item.fecha_recepcion}} </td>
+                        {% if compra.proveedor.nombre.razon_social == "COLABORADOR" %}
+                        <td>
+                            <a id="edit_expiration_{{item.id|unlocalize}}" class="btn btn-lg btn-outline-info m-1" onclick="modificar_fecha('{{item.id|unlocalize}}')">
+                                <i class="fa-solid fa-calendar"></i> <!-- Icono de calendario -->
+                            </a>
+                            <button type="button" id="save_fecha_{{item.id|unlocalize}}" onclick="aceptar_edicion_fecha('{{item.id|unlocalize}}')" class="btn btn-outline-primary d-none">
+                                <i class="fa-regular fa-circle-check"></i> <!-- Icono de confirmación -->
+                            </button>
+                            <button id="cancel_edit_fecha_{{item.id|unlocalize}}" type="button" class="btn add-btn d-none" onclick="cancelar_edicion_fecha('{{item.id|unlocalize}}')" style="color:ghostwhite; background-color:#980F0F ;">
+                                <i class="fa-solid fa-circle-xmark"></i> <!-- Icono de cancelar -->
+                            </button>
+                        </td>
+                        {% else %}
+                        <td>{{item.entrada.oc.proveedor}}</td>
+                        {% endif %}
+                    
+                        <td>{{item.articulo_comprado.producto.producto.articulos.producto}}</td>
+                        <td>{{item.articulo_comprado.producto.producto.articulos.producto.producto.critico}}</td>
+                        <td>{{item.cantidad}}</td>
+                        <td id="comentario_{{ item.id }}">
+                            {% if item.reportes_calidad.exists %}
+                                <p class="text-wrap text-break">{{ item.reportes_calidad.first.comentarios }}</p>
+                            {% else %}
+                                <p class="text-wrap text-break">No hay comentario</p>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <button id="edit_comentario_{{ item.id }}" class="btn btn-outline-info" onclick="modificar_comentario('{{ item.id }}')">
+                                <i class="fa-solid fa-edit"></i> <!-- Icono de edición -->
+                            </button>
+                            <div id="form_comentario_{{ item.id }}" class="d-none">
+                                <input type="text" id="comentario-input_{{ item.id }}" value="{% if item.reportes_calidad.exists %}{{ item.reportes_calidad.first.comentarios }}{% endif %}">
+                                <button id="save_comentario_{{ item.id }}" class="btn btn-outline-primary" onclick="guardar_comentario('{{ item.id }}')">
+                                    <i class="fa-regular fa-circle-check"></i>
+                                </button>
+                                <button id="cancel_comentario_{{ item.id }}" class="btn btn-outline-danger" onclick="cancelar_comentario('{{ item.id }}')">
+                                    <i class="fa-solid fa-circle-xmark"></i>
+                                </button>
+                            </div>
+                        </td>
+                        <td>
+                            <button class="btn btn-success" onclick="autorizarCalidad('{{ item.id }}', true)">
+                                <i class="fa-regular fa-circle-check"></i>
+                            </button>
+                            <button class="btn btn-danger" onclick="autorizarCalidad('{{ item.id }}', false)">
+                                <i class="fa-solid fa-circle-xmark"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+    <nav aria-label="Page navigation example">
+        <ul class="pagination justify-content-center">
+            {% if  articulos_recepcionados_list.has_previous %}
+                <li class="page-item"><a class="page-link" style="color:#3E92CC" href="{% my_url 1 'page' request.GET.urlencode %}"><i class="fa-solid fa-angles-left"></i></a></li>
+                <li class="page-item"><a class="page-link" style="color:#3E92CC" href="{% my_url  articulos_recepcionados_list.previous_page_number  'page' request.GET.urlencode %}"><i class="fa-solid fa-angle-left"></i></a></li>
+            {% endif %}
+
+            {% for item in  articulos_recepcionados_list.paginator.page_range %}
+                {% if  articulos_recepcionados_list.number == item %}
+                    <li class="page-item active"><a href="#" class="page-link bg-dark">{{item}}</a></li>
+                {% elif item >  articulos_recepcionados_list.number|add:'-2' and item <  articulos_recepcionados_list.number|add:'2' %}
+                    <li class="page-item "><a class="page-link" style="color:#3E92CC" href="{% my_url item 'page' request.GET.urlencode %}" class="page-link">{{item}}</a></li>
+                {% endif %}
+            {% endfor %}
+
+            {% if  articulos_recepcionados_list.paginator.num_pages >  articulos_recepcionados_list.number|add:'2' %}
+            <li><a class="page-link" style="color:#3E92CC" href="?page={{ articulos_recepcionados_list.number|add:'2'}}">&hellip;</a></li>
+            <li><a style="color:#3E92CC" href="?page={{ item }}">{{item}}</a></li>
+            <li><a class="page-link" style="color:#3E92CC" href="{% my_url  articulos_recepcionados_list.paginator.num_pages 'page' request.GET.urlencode %}">{{ articulos_recepcionados_list.paginator.num_pages}}</a></li>
+            {% endif %}
+
+            {% if  articulos_recepcionados_list.has_next %}
+                <li class="page-item"><a class="page-link" style="color:#3E92CC" href="{% my_url  articulos_recepcionados_list.next_page_number 'page' request.GET.urlencode %}"><i class="fa-solid fa-chevron-right"></i></a></li>
+                <li class="page-item"><a class="page-link" style="color:#3E92CC" href="{% my_url  articulos_recepcionados_list.paginator.num_pages 'page' request.GET.urlencode %}"><i class="fa-solid fa-angles-right"></i></a></a></li>
+            {% endif %}
+        </ul>
+    </nav>
+
+
+<!--Este es el modal-->
+<div class="modal fade" id ="dialog" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg" id="document" role="document" hx-target="this">
+
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script>
+function modificar_comentario(itemId) {
+    var form_comentario = document.getElementById("form_comentario_" + itemId);
+    var comentario = document.getElementById("comentario_" + itemId);
+    var edit_button = document.getElementById("edit_comentario_" + itemId);
+
+    form_comentario.classList.remove("d-none");
+    edit_button.classList.add("d-none");
+}
+
+function cancelar_comentario(itemId) {
+    var form_comentario = document.getElementById("form_comentario_" + itemId);
+    var comentario = document.getElementById("comentario_" + itemId);
+    var edit_button = document.getElementById("edit_comentario_" + itemId);
+
+    form_comentario.classList.add("d-none");
+    comentario.classList.remove("d-none");
+    edit_button.classList.remove("d-none");
+}
+
+function guardar_comentario(itemId) {
+    var comentario_input = document.getElementById("comentario-input_" + itemId).value;
+
+    // Valida si es necesario
+    if (comentario_input.trim() === "") {
+        alert("El comentario no puede estar vacío");
+        return;
+    }
+    // Elimina cualquier coma en el ID (si es necesario)
+    itemId = itemId.replace(/,/g, '');
+
+    fetch("{% url 'update_comentario' %}", {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrftoken, // Añade el token CSRF necesario para seguridad
+        },
+        body: JSON.stringify({
+            'entradaArticuloId': itemId,
+            'nuevoComentario': comentario_input
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log('Datos recibidos:', data);
+
+        if (data.status === 'success') {
+            // Recargar la página después de actualizar el comentario
+            window.location.reload();
+        } else {
+            console.error('Error al guardar el comentario:', data);
+        }
+    })
+    .catch(error => {
+        console.error('Error al guardar el comentario:', error);
+    });
+}
+
+function autorizarCalidad(entradaArticuloId, autorizado) {
+    entradaArticuloId = entradaArticuloId.replace(/,/g, '');
+
+    fetch("{% url 'autorizar_calidad' %}", {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrftoken  
+        },
+        body: JSON.stringify({
+            'entradaArticuloId': entradaArticuloId,
+            'autorizado': autorizado
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+
+            console.log('Autorización actualizada', data);
+            // Recargar la página para reflejar los cambios
+            window.location.reload();
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+    });
+}
+</script>
+{% endblock %}
+</body>
+</html>

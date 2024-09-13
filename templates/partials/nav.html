@@ -125,6 +125,9 @@
                             <a class="dropdown-item" href="{% url 'entradas_nc' %}">
                                 Entradas NC's
                             </a>
+                            <a class="dropdown-item" href="{% url 'entradas_caducidad' %}">
+                                Entradas con Caducidad
+                            </a>
                             <a class="dropdown-item" href="{% url 'matriz-gasto-entrada'%}">
                                 Entrada por gasto
                             </a>
@@ -143,18 +146,24 @@
                                 {% endif %}
                             </a>
                         </div>
-                        <div class="dropdown-divider"></div>
                     </div>
                     {% if usuario.tipo.calidad == False %}
                     <div class="d-none">
                     {% else %}
+                    <div class="dropdown-divider"></div>
                     <div>
                     {% endif %}
                         <h6 class="dropdown-header">Calidad</h6>
                         <div class="dropdown-divider"></div>
                             <a class="dropdown-item" href="{% url 'pendientes_calidad' %}">Liberación</a>
-                        <div class="dropdown-divider"></div>
+                            <a class="dropdown-item" href="{% url 'calidad_entradas' %}">
+                                Autorización Calidad
+                            </a>
+                            <a class="dropdown-item" href="{% url 'calidad_entradas_autorizadas' %}">
+                                Entradas Autorizadas
+                            </a>
                     </div>
+                    <div class="dropdown-divider"></div>
                     {% if usuario.tipo.solicitudes == False %}
                         <div class="d-none">
                     {% else %}
@@ -217,6 +226,9 @@
                             {% endif %}
                             <a class="dropdown-item" href="{% url 'entradas_nc' %}">
                                 Entradas NC's
+                            </a>
+                            <a class="dropdown-item" href="{% url 'comparativos_historico' %}">
+                                Comparativo Histórico
                             </a>
                         <div class="dropdown-divider"></div>
                     </div>
