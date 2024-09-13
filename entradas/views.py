@@ -213,8 +213,8 @@ def pendientes_entrada(request):
         #print(entrada_item.cantidad)
         #print(producto_comprado.cantidad_pendiente)
         if abs(entrada_item.cantidad_por_surtir - entrada_item.cantidad) > tolerance: #Si la cantidad de las entradas es mayor a la cantidad de la compra se rechaza
-            print('Que?')
-            messages.error(request,f'La cantidad de entradas sobrepasa la cantidad comprada {entrada_item.cantidad} > {producto_comprado.cantidad_pendiente}') 
+            diferencia = entrada_item.cantidad_por_surtir - entrada_item.cantidad
+            messages.error(request,f'La cantidad de entradas sobrepasa la cantidad comprada {entrada_item.cantidad} mayor que {producto_comprado.cantidad_pendiente} = {diferencia}') 
         
             #messages.error(request,f'La cantidad de entradas sobrepasa la cantidad comprada {suma_cantidad} > {entrada_item.cantidad}')
         else:   #En caso de que NO sea un RESURMIENTO
@@ -1198,7 +1198,7 @@ def update_no_conformidad(request):
         total_entradas_nc = pendientes_surtir + suma_nc_producto + nc_item.cantidad#Se suma los pendientes por surtir de las entradas
         #La suma total de la cantidad de los NC_articulo y la cantidad del nuevo item nc_articulo
         if total_entradas_nc > producto_comprado.cantidad: #Si la cantidad de las entradas es mayor a la cantidad de la compra se rechaza
-            messages.error(request,f'Estas intenando ingresar mas productos de los comprados, Comprados: {producto_comprado.cantidad} Ya Recepcionados: {suma_entradas} Ingresados: {cantidad}')
+            messages.error(request,f'Estas intentando ingresar mas productos de los comprados, Comprados: {producto_comprado.cantidad} Ya Recepcionados: {suma_entradas} Ingresados: {cantidad}')
         else:
             #producto_comprado.cantidad_pendiente = producto_comprado.cantidad - total_entradas_nc
             #Cree una variable booleana temporal para quitarlo del seleccionable
