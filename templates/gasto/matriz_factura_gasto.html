@@ -87,17 +87,20 @@
             <thead class="text-black" style="background-color: #F5F5F5;">
                 <tr>
                     <th scope="col">Gasto</th>
+                    <th scope="col">OT</th>
                     <th scope="col">Artículo</th>
+                    <th scope="col">Cantidad</th>             
                     <th scope="col">Descripción</th>
                     <th scope="col">Importe Gasto</th>
-                    
                 </tr>
             </thead>
             <tbody>
                 {% for gasto in articulos_gasto %}
                 <tr>
                     <th scope="row">{{gasto.id}}</th>
+                    <td>{{gasto.proyecto.nombre}}</td>
                     <td>{{gasto.producto}}</td>
+                    <td>{{gasto.cantidad}}</td>
                     <td>{{gasto.comentario}}</td>
                     <td>${{gasto.total_parcial|floatformat:2}}</td>
                 </tr>
