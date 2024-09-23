@@ -2386,7 +2386,7 @@ def convert_excel_solicitud_matriz_productos(productos):
     money_resumen_style.font = Font(name ='Calibri', size = 14, bold = True)
     wb.add_named_style(money_resumen_style)
 
-    columns = ['OC','RQ','Sol','Solicitante','Proyecto','Subproyecto','Fecha','Proveedor','Estatus Proveedor','Área','Cantidad','Código', 'Producto','P.U.','Moneda','Tipo de Cambio','Subtotal','IVA','Total','Estatus','Pagada']
+    columns = ['OC','RQ','Sol','Solicitante','Proyecto','Subproyecto','Fecha','Proveedor','Estatus Proveedor','Área','Cantidad','Código', 'Producto','Criticidad','P.U.','Moneda','Tipo de Cambio','Subtotal','IVA','Total','Estatus','Pagada']
 
     for col_num in range(len(columns)):
         (ws.cell(row = row_num, column = col_num+1, value=columns[col_num])).style = head_style
@@ -2421,6 +2421,7 @@ def convert_excel_solicitud_matriz_productos(productos):
         cantidad = producto.cantidad
         codigo = producto.producto.producto.articulos.producto.producto.codigo
         producto_nombre = producto.producto.producto.articulos.producto.producto.nombre
+        criticidad = producto.producto.producto.articulos.producto.producto.critico
         precio_unitario = producto.precio_unitario
         moneda_nombre = producto.oc.moneda.nombre
         if producto.oc.autorizado2:
@@ -2430,7 +2431,6 @@ def convert_excel_solicitud_matriz_productos(productos):
         else:
             estatus = 'No autorizada aún'
         pagada = 'SI' if producto.oc.pagada == True else "NO"
-
         # Calculate total, subtotal, and IVA using attributes from producto
         subtotal = producto.subtotal_parcial
         iva = producto.iva_parcial
@@ -2444,7 +2444,12 @@ def convert_excel_solicitud_matriz_productos(productos):
 
         if moneda_nombre == "DOLARES" and tipo_de_cambio:
             total = total * tipo_de_cambio
-
+        if criticidad is None:
+            criticidad = ''
+        else:
+            criticidad = str(criticidad)
+        if tipo_de_cambio is None:
+            tipo_de_cambio = ''
         # Constructing the row
         row = [
             compra_id,
@@ -2459,7 +2464,8 @@ def convert_excel_solicitud_matriz_productos(productos):
             area_nombre,
             cantidad, 
             codigo, 
-            producto_nombre, 
+            producto_nombre,
+            criticidad,
             precio_unitario,
             moneda_nombre, 
             tipo_de_cambio, 
