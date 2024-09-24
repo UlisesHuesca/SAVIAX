@@ -230,44 +230,52 @@
 <!--AJAX CALL-->
   <script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-  <script>
+<script>
     document.addEventListener('DOMContentLoaded', function() {
         var inputs = document.querySelectorAll("input");
         inputs.forEach(function(input) {
             if (input.name.endsWith('-DELETE')) {
                 input.style.display = 'none'; // Oculta el checkbox
-                var label = document.querySelector("label[for='"+input.id+"']"); // Busca el label asociado
+                var label = document.querySelector("label[for='" + input.id + "']"); // Busca el label asociado
                 if (label) { // Si existe un label asociado...
                     label.style.display = 'none'; // Oculta el label
                 }
             }
         });
-    });
 
-// Selecciona todos los campos requeridos
-let requiredFields = document.querySelectorAll('.required');
-// Selecciona el botón de envío
-let submitButton = document.getElementById('BtnActualizar');
+        // Selecciona todos los campos requeridos
+        let requiredFields = document.querySelectorAll('.required');
+        // Selecciona el botón de envío
+        let submitButton = document.getElementById('BtnActualizar');
 
+        // Función para verificar el estado del botón
+        function checkButtonVisibility() {
+            // Verifica si todos los campos requeridos están llenos
+            let isFormValid = Array.from(requiredFields).every(function(field) {
+                return field.value.trim() !== '';
+            });
 
-// Escucha los eventos de entrada en los campos requeridos
-requiredFields.forEach(function(field) {
-    
-    field.addEventListener('input', function() {
-        // Verifica si todos los campos requeridos están llenos
-        let isFormValid = Array.from(requiredFields).every(function(field) {
-            return field.value;
+            // Si el formulario es válido, muestra el botón
+            if (isFormValid) {
+                submitButton.classList.remove("d-none");
+            } else {
+                // Si hay errores de validación, el botón sigue visible
+                const errorMessages = document.querySelector('.errorlist');
+                if (errorMessages) {
+                    submitButton.classList.remove("d-none"); // Muestra el botón si hay errores
+                } else {
+                    submitButton.classList.add("d-none"); // Oculta si no hay errores y está vacío
+                }
+            }
+        }
+
+        // Escucha los eventos de entrada en los campos requeridos
+        requiredFields.forEach(function(field) {
+            field.addEventListener('input', checkButtonVisibility);
         });
 
-        // Muestra el botón de envío solo si todos los campos requeridos están llenos
-        if (isFormValid) {
-            submitButton.setAttribute('class',"btn btn-outline-info");
-            
-        } else {
-            console.log(requiredFields)
-            submitButton.setAttribute('class',"btn btn-outline-info d-none");
-        }
+        // Revisa el estado del botón al cargar la página
+        checkButtonVisibility();
     });
-});
-  </script>
+</script>
 {% endblock %}

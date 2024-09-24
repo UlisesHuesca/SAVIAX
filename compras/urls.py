@@ -6,7 +6,7 @@ from django.conf.urls.static import static
 
 urlpatterns = [
     path('compras/requisiciones_autorizadas', views.requisiciones_autorizadas, name='requisicion-autorizada'),
-    path('compras/oc/<int:pk>/', views.oc_modal, name='oc'),
+    path('compras/oc/<int:pk>/', views.oc_modal, name='oc'), #
     path('update_oc/', views.update_oc, name='update-oc'),
     path('compras/matriz_compras/', views.matriz_oc, name='matriz-compras'),
     path('compras/upload_facturas/<int:pk>/', views.upload_facturas, name='upload-facturas'),
@@ -29,7 +29,7 @@ urlpatterns = [
     path('compras/comparativos', views.comparativos, name='comparativos'),
     path('compras/comparativo_historico', views.comparativo_historico, name='comparativos_historico'),
     path('compras/crear_comparativo', views.crear_comparativo, name='crear_comparativo'),
-    path('carga_proveedor', views.carga_proveedor, name='carga-proveedor'),
+    path('carga_proveedor', views.carga_proveedor, name='carga-proveedor'), #
     path('compras/articulos_comparativo/<int:pk>', views.articulos_comparativo, name='articulos-comparativo'),
     path('compras/articulo_comparativo_delete/<int:pk>', views.articulo_comparativo_delete, name='articulo-comparativo-delete'),
     path('compras/historico_articulos_compras', views.historico_articulos_compras, name='historico-articulos-compras'),

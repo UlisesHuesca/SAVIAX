@@ -672,6 +672,7 @@ def add_proveedores2(request, pk=None):
             #print(form.errors) 
             #print(formset.errors) 
             messages.success(request, f'No está validando{form.errors}{formset.errors}')
+
     else:
         form = ProveedoresForm(instance=proveedor)
         formset = ProveedorDireccionesFormSet(instance=proveedor)

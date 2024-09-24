@@ -315,6 +315,7 @@
                 <thead>
                     <tr>
                         <th class="d-none d-lg-table-cell">#</th>
+                        <!--<th scope="col">id</th>-->
                         <th scope="col">Producto</th>
                         <th scope="col">Cantidad</th>
                         <th scope="col">P.U.</th>
@@ -324,8 +325,9 @@
                 </thead>
                 <tbody id="mytbl">
                     {% for product in productos_comp%}
-                    <tr id="row_{{product.id|unlocalize}}">
+                    <tr id="row_{{product.id|unlocalize}}" data-product-id="{{ product.producto.producto.articulos.producto.producto.id }}">
                         <td class="d-none d-lg-table-cell">{{product.producto.producto.articulos.producto.producto.codigo}}</td>
+                        <!--<td>{{product.producto.producto.articulos.producto.producto.id}}</td>-->
                         <td>{{product.producto.producto.articulos.producto.producto.nombre}}</td>
                         <td>{{product.cantidad}}</td>
                         <td>${{product.precio_unitario|floatformat:2}}</td>
@@ -371,11 +373,21 @@
         </div>
         <h6>&nbsp;</h6>
         <div class="card" id="productosPreevaluados">
-            <div class ="card-header">
+            <div class="card-header">
                 <h6>Productos Preevaluados para proveedor seleccionado</h6>
             </div>
             <div class="card-body">
-                <p></p>
+                <table class="table table-bordered" id="tablaProductos">
+                    <thead>
+                        <tr>
+                            <!--<th>ID Producto</th>-->
+                            <th>Nombre del Producto</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Aquí se agregarán los productos dinámicamente -->
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
@@ -425,8 +437,41 @@ function verificar() {
     var status_comparativo = status_txt.getAttribute('status');
     var comparativo = document.getElementById('id_comparativo_model');
     var rows = document.getElementById("mytbl").rows.length;
-    console.log(comparativo.value)
-    
+
+    // Obtén los productos de la primera tabla
+    var table = document.getElementById("mytbl");
+    var productosTabla = []; // Almacenaremos objetos con ID y nombre
+
+    for (var i = 0; i < table.rows.length; i++) {
+        var productoId = table.rows[i].getAttribute('data-product-id'); // Obtén el ID desde el atributo
+        var productoNombre = table.rows[i].cells[1].textContent.trim(); // Obtén el nombre del producto de la segunda celda
+        productosTabla.push({ id: productoId, nombre: productoNombre });
+    }
+
+    // Obtén los IDs de los productos en la segunda tabla usando el atributo data-product-id
+    var tablaPreevaluados = document.getElementById("tablaProductos");
+    var productosComparativo = [];
+    for (var j = 0; j < tablaPreevaluados.rows.length; j++) {
+        var productoComparativoId = tablaPreevaluados.rows[j].getAttribute('data-product-id'); // Obtén el ID del atributo
+        productosComparativo.push(productoComparativoId);
+    }
+
+    // Verificar si los productos en la tabla tienen pre-evaluación
+    for (var k = 0; k < productosTabla.length; k++) {
+        console.log('Evaluando ID: ' + productosTabla[k].id + ' - Nombre: ' + productosTabla[k].nombre); // Agregado para ver el valor actual
+        if (!productosComparativo.includes(productosTabla[k].id)) {
+            var parte = k; // Guarda el índice en caso de que no haya pre-evaluación
+            Swal.fire({
+                "title": "Error",
+                "text": "El producto '" + productosTabla[k].nombre + "' no tiene pre-evaluación", // Muestra el nombre del producto
+                "icon": "error",
+            });
+            console.log('Parteeee: ' + parte); // Muestra el índice del producto que no concuerda
+            return false;
+        }
+    }
+
+
     val_moneda = moneda.value;
     val_tipo_cambio = tipo_cambio.value;
     if (!proveedor.value) {
@@ -1005,6 +1050,33 @@ $(document).ready(function(){
                     data: datosCompra
                 }
             });
+
+            fetch(`{% url 'carga-proveedor' %}?term=${datosCompra.proveedor_text}`)
+                .then(response => response.json())
+                .then(data => {
+                    // Suponiendo que solo hay un proveedor seleccionado, puedes tomar el primer elemento
+                    if (data.length > 0) {
+                        var proveedorActualizado = data[0];
+
+                        // Actualizar datos de la tabla
+                        var productos_comparativo = proveedorActualizado.items_comparativos || [];
+                        var tablaBody = $('#tablaProductos tbody');
+                        tablaBody.empty(); // Limpia el contenido previo
+                        console.log('COMPARATIVOS ACTUALIZADOS:', JSON.stringify(productos_comparativo, null, 2));
+
+                        // Itera sobre cada producto y crea una fila en la tabla
+                        productos_comparativo.forEach(function(item) {
+                            var productoId = item.producto__producto__id; // Cambia según el origen de datos
+                            var productoNombre = item.producto__producto__nombre; // Cambia según el origen de datos
+
+                            var fila = $('<tr>').attr('data-product-id', productoId).append(
+                                $('<td>').text(productoNombre)
+                            );
+                            tablaBody.append(fila); // Añade la fila a la tabla
+                        });
+                    }
+                })
+                .catch(error => console.error('Error al obtener los datos del proveedor:', error));
         }
         $('#id_proveedor').on('select2:unselect', function(e){
        
@@ -1050,14 +1122,19 @@ $(document).ready(function(){
         $('#lbl_status').text(status);  
         $('#lbl_dias').attr('dias',dias)
         var productos_comparativo = data.items; // Esta es la variable que tienes desde AJAX
-        var cardBody = $('#productosPreevaluados .card-body');
-        // Limpia el contenido previo para evitar duplicados
-        cardBody.empty();
-        // Itera sobre cada producto y crea un elemento <p> para cada uno
+        var tablaBody = $('#tablaProductos tbody');
+        tablaBody.empty(); // Limpia el contenido previo
+
+        // Itera sobre cada producto y crea una fila en la tabla
         productos_comparativo.forEach(function(item) {
-            var productoNombre = item.producto__producto__nombre; // Ajusta este campo según la estructura de tu objeto
-            var pElement = $('<p>').text(productoNombre); // Crea un elemento <p> con el nombre del producto
-            cardBody.append(pElement); // Añade el elemento <p> al div card-body
+            var productoId = item.producto__producto__id; // Cambia según el origen de datos
+            var productoNombre = item.producto__producto__nombre; // Cambia según el origen de datos
+            
+            var fila = $('<tr>').attr('data-product-id', productoId).append(
+                //$('<td>').text(productoId),
+                $('<td>').text(productoNombre)
+            );
+            tablaBody.append(fila); // Añade la fila a la tabla
         });
 
 
@@ -1081,12 +1158,8 @@ $(document).ready(function(){
         datosCompra.lbl_estado = estado;
         datosCompra.financiamiento = financiamiento;
         datosCompra.dias_de_credito = dias;
+        datosCompra.items = productos_comparativo;
         precio_max()
-        //if (status == "NUEVO"){
-        //    comparativo.classList.remove('d-none');
-        //} else {
-        //    comparativo.classList.add('d-none');
-        //}
         
         localStorage.setItem("id_formulario_"+ oc, JSON.stringify(datosCompra));
         console.log("Formulario guardado para OC:",oc, datosCompra)
@@ -1097,7 +1170,9 @@ $(document).ready(function(){
         $('#lbl_domicilio').text('');
         $('#lbl_status').text('');  
         $('#id_cond_de_pago').val('').trigger('change');
-
+        // Limpia la lista de productos comparativos
+        var tablaBody = $('#tablaProductos tbody'); 
+        tablaBody.empty(); 
     });
 }); 
 
