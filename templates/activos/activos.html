@@ -10,39 +10,92 @@
 {% block content %}
 <hr>
 <hr>
-<hr>
+<h6>&nbsp;</h6>
+<h6>&nbsp;</h6>
 <div class = "row mt-2 bg-white" id="response-div">
         <div class="col-12">
-            <div class="card card-body">
+            <div class="card">
+                <div class="card-header">
                 <h5>Filtro de Activos</h5>
-                <hr>
-                {% csrf_token %}
-                <form method="GET">
-                </form>
-                <form method=POST>
+                </div>
+                <div class = "card-body">
                     {% csrf_token %}
-                    <ul class="nav nav-pills">
-                        <li class="nav-item mx-2">
-                            <a class="btn btn-outline-info btn-block mx-auto" type="button" href="{% url 'add-activo' %}">
-                                <i class="fa-solid fa-circle-plus">
-                                Agregar
-                                </i>
+                    <form method="GET">
+                        <div class="row g-12">
+                            <div class="col-lg-4 col-sm-12">
+                                <div class="input-group mb-3">
+                                <span class="input-group-text" id="basic-addon1"><i class="fa-solid fa-hashtag"></i></span>
+                                    <div class="form-floating form-floating-group flex-grow-1">   
+                                        {{myfilter.form.eco_unidad|add_class:"form-control"|append_attr:"placeholder= ECO"}}
+                                        <label style="color: #121212;" for="id_id">ECO</label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-lg-4 col-sm-12">
+                                <div class="input-group mb-3">
+                                <span class="input-group-text" id="basic-addon1"><i class="fa-solid fa-user"></i></span>
+                                    <div class="form-floating form-floating-group flex-grow-1">   
+                                        {{myfilter.form.responsable|add_class:"form-control"|append_attr:"placeholder= Responsable"}}
+                                        <label style="color: #121212;" for="id_id">Responsable</label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-lg-4 col-sm-12">
+                                <div class="input-group mb-3">
+                                <span class="input-group-text" id="basic-addon1"><i class="fa-solid fa-user"></i></span>
+                                    <div class="form-floating form-floating-group flex-grow-1">   
+                                        {{myfilter.form.tipo_activo|add_class:"form-control"|append_attr:"placeholder= Tipo de Activo"}}
+                                        <label style="color: #121212;" for="id_id">Tipo de Activo</label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-lg-4 col-sm-12">
+                                <div class="input-group mb-3">
+                                <span class="input-group-text" id="basic-addon1"><i class="fa-solid fa-user"></i></span>
+                                    <div class="form-floating form-floating-group flex-grow-1">   
+                                        {{myfilter.form.estatus|add_class:"form-control"|append_attr:"placeholder= Status"}}
+                                        <label style="color: #121212;" for="id_id">Estatus</label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-2 mt-2">
+                                <button id="btnBuscar" class="btn btn-outline-success btn-block btn-lg" type="submit" value="Buscar"><i class="fa-solid fa-magnifying-glass"></i></button>
+                            </div>
+                        </div>
+                    </form>
+                    <hr>
+                    {% if usuario.tipo.activos == True %}
+                    <form method=POST>
+                        {% csrf_token %}
+                        <ul class="nav nav-pills">
+                            <li class="nav-item mx-2">
+                                <a class="btn btn-outline-info btn-block mx-auto" type="button" href="{% url 'add-activo' %}">
+                                    <i class="fa-solid fa-circle-plus">
+                                    </i> AGREGAR
+                                </a>
+                            </li>
+                            <li class="nav-item mx-2">
+                                <button type="submit" id="btnExcel" name="btnExcel" value='Reporte Excel' class="btn btn-outline-success">
+                                    <i class="fa-solid fa-file-excel fa-2xl"></i>
+                                </button>
+                            </li>
+                            <li class="nav-item mx-2">
+                                <a type="button" class="btn btn-outline-info" href="{% url 'render_pdf_responsiva_activos_gerente' %}" data-bs-toggle="tooltip" data-bs-placement="top" title="Responsiva Gerente"><i class="fa-solid fa-file-pdf fa-2xl"></i></a>
+                            </li>
+                        </ul>
+                        <div class="text-end mt-3"> <!-- Alinea los botones a la derecha -->
+                            <a class="btn btn-outline-primary" href="{% url 'gestionar_tipo_activo' %}">
+                                <i class="fa-solid fa-plus"></i> Agregar Tipo de Activo
                             </a>
-                        </li>
-                        <!--<li class="nav-item mx-2">
-                            <button type="button" class="btn btn-outline-danger">
-                               <i class="fa-solid fa-file-pdf fa-2xl"></i>
-                            </button>
-                        </li>
-                        <li class="nav-item mx-2">
-                            <div class="btn-group btn-group" role="group" aria-label="Large button group">
-                                <a type="button" class="btn btn-outline-info active" style="color:#F5F5F5; background:#3E92CC; border-color: #3E92CC;" href="#"></a>
-                                <a type="button" class="btn btn-outline-info" href="#">Gastos</a>
-                                <a type="button" class="btn btn-outline-info" href="#">Viaticos</a>
-                              </div>
-                        </li>-->
-                    </ul>
-                </form>
+                            <a class="btn btn-outline-primary ms-2" href="{% url 'gestionar_marca' %}">
+                                <i class="fa-solid fa-plus"></i> Agregar Marca
+                            </a>
+                        </div>
+                    </form>
+                    {% else %}
+                    <div></div>
+                    {% endif %}
+                </div>
             </div>
         </div>
     </div>
@@ -88,9 +141,10 @@
                     <th scope="col">Marca</th>
                     <th scope="col">Modelo</th>
                     <th scope="col">Descripción</th>
-                    <th scope="col">Comentario</th>
+                    <th>Status</th>
                     <th scope="col">QR</th>
                     <th scope="col">Editar</th>
+                    <th>Responsiva</th>
                 </tr>
             </thead>
             <tbody>
@@ -100,10 +154,10 @@
                     <td>{{item.responsable.staff.first_name}} {{item.responsable.staff.last_name}}</td>
                     <td>{{item.tipo_activo}}</td>
                     <td>{% if item.serie %} {{item.serie}} {% endif %}</td>
-                    <td>{{item.marca}}</td>
+                    <td>{% if item.marca == Null %} NR {% else %} {{item.marca}} {% endif %}</td>
                     <td>{% if item.modelo %} {{item.modelo}} {% endif %}</td>
                     <td>{{item.descripcion}}</td>
-                    <td>{{item.comentario}}</td>
+                    <td>{% if item.estatus.nombre == "ALTA" %}<span class="badge bg-primary"> {{item.estatus.nombre}}</span> {% elif item.estatus.nombre == "BAJA" %}<span class="badge bg-danger">{{item.estatus.nombre}}</span>{% else %} <span class="badge bg-warning">{{item.estatus.nombre}}</span> {% endif %}</td>
                     <td>
                         <a type="button" class="btn btn-secondary" href="{% url 'generate-qr' item.id %}">
                             <i class="fa-solid fa-qrcode"></i>
@@ -113,6 +167,9 @@
                         <a type="button" class="btn btn-outline-info" href="{% url 'edit-activo' item.id %}">
                             <i class="fa-solid fa-pen-to-square"></i>
                         </a>
+                    </td>
+                    <td>
+                        <a type="button" class="btn btn-outline-info" href="{% url 'render-pdf-responsiva-activos' item.id%}" data-bs-toggle="tooltip" data-bs-placement="top" title="Responsiva"><i class="fa-solid fa-file-pdf fa-2xl"></i></a>
                     </td>
                 </tr>
                 {% endfor %}

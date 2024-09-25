@@ -25,6 +25,7 @@ class Tipo_perfil(models.Model):
     historicos = models.BooleanField(null=True, default=False)
     proveedores = models.BooleanField(null=True, default=False)
     productos = models.BooleanField(null=True, default=False)
+    activos = models.BooleanField(null=True, default = False)
     #Filtros de perfil para acciones
     supervisor = models.BooleanField(null=True, default=False)
     superintendente = models.BooleanField(null=True, default=False)

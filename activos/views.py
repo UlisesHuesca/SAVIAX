@@ -1,26 +1,55 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
+from django.urls import reverse
 from dashboard.models import Inventario, Profile, Marca
 from django.core import serializers
-from .models import Activo
+from .models import Activo, Tipo_Activo
 from requisiciones.models import Salidas 
-from .forms import Activo_Form, Edit_Activo_Form, UpdateResponsableForm, SalidasActivoForm
+from .forms import Activo_Form, Edit_Activo_Form, UpdateResponsableForm, SalidasActivoForm, Tipo_ActivoForm, MarcaForm
 from django.contrib import messages
 from django.http import JsonResponse, HttpResponse, FileResponse
+from django.db.models import Value, F, Q
+from django.http import Http404
+
 #Todo para construir el código QR
 import qrcode
+import io
 from io import BytesIO
 import json
-
+from activos.filters import ActivoFilter
+#Excel
+import xlsxwriter
+from xlsxwriter.utility import xl_col_to_name
+from datetime import date
+#PDF generator
+from reportlab.pdfgen import canvas
+from reportlab.lib import colors
+from reportlab.lib.colors import Color, black, blue, red, white
+from reportlab.lib.units import cm
+from reportlab.lib.pagesizes import letter, portrait
+from reportlab.rl_config import defaultPageSize 
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_JUSTIFY
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, Frame
+from bs4 import BeautifulSoup
 
 # Create your views here.
 @login_required(login_url='user-login')
 def activos(request):
-    
-    activos = Activo.objects.filter(completo=True)
+    perfil = Profile.objects.get(staff__id=request.user.id)
+    if perfil.tipo.activos == True:
+        activos = Activo.objects.filter(completo=True)
+    else:
+        activos = Activo.objects.none()
+    myfilter = ActivoFilter(request.GET, queryset=activos)
+    activos = myfilter.qs 
 
+    if request.method == "POST" and 'btnExcel' in request.POST:
+        return convert_activos_to_xls(activos)
+    
     context = {
         'activos':activos,
+        'myfilter':myfilter,
     }
 
     return render(request,'activos/activos.html',context)
@@ -28,57 +57,70 @@ def activos(request):
 @login_required(login_url='user-login')
 def add_activo(request):
     perfil = Profile.objects.get(staff__id=request.user.id)
-    #activos = Activo.objects.filter(completo=True)
-    productos = Inventario.objects.filter(producto__activo=True)
-    personal = Profile.objects.all()
-    marcas = Marca.objects.all() 
-    #print(productos)
+    if perfil.tipo.activos == True:   
+        perfil = Profile.objects.get(staff__id=request.user.id)
+        productos = Inventario.objects.filter(producto__activo=True)
+        personal = Profile.objects.all()
+        marcas = Marca.objects.all() 
+        #print(productos)
+        responsables = personal.filter(staff__is_active = True)
 
 
-    for producto in productos:
-        producto.activo_disponible = True
-        activo = Activo.objects.filter(activo=producto)
-        activo_cont = activo.filter(completo = True).count()
-        salidas = Salidas.objects.filter(producto__articulos__producto = producto).count()
-        
-        existencia_inv = producto.cantidad + producto.apartada + salidas
-        print( activo, activo_cont, existencia_inv, salidas)
-        if activo_cont == existencia_inv and activo_cont > 0 or existencia_inv == 0: #Si el numero de activos es igual a la existencia en inventario #Si el numero de activos es igual a la existencia en inventario
-            producto.activo_disponible = False   
-        producto.save()         
+        responsables_para_select2 = [
+            {
+                'id': responsable.id, 
+                'text': str(responsable.staff.first_name) + (' ') + str(responsable.staff.last_name)
+            } for responsable in responsables
+        ]
+
+        for producto in productos:
+            producto.activo_disponible = True
+            activo = Activo.objects.filter(activo=producto)
+            activo_cont = activo.filter(completo = True).count()
+            salidas = Salidas.objects.filter(producto__articulos__producto = producto).count()
             
-    activo, created = Activo.objects.get_or_create(creado_por=perfil, completo=False)
-    productos_activos = productos.filter(activo_disponible =True)
-    #print(productos_activos)
-    form = Activo_Form()
+            existencia_inv = producto.cantidad + producto.apartada + salidas
+            print( activo, activo_cont, existencia_inv, salidas)
+            if activo_cont == existencia_inv and activo_cont > 0 or existencia_inv == 0: #Si el numero de activos es igual a la existencia en inventario #Si el numero de activos es igual a la existencia en inventario
+                producto.activo_disponible = False   
+            producto.save()         
+                
+        activo, created = Activo.objects.get_or_create(creado_por=perfil, completo=False)
+        productos_activos = productos.filter(activo_disponible =True)
+        #print(productos_activos)
+        form = Activo_Form(instance = activo)
 
-    form.fields['activo'].queryset = productos_activos
+        form.fields['activo'].queryset = productos_activos
 
-    if request.method =='POST':
-        form = Activo_Form(request.POST, instance = activo)
-        messages.success(request,f'Has agregado incorrectamente el activo')
-        if form.is_valid():
-            activo = form.save(commit=False)
-            activo.completo = True
-            activo.save()
-            messages.success(request,f'Has agregado correctamente el activo {activo.eco_unidad}')
-            return redirect('activos')
-        else:
-            messages.error(request, 'Hubo un error al agregar el activo.')
-            for field, errors in form.errors.items():
-                for error in errors:
-                    messages.error(request, f"{field}: {error}")
-            #messages.success(request,'No está validando')
+        if request.method =='POST':
+            form = Activo_Form(request.POST, request.FILES, instance = activo)
+            messages.success(request,f'Has agregado incorrectamente el activo')
+            if form.is_valid():
+                activo = form.save(commit=False)
+                activo.completo = True
+                activo.estatus.nombre = "ALTA"
+                activo.save()
+                messages.success(request,f'Has agregado correctamente el activo {activo.eco_unidad}')
+                return redirect('activos')
+            else:
+                messages.error(request, 'Hubo un error al agregar el activo.')
+                for field, errors in form.errors.items():
+                    for error in errors:
+                        messages.error(request, f"{field}: {error}")
+                #messages.success(request,'No está validando')
+        
+        context = {
+            'responsables_para_select2':responsables_para_select2,
+            'marcas': marcas,
+            'form':form,
+            'productos_activos':productos_activos,
+        }
+
+        return render(request,'activos/add_activos.html', context)
+    else:
+        # Retornar un error 404 si perfil.tipo.activos no es True
+        raise Http404("No tienes permiso para agregar activos.")
     
-    context = {
-        'personal':personal,
-        'marcas': marcas,
-        'form':form,
-        'productos_activos':productos_activos,
-    }
-
-    return render(request,'activos/add_activos.html', context)
-
 @login_required(login_url='user-login')
 def add_activo2(request, pk):
     personal = Profile.objects.all()
@@ -194,34 +236,107 @@ def add_activo2(request, pk):
 
     return render(request,'activos/add_activos.html', context)
 
+def eliminar_factura_pdf(request, activo_id):
+    activo = get_object_or_404(Activo, id=activo_id)
+    if activo.factura_pdf:
+        activo.factura_pdf.delete()  # Elimina el archivo del sistema de archivos
+        activo.factura_pdf = None  # Elimina la referencia en el modelo
+        activo.save()  # Guarda los cambios en la base de datos
+        messages.success(request,'Has eliminado correctamente el pdf')
+    return redirect(request.META.get('HTTP_REFERER', reverse('activos')))
+
+
+def eliminar_factura_xml(request, activo_id):
+    activo = get_object_or_404(Activo, id=activo_id)
+    if activo.factura_xml:
+        activo.factura_xml.delete()  # Elimina el archivo del sistema de archivos
+        activo.factura_xml = None  # Elimina la referencia en el modelo
+        activo.save()  # Guarda los cambios en la base de datos
+        messages.success(request,'Has eliminado correctamente el xml')
+    return redirect(request.META.get('HTTP_REFERER', reverse('activos')))
+
+
 @login_required(login_url='user-login')
 def edit_activo(request, pk):
+    empleados = Profile.objects.all()
     perfil = Profile.objects.get(staff__id=request.user.id)
-    producto = Salidas.objects.get(id=pk)
-    activo = Activo.objects.filter(activo = producto.producto.articulos.producto)
-    personal = Profile.objects.all()
+    #producto = Salidas.objects.get(id=pk)
+    activo = Activo.objects.get(id=pk)
+    if activo.responsable:
+        responsable = empleados.get(id=activo.responsable.id )
+    responsables = empleados.filter(staff__is_active = True)
     marcas = Marca.objects.all() 
-    
-    form = Edit_Activo_Form()
+    if activo.marca:
+        marca_p = marcas.get(id = activo.marca.id)
+    else:
+        marca_p = None
 
+
+    form = Edit_Activo_Form(instance = activo)
+
+    responsables_para_select2 = [
+        {
+            'id': responsable.id, 
+            'text': str(responsable.staff.first_name) + (' ') + str(responsable.staff.last_name)
+        } for responsable in responsables
+    ]
+
+    if activo.responsable:
+        responsable_predeterminado = {
+            'id': activo.responsable.id,
+            'text': f"{activo.responsable.staff.first_name} {activo.responsable.staff.last_name}"
+        }
+    else:
+        responsable_predeterminado = None
     
+    if marca_p != None:
+        marca_predeterminada = {
+            'id': marca_p.id,
+            'text': marca_p.nombre
+        }
+    else:
+        marca_predeterminada = 'null'
+    
+    marcas_para_select2 = [
+        {
+            'id': marca.id, 
+            'text': marca.nombre if marca.nombre is not None else "",
+        } for marca in marcas
+    ]
+
+    error_messages = {}    
+
     if request.method =='POST':
-        form = Edit_Activo_Form(request.POST, instance = activo)
-        if form.is_valid():
-            activo = form.save(commit=False)
-            activo.completo = True
-            activo.save()
-            messages.success(request,f'Has modificado correctamente el activo {activo.eco_unidad}')
-            return redirect('activos')
+        if 'action' in request.POST:
+            action = request.POST['action']
+            if action == 'delete_pdf':
+                return eliminar_factura_pdf(request, activo.id)
+            elif action == 'delete_xml':
+                return eliminar_factura_xml(request, activo.id)
         else:
-            print(form.errors) 
-            messages.success(request,'No está validando')
+            form = Edit_Activo_Form(request.POST, request.FILES, instance = activo)
+            if form.is_valid():
+                activo = form.save(commit=False)
+                activo.completo = True
+                activo.modified_at = date.today()
+                activo.modified_by = perfil
+                activo.save()
+                messages.success(request,f'Has modificado correctamente el activo {activo.eco_unidad}')
+                return redirect('activos')
+            else:
+                for field, errors in form.errors.items():
+                    error_messages[field] = errors.as_text()
 
 
 
     context = {
+        'error_messages': error_messages,
+        'responsable_predeterminado':responsable_predeterminado,
+        'responsables_para_select2':responsables_para_select2,
+        'marcas_para_select2':marcas_para_select2,
+        'marca_predeterminada':marca_predeterminada,
         'activo':activo,
-        'personal':personal,
+        #'personal':personal,
         'marcas':marcas,
         'form':form,
     }
@@ -322,3 +437,666 @@ def generate_qr(request, pk):
     response.seek(0)
     
     return FileResponse(response, as_attachment=True, filename='qr.png')
+def convert_activos_to_xls(activos):
+      #print('si entra a la función')
+    # Crea un objeto BytesIO para guardar el archivo Excel
+    output = BytesIO()
+
+    # Crea un libro de trabajo y añade una hoja
+    workbook = xlsxwriter.Workbook(output, {'in_memory': True})
+    worksheet = workbook.add_worksheet("Matriz_Compras")
+
+     
+    date_format = workbook.add_format({'num_format': 'dd/mm/yyyy'})
+    # Define los estilos
+    head_style = workbook.add_format({'bold': True, 'font_color': 'FFFFFF', 'bg_color': '333366', 'font_name': 'Arial', 'font_size': 11})
+    body_style = workbook.add_format({'font_name': 'Calibri', 'font_size': 10})
+    money_style = workbook.add_format({'num_format': '$ #,##0.00', 'font_name': 'Calibri', 'font_size': 10})
+    date_style = workbook.add_format({'num_format': 'dd/mm/yyyy', 'font_name': 'Calibri', 'font_size': 10})
+    percent_style = workbook.add_format({'num_format': '0.00%', 'font_name': 'Calibri', 'font_size': 10})
+    messages_style = workbook.add_format({'font_name':'Arial Narrow', 'font_size':11})
+
+    columns = ['Eco', 'Responsable', 'Tipo Activo', 'Serie', 'Marca', 'Modelo', 'Descripción', 'Status']
+
+    columna_max = len(columns)+2
+
+    worksheet.write(0, columna_max - 1, 'Reporte Creado Automáticamente por SAVIA 2.0. UH', messages_style)
+    worksheet.write(1, columna_max - 1, 'Software desarrollado por Vordcab S.A. de C.V.', messages_style)
+    worksheet.set_column(columna_max - 1, columna_max, 30)  # Ajusta el ancho de las columnas nuevas
+    
+
+    for i, column in enumerate(columns):
+        worksheet.write(0, i, column, head_style)
+        worksheet.set_column(i, i, 15)  # Ajusta el ancho de las columnas
+
+    #worksheet.set_column('L:L', 12,  money_style)
+    #worksheet.set_column('M:M', 12, money_style) 
+    
+    row_num = 0
+    for activo in activos:
+        row_num += 1
+        row = [
+            activo.eco_unidad,
+            f"{activo.responsable.staff.first_name} {activo.responsable.staff.last_name}",
+            activo.tipo_activo.nombre,
+            activo.serie,
+            activo.marca.nombre if activo.marca else " ",
+            activo.modelo,
+            activo.descripcion,
+            activo.estatus.nombre
+        ]
+        
+        for col_num, cell_value in enumerate(row):
+        # Define el formato por defecto
+            cell_format = body_style
+
+            # Aplica el formato de fecha para las columnas con fechas
+            #if col_num in [7, 8]:  # Asume que estas son tus columnas de fechas
+            #    cell_format = date_style
+        
+            # Aplica el formato de dinero para las columnas con valores monetarios
+            #elif col_num in [11, 12]:  # Asume que estas son tus columnas de dinero
+            #    cell_format = money_style
+
+            # Finalmente, escribe la celda con el valor y el formato correspondiente
+            worksheet.write(row_num, col_num, cell_value, cell_format)
+
+      
+        #worksheet.write_formula(row_num, 19, f'=IF(ISBLANK(R{row_num+1}), L{row_num+1}, L{row_num+1}*R{row_num+1})', money_style)
+    
+   
+    workbook.close()
+
+    # Construye la respuesta
+    output.seek(0)
+
+    response = HttpResponse(
+        output.read(), 
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+    response['Content-Disposition'] = f'attachment; filename=Matriz_compras_{date.today()}.xlsx'
+      # Establecer una cookie para indicar que la descarga ha iniciado
+    response.set_cookie('descarga_iniciada', 'true', max_age=20)  # La cookie expira en 20 segundos
+    output.close()
+    return response
+
+def render_pdf_responsiva_activos(request, pk):
+    usuario = Profile.objects.get(staff__id=request.user.id)
+    buf = io.BytesIO()
+    c = canvas.Canvas(buf, pagesize=letter)
+    #Here ends conf.
+    todos_activos = Activo.objects.all()
+    activo = todos_activos.get(id=pk)
+    activos = todos_activos.filter(responsable=activo.responsable, estatus__nombre = "ALTA")
+
+   #Azul Vordcab
+    prussian_blue = Color(0.0859375,0.1953125,0.30859375)
+    rojo = Color(0.59375, 0.05859375, 0.05859375)
+    #Encabezado
+    c.setFillColor(black)
+    c.setLineWidth(.2)
+    c.setFont('Helvetica',8)
+    caja_iso = 760
+    ##Elaborar caja
+    c.line(caja_iso,500,caja_iso,720)
+
+     #Encabezado
+    c.drawString(420,caja_iso,'Preparado por:')
+    c.drawString(420,caja_iso-10,'SUP. ADMON')
+    c.drawString(520,caja_iso,'Aprobación')
+    c.drawString(520,caja_iso-10,'SUB ADM')
+    c.drawString(150,caja_iso-20,'Número de documento')
+    c.drawString(160,caja_iso-30,'SEOV-AFI-N4-01.08')
+    c.drawString(245,caja_iso-20,'Clasificación del documento')
+    c.drawString(275,caja_iso-30,'Controlado')
+    c.drawString(355,caja_iso-20,'Nivel del documento')
+    c.drawString(380,caja_iso-30, 'N5')
+    c.drawString(440,caja_iso-20,'Revisión No.')
+    c.drawString(452,caja_iso-30,'000')
+    c.drawString(510,caja_iso-20,'Fecha de Emisión')
+    c.drawString(525,caja_iso-30,'10/07/2024')
+
+    caja_proveedor = caja_iso - 65
+    c.setFont('Helvetica',12)
+    c.setFillColor(prussian_blue)
+    # REC (Dist del eje Y, Dist del eje X, LARGO DEL RECT, ANCHO DEL RECT)
+    c.rect(150,750,250,20, fill=True, stroke=False) #Barra azul superior Solicitud
+    #c.rect(20,caja_proveedor - 8,565,20, fill=True, stroke=False) #Barra azul superior Proveedor | Detalle
+    #c.rect(20,575,565,2, fill=True, stroke=False) #Linea posterior horizontal
+    c.setFillColor(white)
+    #c.setLineWidth(.2)
+    c.setFont('Helvetica-Bold',14)
+    c.drawCentredString(280,755,'Responsiva General')
+    #c.setLineWidth(.3) #Grosor
+    #c.line(20,caja_proveedor-8,20,575) #Eje Y donde empieza, Eje X donde empieza, donde termina eje y,donde termina eje x (LINEA 1 contorno)
+    #c.line(585,caja_proveedor-8,585,575) #Linea 2 contorno
+    c.drawInlineImage('static/images/logo vordtec_documento.png',45,730, 3 * cm, 1.5 * cm) #Imagen vortec
+
+
+    #c.setFillColor(white)
+    #c.setFont('Helvetica-Bold',11)
+    #c.drawString(120,caja_proveedor,'Infor')
+    #c.drawString(300,caja_proveedor, 'Detalles')
+    inicio_central = 300
+    #c.line(inicio_central,caja_proveedor-25,inicio_central,520) #Linea Central de caja Proveedor | Detalle
+    c.setFillColor(black)
+    c.setFont('Helvetica',9)
+    c.drawCentredString(200,170,'Responsable')
+    #c.drawString(30,caja_proveedor-40,'Distrito:')
+    #c.drawString(30,caja_proveedor-60,'Firma:')
+    #c.drawString(30,caja_proveedor-100,'Fecha:')
+    # Segunda columna del encabezado
+    c.drawCentredString(400,170,'Encargado de Activos')
+    c.drawCentredString(300,140,'Distrito - Fecha de impresión')
+    #c.drawString(280,caja_proveedor-40,'Distrito:')
+    #c.drawString(280,caja_proveedor-60,'Firma:')
+    if activo.responsable:
+        c.drawCentredString(200,180, activo.responsable.staff.first_name +' '+activo.responsable.staff.last_name )
+        #activo_resp = Profile.objects.get(Q(tipo__nombre = "ADMIN_ACTIVOS")|Q(tipo__nombre = "ACTIVOS"), distritos = activo.responsable.distritos, tipo__activos = True, st_activo = True)
+        if usuario.tipo.nombre == 'ACTIVOS' or usuario.tipo.nombre == 'ADMIN_ACTIVOS':
+            activo_resp = usuario
+        else:
+            activo_resp = Profile.objects.get(tipo__nombre = "ADMIN_ACTIVOS",staff__is_active = True)
+        c.drawCentredString(400,180, activo_resp.staff.first_name +' '+ activo_resp.staff.last_name)
+        # Obtener la fecha actual
+        fecha_actual = date.today()
+        texto_central = f"PLANTA VORDTEC - {fecha_actual}"
+        c.drawCentredString(300,150, texto_central)
+    else:
+        c.drawCentredString(200,180, " " )
+        c.drawCentredString(400,180, " ")
+    
+
+    #Create blank list
+    data =[]
+
+    data.append(['''Eco''', '''Descripción''', '''Tipo Activo''', '''Serie''','''Marca''', '''Modelo''', '''Fecha'''])
+
+    high = 700
+    cont = 0
+
+    styles = getSampleStyleSheet()
+    custom_paragraph_style = ParagraphStyle(
+        'CustomStyle',
+        parent=styles['BodyText'],
+        fontSize=6,  # Tamaño de fuente ajustado
+        leading=6,
+        alignment=TA_JUSTIFY,
+    )
+
+    for activo in activos:
+        data.append([
+            Paragraph(activo.eco_unidad, custom_paragraph_style), 
+            Paragraph(activo.descripcion, custom_paragraph_style),
+            activo.tipo_activo, 
+            activo.serie,
+            activo.marca.nombre if activo.marca else "NR", 
+            activo.modelo,
+            activo.fecha_asignacion if activo.fecha_asignacion else "NR"
+            ])
+        cont = cont + 1
+        if cont < 26:
+            high = high - 18
+
+
+    c.setFillColor(prussian_blue)
+    c.rect(20,30,565,30, fill=True, stroke=False)
+    c.setFillColor(white)
+    #Primer renglón
+    c.drawCentredString(70,48,'Clasificación:')
+    c.drawCentredString(140,48,'Nivel:')
+    c.drawCentredString(240,48,'Preparado por:')
+    c.drawCentredString(350,48,'Aprobado:')
+    c.drawCentredString(450,48,'Fecha emisión:')
+    c.drawCentredString(550,48,'Rev:')
+    #Segundo renglón
+    c.drawCentredString(70,34,'Controlado')
+    c.drawCentredString(140,34,'N5')
+    c.drawCentredString(240,34,'SEOV-AFI-N4-01.08')
+    c.drawCentredString(350,34,'SUB ADM')
+    c.drawCentredString(450,34,'10/07/2024')
+    c.drawCentredString(550,34,'001')
+
+    c.setFillColor(black)
+    width, height = letter
+    styles = getSampleStyleSheet()
+    styleN = styles["BodyText"]
+
+    
+    texto_responsiva = """
+    RESPONSIVA: A partir de la emisión de la presente, queda asignado a mi cargo y bajo mi responsabilidad el equipo arriba descrito, 
+    comprometiéndome a darle buen uso, solicitar oportunamente su mantenimiento preventivo y en los casos necesarios el mantenimiento 
+    correctivo para el continuo uso del equipo, vigilar la operación correcta de quienes lo operen, y dar aviso inmediato de cualquier 
+    anomalía al departamento correspondiente.
+    """
+
+    c.setFillColor(prussian_blue)
+    c.rect(20,30,565,30, fill=True, stroke=False)
+    c.setFillColor(white)
+    # Personalizar el estilo de los párrafos
+    custom_style = ParagraphStyle(
+    'CustomStyle',
+        parent=styles['BodyText'],
+        fontSize=10,  # Reducir el tamaño de la fuente a 6
+        leading=10,   # Aumentar el espacio entre líneas para asegurar que el texto no se superponga
+        alignment=TA_JUSTIFY,  # Alineación del texto
+        # Puedes añadir más ajustes si es necesario
+    )
+
+    parrafo_responsiva = Paragraph(texto_responsiva, custom_style)
+    ancho_disponible = width - 40  # Asumiendo un margen de 20 por cada lado
+
+    # Calcula el espacio que el párrafo necesita (ancho, alto)
+    w, h = parrafo_responsiva.wrap(ancho_disponible, height)
+
+    # La posición inicial del párrafo en Y, ajusta según necesites
+    posicion_inicio_parrafo = 100  # Ajusta este valor según el espacio necesario para los elementos anteriores
+
+    # Dibuja el párrafo en la posición calculada
+    parrafo_responsiva.drawOn(c, 20, posicion_inicio_parrafo)
+
+    table = Table(data, colWidths=[2.5 * cm, 6 * cm, 3 * cm, 3 * cm, 2 * cm, 2* cm, 2*cm])
+    table_style = TableStyle([ #estilos de la tabla
+        ('INNERGRID',(0,0),(-1,-1), 0.25, colors.white),
+        ('BOX',(0,0),(-1,-1), 0.25, colors.black),
+        ('VALIGN',(0,0),(-1,-1),'MIDDLE'),
+        #ENCABEZADO
+        ('TEXTCOLOR',(0,0),(-1,0), white),
+        ('FONTSIZE',(0,0),(-1,0), 8),
+        ('BACKGROUND',(0,0),(-1,0), prussian_blue),
+        #CUERPO
+        ('TEXTCOLOR',(0,1),(-1,-1), colors.black),
+        ('FONTSIZE',(0,1),(-1,-1), 6),
+        ])
+    table_style2 = TableStyle([ #estilos de la tabla
+        ('INNERGRID',(0,0),(-1,-1), 0.25, colors.white),
+        ('BOX',(0,0),(-1,-1), 0.25, colors.black),
+        ('VALIGN',(0,0),(-1,-1),'MIDDLE'),
+        #ENCABEZADO
+        ('TEXTCOLOR',(0,0),(-1,0), colors.black),
+        ('FONTSIZE',(0,0),(-1,0), 6),
+        #('BACKGROUND',(0,0),(-1,0), prussian_blue),
+        #CUERPO
+        ('TEXTCOLOR',(0,1),(-1,-1), colors.black),
+        ('FONTSIZE',(0,1),(-1,-1), 6),
+        ])
+    table.setStyle(table_style)
+
+    rows_per_page = 25
+    rows_per_additional_page = 33
+    total_rows = len(data) - 1
+    remaining_rows = total_rows - rows_per_page
+
+    if remaining_rows <= 0:
+        # Si no hay suficientes filas para una segunda página, dibujar la tabla completa en la primera página
+        table.wrapOn(c, c._pagesize[0], c._pagesize[1])
+        table.drawOn(c, 20, high)  # Posición en la primera página
+    else:
+        # Dibujar las primeras 15 filas en la primera página
+        first_page_data = data[:rows_per_page + 1]  # Incluye el encabezado
+        first_page_table = Table(first_page_data,  colWidths=[2.5 * cm, 6 * cm, 3 * cm, 3 * cm, 2 * cm, 2* cm, 2 * cm])
+        first_page_table.setStyle(table_style)
+        first_page_table.wrapOn(c, c._pagesize[0], c._pagesize[1])
+        first_page_table.drawOn(c, 20, high)  # Posición en la primera página
+
+        # Procesar las filas restantes
+        remaining_data = data[rows_per_page + 1:]
+        while remaining_data:
+            c.showPage()
+            c.setFont('Helvetica', 8)
+            c.drawString(420, caja_iso, 'Preparado por:')
+            c.drawString(420, caja_iso - 10, 'SUP. ADMON')
+            c.drawString(520, caja_iso, 'Aprobación')
+            c.drawString(520, caja_iso - 10, 'SUB ADM')
+            c.drawString(150, caja_iso - 20, 'Número de documento')
+            c.drawString(160, caja_iso - 30, 'SEOV-AFI-N4-01.08')
+            c.drawString(245, caja_iso - 20, 'Clasificación del documento')
+            c.drawString(275, caja_iso - 30, 'Controlado')
+            c.drawString(355, caja_iso - 20, 'Nivel del documento')
+            c.drawString(380, caja_iso - 30, 'N5')
+            c.drawString(440, caja_iso - 20, 'Revisión No.')
+            c.drawString(452, caja_iso - 30, '000')
+            c.drawString(510, caja_iso - 20, 'Fecha de Emisión')
+            c.drawString(525, caja_iso - 30, '10/07/2024')
+
+           
+            c.setFont('Helvetica', 12)
+            c.setFillColor(prussian_blue)
+            c.rect(150, 750, 250, 20, fill=True, stroke=False)
+            c.setFillColor(colors.white)
+            c.setFont('Helvetica-Bold', 14)
+            c.drawCentredString(280, 755, 'Responsiva General')
+            c.drawInlineImage('static/images/logo_vordcab.jpg', 45, 730, 3 * cm, 1.5 * cm)
+            parrafo_responsiva.drawOn(c, 20, 50)
+
+            page_data = remaining_data[:rows_per_additional_page]
+            
+            remaining_data = remaining_data[rows_per_additional_page:]
+
+             # Calcular la posición Y dinámica
+            num_rows = len(page_data)
+            table_height = num_rows * 18  # Suponiendo que cada fila tiene 18 unidades de altura
+            remaining_table_y = height - table_height - 100  # Ajustar según tus márgenes y contenido
+
+            remaining_table = Table(page_data,  colWidths=[2.5 * cm, 6 * cm, 3 * cm, 3 * cm, 2 * cm, 2 * cm, 2 * cm])
+            remaining_table.setStyle(table_style2)
+            remaining_table.wrapOn(c, c._pagesize[0], c._pagesize[1])
+            remaining_table.drawOn(c, 20, remaining_table_y)  # Ajustar la posición según sea necesario
+
+    c.showPage()
+    c.save()
+    buf.seek(0)
+
+    return FileResponse(buf, as_attachment=True, filename='Responsiva_' + str(activo.responsable) +'.pdf')
+
+def render_pdf_responsiva_activos_gerente(request):
+    buf = io.BytesIO()
+    c = canvas.Canvas(buf, pagesize=letter)
+    #Here ends conf.
+    todos_activos = Activo.objects.filter(completo = True)
+    usuario = Profile.objects.get(staff__id=request.user.id)
+    activos = todos_activos.filter(estatus__nombre = "ALTA")
+
+   #Azul Vordcab
+    prussian_blue = Color(0.0859375,0.1953125,0.30859375)
+    rojo = Color(0.59375, 0.05859375, 0.05859375)
+    #Encabezado
+    c.setFillColor(black)
+    c.setLineWidth(.2)
+    c.setFont('Helvetica',8)
+    caja_iso = 760
+    ##Elaborar caja
+    c.line(caja_iso,500,caja_iso,720)
+
+     #Encabezado
+    c.drawString(420,caja_iso,'Preparado por:')
+    c.drawString(420,caja_iso-10,'SUP. ADMON')
+    c.drawString(520,caja_iso,'Aprobación')
+    c.drawString(520,caja_iso-10,'SUB ADM')
+    c.drawString(150,caja_iso-20,'Número de documento')
+    c.drawString(160,caja_iso-30,'SEOV-AFI-N4-01.06')
+    c.drawString(245,caja_iso-20,'Clasificación del documento')
+    c.drawString(275,caja_iso-30,'Controlado')
+    c.drawString(355,caja_iso-20,'Nivel del documento')
+    c.drawString(380,caja_iso-30, 'N5')
+    c.drawString(440,caja_iso-20,'Revisión No.')
+    c.drawString(452,caja_iso-30,'000')
+    c.drawString(510,caja_iso-20,'Fecha de Emisión')
+    c.drawString(525,caja_iso-30,'10/07/2024')
+
+    caja_proveedor = caja_iso - 65
+    c.setFont('Helvetica',12)
+    c.setFillColor(prussian_blue)
+    # REC (Dist del eje Y, Dist del eje X, LARGO DEL RECT, ANCHO DEL RECT)
+    c.rect(150,750,250,20, fill=True, stroke=False) #Barra azul superior Solicitud
+    #c.rect(20,caja_proveedor - 8,565,20, fill=True, stroke=False) #Barra azul superior Proveedor | Detalle
+    #c.rect(20,575,565,2, fill=True, stroke=False) #Linea posterior horizontal
+    c.setFillColor(white)
+    #c.setLineWidth(.2)
+    c.setFont('Helvetica-Bold',14)
+    c.drawCentredString(280,755,'Responsiva de Gerente')
+    #c.setLineWidth(.3) #Grosor
+    #c.line(20,caja_proveedor-8,20,575) #Eje Y donde empieza, Eje X donde empieza, donde termina eje y,donde termina eje x (LINEA 1 contorno)
+    #c.line(585,caja_proveedor-8,585,575) #Linea 2 contorno
+    c.drawInlineImage('static/images/logo vordtec_documento.png',45,730, 3 * cm, 1.5 * cm) #Imagen vortec
+
+
+    #c.setFillColor(white)
+    #c.setFont('Helvetica-Bold',11)
+    #c.drawString(120,caja_proveedor,'Infor')
+    #c.drawString(300,caja_proveedor, 'Detalles')
+    inicio_central = 300
+    #c.line(inicio_central,caja_proveedor-25,inicio_central,520) #Linea Central de caja Proveedor | Detalle
+    c.setFillColor(black)
+    c.setFont('Helvetica',9)
+    c.drawCentredString(200,160,'Gerente')
+    #c.drawString(30,caja_proveedor-40,'Distrito:')
+    #c.drawString(30,caja_proveedor-60,'Firma:')
+    # Segunda columna del encabezado
+    c.drawCentredString(400,160,'Encargado de Activos')
+    c.drawCentredString(300,140,'Distrito - Fecha de impresión:')
+    #c.drawString(280,caja_proveedor-40,'Distrito:')
+    #c.drawString(280,caja_proveedor-60,'Firma:')
+    gerente = Profile.objects.filter(tipo__nombre = "Gerente",staff__is_active = True).first()
+    c.drawCentredString(200,170, gerente.staff.first_name +' '+ gerente.staff.last_name )
+    #activo_resp = Profile.objects.get(Q(tipo__nombre = "ADMIN_ACTIVOS")|Q(tipo__nombre = "ACTIVOS"),tipo__activos = True, st_activo = True)
+    if usuario.tipo.nombre == 'ACTIVOS' or usuario.tipo.nombre == 'ADMIN_ACTIVOS':
+        activo_resp = usuario
+    else:
+        activo_resp = Profile.objects.get(tipo__nombre = "ADMIN_ACTIVOS",staff__is_active = True)
+    c.drawCentredString(400,170, activo_resp.staff.first_name +' '+ activo_resp.staff.last_name)
+    # Obtener la fecha actual
+    fecha_actual = date.today()
+    texto_central = f"PLANTA VORDTEC - {fecha_actual}"
+    c.drawCentredString(300,150, texto_central)
+   
+    
+
+    #Create blank list
+    data =[]
+
+    data.append(['''Eco''', '''Descripción''', '''Tipo Activo''', '''Serie''','''Marca''', '''Modelo''', '''Fecha'''])
+
+    high = 700
+    cont = 0
+
+    styles = getSampleStyleSheet()
+    custom_paragraph_style = ParagraphStyle(
+        'CustomStyle',
+        parent=styles['BodyText'],
+        fontSize=6,  # Tamaño de fuente ajustado
+        leading=6,
+        alignment=TA_JUSTIFY,
+    )
+
+    for activo in activos:
+        data.append([
+            Paragraph(activo.eco_unidad, custom_paragraph_style), 
+            Paragraph(activo.descripcion, custom_paragraph_style),
+            activo.tipo_activo, 
+            activo.serie,
+            activo.marca.nombre if activo.marca else "NR", 
+            activo.modelo,
+            ])
+        cont = cont + 1
+        if cont < 26:
+            high = high - 18
+
+
+    c.setFillColor(prussian_blue)
+    c.rect(20,30,565,30, fill=True, stroke=False)
+    c.setFillColor(white)
+    #Primer renglón
+    c.drawCentredString(70,48,'Clasificación:')
+    c.drawCentredString(140,48,'Nivel:')
+    c.drawCentredString(240,48,'Preparado por:')
+    c.drawCentredString(350,48,'Aprobado:')
+    c.drawCentredString(450,48,'Fecha emisión:')
+    c.drawCentredString(550,48,'Rev:')
+    #Segundo renglón
+    c.drawCentredString(70,34,'Controlado')
+    c.drawCentredString(140,34,'N5')
+    c.drawCentredString(240,34,'SEOV-AFI-N4-01.06')
+    c.drawCentredString(350,34,'SUB ADM')
+    c.drawCentredString(450,34,'10/07/2024')
+    c.drawCentredString(550,34,'001')
+
+    c.setFillColor(black)
+    width, height = letter
+    styles = getSampleStyleSheet()
+    styleN = styles["BodyText"]
+
+    
+    texto_responsiva = """
+    RESPONSIVA: A partir de la emisión de la presente, queda asignado a mi cargo y bajo mi responsabilidad el equipo arriba descrito, 
+    comprometiéndome a darle buen uso, solicitar oportunamente su mantenimiento preventivo y en los casos necesarios el mantenimiento 
+    correctivo para el continuo uso del equipo, vigilar la operación correcta de quienes lo operen, y dar aviso inmediato de cualquier 
+    anomalía al departamento correspondiente.
+    """
+
+    c.setFillColor(prussian_blue)
+    c.rect(20,30,565,30, fill=True, stroke=False)
+    c.setFillColor(white)
+    # Personalizar el estilo de los párrafos
+    custom_style = ParagraphStyle(
+    'CustomStyle',
+        parent=styles['BodyText'],
+        fontSize=10,  # Reducir el tamaño de la fuente a 6
+        leading=10,   # Aumentar el espacio entre líneas para asegurar que el texto no se superponga
+        alignment=TA_JUSTIFY,  # Alineación del texto
+        # Puedes añadir más ajustes si es necesario
+    )
+
+    parrafo_responsiva = Paragraph(texto_responsiva, custom_style)
+    ancho_disponible = width - 40  # Asumiendo un margen de 20 por cada lado
+
+    # Calcula el espacio que el párrafo necesita (ancho, alto)
+    w, h = parrafo_responsiva.wrap(ancho_disponible, height)
+
+    # La posición inicial del párrafo en Y, ajusta según necesites
+    posicion_inicio_parrafo = 100  # Ajusta este valor según el espacio necesario para los elementos anteriores
+
+    # Dibuja el párrafo en la posición calculada
+    parrafo_responsiva.drawOn(c, 20, posicion_inicio_parrafo)
+
+    table = Table(data, colWidths=[2.5 * cm, 6 * cm, 3 * cm, 3 * cm, 2 * cm, 2* cm, 2*cm])
+    table_style = TableStyle([ #estilos de la tabla
+        ('INNERGRID',(0,0),(-1,-1), 0.25, colors.white),
+        ('BOX',(0,0),(-1,-1), 0.25, colors.black),
+        ('VALIGN',(0,0),(-1,-1),'MIDDLE'),
+        #ENCABEZADO
+        ('TEXTCOLOR',(0,0),(-1,0), white),
+        ('FONTSIZE',(0,0),(-1,0), 8),
+        ('BACKGROUND',(0,0),(-1,0), prussian_blue),
+        #CUERPO
+        ('TEXTCOLOR',(0,1),(-1,-1), colors.black),
+        ('FONTSIZE',(0,1),(-1,-1), 6),
+        ])
+    table_style2 = TableStyle([ #estilos de la tabla
+        ('INNERGRID',(0,0),(-1,-1), 0.25, colors.white),
+        ('BOX',(0,0),(-1,-1), 0.25, colors.black),
+        ('VALIGN',(0,0),(-1,-1),'MIDDLE'),
+        #ENCABEZADO
+        ('TEXTCOLOR',(0,0),(-1,0), colors.black),
+        ('FONTSIZE',(0,0),(-1,0), 6),
+        #('BACKGROUND',(0,0),(-1,0), prussian_blue),
+        #CUERPO
+        ('TEXTCOLOR',(0,1),(-1,-1), colors.black),
+        ('FONTSIZE',(0,1),(-1,-1), 6),
+        ])
+    table.setStyle(table_style)
+
+    rows_per_page = 25
+    rows_per_additional_page = 33
+    total_rows = len(data) - 1
+    remaining_rows = total_rows - rows_per_page
+
+    if remaining_rows <= 0:
+        # Si no hay suficientes filas para una segunda página, dibujar la tabla completa en la primera página
+        table.wrapOn(c, c._pagesize[0], c._pagesize[1])
+        table.drawOn(c, 20, high)  # Posición en la primera página
+    else:
+        # Dibujar las primeras 15 filas en la primera página
+        first_page_data = data[:rows_per_page + 1]  # Incluye el encabezado
+        first_page_table = Table(first_page_data,  colWidths=[2.5 * cm, 6 * cm, 3 * cm, 3 * cm, 2 * cm, 2* cm, 2*cm])
+        first_page_table.setStyle(table_style)
+        first_page_table.wrapOn(c, c._pagesize[0], c._pagesize[1])
+        first_page_table.drawOn(c, 20, high)  # Posición en la primera página
+
+        # Procesar las filas restantes
+        remaining_data = data[rows_per_page + 1:]
+        while remaining_data:
+            c.showPage()
+            c.setFont('Helvetica', 8)
+            c.drawString(420, caja_iso, 'Preparado por:')
+            c.drawString(420, caja_iso - 10, 'SUP. ADMON')
+            c.drawString(520, caja_iso, 'Aprobación')
+            c.drawString(520, caja_iso - 10, 'SUB ADM')
+            c.drawString(150, caja_iso - 20, 'Número de documento')
+            c.drawString(160, caja_iso - 30, 'SEOV-AFI-N4-01.06')
+            c.drawString(245, caja_iso - 20, 'Clasificación del documento')
+            c.drawString(275, caja_iso - 30, 'Controlado')
+            c.drawString(355, caja_iso - 20, 'Nivel del documento')
+            c.drawString(380, caja_iso - 30, 'N5')
+            c.drawString(440, caja_iso - 20, 'Revisión No.')
+            c.drawString(452, caja_iso - 30, '000')
+            c.drawString(510, caja_iso - 20, 'Fecha de Emisión')
+            c.drawString(525, caja_iso - 30, '10/07/2024')
+
+           
+            c.setFont('Helvetica', 12)
+            c.setFillColor(prussian_blue)
+            c.rect(150, 750, 250, 20, fill=True, stroke=False)
+            c.setFillColor(colors.white)
+            c.setFont('Helvetica-Bold', 14)
+            c.drawCentredString(280, 755, 'Responsiva de Gerente')
+            c.drawInlineImage('static/images/logo_vordcab.jpg', 45, 730, 3 * cm, 1.5 * cm)
+            parrafo_responsiva.drawOn(c, 20, 50)
+
+            page_data = remaining_data[:rows_per_additional_page]
+            
+            remaining_data = remaining_data[rows_per_additional_page:]
+
+             # Calcular la posición Y dinámica
+            num_rows = len(page_data)
+            table_height = num_rows * 18  # Suponiendo que cada fila tiene 18 unidades de altura
+            remaining_table_y = height - table_height - 100  # Ajustar según tus márgenes y contenido
+
+            remaining_table = Table(page_data,  colWidths=[2.5 * cm, 6 * cm, 3 * cm, 3 * cm, 2 * cm, 2* cm, 2*cm], splitByRow=True)
+            remaining_table.setStyle(table_style2)
+            remaining_table.wrapOn(c, c._pagesize[0], c._pagesize[1])
+            remaining_table.drawOn(c, 20, remaining_table_y)  # Ajustar la posición según sea necesario
+
+    c.showPage()
+    c.save()
+    buf.seek(0)
+
+    return FileResponse(buf, as_attachment=True, filename='Responsiva_Gerencia' + str(date.today())  +'.pdf')
+
+@login_required(login_url='user-login')
+def gestionar_tipo_activo(request):
+    perfil = Profile.objects.get(staff__id=request.user.id)
+    if perfil.tipo.activos == True:   
+        if request.method == "POST":
+            tipo_activo_form = Tipo_ActivoForm(request.POST)
+            if tipo_activo_form.is_valid():
+                nuevo_tipo_activo = tipo_activo_form.save()  # Guarda y obtiene el objeto
+                messages.success(request, f'Has agregado el tipo de activo: {nuevo_tipo_activo.nombre}')  # Muestra el nombre del nuevo tipo
+                return redirect('activos')  # Redirigir después de guardar
+        else:
+            tipo_activo_form = Tipo_ActivoForm()
+
+        tipos_activos = Tipo_Activo.objects.all().order_by('nombre')
+
+        context = {
+            'tipo_activo_form': tipo_activo_form,
+            'tipos_activos': tipos_activos,
+        }
+
+        return render(request, 'activos/gestionar_tipo_activo.html', context)
+    else:
+        raise Http404("No tienes permiso para agregar activos.")
+    
+@login_required(login_url='user-login')
+def gestionar_marca(request):
+    perfil = Profile.objects.get(staff__id=request.user.id)
+    if perfil.tipo.activos == True:  
+        if request.method == "POST":
+            marca_form = MarcaForm(request.POST)
+            if marca_form.is_valid():
+                nueva_marca = marca_form.save()
+                messages.success(request,f'Has agregado la marca {nueva_marca.nombre}')
+                return redirect('activos')  # Redirigir después de guardar
+        else:
+            marca_form = MarcaForm()
+
+        marcas = Marca.objects.all().order_by('nombre')
+
+        context = {
+            'marca_form': marca_form,
+            'marcas': marcas,
+        }
+
+        return render(request, 'activos/gestionar_marca.html', context)
+    else:
+        raise Http404("No tienes permiso para agregar activos.")
