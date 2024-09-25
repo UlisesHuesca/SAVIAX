@@ -96,18 +96,6 @@ class Sector(models.Model):
     def __str__(self):
         return f'{self.nombre}'
 
-class Activo(models.Model):
-    eco_unidad = models.CharField(max_length=15, null=True, unique=True)
-    distrito = models.ForeignKey(Distrito, on_delete=models.CASCADE, null=True)
-    tipo = models.CharField(max_length=15, null=True)
-    serie = models.CharField(max_length=15, null=True)
-    cuenta = models.CharField(max_length=15, null=True)
-    factura_interna = models.CharField(max_length=15, null=True)
-    arrendado = models.BooleanField(default=True)
-
-    def __str__(self):
-        return f'{self.eco_unidad}'
-
 class Operacion(models.Model):
     nombre = models.CharField(max_length=50, null=True, unique=True)
     created_at = models.DateTimeField(auto_now_add=True)

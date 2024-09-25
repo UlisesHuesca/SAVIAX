@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Proyecto, Subproyecto, Sector, Activo, Operacion, St_Entrega, Cliente
+from .models import Proyecto, Subproyecto, Sector, Operacion, St_Entrega, Cliente
 
 class ProyectoAdmin(admin.ModelAdmin):
     list_display = ('nombre','distrito')
@@ -19,8 +19,6 @@ admin.site.register(Cliente)
 admin.site.register(Subproyecto)
 
 admin.site.register(Sector)
-
-admin.site.register(Activo, ActivoAdmin)
 
 admin.site.register(Operacion)
 
