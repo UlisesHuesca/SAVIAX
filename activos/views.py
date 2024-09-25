@@ -62,6 +62,8 @@ def add_activo(request):
         productos = Inventario.objects.filter(producto__activo=True)
         personal = Profile.objects.all()
         marcas = Marca.objects.all() 
+        tipo_activo = Tipo_Activo.objects.all()
+        
         #print(productos)
         responsables = personal.filter(staff__is_active = True)
 
@@ -71,6 +73,16 @@ def add_activo(request):
                 'id': responsable.id, 
                 'text': str(responsable.staff.first_name) + (' ') + str(responsable.staff.last_name)
             } for responsable in responsables
+        ]
+
+        tipo_activo_para_select2 = [
+            {'id': tipo.id, 'text': tipo.nombre}
+            for tipo in tipo_activo
+        ]
+
+        marca_para_select2 = [
+            {'id': marca.id, 'text': marca.nombre}
+            for marca in marcas
         ]
 
         for producto in productos:
@@ -111,6 +123,8 @@ def add_activo(request):
         
         context = {
             'responsables_para_select2':responsables_para_select2,
+            'tipo_activo_para_select2': tipo_activo_para_select2,
+            'marca_para_select2': marca_para_select2,
             'marcas': marcas,
             'form':form,
             'productos_activos':productos_activos,
@@ -266,11 +280,7 @@ def edit_activo(request, pk):
         responsable = empleados.get(id=activo.responsable.id )
     responsables = empleados.filter(staff__is_active = True)
     marcas = Marca.objects.all() 
-    if activo.marca:
-        marca_p = marcas.get(id = activo.marca.id)
-    else:
-        marca_p = None
-
+    tipo_activo = Tipo_Activo.objects.all()
 
     form = Edit_Activo_Form(instance = activo)
 
@@ -288,21 +298,35 @@ def edit_activo(request, pk):
         }
     else:
         responsable_predeterminado = None
-    
-    if marca_p != None:
-        marca_predeterminada = {
-            'id': marca_p.id,
-            'text': marca_p.nombre
+    # Obtiene los tipos de activo para select2
+    tipo_activo_para_select2 = [
+        {'id': tipo.id, 'text': tipo.nombre}
+        for tipo in tipo_activo
+    ]
+
+    # Obtiene el tipo de activo predeterminado
+    if activo.tipo_activo:
+        tipo_activo_predeterminado = {
+            'id': activo.tipo_activo.id,
+            'text': activo.tipo_activo.nombre
         }
     else:
-        marca_predeterminada = 'null'
-    
-    marcas_para_select2 = [
-        {
-            'id': marca.id, 
-            'text': marca.nombre if marca.nombre is not None else "",
-        } for marca in marcas
+        tipo_activo_predeterminado = None
+
+    # Obtiene las marcas para select2
+    marca_para_select2 = [
+        {'id': marca.id, 'text': marca.nombre}
+        for marca in marcas
     ]
+
+    # Obtiene la marca predeterminada
+    if activo.marca:
+        marca_predeterminada = {
+            'id': activo.marca.id,
+            'text': activo.marca.nombre
+        }
+    else:
+        marca_predeterminada = None
 
     error_messages = {}    
 
@@ -333,10 +357,11 @@ def edit_activo(request, pk):
         'error_messages': error_messages,
         'responsable_predeterminado':responsable_predeterminado,
         'responsables_para_select2':responsables_para_select2,
-        'marcas_para_select2':marcas_para_select2,
-        'marca_predeterminada':marca_predeterminada,
+        'tipo_activo_predeterminado': tipo_activo_predeterminado,
+        'tipo_activo_para_select2': tipo_activo_para_select2,
+        'marca_predeterminada': marca_predeterminada,
+        'marca_para_select2': marca_para_select2,
         'activo':activo,
-        #'personal':personal,
         'marcas':marcas,
         'form':form,
     }
