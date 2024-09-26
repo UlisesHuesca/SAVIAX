@@ -9,6 +9,7 @@ from requisiciones.models import Requis, ValeSalidas, Devolucion
 from compras.models import Compra
 from viaticos.models import Solicitud_Viatico
 from user.models import Profile, Tipo_perfil
+from entradas.models import EntradaArticulo
 from django.db.models import Q
 
 def contadores_processor(request):
@@ -36,6 +37,7 @@ def contadores_processor(request):
     conteo_devoluciones = 0
     conteo_ordenes = 0
     conteo_servicios = 0
+    entradas_calidad = 0 #Para calidad 
 
     conteo_usuario = Profile.objects.all().count()
     conteo_productos = Inventario.objects.filter(cantidad__gt = 0).count()
@@ -96,7 +98,12 @@ def contadores_processor(request):
             conteo_requis_pendientes = requisiciones_pendientes.count()
             conteo_gastos_pendientes = gastos_pendientes.count()
             conteo_viaticos = viaticos_pendientes.count()
-    
+        if usuario.tipo.calidad == True:
+            articulos_recepcionados = EntradaArticulo.objects.filter(recepcion=True,cantidad__gt=0,
+            almacenado=False,articulo_comprado__producto__producto__articulos__producto__producto__servicio=False,
+            articulo_comprado__producto__producto__articulos__producto__producto__critico__in=[1, 2]  # Filtro para id 1 y 2 
+            ).exclude(reportes_calidad__autorizado=True)  # Excluye aquellos que tienen un Reporte_Calidad con autorizado=True
+            entradas_calidad = articulos_recepcionados.count()
         entradas = Compra.objects.filter(Q(cond_de_pago__nombre ='CREDITO') | Q(pagada = True), solo_servicios= False, entrada_completa = False, autorizado2= True).order_by('-folio')
         conteo_entradas = entradas.count()
         
@@ -127,4 +134,5 @@ def contadores_processor(request):
     'conteo_requis': conteo_requis,
     'conteo_pagos':conteo_pagos,
     'conteo_servicios':conteo_servicios,
+    'entradas_calidad':entradas_calidad,
     }
