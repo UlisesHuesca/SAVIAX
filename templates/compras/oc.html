@@ -315,7 +315,7 @@
                 <thead>
                     <tr>
                         <th class="d-none d-lg-table-cell">#</th>
-                        <!--<th scope="col">id</th>-->
+                        <!--<th scope="col">id</th>     Importante para ver el id del elemento para la logica de preevaluados--> 
                         <th scope="col">Producto</th>
                         <th scope="col">Cantidad</th>
                         <th scope="col">P.U.</th>
@@ -325,9 +325,9 @@
                 </thead>
                 <tbody id="mytbl">
                     {% for product in productos_comp%}
-                    <tr id="row_{{product.id|unlocalize}}" data-product-id="{{ product.producto.producto.articulos.producto.producto.id }}">
+                    <tr id="row_{{product.id|unlocalize}}" data-product-id="{{ product.producto.producto.articulos.producto.producto.id|unlocalize}}">
                         <td class="d-none d-lg-table-cell">{{product.producto.producto.articulos.producto.producto.codigo}}</td>
-                        <!--<td>{{product.producto.producto.articulos.producto.producto.id}}</td>-->
+                        <!--<td>{{product.producto.producto.articulos.producto.producto.id|unlocalize}}</td>-->
                         <td>{{product.producto.producto.articulos.producto.producto.nombre}}</td>
                         <td>{{product.cantidad}}</td>
                         <td>${{product.precio_unitario|floatformat:2}}</td>
@@ -453,6 +453,7 @@ function verificar() {
     var productosComparativo = [];
     for (var j = 0; j < tablaPreevaluados.rows.length; j++) {
         var productoComparativoId = tablaPreevaluados.rows[j].getAttribute('data-product-id'); // Obtén el ID del atributo
+        console.log('ID tabla 2:    ' + productoComparativoId)
         productosComparativo.push(productoComparativoId);
     }
 
@@ -1070,6 +1071,7 @@ $(document).ready(function(){
                             var productoNombre = item.producto__producto__nombre; // Cambia según el origen de datos
 
                             var fila = $('<tr>').attr('data-product-id', productoId).append(
+                                //$('<td>').text(productoId),
                                 $('<td>').text(productoNombre)
                             );
                             tablaBody.append(fila); // Añade la fila a la tabla
