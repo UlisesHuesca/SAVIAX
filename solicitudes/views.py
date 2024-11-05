@@ -275,7 +275,22 @@ def checkout(request):
                     prod_inventario = Inventario.objects.get(id = producto.producto.id)
                     ordensurtir , created = ArticulosparaSurtir.objects.get_or_create(articulos = producto)
                     #cond:1 evalua si la cantidad en inventario es mayor que lo solicitado
-                    if prod_inventario.cantidad >= producto.cantidad and order.tipo.tipo == "normal":  #si la cantidad solicitada es mayor que la cantidad en inventario
+                    if producto.producto.producto.servicio == True or producto.producto.producto.activo == True:
+                        ordensurtir.requisitar = True
+                        ordensurtir.cantidad_requisitar = producto.cantidad
+                        order.requisitar = True
+                        requi, created = Requis.objects.get_or_create(complete = True, orden = order)
+                        requitem, created = ArticulosRequisitados.objects.get_or_create(req = requi, producto= ordensurtir, cantidad = producto.cantidad, almacenista = usuario)
+                        requi.folio = str(abrev) + str(folio_number).zfill(4)
+                        if productos.count() == 1: 
+                            order.requisitar=False
+                            order.requisitado = True
+                        ordensurtir.requisitar=False
+                        requi.save()
+                        requitem.save()
+                        ordensurtir.save()
+                        order.save()
+                    elif prod_inventario.cantidad >= producto.cantidad and order.tipo.tipo == "normal":  #si la cantidad solicitada es mayor que la cantidad en inventario
                         prod_inventario.cantidad = prod_inventario.cantidad - producto.cantidad
                         prod_inventario.cantidad_apartada = producto.cantidad + prod_inventario.cantidad_apartada
                         prod_inventario._change_reason = f'Se modifica el inventario en view: autorizada_sol:{order.id} cond:1'
@@ -301,17 +316,6 @@ def checkout(request):
                         ordensurtir.requisitar = True
                         ordensurtir.cantidad_requisitar = producto.cantidad
                         order.requisitar = True
-                        print(producto.producto.producto.servicio)
-                        if producto.producto.producto.servicio == True:
-                            requi, created = Requis.objects.get_or_create(complete = True, orden = order)
-                            requitem, created = ArticulosRequisitados.objects.get_or_create(req = requi, producto= ordensurtir, cantidad = producto.cantidad, almacenista = usuario)
-                            requi.folio = str(abrev) + str(folio_number).zfill(4)
-                            if productos.count() == 1: 
-                                order.requisitar=False
-                                order.requisitado = True
-                            ordensurtir.requisitar=False
-                            requi.save()
-                            requitem.save()
                         ordensurtir.save()
                         order.save()
                 order.autorizar = True

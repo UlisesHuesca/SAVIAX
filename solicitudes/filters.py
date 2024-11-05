@@ -1,5 +1,5 @@
 import django_filters
-from dashboard.models import Inventario, Order, ArticulosOrdenados, Product, Criticidad
+from dashboard.models import Inventario, Order, ArticulosOrdenados, Product, Criticidad, Distrito
 from django_filters import CharFilter, DateFilter, ChoiceFilter
 from django.db.models import Q
 
@@ -92,3 +92,17 @@ class HistoricalProductoFilter(django_filters.FilterSet):
 
     def nombre_usuario(self, queryset, name, value):
         return queryset.filter(Q(history_user__first_name__icontains = value) | Q(history_user__last_name__icontains = value))
+    
+class InventarioFilter(django_filters.FilterSet):
+    codigo = CharFilter(field_name='producto__codigo', lookup_expr='icontains')
+    producto = CharFilter(field_name='producto__nombre', lookup_expr='icontains')
+    familia = CharFilter(field_name='producto__familia__nombre', lookup_expr='icontains')
+    subfamilia = CharFilter(field_name='producto__subfamilia__nombre', lookup_expr='icontains')
+    ubicacion = CharFilter(field_name='ubicacion', lookup_expr='icontains')
+    estante = CharFilter(field_name='estante', lookup_expr='icontains')
+
+    distrito = django_filters.ModelChoiceFilter(queryset=Distrito.objects.all(), label="Distrito", empty_label="Todos los distritos")
+
+    class Meta:
+        model = Inventario
+        fields = ['producto','codigo','familia','ubicacion','estante', 'distrito',]

@@ -284,18 +284,32 @@ def pendientes_entrada(request):
                             )
                     email.attach(f'OC_folio:{entrada_item.articulo_comprado.oc.folio}.pdf',archivo_oc,'application/pdf')
                     #email.send()
-                #Este código es el que tiene que suceder para hacer la entrada a almacén
-                producto_inv.cantidad_entradas = pendientes_surtir
-                producto_inv.cantidad_apartada = producto_inv.apartada_entradas
-                producto_surtir.cantidad = producto_surtir.cantidad + entrada_item.cantidad                       #Al producto disponible para surtir se le suma lo que entra
-                producto_surtir.cantidad_requisitar = producto_surtir.cantidad_requisitar - entrada_item.cantidad   #Al producto pendiente por requisitar se le resta lo que entra
-                producto_surtir.seleccionado = False
-                producto_surtir.surtir = True
-                producto_inv._change_reason = 'Se modifica el inventario en view: update_entrada. Esto es una entrada para solicitud normal'
-                entrada.entrada_date = date.today()
-                entrada.entrada_hora = datetime.now().time()
-                entrada.save()
-                entrada_item.almacenado = True #Esto esta bien
+                if producto_surtir.articulos.producto.producto.activo == True:
+                    producto_inv.cantidad += entrada_item.cantidad #Se suma al inventario como si fuera un resurtimiento ya que Activos lo asigna
+                    producto_inv.cantidad_entradas += entrada_item.cantidad
+                    producto_surtir.cantidad = 0                     #Al producto disponible para surtir
+                    producto_surtir.cantidad_requisitar = 0   #Al producto pendiente por requisitar
+                    producto_surtir.seleccionado = False
+                    producto_surtir.surtir = False
+                    producto_surtir.requisitar = False
+                    producto_inv._change_reason = 'Se modifica el inventario en view: update_entrada. Esto es una entrada para solicitud normal con activo'
+                    entrada.entrada_date = date.today()
+                    entrada.entrada_hora = datetime.now().time()
+                    entrada.save()
+                    entrada_item.almacenado = True #Esto esta bien
+                else:   
+                    #Este código es el que tiene que suceder para hacer la entrada a almacén
+                    producto_inv.cantidad_entradas = pendientes_surtir
+                    producto_inv.cantidad_apartada = producto_inv.apartada_entradas
+                    producto_surtir.cantidad = producto_surtir.cantidad + entrada_item.cantidad                       #Al producto disponible para surtir se le suma lo que entra
+                    producto_surtir.cantidad_requisitar = producto_surtir.cantidad_requisitar - entrada_item.cantidad   #Al producto pendiente por requisitar se le resta lo que entra
+                    producto_surtir.seleccionado = False
+                    producto_surtir.surtir = True
+                    producto_inv._change_reason = 'Se modifica el inventario en view: update_entrada. Esto es una entrada para solicitud normal'
+                    entrada.entrada_date = date.today()
+                    entrada.entrada_hora = datetime.now().time()
+                    entrada.save()
+                    entrada_item.almacenado = True #Esto esta bien
 
 
                 #Si cantidad de entradas es menor a cantidad total del producto
