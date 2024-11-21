@@ -127,7 +127,11 @@
                     {% else %}
                     <td><span class="badge bg-warning">Llevar Material a Almacén</span></td>
                     {% endif %}
-                    <td>Gerente {% if orden.autorizar2 %} <span class="badge bg-primary">Autorizado</span> {% elif orden.autorizar2 == False %} <span class="badge bg-danger">Cancelado</span>{% else %} <span class="badge bg-warning">No Autorizado Aún</span> {% endif %} </td> 
+                    {% if orden.autorizar == False %}
+                        <td>Gerente <span class="badge bg-danger">Cancelado</span></td>
+                    {% else %}
+                        <td>Gerente {% if orden.autorizar2 %} <span class="badge bg-primary">Autorizado</span> {% elif orden.autorizar2 == False %} <span class="badge bg-danger">Cancelado</span>{% else %} <span class="badge bg-warning">No Autorizado Aún</span> {% endif %} </td> 
+                    {% endif %}
                     <td> {% for articulo in orden.articulos.all %}
                         {% if articulo.proyecto %}
                             {{ articulo.proyecto.nombre }}{% if not forloop.last %}, {% endif %}
