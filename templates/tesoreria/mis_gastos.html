@@ -155,7 +155,7 @@
                         </a>
                     </td>
                     <td>
-                        <a type="button" class="btn btn-outline-danger" href="{% url 'matriz-facturas-gasto' gasto.id %}">
+                        <a type="button" class="btn btn-outline-danger" href="{% url 'matriz-facturas-gasto' gasto.id %}?next={{ request.path }}">
                         <i class="fa-solid fa-file-pdf"></i>
                         </a>
                     </td>

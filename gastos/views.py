@@ -465,14 +465,14 @@ def matriz_facturas_gasto(request, pk):
     facturas = Factura.objects.filter(solicitud_gasto = gasto)
     form =  Facturas_Gastos_Form(instance=gasto)
     factura_form = FacturaForm()
-
+    next_url = request.GET.get('next','matriz-pagos')
     if request.method == 'POST':
         form = Facturas_Gastos_Form(request.POST, instance=gasto)
         if "btn_factura_completa" in request.POST:
             if form.is_valid():
                 form.save()
                 messages.success(request,'Haz cambiado el status de facturas completas')
-                return redirect('matriz-pagos')
+                return redirect(next_url)
             else:
                 messages.error(request,'No está validando')
         if "btn_factura" in request.POST:
@@ -483,7 +483,7 @@ def matriz_facturas_gasto(request, pk):
                 factura.fecha_subida = datetime.now()
                 factura.save()
                 messages.success(request, 'Factura agregada correctamente.')
-                return redirect('matriz-pagos')
+                return redirect(next_url)
 
 
     context={

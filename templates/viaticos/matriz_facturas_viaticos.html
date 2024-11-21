@@ -11,41 +11,6 @@
 <hr>
 <hr>
 <hr>
-<div class = "row mt-2 bg-white" id="response-div">
-        <div class="col-12">
-            <div class="card card-body">
-                
-                <form method=POST>
-                    {% csrf_token %}
-                    <ul class="nav nav-pills">
-                    <li class="nav-item mx-1">
-                        <a href="{% url 'mis-gastos' %}" class="btn btn-outline-info">
-                            <i class="fa-solid fa-backward"></i>
-                        </a>
-                    </li>
-                    {% if usuario.tipo.tesoreria == True %}
-                        <li class="nav-item mx-1">
-                            <a href="{% url 'viaticos-autorizados-pago' %}" class="btn btn-outline-info">
-                                <i class="fa-solid fa-backward"> VIATICOS</i>
-                            </a>                 
-                        </li>
-                        <li class="nav-item mx-2">
-                            <a href="{% url 'matriz-pagos' %}" class="btn btn-outline-info">
-                                <i class="fa-solid fa-backward"> MATRIZ PAGOS</i>
-                            </a>
-                        </li>
-                        {% endif %}
-                        <!--<li class="nav-item mx-2">
-                            <button type="button" class="btn btn-outline-danger">
-                               <i class="fa-solid fa-file-pdf fa-2xl"></i>
-                            </button>
-                        </li>-->
-                    </ul>
-                </form>
-            </div>
-        </div>
-    
-    <!-- Aquí terminan el encabezado de los filtros -->
 
 <!-- Esta es la zona donde se crean los mensajes excitantes con sweet alert -->
 <div class="row my-4">
@@ -75,6 +40,41 @@
     </div>
 </div>
 
+
+<div class = "row mt-2 bg-white" id="response-div">
+    <div class="row mt-2 bg-white" id="response-div">
+        <div class="col-12">
+            <div class="card card-body shadow-sm">
+                <form method="POST">
+                    {% csrf_token %}
+                    <ul class="nav nav-pills mb-3">
+                        <li class="nav-item mx-1">
+                            <a href="{% url 'mis-gastos' %}" class="btn btn-outline-info">
+                                <i class="fa-solid fa-backward"></i> Mis gastos
+                            </a>
+                        </li>
+                        {% if usuario.tipo.tesoreria == True %}
+                            <li class="nav-item mx-1">
+                                <a href="{% url 'viaticos-autorizados-pago' %}" class="btn btn-outline-info">
+                                    <i class="fa-solid fa-backward"></i> VIÁTICOS
+                                </a>                 
+                            </li>
+                            <li class="nav-item mx-2">
+                                <a href="{% url 'matriz-pagos' %}" class="btn btn-outline-info">
+                                    <i class="fa-solid fa-backward"></i> MATRIZ DE PAGOS
+                                </a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Aquí terminan el encabezado de los filtros -->
+
+
+
 <div class = "row mt-2">
     <div class="col-md-12">
         <table class="table bg-white">
@@ -94,12 +94,18 @@
                     <td>{{concepto.producto}}</td>
                     <td>{{concepto.comentario}}</td>
                     <td>${{concepto.get_total_parcial|floatformat:2}}</td>
-                    <td>   
-                        <ul class="nav nav pills" >   
+                    <td>
+                        <ul class="nav nav pills">
                             <li class="nav-item mx-1">
-                                <a type="button" class="btn btn-outline-secondary" href="{% url 'facturas-viaticos' concepto.id %}">
-                                    <i class="fa-solid fa-cloud-arrow-up"></i>
-                                </a>
+                                {% if concepto.tiene_facturas_completadas > 0 %}
+                                    <a type="button" class="btn btn-outline-info" href="{% url 'facturas-viaticos' concepto.id %}"title="Tiene Facturas">
+                                        <i class="fa-solid fa-cloud-arrow-up"></i> Subir factura
+                                    </a>
+                                {% else %}
+                                    <a type="button" class="btn btn-outline-secondary" href="{% url 'facturas-viaticos' concepto.id %}"title="No tiene Facturas">
+                                        <i class="fa-solid fa-cloud-arrow-up"></i> Subir factura
+                                    </a>
+                                {% endif %}
                             </li>
                         </ul>
                     </td>
@@ -112,19 +118,24 @@
         {% csrf_token %}
         <div class="row ms-3 my-2">
             <div class="form-check form-switch col-sm">
-            <label for="form.tesoreria_local" class="form-check-label"><strong>Facturas Completas</strong></label>
-            {{form.facturas_completas|add_class:"form-check-input"}}
+                <label for="form.tesoreria_local" class="form-check-label"><strong>Facturas Completas</strong></label>
+                {{ form.facturas_completas|add_class:"form-check-input" }}
             </div>
             <hr>
-        <!--<h6>Nueva factura</h6>-->
-        <ul class="nav">
-            <!--<li class="nav-item">
-                <a type="button" class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target='#dialog' hx-target="#document" hx-get="#" >Registrar</a>
-            </li>-->
-            <li class="nav-item ms-4">
-                <button type="submit" name="btn_factura_completa" class="btn btn-secondary">Cerrar</button>
-            </li>
-        </ul>
+            <ul class="nav">
+                <!-- Botón Guardar que redirige a la ruta actual -->
+                <li class="nav-item ms-4">
+                    <button type="submit" name="btn_factura_completa" class="btn btn-success">Guardar</button>
+                </li>
+                <li class="nav-item ms-2">
+                    {% if request.GET.next %}
+                        <a href="{{ request.GET.next }}" class="btn btn-outline-primary">Volver</a>
+                    {% else %}
+                        <a href="{% url 'matriz-pagos' %}" class="btn btn-outline-primary">Volver</a>
+                    {% endif %}
+                </li>
+            </ul>
+        </div>
     </form>
 </div>
 <!--Este es el modal-->

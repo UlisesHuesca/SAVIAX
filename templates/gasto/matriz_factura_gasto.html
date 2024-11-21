@@ -9,49 +9,7 @@
 <body>
 {% block content %}
 <hr>
-<hr>
-<hr>
 <h6>&nbsp;</h6>
-<div class = "card mt-2 bg-white" id="response-div">
-        <div class="col-12">
-            <div class="card-body">
-                <form method=POST>
-                    {% csrf_token %}
-                    <ul class="nav nav-pills">
-                        <li class="nav-item mx-1">
-                            <a href="{% url 'mis-gastos' %}" class="btn btn-outline-info">
-                                <i class="fa-solid fa-backward"></i>
-                            </a>
-                        </li>
-                        {% if usuario.tipo.tesoreria == True %}
-                        <li class="nav-item mx-1">
-                            <a href="{% url 'pago-gastos-autorizados' %}" class="btn btn-outline-info">
-                                <i class="fa-solid fa-backward"> GASTOS</i>
-                            </a>                 
-                        </li>
-                        <li class="nav-item mx-2">
-                            <a href="{% url 'matriz-pagos' %}" class="btn btn-outline-info">
-                                <i class="fa-solid fa-backward"> MATRIZ PAGOS</i>
-                            </a>
-                        </li>
-                        {% endif %}
-                        
-                        <!--<li class="nav-item mx-2">
-                            <button type="submit" class="btn btn-outline-success" value='Reporte Excel'>
-                                <i class="fa-solid fa-file-excel fa-2xl"></i>
-                            </button>
-                        </li>
-                        <li class="nav-item mx-2">
-                            <button type="button" class="btn btn-outline-danger">
-                               <i class="fa-solid fa-file-pdf fa-2xl"></i>
-                            </button>
-                        </li>-->
-                    </ul>
-                </form>
-            </div>
-        </div>
-</div>
-    <!-- Aquí terminan el encabezado de los filtros -->
 
 <!-- Esta es la zona donde se crean los mensajes excitantes con sweet alert -->
 <div class="row my-4">
@@ -80,8 +38,38 @@
         {% endif %}
     </div>
 </div>
+<div class="card mt-2 bg-white">
+    <div class="col-12">
+        <div class="card-body">
+            <form method="POST">
+                {% csrf_token %}
+                <ul class="nav nav-pills mb-3">
+                    <li class="nav-item mx-1">
+                        <a href="{% url 'mis-gastos' %}" class="btn btn-outline-info">
+                            <i class="fa-solid fa-backward"></i> Mis gastos
+                        </a>
+                    </li>
+                    {% if usuario.tipo.tesoreria == True %}
+                        <li class="nav-item mx-1">
+                            <a href="{% url 'pago-gastos-autorizados' %}" class="btn btn-outline-info">
+                                <i class="fa-solid fa-backward"></i> GASTOS
+                            </a>                 
+                        </li>
+                        <li class="nav-item mx-2">
+                            <a href="{% url 'matriz-pagos' %}" class="btn btn-outline-info">
+                                <i class="fa-solid fa-backward"></i> MATRIZ PAGOS
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </form>
+        </div>
+    </div>
+</div>
 
-<div class = "card mt-2">
+<!-- Aquí terminan el encabezado de los filtros -->
+
+<div class="card mt-2">
     <div class="col-md-12">
         <table class="table bg-white">
             <thead class="text-black" style="background-color: #F5F5F5;">
@@ -96,47 +84,51 @@
             </thead>
             <tbody>
                 {% for gasto in articulos_gasto %}
-                <tr>
-                    <th scope="row">{{gasto.id}}</th>
-                    <td>{{gasto.proyecto.nombre}}</td>
-                    <td>{{gasto.producto}}</td>
-                    <td>{{gasto.cantidad}}</td>
-                    <td>{{gasto.comentario}}</td>
-                    <td>${{gasto.total_parcial|floatformat:2}}</td>
-                </tr>
+                    <tr>
+                        <th scope="row">{{ gasto.id }}</th>
+                        <td>{{ gasto.proyecto.nombre }}</td>
+                        <td>{{ gasto.producto }}</td>
+                        <td>{{ gasto.cantidad }}</td>
+                        <td>{{ gasto.comentario }}</td>
+                        <td>${{ gasto.total_parcial|floatformat:2 }}</td>
+                    </tr>
                 {% endfor %}
             </tbody>
         </table>
         <hr>
+
+        <!-- Formulario para subir la factura -->
         <form method="post" enctype="multipart/form-data">
             {% csrf_token %}
-       
             <div id="factura_pdf" class="row mt-2">
                 <div class="input-group col-lg-12"> 
                     <div class="input-group-text" style="background-color:white">
-                        {{factura_form.archivo_pdf|add_class:"form-control"}}
+                        {{ factura_form.archivo_pdf|add_class:"form-control" }}
                     </div>
                     <span class="input-group-text">
                         <div class="my-3" style="color:#980f0f">
-                            <i class="fa-solid fa-cloud-arrow-up"></i>PDF
+                            <i class="fa-solid fa-cloud-arrow-up"></i> PDF
                         </div>
                     </span>
                 </div>
             </div>
+
             <div id="factura_xml" class="row d-none d-lg-block mt-2">
                 <div class="input-group"> 
                     <div class="input-group-text" style="background-color:white">
-                        {{factura_form.archivo_xml|add_class:"form-control"}}
+                        {{ factura_form.archivo_xml|add_class:"form-control" }}
                     </div>
                     <span class="input-group-text">
                         <div class="my-3" style="color:#9a9b9d">
-                            <i class="fa-solid fa-cloud-arrow-up"></i>XML
+                            <i class="fa-solid fa-cloud-arrow-up"></i> XML
                         </div>
                     </span>
                 </div>
             </div>
+
             <button class="btn btn-outline-info btn-block my-2" type="submit" name="btn_factura">Subir Factura</button>
         </form>
+
         <table class="table bg-white">
             <thead class="text-black" style="background-color: #F5F5F5;">
                 <tr>
@@ -144,54 +136,59 @@
                     <th scope="col">Proveedor [XML]</th>
                     <th scope="col">Monto [XML]</th>
                     <th>Facturas</th>
-                <tr>
+                </tr>
             </thead>
             <tbody>
-                {% for factura in facturas  %}
-                <tr>
-                    <td>{% if factura.archivo_xml %} {{factura.emisor.resultados}} {% endif %}</td>
-                    <td>{% if factura.archivo_xml %} {{factura.emisor.nombre}} {% endif %}</td>
-                    <td>{% if factura.archivo_xml %} ${{factura.emisor.total}} {% endif %}</td>
-                    <td>
-                    <ul class="nav nav-pills">
-                        {% if factura.archivo_pdf %}
-                        <li class="nav-item mx-1">
-                            <a href="{{factura.archivo_pdf.url}}" download class="btn btn-outline-danger">
-                                <i class="fa-solid fa-file-pdf fa-2xl"></i>
-                            </a>                 
-                        </li>
-                        {% endif %}
-                        {% if factura.archivo_xml %}
-                        <li class="nav-item mx-1">
-                            <a href="{{factura.archivo_xml.url}}" download class="btn btn-outline-secondary">
-                                <i class="fa-solid fa-file-code fa-2xl"></i>
-                            </a>                 
-                        </li>
-                        {% endif %}
-                    </ul>
-                    </td> 
-                </tr>
+                {% for factura in facturas %}
+                    <tr>
+                        <td>{% if factura.archivo_xml %} {{ factura.emisor.resultados }} {% endif %}</td>
+                        <td>{% if factura.archivo_xml %} {{ factura.emisor.nombre }} {% endif %}</td>
+                        <td>{% if factura.archivo_xml %} ${{ factura.emisor.total }} {% endif %}</td>
+                        <td>
+                            <ul class="nav nav-pills">
+                                {% if factura.archivo_pdf %}
+                                    <li class="nav-item mx-1">
+                                        <a href="{{ factura.archivo_pdf.url }}" download class="btn btn-outline-danger">
+                                            <i class="fa-solid fa-file-pdf fa-2xl"></i>
+                                        </a>                 
+                                    </li>
+                                {% endif %}
+                                {% if factura.archivo_xml %}
+                                    <li class="nav-item mx-1">
+                                        <a href="{{ factura.archivo_xml.url }}" download class="btn btn-outline-secondary">
+                                            <i class="fa-solid fa-file-code fa-2xl"></i>
+                                        </a>                 
+                                    </li>
+                                {% endif %}
+                            </ul>
+                        </td> 
+                    </tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
+
+    <!-- Formulario para cambiar el estado de las facturas -->
     <form method="post">
         {% csrf_token %}
         <div class="row ms-3 my-2">
             <div class="form-check form-switch col-sm">
-            <label for="form.tesoreria_local" class="form-check-label"><strong>Facturas Completas</strong></label>
-            {{form.facturas_completas|add_class:"form-check-input"}}
+                <label for="form.tesoreria_local" class="form-check-label"><strong>Facturas Completas</strong></label>
+                {{ form.facturas_completas|add_class:"form-check-input" }}
             </div>
             <hr>
-        <!--<h6>Nueva factura</h6>-->
-        <ul class="nav">
-            <!--<li class="nav-item">
-                <a type="button" class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target='#dialog' hx-target="#document" hx-get="{% url 'factura-nueva' gasto.id %}" >Registrar</a>
-            </li>-->
-            <li class="nav-item ms-4">
-                <button type="submit" name="btn_factura_completa" class="btn btn-secondary">Cerrar</button>
-            </li>
-        </ul>
+            <ul class="nav">
+                <li class="nav-item ms-4">
+                    <button type="submit" name="btn_factura_completa" class="btn btn-success">Guardar</button>
+                </li>
+                <li class="nav-item ms-2">
+                    {% if request.GET.next %}
+                        <a href="{{ request.GET.next }}" class="btn btn-outline-primary">Volver</a>
+                    {% else %}
+                        <a href="{% url 'matriz-pagos' %}" class="btn btn-outline-primary">Volver</a>
+                    {% endif %}
+                </li>
+            </ul>
         </div>
     </form>
 </div>

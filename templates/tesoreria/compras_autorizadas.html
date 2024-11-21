@@ -201,7 +201,16 @@
                                 <a id="myBtn" type="button" class="btn btn-outline-info" href="{% url 'compras-pagos' compra.id %}">Pago</a>
                             </li>
                             <li class="nav-item m-1">
-                                <button id="myBtn2" type="button" class="btn btn-outline-light" style="background-color:#990f0f" data-bs-toggle="modal" data-bs-target="#dialog" hx-target="#document" hx-get="{% url 'matriz-facturas' compra.id %}"><i class="fa-solid fa-cloud-arrow-up"></i></button>
+                                <button id="myBtn2" type="button" 
+                                        class="btn {% if compra.Compra.exists %}btn-outline-info{% else %}btn-outline-danger{% endif %}" 
+                                        style="background-color:{% if compra.facturas.exists %}white{% else %}white{% endif %}" 
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#dialog" 
+                                        hx-target="#document" 
+                                        hx-get="{% url 'matriz-facturas' compra.id %}"
+                                        title="{% if compra.Compra.exists %}Tiene Facturas{% else %}No tiene Facturas{% endif %}">
+                                    <i class="fa-solid {% if compra.compra.exists %}fa-file-circle-check{% else %}fa-file-circle-xmark{% endif %}"></i>
+                                </button>
                             </li>
                             <li class="nav-item m-1">
                                 <button id="myBtn2" type="button" class="btn btn-outline-info" data-bs-toggle="modal" data-bs-target="#dialog" hx-target="#document" hx-get="{% url 'saldo-a-favor' compra.id %}">Saldo a Favor</button>

@@ -13,6 +13,7 @@ from .forms import Solicitud_ViaticoForm, Concepto_ViaticoForm, Pago_Viatico_For
 from tesoreria.forms import Facturas_Viaticos_Form
 from .filters import Solicitud_Viatico_Filter
 from django.core.paginator import Paginator
+from django.db.models import Count, Q
 
 from decimal import Decimal, ROUND_HALF_UP
 
@@ -397,10 +398,10 @@ def viaticos_autorizados_pago(request):
     page = request.GET.get('page')
     viaticos_list = p.get_page(page)
 
-    #if request.method =='POST' and 'btnExcel' in request.POST:
-
-        #return convert_excel_solicitud_matriz(solicitudes)
-
+    # Agregar una propiedad extra para verificar si tienen facturas relacionadas
+    for viatico in viaticos_list:
+        viatico.has_invoices = viatico.conceptos.filter(facturas__isnull=False).exists()
+        
     context= {
         'viaticos_list':viaticos_list,
         'myfilter':myfilter,
@@ -511,6 +512,11 @@ def matriz_facturas_viaticos(request, pk):
     viatico = Solicitud_Viatico.objects.get(id = pk)
     concepto_viatico = Concepto_Viatico.objects.filter(viatico = viatico)
     form = Facturas_Viaticos_Form(instance=viatico)
+    next_url = request.GET.get('next','matriz-pagos')
+    # Agregar un campo 'tiene_facturas_completadas' para verificar si tiene facturas con hecho=True
+    concepto_viatico = concepto_viatico.annotate(
+        tiene_facturas_completadas=Count('facturas', filter=Q(facturas__hecho=True))
+    )
 
     if request.method == 'POST':
         form = Facturas_Viaticos_Form(request.POST, instance=viatico)
@@ -518,7 +524,7 @@ def matriz_facturas_viaticos(request, pk):
             if form.is_valid():
                 form.save()
                 messages.success(request,'Haz cambiado el status de facturas completas')
-                return redirect('matriz-pagos')
+                return redirect(next_url)
             else:
                 messages.error(request,'No está validando')
 
