@@ -18,7 +18,7 @@ from compras.models import Compra
 from user.models import Profile, Distrito, Banco
 from .forms import ProductForm, Products_BatchForm, AddProduct_Form, Proyectos_Form, ProveedoresForm, Proyectos_Add_Form, Proveedores_BatchForm, ProveedoresDireccionesForm, Proveedores_Direcciones_BatchForm, Subproyectos_Add_Form, ProveedoresExistDireccionesForm, Add_ProveedoresDireccionesForm, DireccionComparativoForm, Revision_Calidad_Form, PrecioMax_Form
 
-from .filters import ProductFilter, ProyectoFilter, ProveedorFilter, SubproyectoFilter
+from .filters import ProductFilter, ProyectoFilter, ProveedorFilter, SubproyectoFilter, ProfileFilter
 
 import os
 import csv
@@ -392,9 +392,25 @@ def subproyectos_edit(request, pk):
 
 @login_required(login_url='user-login')
 def staff(request):
-    workers = User.objects.all()
-    context= {
-        'workers': workers,
+    usuario = Profile.objects.get(staff=request.user)
+
+    perfiles = Profile.objects.filter(staff__is_active = True,)
+    cuenta_perfiles = perfiles.count()
+
+    myfilter = ProfileFilter(request.GET, queryset=perfiles)
+    perfiles = myfilter.qs
+    cuenta_filtrados = perfiles.count()
+
+    #Set up pagination
+    p = Paginator(perfiles, 30)
+    page = request.GET.get('page')
+    registros_list = p.get_page(page)
+
+    context = {
+        'registros_list':registros_list,
+        'myfilter':myfilter,
+        'cuenta_perfiles':cuenta_perfiles,
+        'cuenta_filtrados':cuenta_filtrados,
         }
     return render(request,'dashboard/staff.html', context)
 

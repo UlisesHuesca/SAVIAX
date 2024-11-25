@@ -1,8 +1,24 @@
 import django_filters
-from .models import Product, Proyecto, Subproyecto, Criticidad
+from .models import Product, Proyecto, Subproyecto, Criticidad, Profile
+from user.models import Tipo_perfil
 from compras.models import Proveedor
-from django_filters import CharFilter, DateTimeFilter
+from django_filters import CharFilter, BooleanFilter, NumberFilter, ModelChoiceFilter, DateTimeFilter
+from django.db.models import Q
 
+class ProfileFilter(django_filters.FilterSet):
+    user = CharFilter(field_name='staff__username', lookup_expr='icontains', label='Usuario')
+    nombre = CharFilter(method='filter_nombre', label='Nombre')
+    tipo = ModelChoiceFilter(queryset=Tipo_perfil.objects.all(), label='Tipo de Perfil')
+    st_activo = BooleanFilter(field_name='staff__is_active', label='Activo')
+    nivel = NumberFilter(field_name='nivel', label='Nivel')
+
+    class Meta:
+        model = Profile
+        fields = ['tipo', 'st_activo', 'nivel']
+
+    def filter_nombre(self, queryset, name, value):
+        return queryset.filter(Q(staff__first_name__icontains=value) | Q(staff__last_name__icontains=value))
+    
 class ProductFilter(django_filters.FilterSet):
     nombre = CharFilter(field_name='nombre', lookup_expr='icontains')
     codigo = CharFilter(field_name='codigo', lookup_expr='icontains')
