@@ -54,9 +54,9 @@ class HistoricalArticuloCompradoFilter(django_filters.FilterSet):
     
 class ComparativoFilter(django_filters.FilterSet):
     nombre = CharFilter(field_name='nombre', lookup_expr='icontains')
-    proveedor = CharFilter(field_name="proveedor__razon_social", lookup_expr='icontains')
-    proveedor2 = CharFilter(field_name="proveedor__razon_social", lookup_expr='icontains')
-    proveedor3 = CharFilter(field_name="proveedor__razon_social", lookup_expr='icontains')
+    proveedor = CharFilter(field_name="proveedor__nombre__razon_social", lookup_expr='icontains')
+    proveedor2 = CharFilter(field_name="proveedor2__nombre__razon_social", lookup_expr='icontains')
+    proveedor3 = CharFilter(field_name="proveedor3__nombre__razon_social", lookup_expr='icontains')
     creada_por = CharFilter(method='creador', lookup_expr='icontains')
     start_date = DateFilter(field_name='created_at', lookup_expr='gte')
     end_date = DateFilter(field_name='created_at', lookup_expr='lte')
