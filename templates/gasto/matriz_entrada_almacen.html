@@ -77,6 +77,7 @@
                     <th scope="col">Proyecto</th>
                     <th scope="col">Subproyecto</th>
                     <th scope="col">Monto</th>
+                    <th scope="col">Detalles</th>
                     <th scope="col">Acción</th>
                 </tr>
             </thead>
@@ -91,6 +92,9 @@
                     <td>{{gasto.proyecto.nombre}}</td>
                     <td>{{gasto.subproyecto.nombre}}</td>
                     <td>${{gasto.total_parcial|floatformat:2}} </td>
+                    <td>
+                    <a class="btn btn-outline-info" type="button" data-bs-toggle="modal" data-bs-target="#dialog" hx-target="#document" hx-get="{% url 'detalle-gastos' gasto.gasto.id %}">Conceptos</a>
+                    </td>
                     <td>
                         <ul class="nav nav-pills">
                             <li class="nav-item mx-1">
