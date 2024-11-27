@@ -22,7 +22,7 @@ import xml.etree.ElementTree as ET
 import decimal
 from django.db.models import Q
 from decimal import Decimal, ROUND_HALF_UP, InvalidOperation
-
+import pytz
 #PDF generator
 from reportlab.pdfgen import canvas
 from reportlab.lib import colors
@@ -35,6 +35,12 @@ from reportlab.lib.enums import TA_CENTER, TA_LEFT
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, Frame
 from bs4 import BeautifulSoup
 
+#Excel stuff
+from openpyxl import Workbook
+from openpyxl.styles import NamedStyle, Font, PatternFill
+from openpyxl.utils import get_column_letter
+import xlsxwriter
+from io import BytesIO
 
 # Create your views here.
 @login_required(login_url='user-login')
@@ -171,9 +177,8 @@ def solicitudes_gasto(request):
     page = request.GET.get('page')
     ordenes_list = p.get_page(page)
 
-    #if request.method =='POST' and 'btnExcel' in request.POST:
-
-        #return convert_excel_solicitud_matriz(solicitudes)
+    if request.method =='POST' and 'btnExcel' in request.POST:
+       return convert_excel_gasto_matriz(solicitudes)
 
     context= {
         'ordenes_list':ordenes_list,
@@ -1012,3 +1017,148 @@ def render_pdf_gasto(request, pk):
     buf.seek(0)
 
     return FileResponse(buf, as_attachment=True, filename='Comprobación_Gasto_' + str(gasto.id) +'.pdf')
+
+def convert_excel_gasto_matriz(gastos):
+    response= HttpResponse(content_type = "application/ms-excel")
+    response['Content-Disposition'] = 'attachment; filename = Gastos_' + str(date.today())+'.xlsx'
+    wb = Workbook()
+    ws = wb.create_sheet(title='Gastos')
+    #Comenzar en la fila 1
+    row_num = 1
+
+    #Create heading style and adding to workbook | Crear el estilo del encabezado y agregarlo al Workbook
+    head_style = NamedStyle(name = "head_style")
+    head_style.font = Font(name = 'Arial', color = '00FFFFFF', bold = True, size = 11)
+    head_style.fill = PatternFill("solid", fgColor = '00003366')
+    wb.add_named_style(head_style)
+    #Create body style and adding to workbook
+    body_style = NamedStyle(name = "body_style")
+    body_style.font = Font(name ='Calibri', size = 10)
+    wb.add_named_style(body_style)
+    #Create messages style and adding to workbook
+    messages_style = NamedStyle(name = "mensajes_style")
+    messages_style.font = Font(name="Arial Narrow", size = 11)
+    wb.add_named_style(messages_style)
+    #Create date style and adding to workbook
+    date_style = NamedStyle(name='date_style', number_format='DD/MM/YYYY')
+    date_style.font = Font(name ='Calibri', size = 10)
+    wb.add_named_style(date_style)
+    money_style = NamedStyle(name='money_style', number_format='$ #,##0.00')
+    money_style.font = Font(name ='Calibri', size = 10)
+    wb.add_named_style(money_style)
+    money_resumen_style = NamedStyle(name='money_resumen_style', number_format='$ #,##0.00')
+    money_resumen_style.font = Font(name ='Calibri', size = 14, bold = True)
+    wb.add_named_style(money_resumen_style)
+    percent_style = NamedStyle(name='percent_style', number_format='0.00%')
+    percent_style.font = Font(name ='Calibri', size = 10)
+    wb.add_named_style(percent_style)
+
+    columns = ['Folio','Fecha Autorización','Proyectos','Subproyectos','Comentarios','Colaborador','Solicitado para',
+               'Importe','Fecha Creación','Status','Autorizado por','Facturas','Status de Pago']
+
+    for col_num in range(len(columns)):
+        (ws.cell(row = row_num, column = col_num+1, value=columns[col_num])).style = head_style
+        ws.column_dimensions[get_column_letter(col_num + 1)].width = 16
+        if col_num == 5: #Columna del proveedor
+            ws.column_dimensions[get_column_letter(col_num + 1)].width = 30
+        if col_num == 2:
+            ws.column_dimensions[get_column_letter(col_num + 1)].width = 20
+
+    columna_max = len(columns)+2
+
+    # Agregar los mensajes
+    ws.cell(column = columna_max, row = 1, value='{Reporte Creado Automáticamente por SAVIA 2.0. UH}').style = messages_style
+    ws.cell(column = columna_max, row = 2, value='{Software desarrollado por Vordcab S.A. de C.V.}').style = messages_style
+    ws.column_dimensions[get_column_letter(columna_max)].width = 30
+
+    # Agregar los encabezados de las nuevas columnas debajo de los mensajes
+    ws.cell(row=3, column = columna_max, value="Total de Gastos").style = head_style
+    ws.cell(row=4, column = columna_max, value="Sumatoria de Pagos Pendientes").style = head_style
+   
+
+    # Asumiendo que las filas de datos comienzan en la fila 2 y terminan en row_num
+    ws.cell(row=3, column=columna_max + 1, value=f"=COUNTA(A:A)-1").style = body_style
+    ws.cell(row=4, column=columna_max + 1, value=f"=SUM(I:I)").style = money_resumen_style
+  
+    for gasto in gastos:
+        row_num = row_num + 1    
+
+        if gasto.pagada:
+            pagada = "Tiene Pago"
+        else: 
+            pagada ="No tiene pago"
+
+        if gasto.facturas.exists():
+            facturas = "Con Facturas"
+        else:
+            facturas = "Sin Facturas"
+        
+        if gasto.autorizar2:
+            status = "Autorizado"
+            
+            if gasto.autorizado_por2:
+                autorizado_por = str(gasto.autorizado_por2.staff.first_name) + ' ' + str(gasto.autorizado_por2.staff.last_name)
+            else:
+                autorizado_por ="NR"
+        elif gasto.autorizar2 == False:
+            status = "Cancelado"
+            autorizado_por =   str(gasto.autorizado_por2.staff.first_name) + ' ' + str(gasto.autorizado_por2.staff.last_name)
+        elif gasto.autorizar:
+            autorizado_por =str(gasto.superintendente.staff.first_name) + ' ' + str(gasto.superintendente.staff.last_name)
+            status = "Autorizado | Falta una autorización"
+        elif gasto.autorizar == False:
+            status = "Cancelado"
+            autorizado_por = str(gasto.superintendente.staff.last_name)
+        else:
+            autorizado_por = "Faltan autorizaciones"
+            status = "Faltan autorizaciones"
+        if gasto.approbado_fecha2 is None:
+            gasto.approbado_fecha2 = ''
+        proyectos = set()
+        subproyectos = set()
+        comentarios = set()
+        articulos_gasto = Articulo_Gasto.objects.filter(gasto=gasto)
+        for articulo in articulos_gasto:
+            if articulo.proyecto:
+                proyectos.add(str(articulo.proyecto.nombre))
+            if articulo.subproyecto:
+                subproyectos.add(str(articulo.subproyecto.nombre))
+            if articulo.comentario:
+                comentarios.add(str(articulo.comentario))
+
+        proyectos_str = ', '.join(proyectos)
+        subproyectos_str = ', '.join(subproyectos)
+        comentarios_str = ', '.join(comentarios)
+
+        row = [
+            gasto.id,
+            gasto.approbado_fecha2,
+            proyectos_str,
+            subproyectos_str,
+            comentarios_str,
+            gasto.staff.staff.first_name + ' ' + gasto.staff.staff.last_name,
+            gasto.colaborador.staff.first_name + ' '  + gasto.colaborador.staff.last_name if gasto.colaborador else '',
+            gasto.get_total_solicitud,
+            gasto.created_at,
+            status,
+            autorizado_por,
+            facturas,
+            pagada,
+            #f'=IF(I{row_num}="",G{row_num},I{row_num}*G{row_num})',  # Calcula total en pesos usando la fórmula de Excel
+            #created_at_naive,
+        ]
+
+    
+        for col_num in range(len(row)):
+            (ws.cell(row = row_num, column = col_num+1, value=str(row[col_num]))).style = body_style
+            if col_num ==1 or col_num == 9:
+                (ws.cell(row = row_num, column = col_num+1, value=row[col_num])).style = date_style
+            if col_num == 8:
+                (ws.cell(row = row_num, column = col_num+1, value=row[col_num])).style = money_style
+       
+    
+    sheet = wb['Sheet']
+    wb.remove(sheet)
+    wb.save(response)
+
+    return(response)
