@@ -779,6 +779,10 @@ def render_pdf_gasto(request, pk):
         precio = producto.precio_unitario if producto.cantidad is not None else 0
         precio_unitario_redondeado = Decimal(precio).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
         subtotal = Decimal(cantidad_redondeada * precio_unitario_redondeado).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+        if producto.otros_impuestos is None:
+            producto.otros_impuestos = 0
+        if subtotal is None:
+            subtotal = 0
         total = Decimal(subtotal) + Decimal(producto.otros_impuestos)
         data.append([
             producto.producto.producto.codigo, 
