@@ -368,7 +368,14 @@ def matriz_pagos(request):
     myfilter = Matriz_Pago_Filter(request.GET, queryset=pagos) 
 
     pagos = myfilter.qs
-    for pago in pagos:
+    #Set up pagination
+    p = Paginator(pagos, 50)
+    page = request.GET.get('page')
+    pagos_list = p.get_page(page)
+
+    if request.method == 'POST' and 'btnReporte' in request.POST:
+        return convert_excel_matriz_pagos(pagos)
+    for pago in pagos_list:
         articulos_gasto = Articulo_Gasto.objects.filter(gasto=pago.gasto)
 
         proyectos = set()
@@ -382,15 +389,6 @@ def matriz_pagos(request):
 
         pago.proyectos = ', '.join(proyectos)
         pago.subproyectos = ', '.join(subproyectos)
-
-    #Set up pagination
-    p = Paginator(pagos, 50)
-    page = request.GET.get('page')
-    pagos_list = p.get_page(page)
-
-    if request.method == 'POST' and 'btnReporte' in request.POST:
-        return convert_excel_matriz_pagos(pagos)
-
     context= {
         'pagos_list':pagos_list,
         'pagos':pagos,
