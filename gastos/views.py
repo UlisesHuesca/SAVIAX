@@ -16,6 +16,9 @@ from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse, HttpResponse, FileResponse
 from django.core.paginator import Paginator
 from django.db.models import Sum
+from django.urls import reverse
+import os
+import base64
 import json
 import io
 import xml.etree.ElementTree as ET
@@ -34,6 +37,7 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.enums import TA_CENTER, TA_LEFT
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, Frame
 from bs4 import BeautifulSoup
+from django.conf import settings
 
 #Excel stuff
 from openpyxl import Workbook
@@ -500,6 +504,107 @@ def matriz_facturas_gasto(request, pk):
         }
 
     return render(request, 'gasto/matriz_factura_gasto.html', context)
+
+def get_image_base64(image_path):
+    with open(image_path, "rb") as image_file:
+        return base64.b64encode(image_file.read()).decode()
+    
+@login_required(login_url='user-login')
+def eliminar_factura_gasto(request, pk):
+    perfil = Profile.objects.get(staff__id=request.user.id)
+    factura = Factura.objects.get(id=pk)
+    gasto = factura.solicitud_gasto
+    comentario = request.POST.get('comentario')
+    # Construir la URL usando reverse
+    next_url = request.GET.get('next', None)
+    print('URLLLLLLLLLLLLLLLLLLL2')
+    print(next_url)
+    # Construir la URL usando reverse
+    matriz_url = reverse('matriz-facturas-gasto', args=[gasto.id])
+    static_path = settings.STATIC_ROOT
+    img_path = os.path.join(static_path,'images','SAVIA_Logo.png')
+    img_path2 = os.path.join(static_path,'images','logo vordtec_documento.png')
+    image_base64 = get_image_base64(img_path)
+    logo_v_base64 = get_image_base64(img_path2)
+    # Crear el mensaje HTML
+    html_message = f"""
+    <html>
+        <head>
+            <meta charset="UTF-8">
+        </head>
+        <body style="font-family: Arial, sans-serif; color: #333; background-color: #f4f4f4; margin: 0; padding: 0;">
+            <table width="100%" cellspacing="0" cellpadding="0" style="background-color: #f4f4f4; padding: 20px;">
+                <tr>
+                    <td align="center">
+                    <img src="data:image/jpeg;base64,{logo_v_base64}" alt="Logo" style="width: 100px; height: auto;" />
+                        <table width="600px" cellspacing="0" cellpadding="0" style="background-color: #ffffff; padding: 20px; border-radius: 10px;">
+                            <tr>
+                            </tr>
+                            <tr>
+                                <td style="padding: 20px;">
+                                    <p style="font-size: 18px; text-align: justify;">
+                                        <p>Estimado {factura.solicitud_gasto.staff.staff.first_name} {factura.solicitud_gasto.staff.staff.last_name},</p>
+                                    </p>
+                                    <p style="font-size: 16px; text-align: justify;">
+                                        Estás recibiendo este correo porque tu factura subida el: <strong>{factura.fecha_subida.date()}</strong> en el gasto <strong>{gasto.folio}</strong> ha sido eliminada.</p>
+                                    <p>Comentario:</p>
+                                    {comentario}
+                               
+                                    </p>
+                                <p style="font-size: 16px; text-align: justify;">
+                                    Att: {perfil.staff.first_name} {perfil.staff.last_name}
+                                </p>
+                                    <p style="text-align: center; margin: 20px 0;">
+                                    <img src="data:image/png;base64,{image_base64}" alt="Imagen" style="width: 50px; height: auto; border-radius: 50%;" />
+                                    </p>
+                                    <p style="font-size: 14px; color: #999; text-align: justify;">
+                                        Este mensaje ha sido automáticamente generado por SAVIA 2.0
+                                    </p>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+            </table>
+        </body>
+    </html>
+    """
+    try:
+        email = EmailMessage(
+            f'Factura eliminada',
+            body=html_message,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            to=[gasto.staff.staff.email],
+            headers={'Content-Type': 'text/html'}
+            )
+        email.content_subtype = "html " # Importante para que se interprete como HTML
+        if factura.archivo_pdf:
+            pdf_path = factura.archivo_pdf.path
+            if os.path.exists(pdf_path):  # Verificar si el archivo realmente existe
+                with open(pdf_path, 'rb') as pdf_file:
+                    email.attach(factura.archivo_pdf.name, pdf_file.read(), 'application/pdf')
+            else:
+                print(f"El archivo PDF no se encuentra en la ruta: {pdf_path}")
+
+        if factura.archivo_xml:
+            xml_path = factura.archivo_xml.path
+            if os.path.exists(xml_path):  # Verificar si el archivo realmente existe
+                with open(xml_path, 'rb') as xml_file:
+                    email.attach(factura.archivo_xml.name, xml_file.read(), 'application/xml')
+            else:
+                print(f"El archivo XML no se encuentra en la ruta: {xml_path}")
+
+        email.send()
+        messages.success(request, f'La factura {factura.id} ha sido eliminada exitosamente')
+    except (BadHeaderError, SMTPException) as e:
+        error_message = f'La factura {factura.id} ha sido eliminada, pero el correo no ha sido enviado debido a un error: {e}'
+        messages.success(request, error_message)
+    factura.delete()
+    # Si next_url existe, redirigir agregando el parámetro `next`
+    if next_url:
+        return redirect(f'{matriz_url}?next={next_url}')
+    else:
+        return redirect(matriz_url)
 
 def facturas_gasto(request, pk):
     articulo = Articulo_Gasto.objects.get(id = pk)

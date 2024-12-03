@@ -18,6 +18,7 @@ urlpatterns = [
     path('gasto/pago_gastos_autorizados/', views.pago_gastos_autorizados, name='pago-gastos-autorizados'),
     path('gasto/pago_gasto/<int:pk>/', views.pago_gasto, name='pago-gasto'),
     path('gasto/matriz_facturas_gasto/<int:pk>', views.matriz_facturas_gasto, name='matriz-facturas-gasto'),
+    path('gasto/eliminar_factura_gasto/<int:pk>/', views.eliminar_factura_gasto, name='eliminar-factura-gasto'),
     path('gasto/facturas_gasto/<int:pk>', views.facturas_gasto, name='facturas-gasto'),
     path('gasto/matriz_gasto_entrada/', views.matriz_gasto_entrada, name ='matriz-gasto-entrada'),
     path('gasto/entrada/<int:pk>', views.gasto_entrada, name='gasto-entrada'),
