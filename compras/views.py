@@ -704,14 +704,7 @@ def matriz_oc(request):
 def matriz_oc_productos(request):
     compras = Compra.objects.filter(complete=True)
     articulos = ArticuloComprado.objects.filter(oc__complete = True).order_by('-oc__created_at')
-    articulos = articulos.annotate(
-        nearest_preevaluacion=Subquery(
-            Preevaluacion.objects.filter(
-                nombre__id=OuterRef('oc__proveedor__nombre__id'),  # Match the provider
-                #creado_at__lte=('oc__created_at'), 
-            ).order_by('-creado_at').values('id')[:1]  # Get the nearest one
-        )
-    )
+   
     myfilter = ArticuloCompradoFilter(request.GET, queryset=articulos)
     articulos = myfilter.qs
 
