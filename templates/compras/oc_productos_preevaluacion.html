@@ -1,0 +1,74 @@
+{% extends 'partials/base_w_nav.html' %}
+{% load static %}
+
+<html>
+<head>
+    {% block title %}Producto OC Comparativo{% endblock %}
+</head>
+
+<body>
+    {% block content %}
+    <div class="modal-dialog modal-lg" style="max-width:100%" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Comparativo de la Preevaluación {{preevaluacion.id}}</h5>
+                <button class="btn-close" type="button" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            
+            <div class="modal-body">
+                <!-- Sección 3: Detalles del Comparativo de Productos -->
+                <div class="card bg-dark text-white mb-4">
+                    <div class="card-header">
+                        <h4>Detalles del Comparativo de Productos</h4>
+                        <p><strong>Producto:</strong> {{ datos.producto }}</p>
+                        <p><strong>Creado:</strong> {{ datos.comparativo.created_at }}</p>
+                        <p><strong>Creado:</strong> {{ datos.comparativo }}</p>
+                    </div>
+                    <div class="card-body">
+                        {% if datos %}
+                        <div class="row">
+                            <!-- Columna 1 -->
+                            <div class="col-md-4">
+                                <p><strong>Modelo 1:</strong> {{ datos.modelo }}</p>
+                                <p><strong>Marca 1:</strong> {{ datos.marca }}</p>
+                                <p><strong>Cantidad 1:</strong> {{ datos.cantidad }}</p>
+                                <p><strong>Precio 1:</strong> ${{ datos.precio }}</p>
+                                <p><strong>Días de entrega 1:</strong> {{ datos.dias_de_entrega }}</p>
+                                <p><strong>Maximo:</strong> {{ datos.maximo1|floatformat:3 }}</p>
+                            </div>
+
+                            <!-- Columna 2 -->
+                            <div class="col-md-4">
+                                <p><strong>Modelo 2:</strong> {{ datos.modelo2 }}</p>
+                                <p><strong>Marca 2:</strong> {{ datos.marca2 }}</p>
+                                <p><strong>Cantidad 2:</strong> {{ datos.cantidad2 }}</p>
+                                <p><strong>Precio 2:</strong> ${{ datos.precio2 }}</p>
+                                <p><strong>Días de entrega 2:</strong> {{ datos.dias_de_entrega2 }}</p>
+                                <p><strong>Maximo:</strong> {{ datos.maximo2|floatformat:3 }}</p>
+                            </div>
+
+                            <!-- Columna 3 -->
+                            <div class="col-md-4">
+                                <p><strong>Modelo 3:</strong> {{ datos.modelo3 }}</p>
+                                <p><strong>Marca 3:</strong> {{ datos.marca3 }}</p>
+                                <p><strong>Cantidad 3:</strong> {{ datos.cantidad3 }}</p>
+                                <p><strong>Precio 3:</strong> ${{ datos.precio3 }}</p>
+                                <p><strong>Días de entrega 3:</strong> {{ datos.dias_de_entrega3 }}</p>
+                                <p><strong>Máximo:</strong> {{ datos.maximo3|floatformat:3 }}</p>
+                            </div>
+                        </div>
+                        {% else %}
+                            <p>Esta preevaluación no cuenta con un comparativo asociado.</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Salir</button>
+            </div>
+        </div>
+    </div>
+    {% endblock %}
+</body>
+</html>
