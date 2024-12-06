@@ -1,4 +1,6 @@
 from django import template
+from decimal import Decimal
+
 
 register = template.Library()
 
@@ -20,3 +22,11 @@ def multiply(value, arg):
         return value * arg
     except (TypeError, ValueError):
         return value  # Retorna el valor original si hay algún error en la multiplicación
+    
+
+@register.filter(name='multiply_dec')
+def multiply_dec(value, arg):
+    try:
+        return Decimal(value) * Decimal(arg)
+    except (TypeError, ValueError, InvalidOperation):
+        return value 

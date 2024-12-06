@@ -3,7 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse, HttpResponse, FileResponse
 from django.contrib import messages
 from django.core.paginator import Paginator
-from django.db.models import F, Avg, Value, ExpressionWrapper, fields, Sum, Q, Case, When, DecimalField, Max, Prefetch
+from django.db.models import F, Avg, Value, ExpressionWrapper, fields, Sum, Q, Case, When, DecimalField, Max, Prefetch, OuterRef, Subquery
 from django.db.models.functions import Concat, Coalesce
 from django.conf import settings
 from django.core.mail import EmailMessage, BadHeaderError
@@ -704,6 +704,14 @@ def matriz_oc(request):
 def matriz_oc_productos(request):
     compras = Compra.objects.filter(complete=True)
     articulos = ArticuloComprado.objects.filter(oc__complete = True).order_by('-oc__created_at')
+    articulos = articulos.annotate(
+        nearest_preevaluacion=Subquery(
+            Preevaluacion.objects.filter(
+                nombre__id=OuterRef('oc__proveedor__nombre__id'),  # Match the provider
+                #creado_at__lte=('oc__created_at'), 
+            ).order_by('-creado_at').values('id')[:1]  # Get the nearest one
+        )
+    )
     myfilter = ArticuloCompradoFilter(request.GET, queryset=articulos)
     articulos = myfilter.qs
 
@@ -734,8 +742,6 @@ def matriz_oc_productos(request):
         #'iva_parcial',
         #'total'
     )
-
-
 
     #Set up pagination
     p = Paginator(articulos, 50)

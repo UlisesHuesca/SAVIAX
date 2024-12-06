@@ -140,6 +140,8 @@
                     <th class="d-none d-lg-table-cell">Subproyecto</th>
                     <th class="d-none d-lg-table-cell">Área</th>
                     <th scope="col">Producto</th>
+                    <th>Fecha OC</th>
+                    <th>Preevaluacion</th>
                     <th scope="col">P.U.</th>
                     <th scope="col">Cantidad</th>
                     <th scope="col">Total</th>
@@ -156,6 +158,20 @@
                     <td class="d-none d-lg-table-cell">{{item.oc.req.orden.subproyecto.nombre}}</td>
                     <td class="d-none d-lg-table-cell">{{item.oc.req.orden.area}}</td>
                     <td>{{item.producto.producto.articulos.producto.producto.nombre}} </td>
+                    <td>
+                        {{item.oc.created_at|date:"d/m/Y"}}
+                    </td> 
+                    <td>
+                        {% for preevaluacion in item.oc.proveedor.nombre.preevaluaciones.all %} 
+                            {% if preevaluacion.id == item.nearest_preevaluacion %}
+                                {% for producto_comp in preevaluacion.comparativo_model.items_comparativos.all %}
+                                    {% if producto_comp.producto == item.producto.producto.articulos.producto %}
+                                    {{preevaluacion.creado_at|date:"d/m/Y"}}|${{producto_comp.precio|floatformat:2}}-${{producto_comp.precio|multiply_dec:1.1|floatformat:2}}
+                                    {% endif %}
+                                {% endfor %}
+                            {% endif %}
+                        {% endfor %}
+                    </td>
                     <td>${{item.precio_unitario|floatformat:2}}</td>
                     <td>{{item.cantidad}}</td>
                     <td>${{item.total|floatformat:2}}</td>
