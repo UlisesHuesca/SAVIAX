@@ -637,7 +637,7 @@ def articulos_recepcion_servicios(request, pk):
     entrada, created = Entrada.objects.get_or_create(oc=compra, almacenista= usuario, completo = False)
     articulos_entrada = EntradaArticulo.objects.filter(entrada = entrada)
     form = EntradaArticuloForm()
-
+    productos_html = '<ul>'
     for articulo in articulos:
         if articulo.cantidad_pendiente == None:
             articulo.cantidad_pendiente = articulo.cantidad
@@ -664,7 +664,8 @@ def articulos_recepcion_servicios(request, pk):
             if suma_cantidad >=  articulo_compra.cantidad:
                 articulo_compra.seleccionado = False
                 articulo_compra.save()
-        
+
+            productos_html += f'<li>{articulo.articulo_comprado.producto.producto.articulos.producto.producto.nombre}: {articulo.cantidad}</li>'
         articulos_recepcionados = articulos_comprados.filter(recepcion_completa = True)
         num_art_recepcionados = articulos_recepcionados.count()
         if num_art_recepcionados >= num_art_comprados:
@@ -672,8 +673,45 @@ def articulos_recepcion_servicios(request, pk):
         
         entrada.save()
         compra.save()
-        messages.success(request, f'La recepcion del servicio {entrada.id} se ha realizado con éxito')
-        return redirect('recepcion-servicios')
+        static_path = settings.STATIC_ROOT
+        img_path = os.path.join(static_path,'images','SAVIA_Logo.png')
+        img_path2 = os.path.join(static_path,'images','logo vordtec_documento.png')
+        productos_html += '</ul>'
+        image_base64 = get_image_base64(img_path)
+        logo_v_base64 = get_image_base64(img_path2)
+        # Crear el mensaje HTML
+        html_message = f"""
+        <html>
+            <head>
+                <meta charset="UTF-8">
+            </head>
+            <body>
+                <p><img src="data:image/jpeg;base64,{logo_v_base64}" alt="Imagen" style="width:100px;height:auto;"/></p>
+                <p>Estimado {compra.creada_por.staff.first_name} {compra.creada_por.staff.last_name},</p>
+                <p>Estás recibiendo este correo porque se ha realizado la entrada para servicios: {entrada.id} de la OC: {compra.id}.</p>
+                <p>Con los productos siguientes:</p>
+                {productos_html}
+                <p><img src="data:image/png;base64,{image_base64}" alt="Imagen" style="width:50px;height:auto;border-radius:50%"/></p>
+                <p>Este mensaje ha sido automáticamente generado por SAVIA 2.0</p>
+            </body>
+        </html>
+        """
+        try:
+            email = EmailMessage(
+                f'Entrada Servicio: {entrada.id} OC: {compra.id}',
+                body=html_message,
+                from_email= settings.DEFAULT_FROM_EMAIL,
+                to=[compra.creada_por.staff.email],
+                headers={'Content-Type': 'text/html'}
+                )
+            email.content_subtype = "html " # Importante para que se interprete como HTML
+            email.send()
+            messages.success(request, f'La recepcion del servicio {entrada.id} se ha realizado con éxito')
+            return redirect('recepcion-servicios')
+        except (BadHeaderError, SMTPException) as e:
+            error_message = f'La recepcion del servicio {entrada.id} ha sido creada, pero el correo no ha sido enviado debido a un error: {e}'
+            messages.success(request, error_message)
+            return redirect('recepcion-servicios')
 
     context = {
         'articulos':articulos,
