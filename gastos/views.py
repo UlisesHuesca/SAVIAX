@@ -546,7 +546,7 @@ def eliminar_factura_gasto(request, pk):
                                         <p>Estimado {factura.solicitud_gasto.staff.staff.first_name} {factura.solicitud_gasto.staff.staff.last_name},</p>
                                     </p>
                                     <p style="font-size: 16px; text-align: justify;">
-                                        Estás recibiendo este correo porque tu factura subida el: <strong>{factura.fecha_subida.date()}</strong> en el gasto <strong>{gasto.folio}</strong> ha sido eliminada.</p>
+                                        Estás recibiendo este correo porque tu factura subida el: <strong>{factura.fecha_subida.date()}</strong> en el gasto <strong>{gasto.id}</strong> ha sido eliminada.</p>
                                     <p>Comentario:</p>
                                     {comentario}
                                

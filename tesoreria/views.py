@@ -9,7 +9,7 @@ from dashboard.models import Subproyecto
 from .models import Pago, Cuenta, Facturas
 from gastos.models import Solicitud_Gasto
 from viaticos.models import Solicitud_Viatico
-from .forms import PagoForm, Facturas_Form, Facturas_Completas_Form, Saldo_Form, ComprobanteForm
+from .forms import PagoForm, Facturas_Form, Facturas_Completas_Form, Saldo_Form, ComprobanteForm, UploadFileForm
 from .filters import PagoFilter, Matriz_Pago_Filter
 from viaticos.filters import Solicitud_Viatico_Filter
 from gastos.filters import Solicitud_Gasto_Filter
@@ -31,7 +31,7 @@ from openpyxl.utils import get_column_letter
 import datetime as dt
 from django.db.models.functions import Concat
 import os
-
+from django.urls import reverse
 
 
 # Create your views here.
@@ -432,24 +432,25 @@ def matriz_facturas(request, pk):
         }
 
     return render(request, 'tesoreria/matriz_facturas.html', context)
-
+    
 @login_required(login_url='user-login')
 def matriz_facturas_nomodal(request, pk):
     compra = Compra.objects.get(id = pk)
     facturas = Facturas.objects.filter(oc = compra, hecho=True)
     pagos = Pago.objects.filter(oc=compra, hecho = True)
     form = Facturas_Completas_Form(instance=compra)
-
+    next_url = request.GET.get('next','matriz-pagos')
     if request.method == 'POST':
         form = Facturas_Completas_Form(request.POST, instance=compra)
         if "btn_factura_completa" in request.POST:
             if form.is_valid():
                 form.save()
                 messages.success(request,'Haz cambiado el status de facturas completas')
-                return redirect('matriz-pagos')
+                return redirect(next_url)
             else:
                 messages.error(request,'No está validando')
-
+        elif 'salir' in request.POST:
+            return redirect(next_url)
     context={
         'pagos':pagos,
         'form':form,
@@ -463,25 +464,38 @@ def factura_nueva(request, pk):
     usuario = Profile.objects.get(staff__id=request.user.id)
     compra = Compra.objects.get(id = pk)
     #facturas = Facturas.objects.filter(pago = pago, hecho=True)
-    factura, created = Facturas.objects.get_or_create(oc=compra, hecho=False)
-    form = Facturas_Form()
+    
+    form = UploadFileForm()
 
     if request.method == 'POST':
         print('post')
         if 'btn_registrar' in request.POST:
             print('registrar')
-            form = Facturas_Form(request.POST or None, request.FILES or None, instance = factura)
+            form = UploadFileForm(request.POST, request.FILES or None)
+            
             if form.is_valid():
-                factura = form.save(commit=False)
-                factura.hecho=True
-                factura.fecha_subido =date.today()
+                archivo_pdf = request.FILES.get('archivo_pdf')
+                archivo_xml = request.FILES.get('archivo_xml')
+
+                if not archivo_pdf and not archivo_xml:
+                    messages.error(request, 'Debes subir al menos un archivo PDF o XML.')
+                    return HttpResponse(status=204)
+
+                comentario = request.POST.get('comentario', '')  # Extraer el comentario
+                factura, created = Facturas.objects.get_or_create(oc=compra, hecho=False)
+                factura.factura_pdf = archivo_pdf
+                factura.factura_xml = archivo_xml
+                factura.hecho = True
+                factura.fecha_subido = date.today()
                 factura.hora_subido = datetime.now().time()
-                factura.subido_por =  usuario
-                form.save()
+                factura.subido_por = usuario
+                factura.comentario = comentario
                 factura.save()
-                messages.success(request,'La factura se registró de manera exitosa')
+                messages.success(request, 'La factura se registró de manera exitosa')
             else:
                 messages.error(request,'No se pudo subir tu documento')
+                for field, errors in form.errors.items():
+                    print[field] = errors.as_text()
         else:
             messages.error(request,'No se pudo subir tu documento2')
 
@@ -520,12 +534,102 @@ def factura_compra_edicion(request, pk):
     return render(request, 'tesoreria/factura_compra_edicion.html', context)
 
 def factura_eliminar(request, pk):
+    perfil = Profile.objects.get(staff__id=request.user.id)
     factura = Facturas.objects.get(id = pk)
     compra = factura.oc
-    messages.success(request,f'La factura {factura.id} ha sido eliminado exitosamente')
+    comentario = request.POST.get('comentario')
+    # Obtener el parámetro `next` de la URL
+    next_url = request.GET.get('next', None)
+
+    # Construir la URL de la matriz de facturas de viáticos
+    matriz_url = reverse('matriz-facturas-nomodal', args=[compra.id])
+
+    static_path = settings.STATIC_ROOT
+    img_path = os.path.join(static_path,'images','SAVIA_Logo.png')
+    img_path2 = os.path.join(static_path,'images','logo vordtec_documento.png')
+    image_base64 = get_image_base64(img_path)
+    logo_v_base64 = get_image_base64(img_path2)
+    # Crear el mensaje HTML
+    html_message = f"""
+    <html>
+        <head>
+            <meta charset="UTF-8">
+        </head>
+        <body style="font-family: Arial, sans-serif; color: #333; background-color: #f4f4f4; margin: 0; padding: 0;">
+            <table width="100%" cellspacing="0" cellpadding="0" style="background-color: #f4f4f4; padding: 20px;">
+                <tr>
+                    <td align="center">
+                        <table width="600px" cellspacing="0" cellpadding="0" style="background-color: #ffffff; padding: 20px; border-radius: 10px;">
+                            <tr>
+                                <td align="center">
+                                    <img src="data:image/jpeg;base64,{logo_v_base64}" alt="Logo" style="width: 100px; height: auto;" />
+                                </td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 20px;">
+                                    <p style="font-size: 18px; text-align: justify;">
+                                        <p>Estimado {factura.subido_por.staff.first_name} {factura.subido_por.staff.last_name},</p>
+                                    </p>
+                                    <p style="font-size: 16px; text-align: justify;">
+                                        Estás recibiendo este correo porque tu factura subida el: <strong>{factura.fecha_subido}</strong> en la compra <strong>{factura.oc.id}</strong> ha sido eliminada.</p>
+                                    <p>Comentario:</p>
+                                    {comentario}
+                                    </p>
+                                <p style="font-size: 16px; text-align: justify;">
+                                    Att: {perfil.staff.first_name} {perfil.staff.last_name}
+                                </p>
+                                    <p style="text-align: center; margin: 20px 0;">
+                                        <img src="data:image/png;base64,{image_base64}" alt="Imagen" style="width: 50px; height: auto; border-radius: 50%;" />
+                                    </p>
+                                    <p style="font-size: 14px; color: #999; text-align: justify;">
+                                        Este mensaje ha sido automáticamente generado por SAVIA X
+                                    </p>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+            </table>
+        </body>
+    </html>
+    """
+    try:
+        email = EmailMessage(
+            f'Factura eliminada',
+            body=html_message,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            to=[compra.creada_por.staff.email],
+            headers={'Content-Type': 'text/html'}
+            )
+        email.content_subtype = "html " # Importante para que se interprete como HTML
+        if factura.factura_pdf:
+            pdf_path = factura.factura_pdf.path
+            if os.path.exists(pdf_path):  # Verificar si el archivo realmente existe
+                with open(pdf_path, 'rb') as pdf_file:
+                    email.attach(factura.factura_pdf.name, pdf_file.read(), 'application/pdf')
+            else:
+                print(f"El archivo PDF no se encuentra en la ruta: {pdf_path}")
+
+        if factura.factura_xml:
+            xml_path = factura.factura_xml.path
+            if os.path.exists(xml_path):  # Verificar si el archivo realmente existe
+                with open(xml_path, 'rb') as xml_file:
+                    email.attach(factura.factura_xml.name, xml_file.read(), 'application/xml')
+            else:
+                print(f"El archivo XML no se encuentra en la ruta: {xml_path}")
+
+        email.send()
+        messages.success(request, f'La factura {factura.id} ha sido eliminada exitosamente')
+    except (BadHeaderError, SMTPException) as e:
+        error_message = f'La factura {factura.id} ha sido eliminada, pero el correo no ha sido enviado debido a un error: {e}'
+        messages.success(request, error_message)
     factura.delete()
 
-    return redirect('matriz-facturas-nomodal',pk= compra.id)
+    # Redirigir a 'matriz-facturas-viaticos' con el parámetro `next` si existe
+    if next_url:
+        return redirect(f'{matriz_url}?next={next_url}')
+    else:
+        return redirect(matriz_url)
 
 def mis_gastos(request):
     usuario = Profile.objects.get(staff__id=request.user.id)

@@ -2,6 +2,7 @@
 {% load crispy_forms_tags %}
 {% load static %}
 {% load widget_tweaks %}
+{% load l10n %}
 <html>
 <head>
 {% block title %}Facturas{% endblock %}
@@ -72,6 +73,7 @@
                             <th scope="col-2">PDF</th>
                             <th scope="col-2">XML</th>
                             <th scope="col-2">Editar</th>
+                            <th scope="col-2">Eliminar</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -104,6 +106,11 @@
                                     <i class="fa-solid fa-cloud-arrow-up"></i>
                                 </a>    
                             </td>
+                        <td>
+                            <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#confirmModal" onclick="setDeleteUrl({{ p.id | unlocalize }})">
+                                <i class="fa-regular fa-trash-can"></i>
+                            </button>
+                        </td>
                         </tr>
                    {% endfor %}
                    </tbody>
@@ -131,7 +138,7 @@
             <div class="card-footer">
                 <h6>Registrar factura del viático: {{viatico.id}}</h6>
                 <button name="btn_factura" id="myBtn2" type = "submit" class="btn btn-success">Registrar</button>
-                <a type="button" class="btn btn-secondary" href="{% url 'matriz-facturas-viaticos' viatico.id %}">Cerrar</a>
+                <a type="button" class="btn btn-secondary" href="{% url 'matriz-facturas-viaticos' viatico.id %}?next={{ next_url }}">Cerrar</a>
             </div>
         </form>
     </div>
@@ -142,7 +149,29 @@
 
     </div>
 </div>
-
+<div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="confirmModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="confirmModalLabel">Eliminar Factura</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="deleteForm" method="POST">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="comentario" class="form-label">Comentario</label>
+                        <input type="text" class="form-control" id="comentario" name="comentario" placeholder="Escribe un comentario" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-danger" onclick="enviarFormulario()">Eliminar</button>
+            </div>
+        </div>
+    </div>
+</div>
 <script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -162,6 +191,42 @@ myModal.addEventListener('hidden.bs.modal', function (event) {
   location.reload();
 })
 
+function setDeleteUrl(facturaId) {
+    const deleteForm = document.getElementById('deleteForm');
+    const baseUrl = "{% url 'eliminar-factura-viatico' 0 %}"; // URL base con un placeholder
+
+    // Obtener el parámetro 'next' de la URL actual
+    const urlParams = new URLSearchParams(window.location.search);
+    const nextParam = urlParams.get('next');  // Captura el valor de 'next' si está presente
+
+    // Construir la URL de eliminación con el ID de la factura
+    let deleteUrl = baseUrl.replace('0', facturaId);
+    
+    // Agregar el parámetro 'next' si existe
+    if (nextParam) {
+        deleteUrl += `?next=${encodeURIComponent(nextParam)}`;
+    }
+
+    // Establecer la acción del formulario
+    deleteForm.action = deleteUrl;
+}
+
+function enviarFormulario() {
+    const comentario = document.getElementById('comentario').value;
+    if (!comentario) {
+        alert("Por favor, escribe un comentario antes de continuar.");
+    } else {
+        document.getElementById('deleteForm').submit();  
+    }
+}
+;(function() {
+    const modal = new bootstrap.Modal(document.getElementById('dialog'))
+
+    htmx.on('htmx:beforeSwap', (e) => {
+        if (e.detail.target.id === "document" && !e.detail.xhr.response)
+            modal.hide()
+    })
+})()
 
 </script>
 {% endblock %}

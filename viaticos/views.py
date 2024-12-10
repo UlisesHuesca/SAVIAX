@@ -2,8 +2,9 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from datetime import date, datetime
 from django.contrib import messages
-from django.core.mail import EmailMessage
+from django.core.mail import EmailMessage, BadHeaderError
 from user.models import Profile
+from smtplib import SMTPException
 from solicitudes.models import Proyecto, Subproyecto, Operacion
 from dashboard.models import Inventario
 from django.http import HttpResponse, FileResponse
@@ -14,9 +15,11 @@ from tesoreria.forms import Facturas_Viaticos_Form
 from .filters import Solicitud_Viatico_Filter
 from django.core.paginator import Paginator
 from django.db.models import Count, Q
-
+from django.urls import reverse
+import os
+import base64
 from decimal import Decimal, ROUND_HALF_UP
-
+from django.conf import settings
 import io
 #PDF generator
 from reportlab.pdfgen import canvas
@@ -471,6 +474,10 @@ def viaticos_pagos(request, pk):
 
     return render(request,'viaticos/viaticos_pagos.html',context)
 
+def get_image_base64(image_path):
+    with open(image_path, "rb") as image_file:
+        return base64.b64encode(image_file.read()).decode()
+    
 @login_required(login_url='user-login')
 def facturas_viaticos(request, pk):
     usuario = Profile.objects.get(staff__id=request.user.id)
@@ -481,7 +488,7 @@ def facturas_viaticos(request, pk):
     factura, created = Viaticos_Factura.objects.get_or_create(concepto_viatico=concepto, hecho=False)
 
     form = Viaticos_Factura_Form()
-
+    next_url = request.GET.get('next', '/tesoreria/tesoreria/matriz_pagos/')
     if request.method == 'POST':
         if "btn_factura" in request.POST:
             form = Viaticos_Factura_Form(request.POST or None, request.FILES or None, instance = factura)
@@ -503,10 +510,108 @@ def facturas_viaticos(request, pk):
         'form':form,
         'facturas':facturas,
         'viatico':viatico,
+        'next_url':next_url,
         }
 
     return render(request, 'viaticos/matriz_facturas.html', context)
 
+@login_required(login_url='user-login')
+def eliminar_factura_viatico(request, pk):
+    perfil = Profile.objects.get(staff__id=request.user.id)
+    factura = Viaticos_Factura.objects.get(id=pk)
+    viatico = factura.concepto_viatico
+    comentario = request.POST.get('comentario')
+    # Construir la URL usando reverse
+    next_url = request.GET.get('next', None)
+    print('URLLLLLLLLLLLLLLLLLLL2')
+    print(next_url)
+    # Construir la URL usando reverse
+    matriz_url = reverse('facturas-viaticos', args=[viatico.id])
+    static_path = settings.STATIC_ROOT
+    img_path = os.path.join(static_path,'images','SAVIA_Logo.png')
+    img_path2 = os.path.join(static_path,'images','logo vordtec_documento.png')
+    image_base64 = get_image_base64(img_path)
+    logo_v_base64 = get_image_base64(img_path2)
+    # Crear el mensaje HTML
+    html_message = f"""
+    <html>
+        <head>
+            <meta charset="UTF-8">
+        </head>
+        <body style="font-family: Arial, sans-serif; color: #333; background-color: #f4f4f4; margin: 0; padding: 0;">
+            <table width="100%" cellspacing="0" cellpadding="0" style="background-color: #f4f4f4; padding: 20px;">
+                <tr>
+                    <td align="center">
+                    <img src="data:image/jpeg;base64,{logo_v_base64}" alt="Logo" style="width: 100px; height: auto;" />
+                        <table width="600px" cellspacing="0" cellpadding="0" style="background-color: #ffffff; padding: 20px; border-radius: 10px;">
+                            <tr>
+                            </tr>
+                            <tr>
+                                <td style="padding: 20px;">
+                                    <p style="font-size: 18px; text-align: justify;">
+                                        <p>Estimado {factura.concepto_viatico.staff.staff.first_name} {factura.concepto_viatico.staff.staff.last_name},</p>
+                                    </p>
+                                    <p style="font-size: 16px; text-align: justify;">
+                                        Estás recibiendo este correo porque tu factura subida el: <strong>{factura.fecha_subido}</strong> en el viatico <strong>{viatico.viatico.id}</strong> ha sido eliminada.</p>
+                                    <p>Comentario:</p>
+                                    {comentario}
+                               
+                                    </p>
+                                <p style="font-size: 16px; text-align: justify;">
+                                    Att: {perfil.staff.first_name} {perfil.staff.last_name}
+                                </p>
+                                    <p style="text-align: center; margin: 20px 0;">
+                                    <img src="data:image/png;base64,{image_base64}" alt="Imagen" style="width: 50px; height: auto; border-radius: 50%;" />
+                                    </p>
+                                    <p style="font-size: 14px; color: #999; text-align: justify;">
+                                        Este mensaje ha sido automáticamente generado por SAVIA 2.0
+                                    </p>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+            </table>
+        </body>
+    </html>
+    """
+    try:
+        email = EmailMessage(
+            f'Factura eliminada',
+            body=html_message,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            to=[viatico.staff.staff.email],
+            headers={'Content-Type': 'text/html'}
+            )
+        email.content_subtype = "html " # Importante para que se interprete como HTML
+        if factura.factura_pdf:
+            pdf_path = factura.factura_pdf.path
+            if os.path.exists(pdf_path):  # Verificar si el archivo realmente existe
+                with open(pdf_path, 'rb') as pdf_file:
+                    email.attach(factura.factura_pdf.name, pdf_file.read(), 'application/pdf')
+            else:
+                print(f"El archivo PDF no se encuentra en la ruta: {pdf_path}")
+
+        if factura.factura_xml:
+            xml_path = factura.factura_xml.path
+            if os.path.exists(xml_path):  # Verificar si el archivo realmente existe
+                with open(xml_path, 'rb') as xml_file:
+                    email.attach(factura.factura_xml.name, xml_file.read(), 'application/xml')
+            else:
+                print(f"El archivo XML no se encuentra en la ruta: {xml_path}")
+
+        email.send()
+        messages.success(request, f'La factura {factura.id} ha sido eliminada exitosamente')
+    except (BadHeaderError, SMTPException) as e:
+        error_message = f'La factura {factura.id} ha sido eliminada, pero el correo no ha sido enviado debido a un error: {e}'
+        messages.success(request, error_message)
+    factura.delete()
+    # Si next_url existe, redirigir agregando el parámetro `next`
+    if next_url:
+        return redirect(f'{matriz_url}?next={next_url}')
+    else:
+        return redirect(matriz_url)
+    
 @login_required(login_url='user-login')
 def matriz_facturas_viaticos(request, pk):
     viatico = Solicitud_Viatico.objects.get(id = pk)
@@ -532,6 +637,7 @@ def matriz_facturas_viaticos(request, pk):
         'form':form,
         'concepto_viatico': concepto_viatico,
         'viatico': viatico,
+        'next_url':next_url,
         }
 
     return render(request, 'viaticos/matriz_facturas_viaticos.html', context)
