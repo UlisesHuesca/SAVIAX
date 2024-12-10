@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q, DecimalField, F
-from .filters import EntradaArticuloFilter, No_ConformidadFilter, Reporte_CalidadFilter
+from .filters import EntradaArticuloFilter, No_ConformidadFilter, Reporte_CalidadFilter, EntradaCaducidadFilter
 from compras.models import Compra, ArticuloComprado
 from compras.filters import CompraFilter
 from compras.views import attach_oc_pdf
@@ -1507,7 +1507,7 @@ def entradas_con_caducidad(request):
         articulo_comprado__producto__producto__articulos__producto__producto__caducidad=True
     ).exclude(fecha_caducidad__isnull=True).exclude(cantidad_por_surtir=0).order_by('fecha_caducidad')
     
-    myfilter = EntradaArticuloFilter(request.GET, queryset=entradas)
+    myfilter = EntradaCaducidadFilter(request.GET, queryset=entradas)
     entradas = myfilter.qs
 
     #Set up pagination
