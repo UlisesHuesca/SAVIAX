@@ -11,6 +11,9 @@ from django.core.paginator import Paginator
 from django.http import FileResponse
 from django.core.files.base import ContentFile
 from django.conf import settings
+from io import BytesIO
+import xlsxwriter
+from xlsxwriter.utility import xl_col_to_name
 
 from solicitudes.models import Proyecto, Subproyecto
 from dashboard.models import Inventario, Order, ArticulosparaSurtir, ArticulosOrdenados, Inventario_Batch, Product, Marca
@@ -1032,7 +1035,7 @@ def render_pdf_view(request, pk):
     #Create blank list
     data =[]
 
-    data.append(['''Código''', '''Nombre''', '''Cantidad''','''Comentario'''])
+    data.append(['''Código''', '''Producto''', '''Cantidad''','''Comentario'''])
 
 
     high = 540
@@ -1099,7 +1102,7 @@ def render_pdf_view(request, pk):
         c.rect(20,high-120,70,15, fill=True, stroke=False)
         c.setFillColor(white)
         c.drawString(25,high-95,'Solicitado por:')
-        c.drawString(25,high-115, 'Aprobado por')
+        c.drawString(25,high-115, 'Aprobado por:')
         c.setFillColor(prussian_blue)
         c.rect(20,high-40,565,25, fill=True, stroke=False)
         c.setFillColor(white)
@@ -2264,3 +2267,122 @@ def render_requisicion_pdf_view(request, pk):
     buf.seek(0)
 
     return FileResponse(buf, as_attachment=True, filename='Requisición_' + str(requisicion.folio) +'.pdf')
+
+@login_required
+def reporte_devoluciones(request):
+    usuario = Profile.objects.get(staff__id=request.user.id)
+    if usuario.tipo.almacen == True:
+        entradas = Devolucion.objects.all().order_by('-fecha').select_related('solicitud')
+    else:
+        entradas = Devolucion.objects.none()
+    myfilter = DevolucionFilter(request.GET, queryset=entradas)
+    entradas = myfilter.qs
+
+    if request.method == "POST" and 'btnExcel' in request.POST:
+        #print(entradas)
+        return convert_devoluciones_to_xls2(entradas)
+    
+    #Set up pagination
+    p = Paginator(entradas, 50)
+    page = request.GET.get('page')
+    ordenes_list = p.get_page(page)
+
+    context = {
+        'ordenes_list':ordenes_list,
+        'entradas':entradas,
+        'myfilter':myfilter,
+        }
+    
+    return render(request,'requisiciones/reporte_devoluciones.html', context)
+
+def convert_devoluciones_to_xls2(entradas):
+    # Crea un objeto BytesIO para guardar el archivo Excel
+    output = BytesIO()
+
+    # Crea un libro de trabajo y añade una hoja
+    workbook = xlsxwriter.Workbook(output, {'in_memory': True})
+    worksheet = workbook.add_worksheet("Matriz_Devoluciones")
+
+     
+    date_format = workbook.add_format({'num_format': 'dd/mm/yyyy'})
+    # Define los estilos
+    head_style = workbook.add_format({'bold': True, 'font_color': 'FFFFFF', 'bg_color': '333366', 'font_name': 'Arial', 'font_size': 11})
+    body_style = workbook.add_format({'font_name': 'Calibri', 'font_size': 10})
+    money_style = workbook.add_format({'num_format': '$ #,##0.00', 'font_name': 'Calibri', 'font_size': 10})
+    date_style = workbook.add_format({'num_format': 'dd/mm/yyyy', 'font_name': 'Calibri', 'font_size': 10})
+    percent_style = workbook.add_format({'num_format': '0.00%', 'font_name': 'Calibri', 'font_size': 10})
+    messages_style = workbook.add_format({'font_name':'Arial Narrow', 'font_size':11})
+
+    #columns = ['Folio Solicitud', 'Solicitante', 'Almacenista','Proyecto', 'Subproyecto', 'Fecha creación','Productos','Tipo','Autorizada','Fecha autorización','Comentario']
+    columns = ['Folio Solicitud', 'Solicitante', 'Almacenista','Proyecto', 'Subproyecto', 'Fecha creación','Tipo','Autorizada','Fecha autorización','Comentario']
+
+    columna_max = len(columns)+2
+
+    worksheet.write(0, columna_max - 1, 'Reporte Creado Automáticamente por SAVIA 2.0 Vordcab. UH', messages_style)
+    worksheet.write(1, columna_max - 1, 'Software desarrollado por Grupo Vordcab S.A. de C.V.', messages_style)
+    worksheet.set_column(columna_max - 1, columna_max, 30)  # Ajusta el ancho de las columnas nuevas
+
+    for i, column in enumerate(columns):
+        worksheet.write(0, i, column, head_style)
+        worksheet.set_column(i, i, 15)  # Ajusta el ancho de las columnas
+
+    row_num = 0
+    for dev in entradas:
+        if dev.tipo:
+            tipo = dev.tipo.nombre
+        else:
+            tipo = ''
+        if dev.autorizada is True:
+            autorizado = 'Autorizado'
+        elif dev.autorizada is False:
+            autorizado = 'No Autorizado'
+        else:
+            autorizado = 'Pendiente'
+        row_num += 1
+        # Crear la lista de productos con nombre y cantidad
+        #productos_lista = [
+        #    f"{producto['producto__producto__nombre']} (Cantidad: {producto['cantidad']})"
+        #    for producto in dev.solicitud.productos.values('producto__producto__nombre', 'cantidad')
+        #]
+        # Unir la lista en una cadena
+        #productos_str = ", ".join(productos_lista)
+
+        row = [
+            dev.solicitud.folio,
+            f"{dev.solicitud.staff.staff.first_name} {dev.solicitud.staff.staff.last_name}",
+            f"{dev.almacenista.staff.first_name} {dev.almacenista.staff.last_name}",
+            dev.solicitud.proyecto.nombre,
+            dev.solicitud.subproyecto.nombre,
+            str(dev.created_at),
+            #productos_str,  # Productos concatenados
+            tipo,
+            autorizado,
+            str(dev.fecha),
+            dev.comentario,
+        ]
+        
+        for col_num, cell_value in enumerate(row):
+        # Define el formato por defecto
+            cell_format = body_style
+
+            # Finalmente, escribe la celda con el valor y el formato correspondiente
+            worksheet.write(row_num, col_num, cell_value, cell_format)
+
+      
+        #worksheet.write_formula(row_num, 19, f'=IF(ISBLANK(R{row_num+1}), L{row_num+1}, L{row_num+1}*R{row_num+1})', money_style)
+    
+   
+    workbook.close()
+
+    # Construye la respuesta
+    output.seek(0)
+
+    response = HttpResponse(
+        output.read(), 
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+    response['Content-Disposition'] = f'attachment; filename=Matriz_requisiciones_{dt.date.today()}.xlsx'
+      # Establecer una cookie para indicar que la descarga ha iniciado
+    response.set_cookie('descarga_iniciada', 'true', max_age=20)  # La cookie expira en 20 segundos
+    output.close()
+    return response

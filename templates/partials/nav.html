@@ -390,6 +390,9 @@
                             <div class="d-none">
                         {% endif %}
                             <a class="dropdown-item" href="{% url 'reporte-entradas' %}">Matriz Entradas</a>
+                            {% if usuario.tipo.almacen == True %}
+                            <a class="dropdown-item" href="{% url 'devolucion_ordenes' %}">Matriz Devoluciones</a>
+                            {% endif %}
                             <a class="dropdown-item" href="{% url 'reporte-salidas' %}">Matriz Salidas</a>
                             </div>
                         {% if usuario.tipo.compras == True or usuario.tipo.nombre == "Gerente" %}
