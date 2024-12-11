@@ -1597,7 +1597,7 @@ def generar_pdf(compra):
     #Configuration of the PDF object
     buf = io.BytesIO()
     c = canvas.Canvas(buf, pagesize=letter)
-    productos = ArticuloComprado.objects.filter(oc=compra.id)
+    productos = ArticuloComprado.objects.filter(oc=compra.id).order_by('id')
     #Azul Vordcab
     prussian_blue = Color(0.0859375,0.1953125,0.30859375)
     rojo = Color(0.59375, 0.05859375, 0.05859375)

@@ -174,6 +174,7 @@
             <thead class="text-black" style="background-color: #F5F5F5;">
                 <tr>
                     <th scope="col">Folio</th>
+                    <th scope="col">Crítico</th>
                     <th class="d-none d-lg-table-cell">Solicitado por</th>
                     <th scope="col">Proyecto</th>
                     <th class="d-none d-lg-table-cell">Subproyecto</th>
@@ -190,6 +191,11 @@
                 {% for producto in productos_list %}
                 <tr>
                     <th scope="row">{{producto.articulos.orden.folio}}</th>
+                    {% if producto.referencia %}
+                        <th scope="row">{{producto.referencia}}</th>
+                    {% else %}
+                    <td>No</td>
+                    {% endif %}
                     <td class="d-none d-lg-table-cell">{{producto.articulos.orden.staff.staff.first_name}} {{producto.articulos.orden.staff.staff.last_name}}</td>
                     <td>{{producto.articulos.orden.proyecto.nombre}}</td>
                     <td class="d-none d-lg-table-cell">{{producto.articulos.orden.subproyecto.nombre}}</td>

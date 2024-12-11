@@ -71,7 +71,7 @@
                                 <select style="font-size:16px" class="form-select form-select-sm" placeholder="Subproyecto" id="producto">
                                     <option style="color:gray;" value="" selected disabled>Producto</option>
                                     {% for articulo in articulos %}
-                                    <option id="js" target="{{articulo.id|unlocalize}}" producto="{{articulo.producto.producto.articulos.id|unlocalize}}" cantidad="{{articulo.cantidad|unlocalize}}" recepcionados="{{articulo.suma_entrada_articulos|unlocalize}}" nc="{{articulo.suma_nc_articulos|unlocalize}}">
+                                    <option id="js" target="{{articulo.id|unlocalize}}" producto="{{articulo.producto.producto.articulos.id|unlocalize}}" cantidad="{{articulo.cantidad|unlocalize}}" recepcionados="{{articulo.suma_entrada_articulos|unlocalize}}" nc="{{articulo.suma_nc_articulos|unlocalize}}" critico = "{{articulo.producto.producto.articulos.producto.producto.critico.nombre}}">
                                         {{articulo.producto.producto.articulos.producto}}
                                     </option>
                                     {% endfor %}
@@ -94,6 +94,11 @@
                             <h6>NC:</h6><h6 style="color: #121212;" id="nc"></h6>   
                         </div>
                     </div>
+                    <div class="col-lg-4 col-sm-12">
+                        <div class="alert alert-secondary" role="alert">
+                            <h6>Criticidad:</h6><h6 style="color: #121212;" id="critico"></h6>   
+                        </div>
+                    </div>
                 </div>
                 <div class="row">
                     <div class="col-lg-4">
@@ -106,7 +111,7 @@
                         </div>
                     </div>
                     <div class="form-check form-switch col-auto mx-4 mt-3" id="referencia">
-                        <input class="form-check-input" type="checkbox" role="switch" id="SwitchReferencia">
+                        <input class="form-check-input" type="checkbox" role="switch" id="SwitchReferencia" disabled>
                         <label class="form-check-label" for="flexSwitchCheckDefault" id="LabelReferencia"><strong>Folio</strong></label>
                     </div>
                     <div  id="referencialbl" class="col-lg-4 d-none">
@@ -251,7 +256,7 @@ document.getElementById("producto").addEventListener("change", function(element)
     let cantidad = current_option.getAttribute('cantidad');
     let recepcionados = current_option.getAttribute('recepcionados');  // Nuevo atributo
     let nc = current_option.getAttribute('nc');  // Nuevo atributo
-
+    let critico = current_option.getAttribute('critico');  // Nuevo atributo
     // Si recepcionados o nc son 'None', los sustituimos por '0'
     recepcionados = (recepcionados === 'None' || recepcionados === null) ? '0.00' : recepcionados;
     nc = (nc === 'None' || nc === null) ? '0.00' : nc;
@@ -259,10 +264,12 @@ document.getElementById("producto").addEventListener("change", function(element)
     var solicitado = document.getElementById('solicitado');
     var recepcionadosElement = document.getElementById('recepcionados');
     var ncElement = document.getElementById('nc');
+    var criticoElement = document.getElementById('critico');
 
     solicitado.innerHTML = cantidad;
     recepcionadosElement.innerHTML = recepcionados || '0';  // Valor por defecto si no está definido
     ncElement.innerHTML = nc || '0';  // Valor por defecto si no está definido
+    criticoElement.innerHTML = critico || 'No asignado';
 });
 
 //var updateBtn = document.getElementById('update')
@@ -291,6 +298,7 @@ document.getElementById("producto").addEventListener("change", function(element)
         var referencia = referencia_div.value
         var recepcionados = current_option.getAttribute('recepcionados');
         var nc = current_option.getAttribute('nc');
+        var critico = current_option.getAttribute('critico');
         // Reemplazar 'None' con '0' y asegurarse de que las variables sean números
         recepcionados = recepcionados === 'None' || recepcionados === null ? 0 : parseFloat(recepcionados);
         nc = nc === 'None' || nc === null ? 0 : parseFloat(nc);
@@ -341,29 +349,28 @@ document.getElementById("producto").addEventListener("change", function(element)
             } 
     });
 
+document.addEventListener('DOMContentLoaded', function () {
+    const productoSelect = document.getElementById('producto');
+    const switchReferencia = document.getElementById('SwitchReferencia');
+    const cantidad = document.getElementById('id_cantidad'); // Campo de cantidad
 
+    // Escuchar el evento "change" del select
+    productoSelect.addEventListener('change', function () {
+        const selectedOption = productoSelect.options[productoSelect.selectedIndex];
+        const criticoValue = selectedOption.getAttribute('critico');
 
-document.getElementById("SwitchReferencia").addEventListener("change", function(){
-    var checkref = this;
-	console.log('referencia check:'+checkref.checked);
-	var lbl_referencia = document.getElementById('referencialbl');
-    var referencia = document.getElementById('id_referencia')
-    var cantidad = document.getElementById('id_cantidad')
-
-
-
-	if (checkref.checked){
-	    lbl_referencia.classList.remove('d-none');
-        //referencia.classList.remove('d-none');
-        cantidad.value = 1
-	} else {
-	    lbl_referencia.classList.add('d-none')
-        //referencia.setAttribute('class','form-control d-none')
-        cantidad.value = 0
-        referencia.value = ""
-	}
+        if (criticoValue === 'Crítico') {
+            // Marcar el switch si el valor es "Crítico"
+            switchReferencia.checked = true;
+            cantidad.value = 1; // Asignar un valor fijo
+            cantidad.disabled = true; // Deshabilitar el campo para evitar modificaciones
+        } else {
+            // Desmarcar el switch en caso contrario
+            switchReferencia.checked = false;
+            cantidad.disabled = false; // Habilitar el campo si no es "Crítico"
+        }
+    });
 });
-
 
 document.getElementById('Btn_Crear').addEventListener('click', function(event) {
     // Evita el envío del formulario si hay cantidades de 0

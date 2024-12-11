@@ -60,6 +60,7 @@ class Product(models.Model):
     porcentaje = models.DecimalField(max_digits=4, decimal_places=2, null=True)
     #modificaciones para API
     critico = models.ForeignKey(Criticidad, on_delete = models.CASCADE, null=True)
+    fecha_criticidad = models.DateTimeField(null=True)
     especs = models.TextField(blank=True, null=True)
     rev_calidad = models.BooleanField(default = False) 
     caducidad = models.BooleanField(default = False) 

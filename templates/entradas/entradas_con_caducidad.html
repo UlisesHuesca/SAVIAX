@@ -14,88 +14,74 @@
 <hr>
 <h6>&nbsp;</h6>
 <h6>&nbsp;</h6>
-<div class = "row">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header">
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
                 <h5>Entradas Productos con Caducidad</h5>
-                </div>
-                <br>
-                <form method="GET">
-                    {% csrf_token %}
-                    <div class="row">
-                        <div class="col-lg-3 col-sm-12">
-                            <div class="input-group mb-3">
-                            <span class="input-group-text" id="basic-addon1"><i class="fa-solid fa-hashtag"></i></span>
-                                <div class="form-floating form-floating-group flex-grow-1">   
-                                    {{myfilter.form.oc|add_class:"form-control"|append_attr:"placeholder= Folio OC"}}
-                                    <label style="color: #121212;" for="id_staff">Folio OC</label>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-lg-3 col-sm-12">
-                            <div class="input-group mb-3">
-                            <span class="input-group-text" id="basic-addon1"><i class="fa-solid fa-user"></i></span>
-                                <div class="form-floating form-floating-group flex-grow-1">   
-                                    {{myfilter.form.proveedor|add_class:"form-control"|append_attr:"placeholder= Proveedor"}}
-                                    <label style="color: #121212;" for="id_staff">Proveedor</label>
-                                </div>
-                            </div>
-                        </div>
-                        <!--<div class="col-lg-3 col-sm-12">
-                            <div class="input-group mb-3">
-                            <span class="input-group-text" id="basic-addon1"><i class="fa-solid fa-hashtag"></i></span>
-                                <div class="form-floating form-floating-group flex-grow-1">   
-                                    {{myfilter.form.req|add_class:"form-control"|append_attr:"placeholder= Requisición"}}
-                                    <label style="color: #121212;" for="id_staff">Requisición</label>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-lg-3 col-sm-12">
-                            <div class="input-group mb-3">
-                            <span class="input-group-text" id="basic-addon1"><i class="fa-solid fa-diagram-project"></i></span>
-                                <div class="form-floating form-floating-group flex-grow-1">   
-                                    {{myfilter.form.proyecto|add_class:"form-control"|append_attr:"placeholder= Proyecto"}}
-                                    <label style="color: #121212;" for="id_proyecto">Proyecto</label>
-                                </div>
-                            </div>
-                        </div>       
-                    </div>
-                    <div class="row">
-                        <div class="col-lg-3 col-sm-12">
-                            <div class="input-group mb-3">
-                            <span class="input-group-text" id="basic-addon1"><i class="fa-solid fa-diagram-project"></i></span>
-                                <div class="form-floating form-floating-group flex-grow-1">   
-                                    {{myfilter.form.subproyecto|add_class:"form-control"|append_attr:"placeholder= Subproyecto"}}
-                                    <label style="color: #121212;" for="id_proyecto">Subproyecto</label>
-                                </div>
-                            </div>
-                        </div>-->
-                        <div id="serie" class="col-lg-2 col-md-auto col-sm-auto">
-                            <div class="input-group mb-3">
-                            <span class="input-group-text" id="basic-addon1"><i class="fa-regular fa-calendar"></i></span>
-                                <div class="form-floating form-floating-group flex-grow-1">   
-                                    {% render_field myfilter.form.start_date type="date" class="form-control" %}
-                                <label style="color: #121212;" for="id_subproyecto">Desde:</label>
-                                </div>
-                            </div>
-                        </div>
-                        <div id="serie" class="col-lg-2 col-md-auto col-sm-auto">
-                            <div class="input-group mb-3">
-                            <span class="input-group-text" id="basic-addon1"><i class="fa-regular fa-calendar"></i></span>
-                                <div class="form-floating form-floating-group flex-grow-1">   
-                                    {% render_field myfilter.form.end_date type="date" class="form-control" %}
-                                <label style="color: #121212;" for="id_subproyecto">Hasta:</label>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-2">
-                            <button class="btn btn-outline-success btn-block btn-lg mt-1" type="submit" value="Buscar"><i class="fa-solid fa-magnifying-glass"></i></button>
-                        </div>
-                    </div>
-                </div>
             </div>
+            <br>
+            <form method="GET">
+                {% csrf_token %}
+                <div class="row">
+                    <div class="col-lg-3 col-sm-12">
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1"><i class="fa-solid fa-hashtag"></i></span>
+                            <div class="form-floating form-floating-group flex-grow-1">
+                                {{ myfilter.form.oc|add_class:"form-control"|append_attr:"placeholder= Folio OC" }}
+                                <label style="color: #121212;" for="id_staff">Folio OC</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-3 col-sm-12">
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1"><i class="fa-solid fa-user"></i></span>
+                            <div class="form-floating form-floating-group flex-grow-1">
+                                {{ myfilter.form.proveedor|add_class:"form-control"|append_attr:"placeholder= Proveedor" }}
+                                <label style="color: #121212;" for="id_staff">Proveedor</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="serie" class="col-lg-2 col-md-auto col-sm-auto">
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1"><i class="fa-regular fa-calendar"></i></span>
+                            <div class="form-floating form-floating-group flex-grow-1">
+                                {% render_field myfilter.form.start_date type="date" class="form-control" %}
+                                <label style="color: #121212;" for="id_subproyecto">Desde:</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="serie" class="col-lg-2 col-md-auto col-sm-auto">
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1"><i class="fa-regular fa-calendar"></i></span>
+                            <div class="form-floating form-floating-group flex-grow-1">
+                                {% render_field myfilter.form.end_date type="date" class="form-control" %}
+                                <label style="color: #121212;" for="id_subproyecto">Hasta:</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-2">
+                        <button class="btn btn-outline-success btn-block btn-lg mt-1" type="submit" value="Buscar">
+                            <i class="fa-solid fa-magnifying-glass"></i>
+                        </button>
+                    </div>
+                </div>
+                <hr>
+            </form> <!-- Cerrar el formulario GET aquí -->
+
+            <!-- Formulario POST para el botón Excel -->
+            <form method="POST">
+                {% csrf_token %}
+                <ul class="nav nav-pills">
+                    <li class="nav-item mx-2">
+                        <button type="submit" class="btn btn-outline-success" name="btnExcel">
+                            <i class="fa-solid fa-file-excel fa-2xl"></i>
+                        </button>
+                    </li>
+                </ul>
+            </form> <!-- Cerrar el formulario POST aquí -->
         </div>
+    </div>
 </div>
     <!-- Aquí terminan el encabezado de los filtros -->
 
@@ -204,24 +190,7 @@
 <script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script>
-var dataSpyList = [].slice.call(document.querySelectorAll('[data-bs-spy="scroll"]'))
-dataSpyList.forEach(function (dataSpyEl) {
-  bootstrap.ScrollSpy.getInstance(dataSpyEl)
-    .refresh()
-});
-;(function(){
-    const modal = new bootstrap.Modal(document.getElementById('dialog'))
 
-    htmx.on('htmx:beforeSwap',(e)=>{
-        if (e.detail.target.id === "document" && !e.detail.xhr.response)
-        modal.hide()
-    })
-})()
-var myModal = document.getElementById('dialog')
-
-myModal.addEventListener('hidden.bs.modal', function (event) {
-  location.reload();
-})
 
 </script>
 {% endblock %}

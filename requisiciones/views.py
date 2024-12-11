@@ -14,6 +14,7 @@ from django.conf import settings
 from io import BytesIO
 import xlsxwriter
 from xlsxwriter.utility import xl_col_to_name
+from django.db.models import OuterRef, Subquery
 
 from solicitudes.models import Proyecto, Subproyecto
 from dashboard.models import Inventario, Order, ArticulosparaSurtir, ArticulosOrdenados, Inventario_Batch, Product, Marca
@@ -112,7 +113,11 @@ def solicitud_autorizada(request):
     if usuario.tipo.almacen == True:
         #productos= ArticulosparaSurtir.objects.filter(Q(salida=False) | Q(surtir=True), articulos__orden__autorizar = True)
         #productos= ArticulosparaSurtir.objects.filter(Q(salida=False) | Q(surtir=True), articulos__orden__autorizar = True, articulos__orden__tipo__tipo = "normal")
-        productos= ArticulosparaSurtir.objects.filter(surtir=True, articulos__orden__autorizar = True, articulos__orden__tipo__tipo = "normal").order_by('-created_at')
+        referencia_subquery = EntradaArticulo.objects.filter(
+            articulo_comprado__oc__req__orden=OuterRef('articulos__orden'),  # Relacionamos con Order a través de las relaciones intermedias
+            ).values('referencia')[:1]  # Solo tomamos el primer resultado
+        productos= ArticulosparaSurtir.objects.filter(surtir=True, articulos__orden__autorizar = True, articulos__orden__tipo__tipo = "normal").order_by('-created_at').annotate(
+            referencia=Subquery(referencia_subquery))
     #else:
         #productos = Requis.objects.filter(complete=None)
     myfilter = ArticulosparaSurtirFilter(request.GET, queryset=productos)
@@ -149,8 +154,20 @@ def solicitudes_autorizadas_pendientes(request):
     if usuario.tipo.almacenista == True:
         #productos= ArticulosparaSurtir.objects.filter(Q(salida=False) | Q(surtir=True), articulos__orden__autorizar = True)
         #productos= ArticulosparaSurtir.objects.filter(Q(salida=False) | Q(surtir=True), articulos__orden__autorizar = True, articulos__orden__tipo__tipo = "normal")
-        productos= ArticulosparaSurtir.objects.filter(salida=False, surtir=False, articulos__orden__autorizar = True, articulos__orden__tipo__tipo = "normal").order_by('-created_at')
+        # Subquery para obtener la referencia de EntradaArticulo
+        referencia_subquery = EntradaArticulo.objects.filter(
+            articulo_comprado__oc__req__orden=OuterRef('articulos__orden'),  # Relacionamos con Order a través de las relaciones intermedias
+        ).values('referencia')[:1]  # Solo tomamos el primer resultado
 
+        # Consulta principal con annotate para agregar la referencia
+        productos = ArticulosparaSurtir.objects.filter(
+            salida=False, 
+            surtir=False, 
+            articulos__orden__autorizar=True, 
+            articulos__orden__tipo__tipo="normal"
+        ).order_by('-created_at').annotate(
+            referencia=Subquery(referencia_subquery)  # Aquí agregamos el subquery como un nuevo campo
+        )
     #else:
         #productos = Requis.objects.filter(complete=None)
     myfilter = ArticulosparaSurtirFilter(request.GET, queryset=productos)
