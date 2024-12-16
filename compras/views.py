@@ -862,6 +862,8 @@ def cancelar_oc1(request, pk):
         costo_oc = compra.costo_oc
         if compra.costo_fletes:
             costo_fletes = compra.costo_fletes
+        else:
+            costo_fletes = 0
     costo_total = costo_fletes + costo_oc
     resta = compra.req.orden.subproyecto.presupuesto - costo_total - compra.req.orden.subproyecto.gastado
     porcentaje = "{0:.2f}%".format((costo_oc/compra.req.orden.subproyecto.presupuesto)*100)
@@ -902,11 +904,15 @@ def cancelar_oc2(request, pk):
         costo_oc = compra.costo_oc * compra.tipo_de_cambio
         if compra.costo_fletes:
             costo_fletes = compra.costo_fletes * compra.tipo_de_cambio
+        else:
+            costo_fletes = 0
     #Escenario con pesos
     else:
         costo_oc = compra.costo_oc
         if compra.costo_fletes:
             costo_fletes = compra.costo_fletes
+        else:
+            costo_fletes = 0
     costo_total = costo_fletes + costo_oc
     resta = compra.req.orden.subproyecto.presupuesto - costo_total - compra.req.orden.subproyecto.gastado
     porcentaje = "{0:.2f}%".format((costo_oc/compra.req.orden.subproyecto.presupuesto)*100)

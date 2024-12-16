@@ -156,13 +156,16 @@
                         <div class="dropdown-divider"></div>
                             <!--<a class="dropdown-item" href="{% url 'pendientes_calidad' %}">Liberación</a>-->
                             <a class="dropdown-item" href="{% url 'calidad_entradas' %}">
-                                Autorización Calidad
+                                Validación Calidad
                                 {% if entradas_calidad > 0 %}
                                     <span class="badge bg-danger">({{entradas_calidad}})</span>
                                 {% endif %}
                             </a>
                             <a class="dropdown-item" href="{% url 'calidad_entradas_autorizadas' %}">
                                 Entradas Autorizadas
+                            </a>
+                            <a class="dropdown-item" href="{% url 'calidad-inventario' %}">
+                                Inventario Calidad
                             </a>
                     </div>
                     <div class="dropdown-divider"></div>

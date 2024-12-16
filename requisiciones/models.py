@@ -91,6 +91,7 @@ class ValeSalidas(models.Model):
     created_at = models.DateField(auto_now_add=True)
     complete = models.BooleanField(null=True, default=False)
     firmado = models.BooleanField(null=True, default=False)
+    
 
     @property
     def get_costo_vale(self):
@@ -116,7 +117,8 @@ class Salidas(models.Model):
     validacion_activos = models.BooleanField(null=True, default=False)
     seleccionado = models.BooleanField(null=True, default=False)
     activo = models.ForeignKey(Activo, on_delete = models.CASCADE, null=True, blank=True)
-
+    referencia = models.CharField(max_length=50, null=True, blank=True)
+    
     @property
     def get_costo_salida(self):
         costo = self.cantidad * self.precio

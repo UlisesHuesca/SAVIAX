@@ -360,8 +360,16 @@ def salida_material(request, pk):
     vale_salida, created = ValeSalidas.objects.get_or_create(almacenista = usuario,complete = False,solicitud=orden)
     salidas = Salidas.objects.filter(vale_salida = vale_salida)
     cantidad_items = salidas.count()
+    referencias_existentes = Salidas.objects.filter(vale_salida__solicitud = orden, vale_salida__complete=True).values_list('referencia', flat=True)
+    for salida in salidas:
+        # Obtener las referencias asociadas a cada producto
+        referencias = EntradaArticulo.objects.filter(
+            articulo_comprado__oc__req__orden=salida.producto.articulos.orden,articulo_comprado__producto__producto__articulos__producto__producto=salida.producto.articulos.producto.producto,
+        ).exclude(referencia__in=referencias_existentes).values_list('referencia', flat=True)
 
-
+        # Agregar las referencias al producto (puedes almacenar esto en una lista o agregarlo como un atributo)
+        salida.referencias = list(referencias)
+        
     formVale = ValeSalidasForm()
     form = SalidasForm()
     users = Profile.objects.all()
@@ -370,10 +378,17 @@ def salida_material(request, pk):
         formVale = ValeSalidasForm(request.POST, instance=vale_salida)
         
         if formVale.is_valid():
-            #formVale.save()
             vale = formVale.save(commit=False)
             cantidad_salidas = 0
             cantidad_productos = productos.count()
+
+            # Iterar sobre las salidas para asignar las referencias seleccionadas
+            for salida in salidas:
+                referencia_seleccionada = request.POST.get(f'referencia_{salida.id}', None)
+                if referencia_seleccionada:
+                    salida.referencia = referencia_seleccionada 
+                    salida.save()
+
             for producto in productos:
                 producto.seleccionado = False
                 if producto.cantidad == 0:
@@ -384,6 +399,7 @@ def salida_material(request, pk):
             if cantidad_productos == cantidad_salidas:
                 orden.requisitado == True #Esta variable creo que podría ser una variable estúpida
                 orden.save()
+            #vale.referencia = ref
             vale.complete = True
             vale.save()
             messages.success(request,'La salida se ha generado de manera exitosa')

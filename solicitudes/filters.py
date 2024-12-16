@@ -93,7 +93,7 @@ class HistoricalProductoFilter(django_filters.FilterSet):
     def nombre_usuario(self, queryset, name, value):
         return queryset.filter(Q(history_user__first_name__icontains = value) | Q(history_user__last_name__icontains = value))
     
-class InventarioFilter(django_filters.FilterSet):
+class InventarioActivoFilter(django_filters.FilterSet):
     codigo = CharFilter(field_name='producto__codigo', lookup_expr='icontains')
     producto = CharFilter(field_name='producto__nombre', lookup_expr='icontains')
     familia = django_filters.ModelChoiceFilter(queryset=Familia.objects.filter(nombre__in=['ACTIVO', 'ACTIVO MENOR']),field_name='producto__familia',

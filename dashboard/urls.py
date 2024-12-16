@@ -34,5 +34,6 @@ urlpatterns = [
     path('dashboard/staff_detail/<int:pk>/', views.staff_detail, name='dashboard-staff-detail'),
     #API
     path('product/revision_calidad/<int:pk>', views.revision_producto_calidad, name='revision-producto-calidad'),
+    path('calidad/inventario', views.calidad_productos, name='calidad-inventario'),
 ]
 
