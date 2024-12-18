@@ -175,6 +175,7 @@
                 <tr>
                     <th scope="col">Folio</th>
                     <th scope="col">Crítico</th>
+                    <th scope="col">Producto Terminado</th>
                     <th class="d-none d-lg-table-cell">Solicitado por</th>
                     <th scope="col">Proyecto</th>
                     <th class="d-none d-lg-table-cell">Subproyecto</th>
@@ -192,9 +193,14 @@
                 <tr>
                     <th scope="row">{{producto.articulos.orden.folio}}</th>
                     {% if producto.referencia %}
-                        <th scope="row">{{producto.referencia}}</th>
+                        <th scope="row">Si</th>
                     {% else %}
                     <td>No</td>
+                    {% endif %}
+                    {% if producto.articulos.producto.producto.familia.nombre == 'PRODUCTO TERMINADO' %}
+                    <th scope="row">PRODUCTO TERMINADO</th>
+                    {% else %}
+                    <th>No</th>
                     {% endif %}
                     <td class="d-none d-lg-table-cell">{{producto.articulos.orden.staff.staff.first_name}} {{producto.articulos.orden.staff.staff.last_name}}</td>
                     <td>{{producto.articulos.orden.proyecto.nombre}}</td>

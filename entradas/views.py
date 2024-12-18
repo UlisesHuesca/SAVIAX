@@ -1753,3 +1753,4 @@ def calidad_entradas_autorizadas(request):
         }
 
     return render(request, 'entradas/calidad_entradas_autorizadas.html', context)
+
