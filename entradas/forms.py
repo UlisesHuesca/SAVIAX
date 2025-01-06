@@ -41,3 +41,4 @@ class Cierre_NCForm(forms.ModelForm):
     class Meta:
         model = No_Conformidad
         fields = ['cierre','image']
+

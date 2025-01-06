@@ -1264,10 +1264,10 @@ def reporte_entradas(request):
     return render(request,'requisiciones/reporte_entradas.html', context)
 
 def reporte_salidas(request):
-    salidas = Salidas.objects.all().order_by('-vale_salida')
+    salidas = Salidas.objects.filter(producto__isnull=False).order_by('-vale_salida')
     myfilter = SalidasFilter(request.GET, queryset=salidas)
     salidas = myfilter.qs
-    salidas_filtradas = salidas.filter(producto__articulos__producto__producto__servicio = False)
+    salidas_filtradas = salidas.filter(producto__articulos__producto__producto__servicio = False,)
 
     if request.method == "POST" and 'btnExcel' in request.POST:
         return convert_salidas_to_xls(salidas_filtradas)
@@ -2432,22 +2432,20 @@ def convert_devoluciones_to_xls2(entradas):
     output.close()
     return response
 
-#@login_required(login_url='user-login')
-#def salidas_producto_terminado(request):
-#    perfil = Profile.objects.get(staff__id=request.user.id)
-#    if perfil.tipo.almacen == True:
-#        salidas = Salidas.objects.filter(vale_salida__solicitud__distrito = perfil.distrito, vale_salida__complete=True,producto__articulos__producto__producto__familia__nombre = 'PRODUCTO TERMINADO').order_by('vale_salida__created_at')
-#    else:
-#        salidas = Salidas.objects.none()
-#    myfilter = SalidasFilter(request.GET, queryset=salidas)
-#    salidas = myfilter.qs 
-
-    #if request.method == "POST" and 'btnExcel' in request.POST:
-    #    return convert_activos_to_xls(activos)
-    
-#    context = {
-#        'salidas':salidas,
-#        'myfilter':myfilter,
-#    }
-
-#    return render(request,'requisiciones/salidas-productos-terminados.html',context)
+@login_required
+def terminado_salida_surtir(request, pk):
+    entrada = get_object_or_404(EntradaArticulo, id=pk)
+    perfil = Profile.objects.get(staff__id=request.user.id)
+    vale, created = ValeSalidas.objects.get_or_create(solicitud_terminado = entrada.producto_terminado.solicitud,almacenista=perfil,proyecto=entrada.producto_terminado.solicitud.proyecto,subproyecto=entrada.producto_terminado.solicitud.subproyecto,complete=True)
+    vale.save()
+    salida, created = Salidas.objects.get_or_create(vale_salida=vale,producto_terminado=entrada.producto_terminado,cantidad=entrada.cantidad,complete =True)
+    salida.save()
+    entrada.liberado = True
+    entrada.save()
+    #Modificar el inventario para la salida
+    inventario = entrada.producto_terminado.producto
+    inventario.cantidad -= entrada.cantidad
+    inventario.comentario = 'Salida de producto terminado'
+    inventario.save()
+    messages.success(request,f'Salida creada para la entrada: {entrada.id}, producto {entrada.producto_terminado.producto.producto.nombre}') 
+    return redirect('producto-terminado-salida')

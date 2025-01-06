@@ -1,11 +1,11 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q, DecimalField, F
-from .filters import EntradaArticuloFilter, No_ConformidadFilter, Reporte_CalidadFilter, EntradaCaducidadFilter
+from .filters import EntradaArticuloFilter, No_ConformidadFilter, Reporte_CalidadFilter, EntradaCaducidadFilter, EntradaTerminadoFilter
 from compras.models import Compra, ArticuloComprado
 from compras.filters import CompraFilter
 from compras.views import attach_oc_pdf
-from dashboard.models import Inventario, Order, ArticulosparaSurtir, Producto_Calidad
+from dashboard.models import Inventario, Order, ArticulosparaSurtir, Producto_Calidad, Productos_Solicitud_Terminado
 from requisiciones.models import Salidas, ArticulosRequisitados, Requis
 from django.core.exceptions import ObjectDoesNotExist
 from .models import Entrada, EntradaArticulo, Reporte_Calidad, No_Conformidad, NC_Articulo
@@ -900,6 +900,7 @@ def update_recepcion_articulos(request):
     producto_id = int(data["producto"])
     pk = int(data["entrada_id"])
     #referencia = data["referencia"]
+    folio = ''
 
     producto_comprado = ArticuloComprado.objects.get(id = producto_id)
     productos_ids = ArticuloComprado.objects.filter(oc=producto_comprado.oc).order_by('id').values_list('id', flat=True)
@@ -921,14 +922,13 @@ def update_recepcion_articulos(request):
 
     if action == "add":
         total_entradas = suma_cantidad + cantidad + suma_nc_producto
-        if producto_comprado.producto.producto.articulos.producto.producto.critico.nombre == 'Crítico':
-            try:
-                numero_partida = list(productos_ids).index(producto_comprado.id) + 1  # Agregar 1 para comenzar desde 1
-            except ValueError:
-                numero_partida = None  # Manejar el caso donde el producto no esté en la lista
-            folio = f"OC{producto_comprado.oc.id}-{numero_partida}-{total_entradas}"
-        else:
-            folio = ''
+        if producto_comprado.producto.producto.articulos.producto.producto.critico:
+            if producto_comprado.producto.producto.articulos.producto.producto.critico.nombre == 'Crítico':
+                try:
+                    numero_partida = list(productos_ids).index(producto_comprado.id) + 1  # Agregar 1 para comenzar desde 1
+                except ValueError:
+                    numero_partida = None  # Manejar el caso donde el producto no esté en la lista
+                folio = f"OC{producto_comprado.oc.id}-{numero_partida}-{total_entradas}"
         tolerance = decimal.Decimal('0.01')
         if total_entradas > (producto_comprado.cantidad + tolerance):
             messages.error(request, f'La cantidad recibida sobrepasa la cantidad comprada, Ya Ingresado: {suma_cantidad + suma_nc_producto} Ingresando: {cantidad} Comprado: {producto_comprado.cantidad}')
@@ -1754,3 +1754,306 @@ def calidad_entradas_autorizadas(request):
 
     return render(request, 'entradas/calidad_entradas_autorizadas.html', context)
 
+@login_required(login_url='user-login')
+def productos_terminados_entrada(request):
+    perfil = Profile.objects.get(staff__id=request.user.id)
+     #Este es un filtro por perfil supervisor o superintendente, es decir puede ver todo lo del distrito
+    if perfil.tipo.almacen == True:
+        entradas = EntradaArticulo.objects.filter(producto_terminado__isnull=False,producto_terminado__principal__isnull=True,recepcion=True,cantidad_por_surtir__gt=0,almacenado =False,producto_terminado__validado__isnull=True)
+    else:
+        entradas = EntradaArticulo.objects.none()
+
+    myfilter=EntradaTerminadoFilter(request.GET, queryset=entradas)
+    entradas = myfilter.qs
+
+    #Set up pagination
+    p = Paginator(entradas, 25)
+    page = request.GET.get('page')
+    entradas_list = p.get_page(page)
+
+    if request.method =='POST' and 'btnExcel' in request.POST:
+        return convert_excel_salida_terminados(entradas)
+
+    context= {
+        'entradas_list':entradas_list,
+        'myfilter':myfilter,
+        }
+
+    return render(request, 'entradas/productos_terminados_entradas.html',context)
+
+@login_required(login_url='user-login')
+def productos_terminados_salida(request):
+    perfil = Profile.objects.get(staff__id=request.user.id)
+     #Este es un filtro por perfil supervisor o superintendente, es decir puede ver todo lo del distrito
+    if perfil.tipo.almacen == True:
+        entradas = EntradaArticulo.objects.filter(producto_terminado__isnull=False,producto_terminado__principal__isnull=True,almacenado =True, producto_terminado__validado=True,liberado=False)
+    else:
+        entradas = EntradaArticulo.objects.none()
+
+    myfilter=EntradaTerminadoFilter(request.GET, queryset=entradas)
+    entradas = myfilter.qs
+
+    #Set up pagination
+    p = Paginator(entradas, 25)
+    page = request.GET.get('page')
+    entradas_list = p.get_page(page)
+
+    if request.method =='POST' and 'btnExcel' in request.POST:
+        return convert_excel_salida_terminados(entradas)
+
+    context= {
+        'entradas_list':entradas_list,
+        'myfilter':myfilter,
+        }
+
+    return render(request, 'entradas/productos_terminados_salidas.html',context)
+
+def terminado_salida_editar_cliente(request, pk):
+    entrada = get_object_or_404(EntradaArticulo, id=pk)
+    producto = entrada.producto_terminado
+
+    if request.method == 'POST':
+        cliente = request.POST.get('cliente')
+        destino = request.POST.get('destino')
+        producto.cliente = cliente
+        producto.destino = destino
+        producto.save()
+        messages.success(request, 'Datos del cliente agregados exitosamente.')
+        return HttpResponse(status=204)
+
+    return render(request, 'entradas/terminado_salida_editar_cliente.html', {'producto': producto})
+
+@login_required(login_url='user-login')
+def validar_entrada_terminado(request, pk):
+    usuario = Profile.objects.get(staff__id=request.user.id)
+    entrada_art = EntradaArticulo.objects.get(id = pk)
+    entrada = Entrada.objects.get(id = entrada_art.entrada.id)
+    solicitud = entrada.solicitud
+    fecha = datetime.now()
+    dia = date.today()
+    hora = datetime.now().time()
+    #Logica actual de que no hay devolucion o entradas por partes
+    entrada_art.cantidad_por_surtir = 0
+    entrada_art.entrada_date = fecha
+    entrada_art.almacenado = True
+    entrada_art.save()   
+    
+    producto = entrada_art.producto_terminado
+    producto.validado = True
+    producto.save()
+
+    entrada.almacenista = usuario
+    entrada.entrada_date = dia
+    entrada.entrada_hora = hora
+    entrada.save()
+    #Parte donde se altera el inventario para la entrada
+    inventario = entrada_art.producto_terminado.producto
+    inventario.cantidad += entrada_art.cantidad
+    inventario.comentario = 'Entrada en producto terminado'
+    inventario.save()
+
+    if entrada_art.producto_terminado.producto.producto.subfamilia:
+        if entrada_art.producto_terminado.producto.producto.subfamilia.nombre == 'EQUIPO':
+            # Obtener las entrada articulos (componentes) relacionados al producto principal
+            componentes = EntradaArticulo.objects.filter(producto_terminado__principal = producto)
+            print('Componentes')
+            print(componentes)
+            for componente in componentes:
+                #Logica actual de que no hay devolucion o entradas por partes
+                componente.cantidad_por_surtir = 0
+                componente.entrada_date = fecha
+                componente.almacenado = True
+                componente.save()
+                producto = componente.producto_terminado
+                producto.validado = True
+                producto.save()   
+                entrada = componente.entrada
+                entrada.almacenista = usuario
+                entrada.entrada_date = dia
+                entrada.entrada_hora = hora
+                entrada.save()
+    #Checar si ya fue completa la solicitud
+    todos_productos = solicitud.productos.filter(complete=True)
+    total_productos = todos_productos.count()
+    validados = solicitud.productos.filter(validado__isnull=False,complete=True) 
+    total_validados = validados.count() 
+    if total_validados == total_productos:
+        solicitud.concluida = True
+        solicitud.save()
+        print('Terminada la solicitud')
+    return redirect('producto-terminado-entrada')
+
+@login_required(login_url='user-login')
+def no_validar_entrada_terminado(request, pk):
+    usuario = Profile.objects.get(staff__id=request.user.id)
+    entrada_art = EntradaArticulo.objects.get(id = pk)
+    entrada = Entrada.objects.get(id = entrada_art.entrada.id)
+    solicitud = entrada.solicitud
+    fecha = datetime.now()
+    dia = date.today()
+    hora = datetime.now().time()
+    # Logica actual de que no hay devolucion o entradas por partes
+    entrada_art.entrada_date = fecha
+    entrada_art.almacenado = False
+    entrada_art.save()
+    
+    producto = entrada_art.producto_terminado #ProductoSolicitud
+    producto.validado = False
+    producto.save()
+    
+    entrada.almacenista = usuario
+    entrada.entrada_date = dia
+    entrada.entrada_hora = hora
+    entrada.save()
+    if entrada_art.producto_terminado.producto.producto.subfamilia:
+        if entrada_art.producto_terminado.producto.producto.subfamilia.nombre == 'EQUIPO':
+            # Obtener las entrada articulos (componentes) relacionados al producto principal
+            componentes = EntradaArticulo.objects.filter(producto_terminado__principal = producto)
+            for componente in componentes:
+                #Logica actual de que no hay devolucion o entradas por partes
+                componente.entrada_date = fecha
+                componente.almacenado = False
+                componente.save()
+                producto = componente.producto_terminado
+                producto.validado = False
+                producto.save()   
+                entrada = componente.entrada
+                entrada.almacenista = usuario
+                entrada.entrada_date = dia
+                entrada.entrada_hora = hora
+                entrada.save()
+    #Checar si ya fue completa la solicitud
+    todos_productos = solicitud.productos.filter(complete=True)
+    total_productos = todos_productos.count()
+    validados = solicitud.productos.filter(validado__isnull=False,complete=True) 
+    total_validados = validados.count() 
+    if total_validados == total_productos:
+        solicitud.concluida = True
+        solicitud.save()
+    return redirect('producto-terminado-entrada')
+
+def producto_terminado_componente_ver(request, pk):
+    usuario = Profile.objects.get(staff__id=request.user.id)
+    entrada = get_object_or_404(EntradaArticulo, id=pk)
+    producto = entrada.producto_terminado
+    componentes = Productos_Solicitud_Terminado.objects.filter(solicitud__id=producto.solicitud.id, principal = producto)
+    
+    return render(request, 'entradas/modal_producto_terminado_componentes.html', {'producto': producto,'componentes':componentes,'entrada':entrada,})
+    
+def convert_excel_salida_terminados(entradas):
+    # Crear un flujo en memoria para el archivo Excel
+    output = io.BytesIO()
+
+    # Configurar la respuesta HTTP
+    response = HttpResponse(content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+    response['Content-Disposition'] = f'attachment; filename=Salida_Producto_Terminado_{date.today()}.xlsx'
+    response.set_cookie('descarga_iniciada', 'true', max_age=10)
+
+    # Crear un nuevo libro de trabajo y hoja de trabajo
+    wb = Workbook()
+    ws = wb.active
+    ws.title = 'Salida_Producto_Terminado'
+
+    # Definir estilos
+    styles = {
+        'head_style': NamedStyle(name="head_style", font=Font(name='Arial', color='00FFFFFF', bold=True, size=11), fill=PatternFill("solid", fgColor='00003366')),
+        'body_style': NamedStyle(name="body_style", font=Font(name='Calibri', size=10)),
+        'messages_style': NamedStyle(name="messages_style", font=Font(name="Arial Narrow", size=11)),
+        'date_style': NamedStyle(name='date_style', number_format='DD/MM/YYYY', font=Font(name='Calibri', size=10))
+    }
+    
+    for style in styles.values():
+        wb.add_named_style(style)
+    
+    # Configurar encabezados de columna
+    columns = [
+        'Solicitud', 'Producto terminado id', 'Entrada', 'Solicitó', 'Solicitado', 
+        'Proyecto', 'Subproyecto', 'Producto', 'Tipo', '# Serie', 
+        'Cantidad', 'Cliente', 'Destino','Entrada','Almacenista', 'Componentes','Vale de Salida', 'Fecha de Salida', 'Almacenista'
+    ]
+    
+    for col_num, column_title in enumerate(columns, start=1):
+        cell = ws.cell(row=1, column=col_num, value=column_title)
+        cell.style = styles['head_style']
+        ws.column_dimensions[get_column_letter(col_num)].width = 25 if col_num == 6 else 16
+
+    # Agregar mensajes
+    max_col = len(columns) + 2
+    ws.cell(row=1, column=max_col, value='{Reporte Creado Automáticamente por Savia X. UH}').style = styles['messages_style']
+    ws.cell(row=2, column=max_col, value='{Software desarrollado por Vordcab S.A. de C.V.}').style = styles['messages_style']
+    ws.column_dimensions[get_column_letter(max_col)].width = 20
+
+    # Agregar datos
+    rows = entradas.values_list(
+        'producto_terminado__solicitud__id',
+        'producto_terminado__id',
+        'entrada__id',
+        Concat('producto_terminado__solicitud__staff__staff__first_name', Value(' '), 'producto_terminado__solicitud__staff__staff__last_name'),
+        'producto_terminado__solicitud__created_at',
+        'producto_terminado__solicitud__proyecto__nombre',
+        'producto_terminado__solicitud__subproyecto__nombre',
+        'producto_terminado__producto__producto__nombre',
+        'producto_terminado__producto__producto__subfamilia__nombre',
+        'producto_terminado__serie',
+        'cantidad',
+        'producto_terminado__cliente',
+        'producto_terminado__destino',
+        'entrada__entrada_date',
+        Concat('entrada__almacenista__staff__first_name', Value(' '),'entrada__almacenista__staff__last_name'),
+    )
+    
+    for row_num, row in enumerate(rows, start=2):
+        # Escribir las columnas existentes
+        for col_num, value in enumerate(row, start=1):
+            cell = ws.cell(row=row_num, column=col_num, value=str(value))
+            if col_num == 6:
+                cell.style = styles['date_style']
+            else:
+                cell.style = styles['body_style']
+
+        # Obtener componentes asociados
+        id_producto_terminado = row[1]  # ID del producto terminado
+        componentes = Productos_Solicitud_Terminado.objects.filter(principal__id=id_producto_terminado).values(
+            'producto__producto__nombre', 'serie', 'cantidad'
+        )
+        componentes_texto = "\n".join([ 
+            f"{comp['producto__producto__nombre']} (Serie: {comp['serie']}, Cantidad: {comp['cantidad']})"
+            for comp in componentes
+        ]) if componentes.exists() else "Sin componentes"
+
+        # Agregar componentes a la columna correspondiente
+        cell = ws.cell(row=row_num, column=len(columns) - 3, value=componentes_texto)
+        cell.style = styles['body_style']
+
+        # Obtener los datos de ValeSalidas y Salidas
+        salida = Salidas.objects.filter(producto_terminado__id=id_producto_terminado).values_list('vale_salida__id', 'created_at', 'vale_salida__almacenista__staff__first_name', flat=False).first()
+
+        # Verificar si se obtuvo algún dato
+        if salida:
+            vale_salida_id, fecha_salida, almacenista = salida
+            # Ajustar la fecha de salida al formato adecuado
+            fecha_salida = fecha_salida.strftime('%d/%m/%Y %H:%M:%S')  # Puedes ajustar el formato
+        else:
+            vale_salida_id, fecha_salida, almacenista = "Sin vale de salida", "Sin fecha", "Sin responsable"
+        
+        # Agregar el Vale de Salida ID
+        ws.cell(row=row_num, column=len(columns) - 2, value=vale_salida_id).style = styles['body_style']
+
+        # Agregar la Fecha de Salida
+        ws.cell(row=row_num, column=len(columns) - 1, value=fecha_salida).style = styles['body_style']
+
+        # Agregar el Responsable (Almacenista)
+        ws.cell(row=row_num, column=len(columns), value=almacenista).style = styles['body_style']
+    
+    # Eliminar la hoja predeterminada y guardar el archivo en el objeto BytesIO
+    if 'Sheet' in wb.sheetnames:
+        wb.remove(wb['Sheet'])
+    
+    wb.save(output)
+    output.seek(0)  # Asegurarse de que el puntero esté al principio del flujo de bytes
+    
+    # Establecer el contenido del archivo en la respuesta HTTP
+    response.write(output.getvalue())
+    output.close()
+    
+    return response

@@ -4,6 +4,17 @@ from . import views
 
 urlpatterns = [
     path('', views.product_selection, name='solicitud-product-selection'),
+    path('catalogo_productos_terminados', views.catalogo_selection, name='catalogo-product-selection'),
+    path('add_producto_solicitud_terminados/', views.add_producto_terminado, name='add_producto_terminado'),
+    path('solicitud_productos_terminados', views.solicitud_productos_terminados, name='solicitud_productos_terminados'),
+    path("producto_terminado_cantidad/<int:pk>/", views.producto_terminado_cantidad, name="producto_terminado_cantidad"),
+    path("producto_terminado_comentario/<int:pk>/", views.producto_terminado_comentario, name="producto_terminado_comentario"),
+    path("producto_terminado_componentes/<int:pk>/", views.producto_terminado_componentes, name="producto_terminado_componentes"),
+    path("producto_terminado_remove/<int:pk>/", views.producto_terminado_remove, name="producto_terminado_remove"),
+    path('matriz_productos_terminados', views.matriz_productos_terminados, name='matriz_productos_terminados'),
+    path('pdf-producto-terminado/<int:pk>/', views.render_pdf_producto_terminado, name='vale-producto-terminado'),
+
+    
     path('solicitud/resurtimiento', views.product_selection_resurtimiento, name='product_selection_resurtimiento'),
     path('crear/', views.checkout, name='solicitud-checkout'),
     path('crear_resurtimiento/', views.checkout_resurtimiento, name='solicitud-checkout-resurtimiento'),

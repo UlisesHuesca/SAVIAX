@@ -1,5 +1,5 @@
 from django.db import models
-from dashboard.models import Order, Inventario, ArticulosparaSurtir
+from dashboard.models import Order, Inventario, ArticulosparaSurtir, Solicitud_Producto_Terminado, Productos_Solicitud_Terminado
 from user.models import Profile
 from solicitudes.models import Proyecto, Subproyecto
 from simple_history.models import HistoricalRecords
@@ -83,7 +83,8 @@ class ArticulosRequisitados(models.Model):
         return f'{self.req} - {self.producto}- {self.cantidad}'
 
 class ValeSalidas(models.Model):
-    solicitud = models.ForeignKey(Order, on_delete = models.CASCADE, null=True, related_name='vale_salida')
+    solicitud = models.ForeignKey(Order, on_delete = models.CASCADE, null=True, related_name='vale_salida',blank=True)
+    solicitud_terminado = models.ForeignKey(Solicitud_Producto_Terminado, on_delete = models.CASCADE, null=True, related_name='vale_salida_terminado',blank=True)
     almacenista = models.ForeignKey(Profile, on_delete = models.CASCADE, null=True, related_name='Almacen')
     proyecto = models.ForeignKey(Proyecto, on_delete = models.CASCADE, null=True, blank=True)
     subproyecto = models.ForeignKey(Subproyecto, on_delete = models.CASCADE, null=True, blank=True)
@@ -105,7 +106,8 @@ class ValeSalidas(models.Model):
 
 class Salidas(models.Model):
     vale_salida = models.ForeignKey(ValeSalidas, on_delete = models.CASCADE, null=True)
-    producto = models.ForeignKey(ArticulosparaSurtir, on_delete = models.CASCADE, null=True)
+    producto = models.ForeignKey(ArticulosparaSurtir, on_delete = models.CASCADE, null=True,blank=True)
+    producto_terminado = models.ForeignKey(Productos_Solicitud_Terminado, on_delete = models.CASCADE, null=True,blank=True)
     cantidad =  models.DecimalField(max_digits=14, decimal_places=2, default=0)
     comentario = models.CharField(max_length=150, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)

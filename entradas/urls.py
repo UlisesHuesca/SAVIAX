@@ -4,6 +4,15 @@ from . import views
 
 urlpatterns = [
     path('entradas/pendientes_entrada', views.pendientes_entrada, name='pendientes-entrada'),
+    path('producto-terminado-entrada/', views.productos_terminados_entrada, name='producto-terminado-entrada'),
+    path('validar-entrada-terminado/<int:pk>/', views.validar_entrada_terminado, name='validar-entrada-terminado'),
+    path('no-validar-entrada-terminado/<int:pk>/', views.no_validar_entrada_terminado, name='no-validar-entrada-terminado'),
+    path("producto_terminado_componentes/<int:pk>/", views.producto_terminado_componente_ver, name="producto_terminado_componente_ver"),
+    path('producto-terminado-salida/', views.productos_terminados_salida, name='producto-terminado-salida'),
+    path("producto_terminado_salida_cliente/<int:pk>/", views.terminado_salida_editar_cliente, name="terminado_salida_editar_cliente"),
+
+
+
     path('entradas/pendientes_entrada/articulos/<int:pk>', views.articulos_entrada, name='articulos_entrada'),
     path('entradas/pendientes_recepcion/articulos/<int:pk>', views.articulos_recepcion, name='articulos_recepcion'),
     #path('update_entrada/', views.update_entrada, name='update-entrada'),
