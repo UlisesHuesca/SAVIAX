@@ -4,6 +4,9 @@ from . import views
 
 urlpatterns = [
     path('sol_autorizadas/', views.solicitud_autorizada, name='solicitud-autorizada'),
+    path('editar_cliente/<int:salida_id>/', views.editar_cliente, name='editar_cliente'),
+
+    #path('sol_autorizadas/producto_terminado', views.salidas_producto_terminado, name='salida-producto-terminado'),
     path('sol_autorizadas_pendientes/', views.solicitudes_autorizadas_pendientes, name='solicitudes-autorizadas-pendientes'),
     path('salida_material/<int:pk>/', views.salida_material, name='salida-material'),
     path('devolucion_salida/<int:pk>/', views.devolucion_material, name='devolucion-material'),
@@ -27,6 +30,8 @@ urlpatterns = [
     path('salida_material/solicitud_pdf/<int:pk>/', views.render_pdf_view, name='solicitud-pdf'),
     path('reporte_entradas/', views.reporte_entradas, name='reporte-entradas'),
     path('reporte_salidas/', views.reporte_salidas, name='reporte-salidas'),
+
+
     #path('inventario/upload_batch_inventario', views.upload_batch_inventario, name='upload_batch_inventario'),
     path('inventario/historico_articulos_para_surtir/', views.historico_articulos_para_surtir, name='historico-articulos-para-surtir'),
     path('salidas/historico_salidas/', views.historico_salidas, name='historico-salidas'),
@@ -36,4 +41,6 @@ urlpatterns = [
     path('requisiciones/estatus', views.requisiciones_status, name='requisiciones-status'),
     path('requisicion_pdf/<int:pk>/', views.render_requisicion_pdf_view, name='requisicion-pdf'),
     path('matriz/devolucion_ordenes', views.reporte_devoluciones, name='devolucion_ordenes'),
+
+    path('salida_producto_terminado_crear/<int:pk>/', views.terminado_salida_surtir, name='salida_producto_terminado_crear'),
     ]

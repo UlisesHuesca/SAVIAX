@@ -1,4 +1,4 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse
 from django.db.models.functions import Concat
@@ -360,8 +360,16 @@ def salida_material(request, pk):
     vale_salida, created = ValeSalidas.objects.get_or_create(almacenista = usuario,complete = False,solicitud=orden)
     salidas = Salidas.objects.filter(vale_salida = vale_salida)
     cantidad_items = salidas.count()
+    referencias_existentes = Salidas.objects.filter(vale_salida__solicitud = orden, vale_salida__complete=True).values_list('referencia', flat=True)
+    for salida in salidas:
+        # Obtener las referencias asociadas a cada producto
+        referencias = EntradaArticulo.objects.filter(
+            articulo_comprado__oc__req__orden=salida.producto.articulos.orden,articulo_comprado__producto__producto__articulos__producto__producto=salida.producto.articulos.producto.producto,
+        ).exclude(referencia__in=referencias_existentes).values_list('referencia', flat=True)
 
-
+        # Agregar las referencias al producto (puedes almacenar esto en una lista o agregarlo como un atributo)
+        salida.referencias = list(referencias)
+        
     formVale = ValeSalidasForm()
     form = SalidasForm()
     users = Profile.objects.all()
@@ -370,10 +378,17 @@ def salida_material(request, pk):
         formVale = ValeSalidasForm(request.POST, instance=vale_salida)
         
         if formVale.is_valid():
-            #formVale.save()
             vale = formVale.save(commit=False)
             cantidad_salidas = 0
             cantidad_productos = productos.count()
+
+            # Iterar sobre las salidas para asignar las referencias seleccionadas
+            for salida in salidas:
+                referencia_seleccionada = request.POST.get(f'referencia_{salida.id}', None)
+                if referencia_seleccionada:
+                    salida.referencia = referencia_seleccionada 
+                    salida.save()
+
             for producto in productos:
                 producto.seleccionado = False
                 if producto.cantidad == 0:
@@ -384,6 +399,7 @@ def salida_material(request, pk):
             if cantidad_productos == cantidad_salidas:
                 orden.requisitado == True #Esta variable creo que podría ser una variable estúpida
                 orden.save()
+            #vale.referencia = ref
             vale.complete = True
             vale.save()
             messages.success(request,'La salida se ha generado de manera exitosa')
@@ -1248,10 +1264,10 @@ def reporte_entradas(request):
     return render(request,'requisiciones/reporte_entradas.html', context)
 
 def reporte_salidas(request):
-    salidas = Salidas.objects.all().order_by('-vale_salida')
+    salidas = Salidas.objects.filter(producto__isnull=False).order_by('-vale_salida')
     myfilter = SalidasFilter(request.GET, queryset=salidas)
     salidas = myfilter.qs
-    salidas_filtradas = salidas.filter(producto__articulos__producto__producto__servicio = False)
+    salidas_filtradas = salidas.filter(producto__articulos__producto__producto__servicio = False,)
 
     if request.method == "POST" and 'btnExcel' in request.POST:
         return convert_salidas_to_xls(salidas_filtradas)
@@ -1270,6 +1286,16 @@ def reporte_salidas(request):
 
     return render(request,'requisiciones/reporte_salidas.html', context)
 
+
+def editar_cliente(request, salida_id):
+    if request.method == "POST":
+        salida = get_object_or_404(Salidas, id=salida_id)
+        nuevo_cliente = request.POST.get('cliente', '').strip()
+        salida.cliente = nuevo_cliente
+        salida.save()
+        messages.success(request,f'Has actualizado los datos del cliente correctamente. Salida:{salida.id}-Vale:{salida.vale_salida.id}')
+        return redirect('reporte-salidas')  # Ajusta el nombre de tu vista principal
+    
 @login_required(login_url='user-login')
 def historico_articulos_para_surtir(request):
     registros = ArticulosparaSurtir.history.all()
@@ -1856,10 +1882,10 @@ def render_salida_pdf(request, pk):
 
     data =[]
     high = 670
-    data.append(['''Código''','''Producto''', '''Cantidad''', '''Unidad''','''P.Unitario''', '''Importe'''])
+    data.append(['''Código''','''Producto''','''Referencia''','''Cliente''','''Cantidad''', '''Unidad''','''P.Unitario''', '''Importe'''])
     for producto in productos:
         producto_nombre = Paragraph(producto.producto.articulos.producto.producto.nombre, styles["BodyText"])
-        data.append([producto.producto.articulos.producto.producto.codigo, producto_nombre, producto.cantidad, producto.producto.articulos.producto.producto.unidad, producto.precio, producto.precio * producto.cantidad])
+        data.append([producto.producto.articulos.producto.producto.codigo, producto_nombre, producto.referencia, producto.cliente, producto.cantidad, producto.producto.articulos.producto.producto.unidad, producto.precio, producto.precio * producto.cantidad])
         high = high - 18
    
     c.setFillColor(black)
@@ -1893,8 +1919,10 @@ def render_salida_pdf(request, pk):
 
     c.line(370,proyecto_y - 20,430, proyecto_y - 20)
     c.drawCentredString(400,proyecto_y - 30,'Recibió')
-    c.drawCentredString(400,proyecto_y - 40, vale.material_recibido_por.staff.first_name +' '+vale.material_recibido_por.staff.last_name)
-
+    if vale.material_recibido_por:
+        c.drawCentredString(400,proyecto_y - 40, vale.material_recibido_por.staff.first_name +' '+vale.material_recibido_por.staff.last_name)
+    else:
+        c.drawCentredString(400,proyecto_y - 40, '')
 
     #c.line(240, high-200, 310, high-200)
     c.drawCentredString(280,proyecto_y - 30,'Autorizó')
@@ -1910,7 +1938,7 @@ def render_salida_pdf(request, pk):
     c.setFillColor(white)
 
     width, height = letter
-    table = Table(data, colWidths=[1.5 * cm, 10.5 * cm, 2.0 * cm, 2.0 * cm, 2.0 * cm, 2.0 * cm])
+    table = Table(data, colWidths=[1.5 * cm, 6.5 * cm, 2.0 * cm, 2.0 * cm, 2.0 * cm, 2.0 * cm, 2.0 * cm, 2.0 * cm])
     table.setStyle(TableStyle([ #estilos de la tabla
         ('INNERGRID',(0,0),(-1,-1), 0.25, colors.white),
         ('BOX',(0,0),(-1,-1), 0.25, colors.black),
@@ -2403,3 +2431,21 @@ def convert_devoluciones_to_xls2(entradas):
     response.set_cookie('descarga_iniciada', 'true', max_age=20)  # La cookie expira en 20 segundos
     output.close()
     return response
+
+@login_required
+def terminado_salida_surtir(request, pk):
+    entrada = get_object_or_404(EntradaArticulo, id=pk)
+    perfil = Profile.objects.get(staff__id=request.user.id)
+    vale, created = ValeSalidas.objects.get_or_create(solicitud_terminado = entrada.producto_terminado.solicitud,almacenista=perfil,proyecto=entrada.producto_terminado.solicitud.proyecto,subproyecto=entrada.producto_terminado.solicitud.subproyecto,complete=True)
+    vale.save()
+    salida, created = Salidas.objects.get_or_create(vale_salida=vale,producto_terminado=entrada.producto_terminado,cantidad=entrada.cantidad,complete =True)
+    salida.save()
+    entrada.liberado = True
+    entrada.save()
+    #Modificar el inventario para la salida
+    inventario = entrada.producto_terminado.producto
+    inventario.cantidad -= entrada.cantidad
+    inventario.comentario = 'Salida de producto terminado'
+    inventario.save()
+    messages.success(request,f'Salida creada para la entrada: {entrada.id}, producto {entrada.producto_terminado.producto.producto.nombre}') 
+    return redirect('producto-terminado-salida')

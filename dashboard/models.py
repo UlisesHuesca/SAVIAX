@@ -354,3 +354,31 @@ class ArticulosparaSurtir(models.Model):
 
     def __str__(self):
         return f'{self.articulos} - {self.cantidad} - {self.cantidad_requisitar}'
+
+class Solicitud_Producto_Terminado(models.Model):
+    folio = models.IntegerField(null=True,blank=True)
+    staff = models.ForeignKey(Profile, on_delete = models.CASCADE, null=True)
+    proyecto = models.ForeignKey(Proyecto, on_delete = models.CASCADE, null=True)
+    subproyecto = models.ForeignKey(Subproyecto, on_delete = models.CASCADE, null=True)
+    complete = models.BooleanField(null=True)
+    created_at = models.DateTimeField(null=True)
+    comentario =  models.TextField(max_length=200, null=True, blank=True)
+    concluida = models.BooleanField(null=True)
+    def __str__(self):
+        return f'{self.id} - {self.staff} - {self.complete}'
+    
+class Productos_Solicitud_Terminado(models.Model):
+    principal = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name="componentes")
+    serie = models.CharField(max_length=20, null=True, unique=True)
+    producto = models.ForeignKey(Inventario, on_delete = models.CASCADE, null=True)
+    solicitud = models.ForeignKey(Solicitud_Producto_Terminado, on_delete = models.CASCADE, null=True, related_name= "productos")
+    cantidad = models.DecimalField(max_digits=14, decimal_places=2, default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+    comentario = models.TextField(max_length=100, null=True, blank=True)
+    complete = models.BooleanField(null=True)
+    validado = models.BooleanField(null=True)
+    cliente = models.TextField(max_length=100, null=True, blank=True)
+    destino = models.TextField(max_length=100, null=True, blank=True)
+
+    def __str__(self):
+        return f'{self.id} - {self.producto} - {self.complete} - SOL [{self.solicitud}]'

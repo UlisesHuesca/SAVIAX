@@ -40,6 +40,18 @@
                             {{productosordenadosres}}
                         </span>
                     </div>
+                    <div class="form-inline my-2 my-lg-0 position-relative d-none" id="cart3">
+                        <a href="{% url 'solicitud_productos_terminados' %}">
+                        <img id="cart-icon" src="{% static 'images/cart.png' %}">
+                        </a>
+                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                        {% if productos_terminados %}
+                            {{productos_terminados}}
+                        {% else %}
+                            0
+                        {% endif %}
+                        </span>
+                    </div>
                 </div>
                 </li>
             </ul>
@@ -121,6 +133,9 @@
                                 <span class="badge bg-danger">({{conteo_entradas}})</span>
                                  {% endif %}
                             </a>
+                            <a class="dropdown-item" href="{% url 'producto-terminado-entrada' %}">
+                                Producto terminado
+                            </a>
                             <a class="dropdown-item" href="{% url 'entradas_nc' %}">
                                 Entradas NC's
                             </a>
@@ -144,6 +159,9 @@
                                 <span class="badge bg-danger">({{conteo_ordenes}})</span>
                                 {% endif %}
                             </a>
+                            <a class="dropdown-item" href="{% url 'producto-terminado-salida' %}">
+                                Salidas | Producto Terminado 
+                            </a>
                         </div>
                     </div>
                     {% if usuario.tipo.calidad == False %}
@@ -156,13 +174,16 @@
                         <div class="dropdown-divider"></div>
                             <!--<a class="dropdown-item" href="{% url 'pendientes_calidad' %}">Liberación</a>-->
                             <a class="dropdown-item" href="{% url 'calidad_entradas' %}">
-                                Autorización Calidad
+                                Validación Calidad
                                 {% if entradas_calidad > 0 %}
                                     <span class="badge bg-danger">({{entradas_calidad}})</span>
                                 {% endif %}
                             </a>
                             <a class="dropdown-item" href="{% url 'calidad_entradas_autorizadas' %}">
                                 Entradas Autorizadas
+                            </a>
+                            <a class="dropdown-item" href="{% url 'calidad-inventario' %}">
+                                Inventario Calidad
                             </a>
                     </div>
                     <div class="dropdown-divider"></div>
@@ -176,6 +197,7 @@
                                 <a class="dropdown-item" href="{% url 'crear-plantilla' %}">Crear Plantilla</a>
                                 <a class="dropdown-item" href="{% url 'matriz-plantillas' %}">Matriz Plantillas</a>
                                 <a class="dropdown-item" href="{% url 'solicitud-product-selection' %}">Crear Solicitud</a>
+                                <a class="dropdown-item" href="{% url 'catalogo-product-selection' %}">Catalogo Productos</a>
                                 <a class="dropdown-item" href="{% url 'solicitud-matriz-productos' %}">Solicitudes por producto</a>
                                 <a class="dropdown-item" href="{% url 'solicitudes-pendientes' %}">Solicitudes pendientes</a>
                             <div class="dropdown-divider"></div>
@@ -394,6 +416,7 @@
                             <a class="dropdown-item" href="{% url 'devolucion_ordenes' %}">Matriz Devoluciones</a>
                             {% endif %}
                             <a class="dropdown-item" href="{% url 'reporte-salidas' %}">Matriz Salidas</a>
+                            <a class="dropdown-item" href="{% url 'matriz_productos_terminados' %}">Matriz Producto Terminado</a>
                             </div>
                         {% if usuario.tipo.compras == True or usuario.tipo.nombre == "Gerente" %}
                             <div>

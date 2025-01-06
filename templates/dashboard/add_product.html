@@ -194,7 +194,7 @@ function mini_ajax(familia_id){
 };
 
 function actualizarSubfamilia(data) {
-    //console.log(data)
+    console.log(data)
     var $subfamiliaSelect = $('#id_subfamilia');
     $subfamiliaSelect.empty(); // Limpiar las opciones actuales
 
@@ -202,7 +202,7 @@ function actualizarSubfamilia(data) {
     $subfamiliaSelect.append(new Option('Seleccione una familia', '', true, true));
 
     // Añadir nuevas opciones
-    $.each(data, function(index, subproyecto) {
+    $.each(data, function(index, subfamilia) {
         $subfamiliaSelect.append(new Option(subfamilia.nombre, subfamilia.id, false, false));
     });
 

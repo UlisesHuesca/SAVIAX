@@ -2,12 +2,13 @@ from django.db import models
 from compras.models import Compra, ArticuloComprado
 from simple_history.models import HistoricalRecords
 from user.models import Profile
+from dashboard.models import Proyecto, Subproyecto, Inventario, Solicitud_Producto_Terminado, Productos_Solicitud_Terminado
 
 # Create your models here.
-
 class Entrada(models.Model):
     almacenista = models.ForeignKey(Profile, on_delete = models.CASCADE, null=True, blank=True)
-    oc = models.ForeignKey(Compra, on_delete = models.CASCADE, null=True, related_name = 'vale_entrada')
+    oc = models.ForeignKey(Compra, on_delete = models.CASCADE, null=True, related_name = 'vale_entrada', blank=True)
+    solicitud = models.ForeignKey(Solicitud_Producto_Terminado, on_delete = models.CASCADE, null=True, related_name = 'soliciutd_entrada', blank=True)
     comentario = models.CharField(max_length=250, null=True, blank=True)
     entrada_date = models.DateField(null=True, blank=True)
     entrada_hora = models.TimeField(null=True, blank=True)
@@ -21,7 +22,8 @@ class EntradaArticulo(models.Model):
     entrada = models.ForeignKey(Entrada, on_delete = models.CASCADE, null=True, related_name = "articulos")
     cantidad = models.DecimalField(max_digits=14, decimal_places=2, default=0)
     cantidad_por_surtir = models.DecimalField(max_digits=14, decimal_places=2, null=True) #Cambié el dafault de 0 porque eso es lo que considera la view para llenar este campo
-    articulo_comprado = models.ForeignKey(ArticuloComprado, on_delete = models.CASCADE, null=True)
+    articulo_comprado = models.ForeignKey(ArticuloComprado, on_delete = models.CASCADE, null=True, blank=True)
+    producto_terminado = models.ForeignKey(Productos_Solicitud_Terminado, on_delete = models.CASCADE, null=True,blank=True)
     fecha_caducidad = models.DateField(null=True, blank=True) 
     history = HistoricalRecords(history_change_reason_field=models.TextField(null=True))
     created_at = models.DateTimeField(auto_now_add=True)

@@ -59,3 +59,13 @@ class EntradaCaducidadFilter(django_filters.FilterSet):
     class Meta:
         model = EntradaArticulo
         fields = ['oc', 'proveedor', 'fecha_caducidad']
+
+class EntradaTerminadoFilter(django_filters.FilterSet):
+    solicitud = CharFilter(field_name='producto_terminado__solicitud__id', lookup_expr='icontains')
+    proyecto = CharFilter(field_name='producto_terminado__solicitud__proyecto__nombre', lookup_expr='icontains')
+    subproyecto = CharFilter(field_name='producto_terminado__solicitud__subproyecto__nombre', lookup_expr='icontains')
+    start_date = DateFilter(field_name='producto_terminado__solicitud__created_at', lookup_expr='gte')
+    end_date = DateFilter(field_name='producto_terminado__solicitud__created_at', lookup_expr='lte')
+    class Meta:
+        model = EntradaArticulo
+        fields = ['producto_terminado']

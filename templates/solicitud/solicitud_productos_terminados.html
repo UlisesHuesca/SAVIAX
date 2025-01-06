@@ -1,0 +1,253 @@
+{% extends 'partials/base.html' %}
+{% load crispy_forms_tags %}
+{% load static %}
+{% load widget_tweaks %}
+{% load l10n %}
+<html>
+<head>
+{% block title %}Solicitud Productos Terminados{% endblock %}
+</head>
+<body>
+{% block content %}
+<!-- Esta es la zona donde se crean los mensajes excitantes con sweet alert -->
+<div>
+    <script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+        {% if messages %}
+            {% for message in messages %}
+                {% if message.tags == "error" %}
+                <script>    
+                Swal.fire({
+                    "title":"Error",
+                    "text":"{{message}}",
+                    "icon":"error",
+                })
+                </script>
+                {% else %}
+                <script>
+                Swal.fire({
+                    "title":"Excelente",
+                    "text":"{{message}}",
+                    "icon":"success",
+                })
+                </script>
+                {% endif %}
+            {% endfor %}
+        {% endif %}
+</div>
+<hr>
+<hr>
+<hr>
+<h6 class="d-lg-none">&nbsp;</h6>
+<h6>&nbsp;</h6>
+<div class="row">
+    <div class="col-lg-4 col-md-12">
+        <div class="card" id="Solicitud-info">
+            <div class="card-header">
+                <h2>Información de Solicitud</h2>
+                <h5>Productos terminados</h5>
+            </div>
+            <div class="card-body">
+                <form id="myForm" method="POST" id='OrderForm' data-subproyecto-url="{% url 'ajax_load_subproyectos' %}" enctype="multipart/form-data" onsubmit="mostrarIndicadorCarga();">
+                    {% csrf_token %}
+                        <div class="row my-2">
+                            <div class="col-12">
+                                <div class="input-group mb-3">
+                                <span class="input-group-text" id="basic-addon1"><i class="fa-solid fa-comment"></i></span>
+                                    <div class="form-floating form-floating-group flex-grow-1">   
+                                        {{form.proyecto|add_class:"form-control"|append_attr:"placeholder= Proyecto"}}
+                                        <label style="color: #121212;" for="id_area"></label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <div class="input-group mb-3">
+                                <span class="input-group-text" id="basic-addon1"><i class="fa-solid fa-comment"></i></span>
+                                    <div class="form-floating form-floating-group flex-grow-1">   
+                                        {{form.subproyecto|add_class:"form-control"|append_attr:"placeholder= Subproyecto"}}
+                                        <label style="color: #121212;" for="id_area"></label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <div class="input-group mb-3">
+                                <span class="input-group-text" id="basic-addon1"><i class="fa-solid fa-comment"></i></span>
+                                    <div class="form-floating form-floating-group flex-grow-1">   
+                                        {{form.comentario|add_class:"form-control"|append_attr:"placeholder= Comentario"}}
+                                        <label style="color: #121212;" for="id_area">Comentario*</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    <input id="submit-button" class="btn btn-outline-info btn-block my-2" name="" type="submit" value="Crear Solicitud">
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-8 col-sm-12">
+        <div class="card">
+        <div class = "card bg-white">
+            
+                <div class="card-header">
+                    <h3>Productos de la solicitud </h3>
+                </div>
+            <div class="col-3 my-2">
+                <a class="btn btn-outline-info" href="{% url 'catalogo-product-selection' %}">
+                    <i class="fa-solid fa-arrow-left"></i>
+                </a>
+            </div>
+            
+                
+            <div class ="table-responsive-sm">
+                <table class="table table-ligth table-striped mx-1">
+                    <form method="POST">
+                    {% csrf_token %}
+                    <thead>
+                        <tr>
+                            <th scope="col">#</th>
+                            <th scope="col">Código</th>
+                            <th scope="col">Producto</th>
+                            <th scope="col">Serie</th>
+                            <th scope="col">Tipo</th>
+                            <th scope="col">Cantidad</th>
+                            <th scope="col">Unidad</th>
+                            <th scope="col">Comentario</th>
+                            <th scope="col"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for producto in productos %}
+                        <tr>
+                            <td>{{ forloop.counter }}</td>
+                            <td>{{producto.producto.producto.codigo}}</td>
+                            <td>{{producto.producto.producto.nombre}}</td>
+                            <td>{{producto.serie}}</td>
+                            {% if producto.producto.producto.subfamilia %}
+                            <td>{{producto.producto.producto.subfamilia.nombre}}</td>
+                            {% else %}
+                            <td>SIN SERIE</td>
+                            {% endif %}                       
+                            <td>{{producto.cantidad}}</td>
+                            <td>{{producto.producto.producto.unidad}}</td>
+                            <td>{% if producto.comentario %} {{producto.comentario}} {% endif %}</td>
+                            <td>
+                                {% if producto.producto.producto.subfamilia and producto.serie == None %}
+                                    <a class="btn btn-outline-danger" type="button" data-bs-toggle="modal" data-bs-target="#dialog" hx-target="#document" hx-get="{% url 'producto_terminado_cantidad' producto.id %}" title="Pendiente # serie">
+                                        <i class="fa-solid fa-pen-to-square"></i>
+                                    </a>
+                                {% else %}
+                                    <a class="btn btn-outline-info" type="button" data-bs-toggle="modal" data-bs-target="#dialog" hx-target="#document" hx-get="{% url 'producto_terminado_cantidad' producto.id %}" title="Editar cantidad y serie">
+                                        <i class="fa-solid fa-pen-to-square"></i>
+                                    </a>
+                                {% endif %}
+                                <a class="btn btn-outline-info" type="button" data-bs-toggle="modal" data-bs-target="#dialog" hx-target="#document" hx-get="{% url 'producto_terminado_comentario' producto.id %}" title="Editar comentario">
+                                    <i class="fa-regular fa-comment"></i>
+                                </a>
+                                {% if producto.producto.producto.subfamilia.nombre == 'EQUIPO' %}
+                                    <a class="btn btn-outline-info" type="button" data-bs-toggle="modal" data-bs-target="#dialog" hx-target="#document" hx-get="{% url 'producto_terminado_componentes' producto.id %}" title="Agregar componente">
+                                        <i class="fa-solid fa-gear"></i>
+                                    </a>
+                                {% endif %}
+                                <a class="btn btn-outline-danger" type="button" data-bs-toggle="modal" data-bs-target="#dialog" hx-target="#document" hx-get="{% url 'producto_terminado_remove' producto.id %}" title="Eliminar">
+                                    <i class="fa-solid fa-trash-can"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    </form>
+                </table>
+            </div>
+            <hr>     
+            <h5>Artículos: {{productos_terminados}}</h5>
+        </div>
+        </div>
+    </div>
+    <!--Este es el modal-->
+    <div class="modal fade" id ="dialog" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" role="dialog">
+        <div class="modal-dialog modal-lg modal-dialog-centered" id="document" role="document" hx-target="this">
+
+        </div>
+    </div>
+</div>
+<div id="loadingIndicator" style="display:none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); z-index: 1000;">
+    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); display: flex; flex-direction: row; align-items: center; justify-content: center;">
+        <img src="{% static 'images/SAVIA_Logo.png' %}" alt="Logo" style="width: 100px; height: 100px; border-radius: 50%; margin-right: 10px;">
+        <p style="color: white; margin: 0;">Generando reporte, por favor espera...&nbsp;<i class="fa-solid fa-mug-hot"></i></p>
+    </div>
+</div>
+<!--AJAX CALL-->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script>
+    var datosProyectos = {{ proyecto_para_select2 | safe }};
+    var datosSubproyectos = {{ subproyecto_para_select2 | safe }};
+
+    $(document).ready(function () {
+        // Inicializar Select2 para el campo de proyecto
+        $('#id_proyecto').select2({
+            allowClear: true,
+            width: '100%',
+            placeholder: 'Selecciona un proyecto',
+            data: datosProyectos,
+            templateResult: formatRepo,
+            templateSelection: formatRepoSelection
+        });
+
+        // Inicializar Select2 para el campo de subproyecto
+        $('#id_subproyecto').select2({
+            allowClear: true,
+            width: '100%',
+            placeholder: 'Selecciona un subproyecto',
+            data: [],
+            templateResult: formatRepo,
+            templateSelection: formatRepoSelection
+        });
+
+        // Función para formatear los resultados
+        function formatRepo(repo) {
+            return repo.text || repo.id;
+        }
+
+        function formatRepoSelection(repo) {
+            return repo.text || repo.id;
+        }
+
+        // Manejar el cambio en el selector de proyectos
+        $('#id_proyecto').on('change', function () {
+            var proyectoSeleccionado = $(this).val();
+
+            // Filtrar los subproyectos relacionados al proyecto seleccionado
+            var subproyectosFiltrados = datosSubproyectos.filter(function (subproyecto) {
+                return subproyecto.proyecto == proyectoSeleccionado;
+            });
+
+            // Actualizar el selector de subproyectos
+            $('#id_subproyecto').empty().select2({
+                allowClear: true,
+                width: '100%',
+                placeholder: 'Selecciona un subproyecto',
+                data: subproyectosFiltrados,
+                templateResult: formatRepo,
+                templateSelection: formatRepoSelection
+            });
+        });
+    });
+
+;(function(){
+    const modal = new bootstrap.Modal(document.getElementById('dialog'))
+
+    htmx.on('htmx:beforeSwap',(e)=>{
+        if (e.detail.target.id === "document" && !e.detail.xhr.response)
+        modal.hide()
+    })
+})()
+
+var myModal = document.getElementById('dialog')
+
+myModal.addEventListener('hidden.bs.modal', function (event) {
+  location.reload();
+})
+</script>
+{% endblock %}
+</body>
+</html>

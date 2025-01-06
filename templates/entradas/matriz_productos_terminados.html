@@ -1,0 +1,289 @@
+{% extends 'partials/base.html' %}
+{% load crispy_forms_tags %}
+{% load widget_tweaks %}
+{% load static %}
+{% load tt_extras %}
+{% load l10n %}
+<html>
+<head>
+{% block title %}Matriz Producto Terminado{% endblock %}
+</head>
+<body>
+{% block content %}
+<hr>
+<hr>
+<hr>
+<h6>&nbsp;</h6>
+<h6 class="d-lg-none">&nbsp;</h6>
+<div class="col">
+    <div class="card">
+        <div class="card-header">
+            <h5>Matriz Producto Terminado</h5>
+        </div>
+        <div class="card-body">
+            <form method="GET" class="row g-7">
+                {% csrf_token %}
+                <div class="col-lg-4 col-sm-12">
+                    <div class="input-group mb-3">
+                    <span class="input-group-text" id="basic-addon1"><i class="fa-solid fa-diagram-project"></i></span>
+                        <div class="form-floating form-floating-group flex-grow-1">   
+                            {{myfilter.form.proyecto|add_class:"form-control"|append_attr:"placeholder= Proyecto"}}
+                            <label style="color: #121212;" for="id_proyecto">Proyecto</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-sm-12">
+                    <div class="input-group mb-3">
+                    <span class="input-group-text" id="basic-addon1"><i class="fa-solid fa-diagram-project"></i></span>
+                        <div class="form-floating form-floating-group flex-grow-1">   
+                            {{myfilter.form.subproyecto|add_class:"form-control"|append_attr:"placeholder= Proyecto"}}
+                            <label style="color: #121212;" for="id_proyecto">SubProyecto</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-sm-12">
+                    <div class="input-group mb-3">
+                    <span class="input-group-text" id="basic-addon1"><i class="fa-solid fa-hashtag"></i></span>
+                        <div class="form-floating form-floating-group flex-grow-1">   
+                            {{myfilter.form.solicitud|add_class:"form-control"|append_attr:"placeholder= Folio"}}
+                            <label style="color: #121212;" for="id_proyecto">Folio</label>
+                        </div>
+                    </div>
+                </div>
+                <div id="serie" class="col-lg-2 col-md-auto col-sm-12">
+                    <div class="input-group mb-3">
+                    <span class="input-group-text" id="basic-addon1"><i class="fa-regular fa-calendar"></i></span>
+                        <div class="form-floating form-floating-group flex-grow-1">   
+                            {% render_field myfilter.form.start_date type="date" class="form-control" %}
+                        <label style="color: #121212;" for="id_subproyecto">Desde:</label>
+                        </div>
+                    </div>
+                </div>
+                <div id="serie" class="col-lg-2 col-md-auto col-sm-12">
+                    <div class="input-group mb-3">
+                    <span class="input-group-text" id="basic-addon1"><i class="fa-regular fa-calendar"></i></span>
+                        <div class="form-floating form-floating-group flex-grow-1">   
+                            {% render_field myfilter.form.end_date type="date" class="form-control" %}
+                        <label style="color: #121212;" for="id_subproyecto">Hasta:</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-auto">
+                    <button class="btn btn-outline-success btn-lg mt-1" type="submit" value="Buscar"><i class="fa-solid fa-magnifying-glass"></i></button>
+                </div>
+            </form>
+            <hr>
+            <div class = "row mt-2 bg-white">
+                <form method=POST>
+                    {% csrf_token %}
+                <ul class="nav nav-pills">
+                    <!--<li class="nav-item mx-2">
+                        <a class="btn btn-outline-secondary" href="{% url 'solicitud-product-selection' %}"><i class="fa-solid fa-angle-left"></i> Volver a solicitud elegir productos</a>
+                    </li> -->
+                    <li class="nav-item mx-2">
+                        <button type="submit" class="btn btn-outline-success" name="btnExcel"><i class="fa-solid fa-file-excel fa-2xl"></i></button>
+                    </li>
+                    <!--
+                    <li class="nav-item mx-2">
+                        <a class="btn btn-outline-secondary" href="{% url 'solicitud-matriz-productos' %}">Ver matriz por productos <i class="fa-solid fa-angle-right"></i></a>
+                    </li>-->
+                </ul>
+                </form>
+            </div>
+            <hr>
+            <div class="mb-3">
+                <h6>Mostrar/Ocultar columnas:</h6>
+                <label for="toggleColumns" class="form-label"></label>
+                <div id="toggleColumns" class="d-flex align-items-center gap-3">
+                    <!-- Switch para "Solicitado" -->
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="toggleSolicitado">
+                        <label class="form-check-label" for="toggleSolicitado">Solicitado</label>
+                    </div>
+
+                    <!-- Switch para "Proyecto" -->
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="toggleProyecto">
+                        <label class="form-check-label" for="toggleProyecto">Proyecto</label>
+                    </div>
+
+                    <!-- Switch para "Subproyecto" -->
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="toggleSubproyecto">
+                        <label class="form-check-label" for="toggleSubproyecto">Subproyecto</label>
+                    </div>
+                    <!-- Switch para "Serie" -->
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="toggleSerie">
+                        <label class="form-check-label" for="toggleSerie">Serie</label>
+                    </div>
+                    <!-- Switch para "Cliente" -->
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="toggleCliente">
+                        <label class="form-check-label" for="toggleCliente">Cliente</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row my-4">
+    <div class="col-md-4">
+        {% for message in messages %}
+            {% if message %}
+            <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+            <script>
+                var m = "{{ message }}";
+                swal("Excelente !", m, "success")
+            </script>
+            {% endif %}
+        {% endfor %}
+    </div>
+</div>
+
+<div class = "col mt-2">
+    <div class ="table-responsive-sm">
+        <table class="table bg-white">
+            <thead class="text-black" style="background-color: #F5F5F5;">
+                <tr>
+                    <th scope="col">Solicitud</th>
+                    <th scope="col">EntradaArt</th>
+                    <th scope="col">Entrada</th>
+                    <!--<th scope="col">Articulo</th>-->
+                    <th scope="col">Solicito</th>
+                    <th scope="col" class="toggle-solicitado d-none">Solicitado</th>
+                    <th scope="col" class="toggle-proyecto d-none">Proyecto</th>
+                    <th scope="col" class="toggle-subproyecto d-none">Subproyecto</th>
+                    <th scope="col">Producto</th>
+                    <th scope="col">Tipo</th>
+                    <th scope="col" class="toggle-serie d-none">#Serie</th>
+                    <th scope="col">Cantidad</th>
+                    <th scope="col">Salida</th>
+                    <th scope="col"class="toggle-cliente d-none">Cliente</th>
+                    <th scope="col"class="toggle-cliente d-none">Destino</th>
+                    <th scope="col">Acción</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for entrada in entradas_list %}
+                <tr>
+                    <th scope="row">{{entrada.producto_terminado.solicitud.id|unlocalize}}</th>
+                    <th scope="row">{{entrada.id|unlocalize}}</th>
+                    <th scope="row">{{entrada.entrada.id|unlocalize}}</th>
+                    <!--<th scope="row">{{entrada.id|unlocalize}}</th>-->
+                    <th scope="row">{{entrada.producto_terminado.solicitud.staff.staff.first_name}} {{entrada.producto_terminado.solicitud.staff.staff.last_name}}</th>
+                    <th scope="row" class="toggle-solicitado d-none">{{entrada.producto_terminado.solicitud.created_at}}</th>
+                    <th scope="row" class="toggle-proyecto d-none">{{entrada.producto_terminado.solicitud.proyecto.nombre}}</th>
+                    <th scope="row" class="toggle-subproyecto d-none">{{entrada.producto_terminado.solicitud.subproyecto.nombre}}</th>
+                    <th scope="row">{{entrada.producto_terminado.producto.producto.nombre}}</th>
+                    {% if entrada.producto_terminado.producto.producto.subfamilia %}
+                        <th scope="row">{{entrada.producto_terminado.producto.producto.subfamilia}}</th>
+                        <th scope="row" class="toggle-serie d-none">{{entrada.producto_terminado.serie}}</th>
+                    {% else %}
+                        <th scope="row"></th>
+                        <th scope="row" class="toggle-serie d-none"</th>
+                    {% endif%}
+                    <th scope="row">{{entrada.cantidad}}</th>
+                    <th scope="row">
+                        {% if entrada.liberado %}
+                            Si
+                        {% else %}
+                            No
+                        {% endif %}
+                    </th>
+                    {% if entrada.producto_terminado.cliente %}
+                    <th scope="row" class="toggle-cliente d-none">{{entrada.producto_terminado.cliente}}</th>
+                    <th scope="row" class="toggle-cliente d-none">{{entrada.producto_terminado.destino}}</th>
+                    {% else %}
+                    <th scope="row" class="toggle-cliente d-none"></th>
+                    <th scope="row" class="toggle-cliente d-none"></th>
+                    {% endif%}
+                    <td>
+                            {% if entrada.producto_terminado.producto.producto.subfamilia.nombre == 'EQUIPO' %}
+                            <li class="nav-item m-2 ">
+                                    <a class="btn btn-outline-info" type="button" data-bs-toggle="modal" data-bs-target="#dialog" hx-target="#document" hx-get="{% url 'producto_terminado_componente_ver' entrada.id %}" title="Ver componentes">
+                                        <i class="fa-solid fa-gear"></i>
+                                    </a>
+                            </li>
+                            {% endif%}
+                            <li class="nav-item m-2 ">
+                                <a type="button" class="btn btn-outline-info m-1" href="{% url 'vale-producto-terminado' entrada.id %}" title="Vale de salida"><i class="fa-solid fa-file-pdf fa-2xl"></i></a>
+                            </li>
+                        </ul>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <nav aria-label="Page navigation example">
+            <ul class="pagination justify-content-center">
+                {% if entradas_list.has_previous %}
+                    <li class="page-item"><a class="page-link" style="color:#3E92CC" href="{% my_url 1 'page' request.GET.urlencode %}"><i class="fa-solid fa-angles-left"></i></a></li>
+                    <li class="page-item"><a class="page-link" style="color:#3E92CC" href="{% my_url entradas_list.previous_page_number  'page' request.GET.urlencode %}"><i class="fa-solid fa-angle-left"></i></a></li>
+                {% endif %}
+
+                {% for item in entradas_list.paginator.page_range %}
+                    {% if entradas_list.number == item %}
+                        <li class="page-item active"><a href="#" class="page-link bg-dark">{{item}}</a></li>
+                    {% elif item > entradas_list.number|add:'-2' and item < entradas_list.number|add:'2' %}
+                        <li class="page-item "><a class="page-link" style="color:#3E92CC" href="{% my_url item 'page' request.GET.urlencode %}" class="page-link">{{item}}</a></li>
+                    {% endif %}
+                {% endfor %}
+
+                {% if entradas_list.paginator.num_pages > entradas_list.number|add:'2' %}
+                <li><a class="page-link" style="color:#3E92CC" href="?page={{entradas_list.number|add:'2'}}">&hellip;</a></li>
+                <li><a style="color:#3E92CC" href="?page={{ item }}">{{item}}</a></li>
+                <li><a class="page-link" style="color:#3E92CC" href="{% my_url entradas_list.paginator.num_pages 'page' request.GET.urlencode %}">{{entradas_list.paginator.num_pages}}</a></li>
+                {% endif %}
+
+                {% if entradas_list.has_next %}
+                    <li class="page-item"><a class="page-link" style="color:#3E92CC" href="{% my_url entradas_list.next_page_number 'page' request.GET.urlencode %}"><i class="fa-solid fa-chevron-right"></i></a></li>
+                    <li class="page-item"><a class="page-link" style="color:#3E92CC" href="{% my_url entradas_list.paginator.num_pages 'page' request.GET.urlencode %}"><i class="fa-solid fa-angles-right"></i></a></a></li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+</div>
+
+    <!--Este es el modal-->
+    <div class="modal fade" id ="dialog" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" role="dialog">
+        <div class="modal-dialog modal-lg modal-dialog-centered" id="document" role="document" hx-target="this">
+
+        </div>
+    </div>
+<!--AJAX CALL-->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Obtenemos los checkboxes
+        const toggleSolicitado = document.getElementById('toggleSolicitado');
+        const toggleProyecto = document.getElementById('toggleProyecto');
+        const toggleSubproyecto = document.getElementById('toggleSubproyecto');
+        const toggleSerie = document.getElementById('toggleSerie');
+        const toggleCliente = document.getElementById('toggleCliente');
+
+        // Función para alternar visibilidad
+        function toggleColumn(className, isChecked) {
+            const elements = document.querySelectorAll(`.${className}`);
+            elements.forEach(element => {
+                if (isChecked) {
+                    element.classList.remove('d-none');
+                } else {
+                    element.classList.add('d-none');
+                }
+            });
+        }
+
+        // Eventos para los checkboxes
+        toggleSolicitado.addEventListener('change', () => toggleColumn('toggle-solicitado', toggleSolicitado.checked));
+        toggleProyecto.addEventListener('change', () => toggleColumn('toggle-proyecto', toggleProyecto.checked));
+        toggleSubproyecto.addEventListener('change', () => toggleColumn('toggle-subproyecto', toggleSubproyecto.checked));
+        toggleSerie.addEventListener('change', () => toggleColumn('toggle-serie', toggleSerie.checked));
+        toggleCliente.addEventListener('change', () => toggleColumn('toggle-cliente', toggleCliente.checked));
+    });
+</script>
+{% endblock %}
+</body>
+</html>

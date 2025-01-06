@@ -1,20 +1,24 @@
 from django.shortcuts import render, redirect
-from dashboard.models import Inventario, Order, ArticulosOrdenados, ArticulosparaSurtir, Inventario_Batch, Marca, Product, Tipo_Orden, Plantilla, ArticuloPlantilla, Producto_Calidad
-from requisiciones.models import Requis, ArticulosRequisitados, ValeSalidas
+from dashboard.models import Inventario, Order, ArticulosOrdenados, ArticulosparaSurtir, Inventario_Batch, Marca, Product, Tipo_Orden, Plantilla, ArticuloPlantilla, Producto_Calidad, Productos_Solicitud_Terminado, Solicitud_Producto_Terminado
+from requisiciones.models import Requis, ArticulosRequisitados, ValeSalidas, Salidas
 from compras.models import Compra
 from tesoreria.models import Pago
 from django.http import StreamingHttpResponse
 from solicitudes.models import Subproyecto, Operacion, Proyecto
 from entradas.models import EntradaArticulo, Entrada
+from entradas.filters import EntradaTerminadoFilter
 from requisiciones.views import get_image_base64
 from gastos.models import Entrada_Gasto_Ajuste, Conceptos_Entradas
 from .forms import InventarioForm, OrderForm, Inv_UpdateForm, Inv_UpdateForm_almacenista, ArticulosOrdenadosForm, Conceptos_EntradasForm, Entrada_Gasto_AjusteForm, Order_Resurtimiento_Form, ArticulosOrdenadosComentForm, Plantilla_Form, ArticuloPlantilla_Form
-from dashboard.forms import Inventario_BatchForm
+from dashboard.forms import Inventario_BatchForm, SolicitudProductoTerminadoForm
+from entradas.views import convert_excel_salida_terminados
 from user.models import Profile, Distrito, Almacen
 from django.contrib.auth.decorators import login_required
-from django.http import JsonResponse, HttpResponse
+from django.http import JsonResponse, HttpResponse, FileResponse
 from django.conf import settings
 import json
+from django.shortcuts import get_object_or_404
+
 import io
 from django.db.models import Sum, Value, F, Sum, When, Case, DecimalField, Q
 from .filters import InventoryFilter, SolicitudesFilter, SolicitudesProdFilter, InventarioFilter, HistoricalInventarioFilter, HistoricalProductoFilter
@@ -34,6 +38,13 @@ import ast
 import os
 from django.core.mail import EmailMessage, BadHeaderError
 from smtplib import SMTPException
+
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import letter, landscape
+from reportlab.lib.units import cm
+from reportlab.platypus import Table, TableStyle
+from reportlab.pdfgen import canvas
+from reportlab.lib.colors import Color, black, white
 # Create your views here.
 
 
@@ -1538,3 +1549,280 @@ def convert_excel_solicitud_matriz(ordenes):
     output.close()
     
     return response
+
+def add_producto_terminado(request):
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        producto_id = data.get('producto_id')
+        
+        # Obtener el usuario y su solicitud
+        usuario = Profile.objects.get(staff__id=request.user.id)
+        solicitud, created = Solicitud_Producto_Terminado.objects.get_or_create(staff=usuario, complete=False)
+        
+        # Obtener el producto y crear el registro
+        producto = Inventario.objects.get(id=producto_id)
+        Productos_Solicitud_Terminado.objects.create(
+            producto=producto,
+            solicitud=solicitud,
+            complete = True,
+            cantidad=1  # Cantidad predeterminada
+        )
+        
+        # Devolver respuesta de éxito
+        
+        # Agregar un mensaje de éxito
+        messages.success(request, 'Producto agregado a la solicitud con éxito.')
+        return JsonResponse({'message': 'Producto agregado a la solicitud con éxito.'}, status=200)
+    
+    # Si ocurre un error, agregar un mensaje de error
+    messages.error(request, 'Hubo un error al agregar el producto.')
+    return JsonResponse({'error': 'Método no permitido.'}, status=405)
+
+@login_required(login_url='user-login')
+def catalogo_selection(request):
+    usuario = Profile.objects.get(staff__id=request.user.id)
+    productos = Inventario.objects.filter(complete=True,producto__familia__nombre ='PRODUCTO TERMINADO').order_by('id')
+    solicitud, created = Solicitud_Producto_Terminado.objects.get_or_create(staff=usuario, complete=False,)
+    # Obtener la cantidad de Productos_Solicitud_Terminado relacionados
+    productos_terminados = Productos_Solicitud_Terminado.objects.filter(solicitud=solicitud,complete=True,principal__isnull=True).count()
+
+    myfilter=InventoryFilter(request.GET, queryset=productos)
+    productos = myfilter.qs
+
+    #Set up pagination
+    p = Paginator(productos, 30)
+    page = request.GET.get('page')
+    productos_list = p.get_page(page)
+
+
+    context= {
+        'myfilter': myfilter,
+        'productos_list':productos_list,
+        'productos':productos,
+        'productos_terminados':productos_terminados,
+        }
+    return render(request, 'solicitud/catalogo_selection.html', context)
+
+@login_required(login_url='user-login')
+def solicitud_productos_terminados(request):
+    usuario = Profile.objects.get(staff__id=request.user.id)
+    solicitud, created = Solicitud_Producto_Terminado.objects.get_or_create(staff=usuario, complete=False,)
+    productos = Productos_Solicitud_Terminado.objects.filter(solicitud=solicitud,complete=True,principal__isnull=True) #Productos en la tabla todos menos los componentes
+    todos_productos  = Productos_Solicitud_Terminado.objects.filter(solicitud=solicitud,complete=True)
+    #productos_verificar = productos.filter(producto__producto__subfamilia__isnull=False).count()
+    productos_verificar = productos.filter(producto__producto__subfamilia__isnull=False, serie = None).count() #Productos de la solicitud que necesitan numero de serie por que no tienen
+    productos_terminados = productos.count() #productos totales 
+    proyectos = Proyecto.objects.all()
+    subproyectos = Subproyecto.objects.all()
+
+    proyecto_para_select2 = [
+        {
+            'id': proyecto.id, 
+            'text': str(proyecto.nombre)
+        } for proyecto in proyectos
+    ]
+
+    subproyecto_para_select2 = [
+        {
+            'id': subproyecto.id, 
+            'proyecto':subproyecto.proyecto.id,
+            'text': str(subproyecto.nombre)
+        } for subproyecto in subproyectos
+    ]
+
+    if request.method == 'POST':
+        form = SolicitudProductoTerminadoForm(request.POST, instance=solicitud)
+        if productos_verificar > 0:
+            messages.error(request, 'Falta agregar número de serie en productos tipo: (Equipo y Serie).') 
+        else:
+
+            if form.is_valid():
+                solicitud.complete = True
+                solicitud.created_at = datetime.now()
+                solicitud.save()
+                form.save()
+                #Aquí se hacen los entrada articulo para todos los productos, desde sin subfamilia hasta componentes y equipo
+                for producto in todos_productos:
+                #AQUI SE DEBE HACER LA ENTRADA
+                    entrada, created = Entrada.objects.get_or_create(solicitud=solicitud, completo = False)
+                    entrada.entrada_date = date.today()
+                    entrada.entrada_hora = datetime.now().time()
+                    entrada.completo = True
+                    entrada.save()
+                    articuloentrada, created = EntradaArticulo.objects.get_or_create(entrada=entrada, producto_terminado=producto)
+                    articuloentrada.created_at = datetime.now()
+                    articuloentrada.fecha_recepcion = datetime.now()
+                    articuloentrada.almacenado = False
+                    articuloentrada.liberado = False
+                    articuloentrada.recepcion = True
+                    articuloentrada.cantidad = producto.cantidad
+                    articuloentrada.cantidad_por_surtir = producto.cantidad
+                    articuloentrada.save()
+                messages.success(request, 'Solicitud actualizada con éxito.')
+                return redirect('solicitud_productos_terminados')
+    else:
+        form = SolicitudProductoTerminadoForm(instance=solicitud)
+
+    context = {
+        'productos': productos,
+        'productos_terminados': productos_terminados,
+        'form': form,
+        'proyecto_para_select2':proyecto_para_select2,
+        'subproyecto_para_select2':subproyecto_para_select2,
+    }
+    return render(request, 'solicitud/solicitud_productos_terminados.html', context)
+
+def producto_terminado_cantidad(request, pk):
+    producto = get_object_or_404(Productos_Solicitud_Terminado, id=pk)
+
+    if request.method == 'POST':
+        nueva_cantidad = request.POST.get('cantidad')
+        nueva_serie = request.POST.get('numero_serie')
+        # Validar si el número de serie ya existe
+        if Productos_Solicitud_Terminado.objects.filter(serie=nueva_serie).exists():
+            messages.error(request, 'El número de serie ya existe. Por favor, ingrese uno diferente.')
+        else:
+            # Guardar el nuevo componente si el número de serie no existe
+            producto.cantidad = nueva_cantidad
+            producto.serie = nueva_serie
+            producto.save()
+            messages.success(request, 'Cantidad modificada exitosamente.')
+            return HttpResponse(status=204)
+
+    return render(request, 'solicitud/modal_producto_terminado_cantidad.html', {'producto': producto})
+
+def producto_terminado_comentario(request, pk):
+    producto = get_object_or_404(Productos_Solicitud_Terminado, id=pk)
+
+    if request.method == 'POST':
+        nuevo_comentario = request.POST.get('comentario')
+        if nuevo_comentario:
+            producto.comentario = nuevo_comentario
+            producto.save()
+            messages.success(request, 'Comentario modificada exitosamente.')
+            return HttpResponse(status=204)
+
+    return render(request, 'solicitud/modal_producto_terminado_comentario.html', {'producto': producto})
+
+def producto_terminado_componentes(request, pk):
+    usuario = Profile.objects.get(staff__id=request.user.id)
+    producto = get_object_or_404(Productos_Solicitud_Terminado, id=pk)
+    componentes = Productos_Solicitud_Terminado.objects.filter(solicitud__id=producto.solicitud.id, principal = producto)
+    componente, created = Productos_Solicitud_Terminado.objects.get_or_create(complete = False, solicitud = producto.solicitud)
+    productos_select = Inventario.objects.filter(complete=True,producto__familia__nombre ='PRODUCTO TERMINADO',producto__subfamilia__nombre ='SERIE')
+    if request.method == 'POST':
+        comentario = request.POST.get('comentario')
+        serie = request.POST.get('serie')
+        #cantidad = request.POST.get('cantidad')
+        producto_id  = request.POST.get('producto')
+        
+        # Validar si el número de serie ya existe
+        if Productos_Solicitud_Terminado.objects.filter(serie=serie).exists():
+            messages.error(request, 'El número de serie ya existe. Por favor, ingrese uno diferente.')
+        else:
+            # Guardar el nuevo componente si el número de serie no existe
+            componente.principal = producto
+            componente.serie = serie
+            producto_seleccionado = Inventario.objects.get(id=producto_id)
+            componente.producto = producto_seleccionado
+            componente.cantidad = 1  # Fijo ya que lleva número de serie
+            componente.comentario = comentario
+            componente.complete = True
+            componente.save()
+            messages.success(request, 'Componente agregado al producto.')
+            return HttpResponse(status=204)
+
+    return render(request, 'solicitud/modal_producto_terminado_componentes.html', {'producto': producto,'componentes':componentes,'productos_select':productos_select,})
+
+
+def producto_terminado_remove(request, pk):
+    producto = get_object_or_404(Productos_Solicitud_Terminado, id=pk)
+
+    if request.method == 'POST':
+        producto.delete()
+        messages.success(request, 'Producto eliminado exitosamente.')
+        return HttpResponse(status=204)
+
+    return render(request, 'solicitud/modal_producto_terminado_remove.html', {'producto': producto})
+
+@login_required(login_url='user-login')
+def matriz_productos_terminados(request):
+    perfil = Profile.objects.get(staff__id=request.user.id)
+     #Este es un filtro por perfil supervisor o superintendente, es decir puede ver todo lo del distrito
+    if perfil.tipo.almacen == True:
+        entradas = EntradaArticulo.objects.filter(producto_terminado__isnull=False,producto_terminado__principal__isnull=True,)
+    else:
+        entradas = EntradaArticulo.objects.none()
+
+    myfilter=EntradaTerminadoFilter(request.GET, queryset=entradas)
+    entradas = myfilter.qs
+
+    #Set up pagination
+    p = Paginator(entradas, 25)
+    page = request.GET.get('page')
+    entradas_list = p.get_page(page)
+
+    if request.method =='POST' and 'btnExcel' in request.POST:
+        return convert_excel_salida_terminados(entradas)
+
+    context= {
+        'entradas_list':entradas_list,
+        'myfilter':myfilter,
+        }
+
+    return render(request, 'entradas/matriz_productos_terminados.html',context)
+
+def render_pdf_producto_terminado(request, pk):
+    # Configuración inicial del PDF
+    buf = io.BytesIO()
+    c = canvas.Canvas(buf, pagesize=letter)
+    c.setFont('Helvetica', 10)
+
+    # Datos del vale
+    vale = ValeSalidas.objects.get(id=pk)
+    productos = Salidas.objects.filter(vale_salida=vale)
+
+    # Colores personalizados
+    prussian_blue = Color(0.0859375, 0.1953125, 0.30859375)
+    c.drawInlineImage('static/images/logo vordtec_documento.png',60,711, 2 * cm, 1 * cm) #Imagen vortec
+    # Dibujar un rectángulo vacío
+    c.setFillColor(black)  # Color del borde
+    c.setLineWidth(0.7)  # Grosor de la línea
+    c.rect(50, 690, 515, 50, fill=False, stroke=True) #rectangulo
+    c.line(50, 715, 565, 715) #Horizontal
+    c.line(130, 690, 130, 740) #vertical 1
+    c.line(230, 690, 230, 715) #vertical 2
+    c.line(340, 690, 340, 740) #vertical 3
+    c.line(435, 690, 435, 740) #vertical 4
+    c.line(500, 690, 500, 715) #vertical 5
+    c.setFont('Helvetica-Bold', 10)
+    c.drawCentredString(235, 727, "Salida del producto terminado")
+    c.setFont('Helvetica-Bold', 7)
+    c.drawCentredString(390, 734, "Preparado por:")
+    c.drawCentredString(500, 734, "Aprobación")
+    c.drawCentredString(90, 708, "Número de documento")
+    c.drawCentredString(180, 708, "Clasificación del documento")
+    c.drawCentredString(285, 708, "Nivel del documento")
+    c.drawCentredString(390, 708, "Revisión No.")
+    c.drawCentredString(468, 708, "Fecha de emisión")
+    c.drawCentredString(530, 708, "Fecha última")
+    c.drawCentredString(530, 700, "modificación")
+    c.setFont('Helvetica', 7)
+    c.drawCentredString(390, 720, "Almacén")
+    c.drawCentredString(500, 720, "Subdirección Administrativa")
+    c.drawCentredString(90, 695, "F-ALM-N4-03.01")
+    c.drawCentredString(180, 695, "Registro")
+    c.drawCentredString(285, 695, "N5")
+    c.drawCentredString(390, 695, "000")
+    c.drawCentredString(468, 695, "19/03/2024")
+    c.drawCentredString(530, 692, "19/03/2024")
+    # Dibujar un rectángulo lleno
+    c.setFillColor(colors.blue)  # Color del relleno
+    c.setFillColor(prussian_blue)
+    c.rect(50, 665, 175, 20, fill=True, stroke=False) #1 misma fila
+    c.rect(490, 665, 75, 20, fill=True, stroke=False) #2 misma fila
+
+    c.showPage()
+    c.save()
+    buf.seek(0)
+    return FileResponse(buf, as_attachment=True, filename=f"vale_producto_terminado_{vale.id}.pdf")
