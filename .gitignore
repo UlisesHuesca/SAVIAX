@@ -6,3 +6,4 @@ media/
 *.sql.gz
 middleware.log
 .venv-old
+*.pyc
