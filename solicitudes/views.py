@@ -20,7 +20,7 @@ import json
 from django.shortcuts import get_object_or_404
 
 import io
-from django.db.models import Sum, Value, F, Sum, When, Case, DecimalField, Q
+from django.db.models import Sum, Value, F, Sum, When, Case, DecimalField, Q, Exists, OuterRef
 from .filters import InventoryFilter, SolicitudesFilter, SolicitudesProdFilter, InventarioFilter, HistoricalInventarioFilter, HistoricalProductoFilter
 from django.contrib import messages
 import decimal
@@ -1753,7 +1753,14 @@ def matriz_productos_terminados(request):
         entradas = EntradaArticulo.objects.filter(producto_terminado__isnull=False,producto_terminado__principal__isnull=True,)
     else:
         entradas = EntradaArticulo.objects.none()
-
+    # Añadir campo dinámico 'salida' usando anotación
+    entradas = entradas.annotate(
+        salida=Exists(
+            Salidas.objects.filter(
+                producto_terminado=OuterRef('producto_terminado')
+            )
+        )
+    )
     myfilter=EntradaTerminadoFilter(request.GET, queryset=entradas)
     entradas = myfilter.qs
 
@@ -1764,6 +1771,7 @@ def matriz_productos_terminados(request):
 
     if request.method =='POST' and 'btnExcel' in request.POST:
         return convert_excel_salida_terminados(entradas)
+
 
     context= {
         'entradas_list':entradas_list,
@@ -1777,10 +1785,9 @@ def render_pdf_producto_terminado(request, pk):
     buf = io.BytesIO()
     c = canvas.Canvas(buf, pagesize=letter)
     c.setFont('Helvetica', 10)
-
-    # Datos del vale
-    vale = ValeSalidas.objects.get(id=pk)
-    productos = Salidas.objects.filter(vale_salida=vale)
+    entrada = EntradaArticulo.objects.get(id=pk)
+    # Datos
+    salida = Salidas.objects.get(producto_terminado=entrada.producto_terminado)
 
     # Colores personalizados
     prussian_blue = Color(0.0859375, 0.1953125, 0.30859375)
@@ -1821,8 +1828,89 @@ def render_pdf_producto_terminado(request, pk):
     c.setFillColor(prussian_blue)
     c.rect(50, 665, 175, 20, fill=True, stroke=False) #1 misma fila
     c.rect(490, 665, 75, 20, fill=True, stroke=False) #2 misma fila
+    c.setFont('Helvetica-Bold', 8)
+    c.setFillColor(white)  # Color del borde
+    c.drawCentredString(90, 670, "Proyecto")
+    c.drawCentredString(180, 670, "Subproyecto")
+    c.drawCentredString(530, 670, "Folio")
+    c.setFillColor(black)  # Color del borde
+    c.drawCentredString(90, 656, salida.producto_terminado.solicitud.proyecto.nombre)
+    c.drawCentredString(180, 656, salida.producto_terminado.solicitud.subproyecto.nombre)
+    c.drawCentredString(530, 656, str(salida.vale_salida.id))
+    # Encabezados de la tabla
+    data = [['Código', 'Cantidad', 'Unidad', 'Producto', 'Número de Serie']]
+    data.append([
+        salida.producto_terminado.producto.producto.codigo,
+        salida.producto_terminado.cantidad,
+        salida.producto_terminado.producto.producto.unidad,
+        salida.producto_terminado.producto.producto.nombre,
+        salida.producto_terminado.serie
+        ])
+
+    # Tabla de productos
+    table = Table(data, colWidths=[2.5 * cm, 2.5 * cm, 2.2 * cm, 6 * cm, 5 * cm])
+    table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), prussian_blue),
+        ('TEXTCOLOR', (0, 0), (-1, 0), white),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.black),
+        ('FONTSIZE', (0, 0), (-1, 0), 10),
+        ('FONTSIZE', (0, 1), (-1, -1), 8),
+    ]))
+    table.wrapOn(c, 800, 400)
+    table.drawOn(c, 50, 610)
+    high = 450
+    componentes = salida.producto_terminado.componentes.all()  # Usa el related_name definido en el modelo
+
+    if componentes.exists():
+        c.setFont('Helvetica-Bold', 12)
+        c.setFillColor(prussian_blue)
+        c.drawCentredString(320, 530, "Componentes")
+        # Tabla para los componentes
+        data_componentes = [['Código', 'Cantidad', 'Unidad', 'Producto', 'Número de Serie']]
+        for componente in componentes:
+            data_componentes.append([
+                componente.producto.producto.codigo,
+                componente.cantidad,
+                componente.producto.producto.unidad,
+                componente.producto.producto.nombre,
+                componente.serie
+            ])
+            high -=12
+
+        # Genera la tabla de componentes
+        table_componentes = Table(data_componentes, colWidths=[2.5 * cm, 2.5 * cm, 2.2 * cm, 6 * cm, 5 * cm])
+        table_componentes.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#6699CC')),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.black),
+            ('FONTSIZE', (0, 0), (-1, 0), 10),
+            ('FONTSIZE', (0, 1), (-1, -1), 8),
+        ]))
+        # Ajusta la posición debajo de la tabla principal
+        table_componentes.wrapOn(c, 800, 400)
+        table_componentes.drawOn(c, 50, high)  # Ajusta la posición según sea necesario
+
+    c.setFont('Helvetica-Bold', 8)
+    c.setFillColor(black)  # Color del borde
+    # Firmas
+    c.setFont('Helvetica', 8)
+    c.drawCentredString(130, 235, "Entregó:")
+    #c.drawCentredString(130, 250, vale.almacenista.staff.first_name + " " + vale.almacenista.staff.last_name)
+    c.line(70, 245, 195, 245)  # Línea para firma
+
+    c.drawCentredString(310, 235, "Autorizó:")
+    c.line(245, 245, 370, 245)  # Línea para firma
+
+    c.drawCentredString(480, 235, "Recibió:")
+    c.line(420, 245, 545, 245)  # Línea para firma
+
+    c.drawCentredString(310, 190, "Visto Bueno:")
+    #c.drawCentredString(310, 205, vale.solicitud.staff.staff.first_name + " " + vale.solicitud.staff.staff.last_name)
+    c.line(245, 200, 370, 200)  # Línea para firma
 
     c.showPage()
     c.save()
     buf.seek(0)
-    return FileResponse(buf, as_attachment=True, filename=f"vale_producto_terminado_{vale.id}.pdf")
+    return FileResponse(buf, as_attachment=True, filename=f"vale_producto_terminado_{salida.vale_salida.id}.pdf")
