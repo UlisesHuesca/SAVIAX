@@ -23,6 +23,7 @@ from entradas.models import Entrada, No_Conformidad
 import json
 from datetime import date, datetime, timedelta
 from num2words import num2words
+import socket
 
 import decimal
 
@@ -74,6 +75,10 @@ def requisiciones_autorizadas(request):
     #requis = Requis.objects.filter(autorizar=True, colocada=False)
 
     tag = dof()
+     #Set up pagination
+    p = Paginator(requis, 50)
+    page = request.GET.get('page')
+    requis = p.get_page(page)
 
     context= {
         'requis':requis,
@@ -168,6 +173,10 @@ def articulos_restantes(request, pk):
 def dof():
 #Trying to fetch DOF
     try:
+        # Configurar el tiempo máximo de espera (en segundos)
+        timeout = 2  # Ajusta el tiempo de espera según tus necesidades
+        socket.setdefaulttimeout(timeout)
+    
         ctx = ssl.create_default_context()
         ctx.check_hostname = False
         ctx.verify_mode = ssl.CERT_NONE
@@ -190,6 +199,8 @@ def dof():
         tag = tags[4][3]
 
         return tag
+    except socket.timeout:
+        return "Error: El tiempo de espera para la consulta ha sido superado."
     except Exception as e:
         # Manejo de la excepción - log, mensaje de error, etc.
         return f"Error al obtener datos: {e}"
