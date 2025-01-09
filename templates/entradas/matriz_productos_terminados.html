@@ -200,17 +200,14 @@
                     <th scope="row" class="toggle-cliente d-none"></th>
                     {% endif%}
                     <td>
+                        <ul>
                             {% if entrada.producto_terminado.producto.producto.subfamilia.nombre == 'EQUIPO' %}
-                            <li class="nav-item m-2 ">
-                                    <a class="btn btn-outline-info" type="button" data-bs-toggle="modal" data-bs-target="#dialog" hx-target="#document" hx-get="{% url 'producto_terminado_componente_ver' entrada.id %}" title="Ver componentes">
-                                        <i class="fa-solid fa-gear"></i>
-                                    </a>
-                            </li>
+                                <a class="btn btn-outline-info" type="button" data-bs-toggle="modal" data-bs-target="#dialog" hx-target="#document" hx-get="{% url 'producto_terminado_componente_ver' entrada.id %}" title="Ver componentes">
+                                    <i class="fa-solid fa-gear"></i>
+                                </a>
                             {% endif%}
                             {% if entrada.salida %}
-                            <li class="nav-item m-2 ">
                                 <a type="button" class="btn btn-outline-info m-1" href="{% url 'vale-producto-terminado' entrada.id %}" title="Vale de salida"><i class="fa-solid fa-file-pdf fa-2xl"></i></a>
-                            </li>
                             {% endif %}
                         </ul>
                     </td>
