@@ -20,7 +20,7 @@ import json
 from django.shortcuts import get_object_or_404
 
 import io
-from django.db.models import Sum, Value, F, Sum, When, Case, DecimalField, Q
+from django.db.models import Sum, Value, F, Sum, When, Case, DecimalField, Q, Exists, OuterRef
 from .filters import InventoryFilter, SolicitudesFilter, SolicitudesProdFilter, InventarioFilter, HistoricalInventarioFilter, HistoricalProductoFilter
 from django.contrib import messages
 import decimal
@@ -1679,7 +1679,7 @@ def producto_terminado_cantidad(request, pk):
         nueva_cantidad = request.POST.get('cantidad')
         nueva_serie = request.POST.get('numero_serie')
         # Validar si el número de serie ya existe
-        if Productos_Solicitud_Terminado.objects.filter(serie=nueva_serie).exists():
+        if nueva_serie != None and Productos_Solicitud_Terminado.objects.filter(serie=nueva_serie).exists():
             messages.error(request, 'El número de serie ya existe. Por favor, ingrese uno diferente.')
         else:
             # Guardar el nuevo componente si el número de serie no existe
@@ -1753,7 +1753,14 @@ def matriz_productos_terminados(request):
         entradas = EntradaArticulo.objects.filter(producto_terminado__isnull=False,producto_terminado__principal__isnull=True,)
     else:
         entradas = EntradaArticulo.objects.none()
-
+    # Añadir campo dinámico 'salida' usando anotación
+    entradas = entradas.annotate(
+        salida=Exists(
+            Salidas.objects.filter(
+                producto_terminado=OuterRef('producto_terminado')
+            )
+        )
+    )
     myfilter=EntradaTerminadoFilter(request.GET, queryset=entradas)
     entradas = myfilter.qs
 
@@ -1764,6 +1771,7 @@ def matriz_productos_terminados(request):
 
     if request.method =='POST' and 'btnExcel' in request.POST:
         return convert_excel_salida_terminados(entradas)
+
 
     context= {
         'entradas_list':entradas_list,
@@ -1777,13 +1785,16 @@ def render_pdf_producto_terminado(request, pk):
     buf = io.BytesIO()
     c = canvas.Canvas(buf, pagesize=letter)
     c.setFont('Helvetica', 10)
-
-    # Datos del vale
-    vale = ValeSalidas.objects.get(id=pk)
-    productos = Salidas.objects.filter(vale_salida=vale)
-
+    entrada = EntradaArticulo.objects.get(id=pk)
+    # Datos
+    salida = Salidas.objects.get(producto_terminado=entrada.producto_terminado)
+    empleados = Profile.objects.all()
+    gerente = empleados.get(tipo__nombre='Gerente')
+    superintendente = empleados.filter(tipo__nombre='Superintendente').first()
     # Colores personalizados
     prussian_blue = Color(0.0859375, 0.1953125, 0.30859375)
+    prussian_blue_lighter = Color(0.1359375, 0.2453125, 0.35859375)
+
     c.drawInlineImage('static/images/logo vordtec_documento.png',60,711, 2 * cm, 1 * cm) #Imagen vortec
     # Dibujar un rectángulo vacío
     c.setFillColor(black)  # Color del borde
@@ -1821,8 +1832,79 @@ def render_pdf_producto_terminado(request, pk):
     c.setFillColor(prussian_blue)
     c.rect(50, 665, 175, 20, fill=True, stroke=False) #1 misma fila
     c.rect(490, 665, 75, 20, fill=True, stroke=False) #2 misma fila
+    c.setFont('Helvetica-Bold', 8)
+    c.setFillColor(white)  # Color del borde
+    c.drawCentredString(90, 670, "Proyecto")
+    c.drawCentredString(180, 670, "Subproyecto")
+    c.drawCentredString(530, 670, "Folio")
+    c.setFillColor(black)  # Color del borde
+    c.drawCentredString(90, 656, salida.producto_terminado.solicitud.proyecto.nombre)
+    c.drawCentredString(180, 656, salida.producto_terminado.solicitud.subproyecto.nombre)
+    c.drawCentredString(530, 656, str(salida.vale_salida.id))
+    # Encabezados de la tabla
+    # Datos de la tabla combinada
+    data = [['Código', 'Cantidad', 'Unidad', 'Producto', 'Número de Serie']]  # Encabezado
+    high = 550
+    # Agregar datos de la primera tabla (productos)
+    data.append([
+        salida.producto_terminado.producto.producto.codigo,
+        salida.producto_terminado.cantidad,
+        salida.producto_terminado.producto.producto.unidad,
+        salida.producto_terminado.producto.producto.nombre,
+        salida.producto_terminado.serie
+    ])
+    
+    # Fila vacía como separador
+    data.append(['', '', '', '', ''])
+    
+    # Agregar datos de la segunda tabla (componentes)
+    componentes = salida.producto_terminado.componentes.all()
+    for componente in componentes:
+        data.append([
+            componente.producto.producto.codigo,
+            componente.cantidad,
+            componente.producto.producto.unidad,
+            componente.producto.producto.nombre,
+            componente.serie
+        ])
+        high -=16
+    # Crear la tabla combinada
+    table = Table(data, colWidths=[2.5 * cm, 2.5 * cm, 2.2 * cm, 6 * cm, 5 * cm])
+    table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), prussian_blue),  # Encabezado
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.black),
+        ('FONTSIZE', (0, 0), (-1, 0), 10),
+        ('FONTSIZE', (0, 1), (-1, -1), 8),
+        ('SPAN', (0, len(data) - len(componentes) - 1), (-1, len(data) - len(componentes) - 1)),  # Fila vacía
+    ]))
+    
+    # Dibujar la tabla combinada en el PDF
+    table.wrapOn(c, 800, 400)
+    table.drawOn(c, 50, high)  # Ajustar la posición según el diseño
+
+    c.setFont('Helvetica-Bold', 8)
+    c.setFillColor(black)  # Color del borde
+    # Firmas
+    c.setFont('Helvetica', 8)
+    c.drawCentredString(130, 235, "Entregó:")
+    c.drawCentredString(130, 250, salida.vale_salida.almacenista.staff.first_name + " " + salida.vale_salida.almacenista.staff.last_name)
+    c.line(70, 245, 195, 245)  # Línea para firma
+
+    c.drawCentredString(310, 235, "Autorizó:")
+    c.drawCentredString(310, 250, superintendente.staff.first_name + " " + superintendente.staff.last_name)
+    c.line(245, 245, 370, 245)  # Línea para firma
+
+    c.drawCentredString(480, 235, "Recibió:")
+    c.drawCentredString(480, 250, salida.producto_terminado.cliente)
+    c.line(420, 245, 545, 245)  # Línea para firma
+
+    c.drawCentredString(310, 190, "Visto Bueno:")
+    c.drawCentredString(310, 205, gerente.staff.first_name + " " + gerente.staff.last_name)
+    c.line(245, 200, 370, 200)  # Línea para firma
 
     c.showPage()
     c.save()
     buf.seek(0)
-    return FileResponse(buf, as_attachment=True, filename=f"vale_producto_terminado_{vale.id}.pdf")
+    return FileResponse(buf, as_attachment=True, filename=f"vale_producto_terminado_{salida.vale_salida.id}.pdf")
