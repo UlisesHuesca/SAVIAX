@@ -1,0 +1,105 @@
+{% extends 'partials/base_w_nav.html' %}
+{% load crispy_forms_tags %}
+{% load l10n %}
+<html>
+<head>
+    {% block title %}Editar Componentes{% endblock %}
+</head>
+<body>
+{% block content %}
+<div class="modal-dialog-lg" role="document">
+    <div class="row my-4">
+        <div class="col-md-4">
+        <script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+            {% if messages %}
+                {% for message in messages %}
+                    {% if message.tags == "error" %}
+                    <script>
+                    Swal.fire({
+                        "title":"Error",
+                        "text":"{{message}}",
+                        "icon":"error",
+                    })
+                    </script>
+                    {% else %}
+                    <script>
+                    Swal.fire({
+                        "title":"Excelente",
+                        "text":"{{message}}",
+                        "icon":"success",
+                    })
+                    </script>
+                    {% endif %}
+                {% endfor %}
+            {% endif %}
+        </div>
+    </div>
+    <form hx-post="{{ request.path }}" class="modal-content">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Agregar componente</h5>
+                <button class="btn-close cerrar" type="button" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" style="color:white">
+                <!-- Tabla para mostrar componentes ya agregados -->
+                <h6>Componentes ya agregados</h6>
+                <table class="table table-dark table-striped mx-3">
+                    <thead>
+                        <tr>
+                            <th scope="col">Serie</th>
+                            <th scope="col">Producto</th>
+                            <th scope="col">Cantidad</th>
+                            <th scope="col">Comentario</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for componente in componentes %}
+                        <tr>
+                            <td>{{ componente.serie }}</td>
+                            <td>{{ componente.producto.producto.nombre }}</td>
+                            <td>{{ componente.cantidad }}</td>
+                            <td>{{ componente.comentario }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="text-center">No hay componentes agregados</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+
+                <!-- Formulario para agregar un nuevo componente -->
+                <h6 class="mt-4">Agregar nuevo componente</h6>
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label for="producto" class="form-label">Producto</label>
+                    <select name="producto" id="producto" class="form-select" required>
+                        <option value="" disabled selected>Seleccione un producto</option>
+                        {% for datos in productos_select %}
+                        <option value="{{ datos.id|unlocalize }}">{{ datos.producto.nombre }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="serie" class="form-label">Serie</label>
+                    <input type="text" name="serie" id="serie" class="form-control" maxlength="20" required>
+                </div>
+                <!--<div class="mb-3">
+                    <label for="cantidad" class="form-label">Cantidad</label>
+                    <input type="number" name="cantidad" id="cantidad" class="form-control" step="0.01" min="0.1" required>
+                </div>-->
+                <div class="mb-3">
+                    <label for="comentario" class="form-label">Comentario</label>
+                    <textarea name="comentario" id="comentario" class="form-control" rows="3"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline-info col-2" type="submit">Guardar</button>
+                <button class="btn btn-secondary" type="button" data-bs-dismiss="modal">Cancelar</button> 
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}
+</body>
+</html>

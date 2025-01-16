@@ -3,6 +3,7 @@
 {% load static %}
 {% load widget_tweaks %}
 {% load tt_extras %}
+{% load l10n %}
 <html>
 <head>
 {% block title %}Reporte de Salidas{% endblock %}
@@ -192,7 +193,9 @@
                     <th class="d-none d-md-table-cell">Material Recibido por</th>
                     <th scope="col-sm">Cantidad</th>
                     <th scope="col-sm">Precio</th>
-                    <!--<th scope="col-sm">Costo Vale</th>-->
+                    <!--<th scope="col-sm">Costo Vale</th>
+                    <th scope="col-sm">Cliente Nombre</th>-->
+                    <th class="d-none d-lg-table-cell">Cliente</th>
                     <th class="d-none d-lg-table-cell">Vale</th>
                     <th class="d-none d-lg-table-cell">Devolución</th>
                 </tr>
@@ -214,14 +217,24 @@
                     <td class="d-none d-md-table-cell">{{salida.vale_salida.material_recibido_por.staff.first_name}} {{salida.vale_salida.material_recibido_por.staff.last_name}}</td>
                     <td>{{salida.cantidad}}</td>
                     <td>{% if salida.precio > 0 %} {{salida.precio}} {% elif salida.producto.precio > 0 %} {{salida.producto.precio}} {% else %} {{salida.producto.articulos.producto.price}} {% endif %}</td>
-                    <!--<td>{{salida.vale_salida.get_costo_vale}}</td>-->
+                    <!--<td>{{salida.vale_salida.get_costo_vale}}</td>
+                    <td>{{salida.cliente}}</td>-->
+                    <td>
+                        <a class="btn btn-outline-info m-1" 
+                        type="button" 
+                        data-bs-toggle="modal" 
+                        data-bs-target="#dialog" 
+                        onclick="openEditModal('{{ salida.id|unlocalize }}', '{{ salida.cliente }}')">
+                            <i class="fa-solid fa-user"></i>
+                        </a>
+                    </td>
                     <td class="d-none d-lg-table-cell">
                         <a type="submit" href="{% url 'vale-salida-pdf' salida.id %}" class="btn btn-outline-info btn-lg">
                             <i class="fa-solid fa-file-pdf fa-2xl"></i>
                         </a>
                     </td>
                     <td class="d-none d-lg-table-cell">
-                        <a href="#" class="btn btn-outline-info btn-lg">
+                        <a href="{% url 'devolucion-material-salida' salida.id %}" class="btn btn-outline-info btn-lg">
                             <i class="fa-solid fa-backward"></i>
                         </a>
                     </td>
@@ -233,7 +246,6 @@
         </div>
     </div>
 </div>
-
 <nav aria-label="Page navigation example mt-4">
     <ul class="pagination justify-content-center">
         {% if salidas_list.has_previous %}
@@ -261,13 +273,40 @@
         {% endif %}
     </ul>
 </nav>
-
-<!--Este es el modal-->
-<div class="modal fade" id ="dialog" tabindex="-1" role="dialog">
-    <div class="modal-dialog modal-lg" id="document" role="document" hx-target="this">
-
+<div class="modal fade" id="dialog" tabindex="-1" aria-labelledby="dialogLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="edit-client-form" method="POST" action="">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title" id="dialogLabel">Editar Cliente</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="client-name" class="form-label">Cliente</label>
+                        <input type="text" class="form-control" id="client-name" name="cliente" value="">
+                    </div>
+                    <input type="hidden" id="salida-id" name="salida_id" value="">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                    <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+                </div>
+            </form>
+        </div>
     </div>
 </div>
+<script>
+    function openEditModal(salidaId, cliente) {
+        // Rellenar los campos del modal
+        document.getElementById('salida-id').value = salidaId;
+        document.getElementById('client-name').value = cliente;
+        // Configurar la acción del formulario
+        const form = document.getElementById('edit-client-form');
+        form.action = `/requisiciones/editar_cliente/${salidaId}/`; // Ruta de tu vista de edición
+    }
+</script>
 {% endblock %}
 
 </body>

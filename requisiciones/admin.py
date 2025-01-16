@@ -15,12 +15,14 @@ class Articulos_RequisitadosAdmin(admin.ModelAdmin):
     raw_id_fields = ('req','producto')
 
 class SalidasAdmin(admin.ModelAdmin):
+    raw_id_fields = ('producto',)
     list_display = ('id','producto','cantidad','precio','complete','entrada')
     search_fields = ['producto__articulos__producto__producto__nombre']
-
+    raw_id_fields = ('producto','activo',)
+    
 class DevolucionAdmin(admin.ModelAdmin):
     list_display = ('id','solicitud','almacenista','autorizada')
-    raw_id_fields = ('solicitud','almacenista',)
+    raw_id_fields = ('solicitud','almacenista','salida')
 
 class Devolucion_ArticulosAdmin(admin.ModelAdmin):
     list_display = ('vale_devolucion','producto','cantidad','precio','comentario')

@@ -174,6 +174,7 @@
                     <th class="d-none d-md-table-cell">Moneda</th>
                     <th class="d-none d-md-table-cell">Pagado</th>
                     <th class="d-none d-md-table-cell">Condiciones</th>
+                    <th class="d-none d-md-table-cell">Facturas</th>
                     <th scope="col">Acción</th>
                     <th>Cancelar</th>
                 </tr>
@@ -192,6 +193,19 @@
                     <td class="d-none d-md-table-cell">{{compra.moneda}}</td>
                     <td class="d-none d-md-table-cell">${{compra.monto_pagado}}</td>
                     <td class="d-none d-md-table-cell">{{compra.cond_de_pago}}</td>
+                    <td
+                        <li class="nav-item m-1">
+                            <a type="button" 
+                            class="btn {% if compra.Compra.exists %}btn-outline-info{% else %}btn-outline-danger{% endif %}" 
+                            href="{% url 'matriz-facturas-nomodal' compra.id %}?next={{ request.path }}" 
+                            data-bs-toggle="tooltip" 
+                            data-bs-placement="top" 
+                            title="{% if compra.Compra.exists %}Tiene Facturas{% else %}No tiene Facturas{% endif %}" 
+                            style="background-color: white;">
+                                <i class="fa-solid {% if compra.Compra.exists %}fa-file-circle-check{% else %}fa-file-circle-xmark{% endif %}"></i>
+                            </a>
+                        </li>
+                    </td>
                     <td>
                         <ul class="nav nav-pills">
                             <li class="nav-item m-1">

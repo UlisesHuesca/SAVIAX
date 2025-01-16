@@ -30,6 +30,7 @@ class Reporte_CalidadAdmin(admin.ModelAdmin):
 
 class Cierre_NcAdmin(admin.ModelAdmin):
     list_display = ('id', 'nombre',)
+    
 
 admin.site.register(Entrada, EntradaAdmin)
 

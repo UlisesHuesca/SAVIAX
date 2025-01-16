@@ -6,7 +6,7 @@ from django.contrib.auth.models import User
 from django.core.mail import EmailMessage, BadHeaderError
 from smtplib import SMTPException
 from django.forms import inlineformset_factory
-from django.db.models import Sum, Q, Prefetch, Avg, FloatField, Case, When, F,DecimalField, ExpressionWrapper, CharField, Value
+from django.db.models import Sum, Q, Prefetch, Avg, FloatField, Case, When, F,DecimalField, ExpressionWrapper, CharField, Value, Count
 from django.db.models.functions import Concat
 from django.conf import settings
 from .models import Product, Subfamilia, Order, Products_Batch, Familia, Unidad, Inventario, Producto_Calidad
@@ -19,6 +19,7 @@ from user.models import Profile, Distrito, Banco
 from .forms import ProductForm, Products_BatchForm, AddProduct_Form, Proyectos_Form, ProveedoresForm, Proyectos_Add_Form, Proveedores_BatchForm, ProveedoresDireccionesForm, Proveedores_Direcciones_BatchForm, Subproyectos_Add_Form, ProveedoresExistDireccionesForm, Add_ProveedoresDireccionesForm, DireccionComparativoForm, Revision_Calidad_Form, PrecioMax_Form
 
 from .filters import ProductFilter, ProyectoFilter, ProveedorFilter, SubproyectoFilter, ProfileFilter
+from solicitudes.filters import InventoryFilter
 
 import os
 import csv
@@ -34,6 +35,13 @@ from openpyxl import Workbook
 from openpyxl.styles import NamedStyle, Font, PatternFill
 from openpyxl.utils import get_column_letter
 import datetime as dt
+import io
+from io import BytesIO
+
+#Excel
+import xlsxwriter
+from xlsxwriter.utility import xl_col_to_name
+from datetime import date
 
 # Create your views here.
 @login_required(login_url='user-login')
@@ -1132,12 +1140,23 @@ def add_product(request):
 def product_update(request, pk):
     usuario = Profile.objects.get(staff=request.user)
     item = Product.objects.get(id=pk)
+    familias = Familia.objects.all()
+    familia_select = item.familia
+    subfamilia_select = item.subfamilia
+    familias_para_select2 = [
+        {
+            'id': item.id, 
+            'text': str(item.nombre)
+        } for item in familias
+    ]
     error_messages = {}
     if request.method =='POST':
         form = AddProduct_Form(request.POST, request.FILES or None, instance=item, )
         if form.is_valid():
             item = form.save(commit = False)
             item.updated_by = usuario
+            if item.critico.nombre == "Crítico":
+                item.fecha_criticidad = dt.date.today()
             item.save()           
             if item.critico.nombre == "Crítico":
                 calidad = Profile.objects.filter(tipo__nombre = "Supervisor_Calidad" )
@@ -1195,6 +1214,9 @@ def product_update(request, pk):
         'error_messages':error_messages,
         'form': form,
         'item':item,
+        'familias_para_select2':familias_para_select2,
+        'familia_select':familia_select,
+        'subfamilia_select':subfamilia_select,
         }
     return render(request,'dashboard/product_update.html', context)
 
@@ -1412,3 +1434,124 @@ def convert_excel_proveedores(proveedores):
 
     return(response)
 
+@login_required(login_url='user-login')
+def calidad_productos(request):
+    usuario = Profile.objects.get(staff__id=request.user.id) 
+    if usuario.tipo.nombre == "Supervisor_Calidad" or usuario.tipo.nombre == "Admin":
+        items = Inventario.objects.filter(complete=True,producto__critico__nombre='Crítico'
+            ).annotate(productos_con_calidad=Count('producto__producto_calidad',filter=Q(producto__producto_calidad__updated_by__isnull=False))).order_by('producto__codigo')
+    else:
+        items = Inventario.objects.none()
+    total_productos_con_calidad = items.aggregate(total=Sum('productos_con_calidad'))['total']
+
+    myfilter=InventoryFilter(request.GET, queryset=items)
+    items = myfilter.qs
+
+    #Set up pagination
+    p = Paginator(items, 50)
+    page = request.GET.get('page')
+    items_list = p.get_page(page)
+
+    cantidad = items_list.paginator.count  # Total de elementos filtrados
+    if request.method =='POST' and 'btnExcel' in request.POST:
+        #return convert_excel_inventario(existencia, valor_inv, dict_entradas, dict_resultados)
+        return convert_excel_inventario_calidad_xlsxwriter(items,)
+    # Sumar el total de todos los activo_count
+    #total_activo_count = items.aggregate(total=Sum('activo_count'))['total']
+
+    context = {
+        'usuario':usuario,
+        'items': items,
+        'myfilter':myfilter,
+        'items_list':items_list,
+        'cantidad': cantidad,
+        'total_productos_con_calidad':total_productos_con_calidad,
+        }
+
+
+    return render(request,'dashboard/calidad_inventario.html', context)
+
+def convert_excel_inventario_calidad_xlsxwriter(existencia):
+    output = BytesIO()
+    workbook = xlsxwriter.Workbook(output, {'in_memory': True})
+    worksheet = workbook.add_worksheet('Inventario')
+
+    # Definir los estilos antes de usarlos
+    head_style = workbook.add_format({'bold': True, 'font_color': 'white', 'bg_color': '333366', 'font_name': 'Arial', 'font_size': 11})
+    body_style = workbook.add_format({'font_name': 'Calibri', 'font_size': 10})
+    money_style = workbook.add_format({'num_format': '$ #,##0.00', 'font_name': 'Calibri', 'font_size': 10})
+    money_resumen_style = workbook.add_format({'num_format': '$ #,##0.00', 'font_name': 'Calibri', 'font_size': 14, 'bold': True})
+    date_style = workbook.add_format({'num_format': 'dd/mm/yyyy', 'font_name': 'Calibri', 'font_size': 10})
+
+    # Definir las columnas antes de utilizar la variable `columns`
+    columns = ['Código', 'Producto', 'Distrito', 'Unidad','Familia','Subfamilia','Fecha de alta como crítico','Fecha de revisión','Días entre fechas']
+    
+    # Escribir el encabezado con los estilos definidos
+    #worksheet.write_row('A1', columns, head_style)
+
+    # Establecer los anchos de las columnas después de definir `columns`
+    worksheet.set_column('A:A', 10)
+    worksheet.set_column('B:B', 30)
+    for i, column in enumerate(columns):
+        worksheet.write(0, i, column, head_style)
+        worksheet.set_column(i, i, 15)  # Ajusta el ancho de las columnas
+
+    # Escribir los datos
+    row_num = 0
+    for inventario in existencia:
+        if inventario.producto is None:
+            familia = 'Sin producto asociado'
+            subfamilia = ''
+        else:
+            familia = inventario.producto.familia.nombre
+            if inventario.producto.subfamilia:
+                subfamilia = inventario.producto.subfamilia.nombre
+            else:
+                subfamilia = ''
+        if hasattr(inventario.producto, 'producto_calidad') and inventario.producto.producto_calidad:
+            if inventario.producto.fecha_criticidad and inventario.producto.producto_calidad.updated_at:
+                asignado = inventario.producto.producto_calidad.updated_at
+                diferencia_dias = (inventario.producto.fecha_criticidad - inventario.producto.producto_calidad.updated_at).days
+            else:
+                asignado = ''
+                diferencia_dias = ''
+        else:
+            asignado = ''
+            diferencia_dias = ''
+        row_num += 1
+    
+        row = [
+            inventario.producto.codigo,
+            inventario.producto.nombre,
+            inventario.distrito.nombre,
+            inventario.producto.unidad.nombre,
+            familia,
+            subfamilia,
+            str(inventario.producto.fecha_criticidad),
+            str(asignado),
+            str(diferencia_dias),
+        ]
+    
+        for col_num, item in enumerate(row, start=1):  # Enumerate empieza con 1 para A1, ajusta según sea necesario
+            worksheet.write(row_num, col_num - 1, item, body_style)
+    
+
+    # Escribir el total del inventario
+    worksheet.set_column('N:N', 30)
+    worksheet.set_column('O:O', 30)
+
+    workbook.close()
+    output.seek(0)
+
+    response = HttpResponse(
+        output.read(), 
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+      # Establecer una cookie para indicar que la descarga ha iniciado
+    response.set_cookie('iniciada', 'true', max_age=20)  # La cookie expira en 20 segundos
+    
+
+    
+    response['Content-Disposition'] = f'attachment; filename=Calidad_Productos_{date.today()}.xlsx'
+    output.close()
+    return response

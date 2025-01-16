@@ -23,6 +23,7 @@ from entradas.models import Entrada, No_Conformidad
 import json
 from datetime import date, datetime, timedelta
 from num2words import num2words
+import socket
 
 import decimal
 
@@ -74,6 +75,10 @@ def requisiciones_autorizadas(request):
     #requis = Requis.objects.filter(autorizar=True, colocada=False)
 
     tag = dof()
+     #Set up pagination
+    p = Paginator(requis, 50)
+    page = request.GET.get('page')
+    requis = p.get_page(page)
 
     context= {
         'requis':requis,
@@ -168,6 +173,10 @@ def articulos_restantes(request, pk):
 def dof():
 #Trying to fetch DOF
     try:
+        # Configurar el tiempo máximo de espera (en segundos)
+        timeout = 2  # Ajusta el tiempo de espera según tus necesidades
+        socket.setdefaulttimeout(timeout)
+    
         ctx = ssl.create_default_context()
         ctx.check_hostname = False
         ctx.verify_mode = ssl.CERT_NONE
@@ -190,6 +199,8 @@ def dof():
         tag = tags[4][3]
 
         return tag
+    except socket.timeout:
+        return "Error: El tiempo de espera para la consulta ha sido superado."
     except Exception as e:
         # Manejo de la excepción - log, mensaje de error, etc.
         return f"Error al obtener datos: {e}"
@@ -855,6 +866,8 @@ def cancelar_oc1(request, pk):
         costo_oc = compra.costo_oc
         if compra.costo_fletes:
             costo_fletes = compra.costo_fletes
+        else:
+            costo_fletes = 0
     costo_total = costo_fletes + costo_oc
     resta = compra.req.orden.subproyecto.presupuesto - costo_total - compra.req.orden.subproyecto.gastado
     porcentaje = "{0:.2f}%".format((costo_oc/compra.req.orden.subproyecto.presupuesto)*100)
@@ -895,11 +908,15 @@ def cancelar_oc2(request, pk):
         costo_oc = compra.costo_oc * compra.tipo_de_cambio
         if compra.costo_fletes:
             costo_fletes = compra.costo_fletes * compra.tipo_de_cambio
+        else:
+            costo_fletes = 0
     #Escenario con pesos
     else:
         costo_oc = compra.costo_oc
         if compra.costo_fletes:
             costo_fletes = compra.costo_fletes
+        else:
+            costo_fletes = 0
     costo_total = costo_fletes + costo_oc
     resta = compra.req.orden.subproyecto.presupuesto - costo_total - compra.req.orden.subproyecto.gastado
     porcentaje = "{0:.2f}%".format((costo_oc/compra.req.orden.subproyecto.presupuesto)*100)
@@ -1590,7 +1607,7 @@ def generar_pdf(compra):
     #Configuration of the PDF object
     buf = io.BytesIO()
     c = canvas.Canvas(buf, pagesize=letter)
-    productos = ArticuloComprado.objects.filter(oc=compra.id)
+    productos = ArticuloComprado.objects.filter(oc=compra.id).order_by('id')
     #Azul Vordcab
     prussian_blue = Color(0.0859375,0.1953125,0.30859375)
     rojo = Color(0.59375, 0.05859375, 0.05859375)
@@ -2433,7 +2450,7 @@ def convert_excel_solicitud_matriz_productos(productos):
         # Calculate total, subtotal, and IVA using attributes from producto
         subtotal = producto.subtotal_parcial
         iva = producto.iva_parcial
-        total = producto.total
+        total = subtotal + iva
        
 
         # Handling the currency conversion logic
@@ -2441,8 +2458,8 @@ def convert_excel_solicitud_matriz_productos(productos):
         tipo_de_cambio_promedio_pagos = pagos.aggregate(Avg('tipo_de_cambio'))['tipo_de_cambio__avg']
         tipo_de_cambio = tipo_de_cambio_promedio_pagos or producto.oc.tipo_de_cambio
 
-        if moneda_nombre == "DOLARES" and tipo_de_cambio:
-            total = total * tipo_de_cambio
+        #if moneda_nombre == "DOLARES" and tipo_de_cambio:
+        #    total = total * tipo_de_cambio
         if criticidad is None:
             criticidad = ''
         else:
@@ -2451,28 +2468,28 @@ def convert_excel_solicitud_matriz_productos(productos):
             tipo_de_cambio = ''
         # Constructing the row
         row = [
-            compra_id,
-            req_folio, 
-            orden_folio, 
-            staff_name, 
-            proyecto_nombre, 
-            subproyecto_nombre, 
-            created_at,
-            proveedor_nombre,
-            status_proveedor,
-            area_nombre,
-            cantidad, 
-            codigo, 
-            producto_nombre,
-            criticidad,
-            precio_unitario,
-            moneda_nombre, 
-            tipo_de_cambio, 
-            subtotal, 
-            iva, 
-            total, 
-            estatus,
-            pagada
+            compra_id, #0
+            req_folio, #1
+            orden_folio, #2
+            staff_name, #3
+            proyecto_nombre, #4 
+            subproyecto_nombre, #5 
+            created_at, #6
+            proveedor_nombre, #7
+            status_proveedor, #8  
+            area_nombre, #9
+            cantidad, #10
+            codigo,  #11
+            producto_nombre, #12
+            criticidad, #13
+            precio_unitario, #14
+            moneda_nombre, #15
+            tipo_de_cambio, #16
+            subtotal, #17
+            iva, #18
+            total, #19
+            estatus, #20
+            pagada #21
         ]
         rows.append(row)
 
@@ -2483,9 +2500,9 @@ def convert_excel_solicitud_matriz_productos(productos):
             ws.cell(row=row_num, column=col_num + 1, value=str(cell_value)).style = body_style
             if col_num == 5:
                 ws.cell(row=row_num, column=col_num + 1, value=cell_value).style = body_style
-            if col_num == 9:
+            if col_num == 10:
                 ws.cell(row=row_num, column=col_num + 1, value=cell_value).style = number_style
-            if col_num in [13, 16, 17, 18]:
+            if col_num in [14, 16,17, 18, 19] :
                 ws.cell(row=row_num, column=col_num + 1, value=cell_value).style = money_style
 
     sheet = wb['Sheet']

@@ -1,5 +1,6 @@
 {% extends 'partials/base.html' %}
 {% load crispy_forms_tags %}
+{% load tt_extras %}
 {% load static %}
 <html>
 <head>
@@ -141,6 +142,33 @@
                 {% endfor %}
             </tbody>
         </table>
+        <nav aria-label="Page navigation example">
+            <ul class="pagination justify-content-center">
+                {% if requis.has_previous %}
+                    <li class="page-item"><a class="page-link" style="color:#3E92CC" href="{% my_url 1 'page' request.GET.urlencode %}"><i class="fa-solid fa-angles-left"></i></a></li>
+                    <li class="page-item"><a class="page-link" style="color:#3E92CC" href="{% my_url requis.previous_page_number  'page' request.GET.urlencode %}"><i class="fa-solid fa-angle-left"></i></a></li>
+                {% endif %}
+
+                {% for item in requis.paginator.page_range %}
+                    {% if requis.number == item %}
+                        <li class="page-item active"><a href="#" class="page-link bg-dark">{{item}}</a></li>
+                    {% elif item > requis.number|add:'-2' and item < requis.number|add:'2' %}
+                        <li class="page-item "><a class="page-link" style="color:#3E92CC" href="{% my_url item 'page' request.GET.urlencode %}" class="page-link">{{item}}</a></li>
+                    {% endif %}
+                {% endfor %}
+
+                {% if requis.paginator.num_pages > requis.number|add:'2' %}
+                <li><a class="page-link" style="color:#3E92CC" href="?page={{requis.number|add:'2'}}">&hellip;</a></li>
+                <li><a style="color:#3E92CC" href="?page={{ item }}">{{item}}</a></li>
+                <li><a class="page-link" style="color:#3E92CC" href="{% my_url requis.paginator.num_pages 'page' request.GET.urlencode %}">{{requis.paginator.num_pages}}</a></li>
+                {% endif %}
+
+                {% if requis.has_next %}
+                    <li class="page-item"><a class="page-link" style="color:#3E92CC" href="{% my_url requis.next_page_number 'page' request.GET.urlencode %}"><i class="fa-solid fa-chevron-right"></i></a></li>
+                    <li class="page-item"><a class="page-link" style="color:#3E92CC" href="{% my_url requis.paginator.num_pages 'page' request.GET.urlencode %}"><i class="fa-solid fa-angles-right"></i></a></a></li>
+                {% endif %}
+            </ul>
+        </nav>
     </div>
 
 <!--Este es el modal-->

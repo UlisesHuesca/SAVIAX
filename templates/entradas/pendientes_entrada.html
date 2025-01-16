@@ -136,6 +136,8 @@
                 <thead class="text-black" style="background-color: #F5F5F5;">
                     <tr>
                         <th scope="col">Compra</th>
+                        <th scope="col">Critico</th>
+                        <th scope="col">Producto Terminado</th>
                         <th class="d-none d-lg-table-cell">Req.</th>
                         <th scope="col">Sol.</th>
                         <th class="d-none d-lg-table-cell">Solicitado por</th>
@@ -155,6 +157,16 @@
                     {% for item in articulos_recepcionados_list %}
                     <tr>
                         <td scope="col">{{item.entrada.oc.get_folio}}</td>
+                        {% if item.referencia %}
+                        <th scope="row">{{item.referencia}}</th>
+                        {% else %}
+                        <th>No</th>
+                        {% endif %}
+                        {% if item.articulo_comprado.producto.producto.articulos.producto.producto.familia.nombre == 'PRODUCTO TERMINADO' %}
+                        <th scope="row">PRODUCTO TERMINADO</th>
+                        {% else %}
+                        <th>No</th>
+                        {% endif %}
                         <td class="d-none d-lg-table-cell">{{item.entrada.oc.req.folio}}</td>
                         <td scope="col">{{item.entrada.oc.req.orden.folio}}</td>
                         <td class="d-none d-lg-table-cell">{{item.entrada.oc.req.orden.staff.staff.first_name}} {{item.entrada.oc.req.orden.staff.staff.last_name}}</td>

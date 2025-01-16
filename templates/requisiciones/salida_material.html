@@ -44,39 +44,38 @@
     <div class="col-lg-6">
         <div class="card" id="form-wrapper">
             <div class="card-header">
-            <!-- Aqui es el encabezado de los filtros -->
+                <!-- Aquí es el encabezado de los filtros -->
                 <h3 target="">Vale de Salida</h3>
             </div>
             <div class="card-body" id="Solicitud-info">
-                    <form id="myForm" method="POST" id='OrderForm' data-subproyecto-url="{% url 'ajax_load_subproyectos' %}">
-                        {% csrf_token %}
-                        <div class="row my-5">
-                            <label for="form.moneda" class="col-auto col-form-label my-1"><strong><h4>Material entregado a:</h4></strong></label>
-                           
-                            <div class="col-5">
-                                {{ formVale.material_recibido_por|add_class:"form-select my-1 d-none" }}
-                            </div>
-                            <div class="col-12">
-                                <div class="input-group mb-3">
-                                    <span class="input-group-text" id="basic-addon1"><i class="fa-solid fa-user"></i></span>    
-                                    <div class="form-floating form-floating-group flex-grow-1">   
-                                        <input type="text" list="user" id="txt_usuario" valor="{{user.id}}" placeholder="Usuarios..." class="form-control">
-                                        <label for="txt_usuario">Usuarios*</label>
-                                    </div>         
-                                    <datalist id="user" name='user'>
-                                        {% for user in users %}
-                                            <option valor="{{user.id}}" value="{{user.staff.first_name}} {{user.staff.last_name}}"></option>
-                                        {% endfor %}
-                                    </datalist>
-                                </div>
-                            </div>
-                                
-                                <div class="col-3">
-                                <input id="submit-button" class="btn btn-outline-info btn-block my-4" name="agregar" type="submit" value="Guardar vale">
-                                </div>
-                                
+                <form id="myForm" method="POST" id="OrderForm" data-subproyecto-url="{% url 'ajax_load_subproyectos' %}">
+                    {% csrf_token %}
+                    <div class="row my-5">
+                        <label for="form.moneda" class="col-auto col-form-label my-1"><strong><h4>Material entregado a:</h4></strong></label>
+                        
+                        <div class="col-5">
+                            {{ formVale.material_recibido_por|add_class:"form-select my-1 d-none" }}
                         </div>
-                    </form>
+                        <div class="col-12">
+                            <div class="input-group mb-3">
+                                <span class="input-group-text" id="basic-addon1"><i class="fa-solid fa-user"></i></span>    
+                                <div class="form-floating form-floating-group flex-grow-1">   
+                                    <input type="text" list="user" id="txt_usuario" valor="{{user.id}}" placeholder="Usuarios..." class="form-control">
+                                    <label for="txt_usuario">Usuarios*</label>
+                                </div>         
+                                <datalist id="user" name="user">
+                                    {% for user in users %}
+                                        <option valor="{{user.id}}" value="{{user.staff.first_name}} {{user.staff.last_name}}"></option>
+                                    {% endfor %}
+                                </datalist>
+                            </div>
+                        </div>
+                        
+                        <div class="col-3">
+                            <input id="submit-button" class="btn btn-outline-info btn-block my-4" name="agregar" type="submit" value="Guardar vale">
+                        </div>
+                    </div>
+
             </div>
             <hr>
         </div>
@@ -84,24 +83,29 @@
     <div class="col-lg-6">
         <div class="card">
             <div class="card-header">
-            <h3 id="vale" vale="{{vale_salida.id|unlocalize}}">Resumen de Salida</h3>
+                <h3 id="vale" vale="{{vale_salida.id|unlocalize}}">Resumen de Salida</h3>
             </div>
-            <div class='card-body'>
-                <form method="POST">
+            <div class="card-body">
                 <div class="row">
                     <div class="col-lg-8 col-sm-12">
                         <div id="input_subproyecto" class="input-group mb-3">
                             <span class="input-group-text" id="basic-addon1"><i class="fa-solid fa-box"></i></span>
                             <div class="form-floating form-floating-group flex-grow-1">
-                                <label  style="font-size:10px; color:gray;" for="producto">Productos*</label>
+                                <label style="font-size:10px; color:gray;" for="producto">Productos*</label>
                                 <select style="font-size:16px" class="form-select form-select-sm grupo-entrada" id="producto">
                                     <option style="color:gray;" value="" selected disabled>Productos</option>
                                     {% for producto in productos %}
-                                    {% if producto.seleccionado == False %}
-                                    <option id="js" target="{{producto.id|unlocalize}}" activo="{{producto.articulos.producto.producto.activo}}" producto="{{producto.articulos.producto}}" cantidad="{{producto.cantidad}}" cantidad_sol ="{{producto.articulos.cantidad}}" stock="{{producto.articulos.producto.cantidad}}">
-                                        {{producto.articulos.producto}}
-                                    </option>
-                                    {% endif %}
+                                        {% if producto.seleccionado == False %}
+                                            <option id="js" target="{{producto.id|unlocalize}}" 
+                                                activo="{{producto.articulos.producto.producto.activo}}" 
+                                                producto="{{producto.articulos.producto}}" 
+                                                cantidad="{{producto.cantidad}}" 
+                                                cantidad_sol="{{producto.articulos.cantidad}}" 
+                                                stock="{{producto.articulos.producto.cantidad}}" 
+                                                critico="{{producto.articulos.producto.producto.critico.nombre}}">
+                                                {{producto.articulos.producto}}
+                                            </option>
+                                        {% endif %}
                                     {% endfor %}
                                 </select>
                             </div>
@@ -109,76 +113,89 @@
                     </div>
                     <div id="etiqueta_solicitado" class="col-lg-4 col-sm-6">
                         <div class="alert alert-secondary" role="alert">
-                        <h6>Disponible:</h6><h6 style="color: #121212;" id="solicitado"></h6>   
+                            <h6>Disponible:</h6>
+                            <h6 style="color: #121212;" id="solicitado"></h6>   
                         </div>
                     </div>
                 </div>
                 <div class="row">    
                     <div class="col-lg-4">
                         <div class="input-group mb-3">
-                        <span class="input-group-text" id="basic-addon1"><i class="fa-solid fa-gear"></i></span>
+                            <span class="input-group-text" id="basic-addon1"><i class="fa-solid fa-gear"></i></span>
                             <div class="form-floating form-floating-group flex-grow-1">   
                                 {{form.cantidad|add_class:"form-control"|append_attr:"placeholder= Cantidad"}}
                                 <label style="color: #121212;" for="id_impuestos_adicionales">Cantidad</label>
                             </div>
                         </div>
                     </div>
-                       
+                    <div id="etiqueta_critico" class="col-lg-4 col-sm-6">
+                        <div class="alert alert-secondary" role="alert">
+                            <h6>Critico:</h6>
+                            <h6 style="color: #121212;" id="critico"></h6>   
+                        </div>
+                    </div>
                     <div class="col-sm-1 mt-3">
-                        <button type ="button" class="btn btn-success update-salida d-none" id="update-salida" name="salida">
+                        <button type="button" class="btn btn-success update-salida d-none" id="update-salida" name="salida">
                             <i class="fa-solid fa-circle-plus"></i>
                         </button>
                     </div>
                 </div>
                 <hr>
-                <div class ="table-responsive-sm">
-                    <table class="table table-ligth table-striped mx-1">
-                    {% csrf_token %}
-                    <thead>
-                        <tr>
-                        <th  salidas="{{salidas}}">Código</th>
-                        <th scope="col">Producto</th>
-                        <th scope="col">Cantidad</th>
-                        <th scope="col">Precio</th>
-                        <th scope="col">Entrada</th>
-                        </tr>
-                    </thead>
-                    <tbody id="mytbl">
-                        {% for item in salidas %}
-                        <tr>
-                            <th scope="col">{{item.producto.articulos.producto.producto.codigo}}</th>
-                            <th scope="col">{{item.producto.articulos.producto.producto.nombre}}</th>
-                            <th scope="col">{{item.cantidad}}</th>
-                            <th scope="col">{{item.precio}}</th>
-                            <th scope="col">{{item.entrada}}</th>
-                            <th scope="col">
-                            <td>
-                                <!--<a class="btn btn-outline-info m-1" id="btnActualizar" type="button" data-bs-toggle="modal" data-bs-target="#dialog" hx-target="#document" hx-get="">
-                                    <i class="fa-solid fa-pen-to-square"></i>
-                                </a>-->
-                                <button type="button" class="btn btn-danger m-1" onclick="deleteRow(this)" id="delete" value="Delete" id_salida ="{{item.id|unlocalize}}" cantidad="{{item.cantidad}}" producto="{{item.producto}}" producto_id="{{item.producto.id|unlocalize}}" action="remove">
-                                    <i class="fa-solid fa-trash-can"></i>
-                                </button>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
+                <div class="table-responsive-sm">
+                    <table class="table table-light table-striped mx-1">
+                        <thead>
+                            <tr>
+                                <th salidas="{{salidas}}">Código</th>
+                                <th scope="col">Producto</th>
+                                <th scope="col">Cantidad</th>
+                                <th scope="col">Precio</th>
+                                <th scope="col">Entrada</th>
+                                <th scope="col">Referencias</th>
+                            </tr>
+                        </thead>
+                        <tbody id="mytbl">
+                            {% for item in salidas %}
+                                <tr>
+                                    <th scope="col">{{item.producto.articulos.producto.producto.codigo}}</th>
+                                    <th scope="col">{{item.producto.articulos.producto.producto.nombre}}</th>
+                                    <th scope="col">{{item.cantidad}}</th>
+                                    <th scope="col">{{item.precio}}</th>
+                                    <th scope="col">{{item.entrada}}</th>
+                                    <th scope="col">
+                                        <select class="form-select referencia-select" name="referencia_{{ item.id |unlocalize }}">
+                                            <option value="" selected disabled>Selecciona una referencia</option>
+                                            {% for referencia in item.referencias %}
+                                                <option value="{{ referencia }}">{{ referencia }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </th>
+                                    <td>
+                                        <button type="button" class="btn btn-danger m-1" onclick="deleteRow(this)" id="delete" 
+                                            value="Delete" 
+                                            id_salida="{{item.id|unlocalize}}" 
+                                            cantidad="{{item.cantidad}}" 
+                                            producto="{{item.producto}}" 
+                                            producto_id="{{item.producto.id|unlocalize}}" 
+                                            action="remove">
+                                            <i class="fa-solid fa-trash-can"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
                 </form>
-                </table>
-            </div>
             </div>
             <hr>
             <h5>Artículos: {{cantidad_items}}</h5>
-
         </div>
     </div>
-    <div class="modal fade" id ="dialog" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" role="dialog">
+    <div class="modal fade" id="dialog" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" role="dialog">
         <div class="modal-dialog modal-lg modal-dialog-centered" id="document" role="document" hx-target="this">
-
         </div>
     </div>
 </div>
-
 
 
 
@@ -187,7 +204,6 @@
   <script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
   <script>
-
 var rows = document.getElementById("mytbl").rows.length
 //submit_btn = document.getElementById('submit-button')
 console.log('rows',rows)
@@ -242,6 +258,8 @@ document.getElementById("producto").addEventListener("change", function(element)
     let cantidad = current_option.getAttribute('cantidad');
     let cantidad_sol = current_option.getAttribute('cantidad_sol');
     let stock = current_option.getAttribute('stock');
+    let nombre = current_option.getAttribute('critico');
+    //let datos = current_option.getAttribute('referencias');
 
     console.log('sol:',cantidad_sol)
     console.log('cantidad:', cantidad)
@@ -253,8 +271,63 @@ document.getElementById("producto").addEventListener("change", function(element)
     var cantidad_pendiente = cantidad}
 
     console.log('stock',stock);
+    console.log('critico',critico);
+    //console.log('referencias',referencias);
     var solicitado = document.getElementById('solicitado');
+    var critico = document.getElementById('critico');
+    //var referencias = document.getElementById('referencias');
     solicitado.innerHTML = cantidad_pendiente;
+    critico.innerHTML = nombre || 'No asignado';
+    //referencias.innerHTML = datos || 'No asignado';
+});
+document.addEventListener('DOMContentLoaded', function () {
+    const selects = document.querySelectorAll('.referencia-select');
+
+    function actualizarOpciones() {
+        // Recopilar todas las referencias seleccionadas
+        const referenciasSeleccionadas = Array.from(selects).map(select => select.value).filter(val => val !== "");
+
+        selects.forEach(select => {
+            const options = select.querySelectorAll('option');
+
+            options.forEach(option => {
+                // Deshabilitar opciones seleccionadas en otros selects
+                if (referenciasSeleccionadas.includes(option.value) && option.value !== select.value) {
+                    option.disabled = true;
+                } else {
+                    option.disabled = false;
+                }
+            });
+        });
+    }
+
+    // Escuchar cambios en todos los selects
+    selects.forEach(select => {
+        select.addEventListener('change', actualizarOpciones);
+    });
+});
+document.addEventListener('DOMContentLoaded', function () {
+    const productoSelect = document.getElementById('producto');
+    const cantidad = document.getElementById('id_cantidad'); // Campo de cantidad
+    const btn = document.getElementById('update-salida');
+
+    // Escuchar el evento "change" del select
+    productoSelect.addEventListener('change', function () {
+        const selectedOption = productoSelect.options[productoSelect.selectedIndex];
+        const criticoValue = selectedOption.getAttribute('critico');
+
+        if (criticoValue === 'Crítico') {
+            // Marcar el switch si el valor es "Crítico"
+            cantidad.value = 1; // Asignar un valor fijo
+            cantidad.disabled = true; // Deshabilitar el campo para evitar modificaciones
+            btn.classList.remove('d-none')
+        } else {
+            // Desmarcar el switch en caso contrario
+            cantidad.value = 0;
+            cantidad.disabled = false; // Habilitar el campo si no es "Crítico"
+            btn.classList.add('d-none')
+        }
+    });
 });
 
 document.getElementById("txt_usuario").addEventListener("change", (event)=>{

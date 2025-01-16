@@ -39,3 +39,7 @@ class ComprobanteForm(forms.ModelForm):
     class Meta:
         model = Pago
         fields = ['comprobante_pago']
+
+class UploadFileForm(forms.Form):
+    factura_pdf = forms.FileField(required=False)
+    factura_xml = forms.FileField(required=False)

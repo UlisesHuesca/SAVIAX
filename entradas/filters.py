@@ -49,3 +49,23 @@ class Reporte_CalidadFilter(django_filters.FilterSet):
     class Meta:
         model = Reporte_Calidad
         fields = ['articulo','reporte_date','autorizado'] #'producto'
+
+class EntradaCaducidadFilter(django_filters.FilterSet):
+    proveedor = CharFilter(field_name='entrada__oc__proveedor__nombre__razon_social', lookup_expr='icontains')
+    oc = CharFilter(field_name='entrada__oc__id', lookup_expr='icontains')
+    start_date = DateFilter(field_name='fecha_caducidad', lookup_expr='gte')
+    end_date = DateFilter(field_name='fecha_caducidad', lookup_expr='lte')
+
+    class Meta:
+        model = EntradaArticulo
+        fields = ['oc', 'proveedor', 'fecha_caducidad']
+
+class EntradaTerminadoFilter(django_filters.FilterSet):
+    solicitud = CharFilter(field_name='producto_terminado__solicitud__id', lookup_expr='icontains')
+    proyecto = CharFilter(field_name='producto_terminado__solicitud__proyecto__nombre', lookup_expr='icontains')
+    subproyecto = CharFilter(field_name='producto_terminado__solicitud__subproyecto__nombre', lookup_expr='icontains')
+    start_date = DateFilter(field_name='producto_terminado__solicitud__created_at', lookup_expr='gte')
+    end_date = DateFilter(field_name='producto_terminado__solicitud__created_at', lookup_expr='lte')
+    class Meta:
+        model = EntradaArticulo
+        fields = ['producto_terminado']

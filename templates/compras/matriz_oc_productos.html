@@ -166,7 +166,7 @@
                             
                                 {% for producto_comp in preevaluacion.comparativo_model.items_comparativos.all %}
                                     {% if producto_comp.producto == item.producto.producto.articulos.producto %}
-                                    {{preevaluacion.creado_at|date:"d/m/Y"}}|${{producto_comp.precio|floatformat:2}}-${{producto_comp.precio|multiply_dec:1.1|floatformat:2}}
+                                    {{preevaluacion.creado_at|date:"d/m/Y"}}|${{producto_comp.precio|floatformat:2}}-${{producto_comp.precio|multiply_dec:1.1|floatformat:2}},
                                     {% endif %}
                                 {% endfor %}
                             

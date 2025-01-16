@@ -1,5 +1,5 @@
 from django import forms
-from .models import Product, Subfamilia, Products_Batch, Inventario_Batch, Familia, Producto_Calidad, Grado_Control
+from .models import Product, Subfamilia, Products_Batch, Inventario_Batch, Familia, Producto_Calidad, Grado_Control, Solicitud_Producto_Terminado
 from compras.models import Proveedor_Batch, Proveedor, Proveedor_direcciones, Proveedor_Direcciones_Batch
 from solicitudes.models import Proyecto, Subproyecto
 
@@ -129,3 +129,8 @@ class Subproyectos_Add_Form(forms.ModelForm):
     class Meta:
         model = Subproyecto
         fields = ['nombre','descripcion','presupuesto']
+
+class SolicitudProductoTerminadoForm(forms.ModelForm):
+    class Meta:
+        model = Solicitud_Producto_Terminado
+        fields = ['proyecto', 'subproyecto', 'comentario']

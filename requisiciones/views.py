@@ -1,4 +1,4 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse
 from django.db.models.functions import Concat
@@ -11,6 +11,10 @@ from django.core.paginator import Paginator
 from django.http import FileResponse
 from django.core.files.base import ContentFile
 from django.conf import settings
+from io import BytesIO
+import xlsxwriter
+from xlsxwriter.utility import xl_col_to_name
+from django.db.models import OuterRef, Subquery
 
 from solicitudes.models import Proyecto, Subproyecto
 from dashboard.models import Inventario, Order, ArticulosparaSurtir, ArticulosOrdenados, Inventario_Batch, Product, Marca
@@ -109,7 +113,11 @@ def solicitud_autorizada(request):
     if usuario.tipo.almacen == True:
         #productos= ArticulosparaSurtir.objects.filter(Q(salida=False) | Q(surtir=True), articulos__orden__autorizar = True)
         #productos= ArticulosparaSurtir.objects.filter(Q(salida=False) | Q(surtir=True), articulos__orden__autorizar = True, articulos__orden__tipo__tipo = "normal")
-        productos= ArticulosparaSurtir.objects.filter(surtir=True, articulos__orden__autorizar = True, articulos__orden__tipo__tipo = "normal").order_by('-created_at')
+        referencia_subquery = EntradaArticulo.objects.filter(
+            articulo_comprado__oc__req__orden=OuterRef('articulos__orden'),  # Relacionamos con Order a través de las relaciones intermedias
+            ).values('referencia')[:1]  # Solo tomamos el primer resultado
+        productos= ArticulosparaSurtir.objects.filter(surtir=True, articulos__orden__autorizar = True, articulos__orden__tipo__tipo = "normal").order_by('-created_at').annotate(
+            referencia=Subquery(referencia_subquery))
     #else:
         #productos = Requis.objects.filter(complete=None)
     myfilter = ArticulosparaSurtirFilter(request.GET, queryset=productos)
@@ -146,8 +154,20 @@ def solicitudes_autorizadas_pendientes(request):
     if usuario.tipo.almacenista == True:
         #productos= ArticulosparaSurtir.objects.filter(Q(salida=False) | Q(surtir=True), articulos__orden__autorizar = True)
         #productos= ArticulosparaSurtir.objects.filter(Q(salida=False) | Q(surtir=True), articulos__orden__autorizar = True, articulos__orden__tipo__tipo = "normal")
-        productos= ArticulosparaSurtir.objects.filter(salida=False, surtir=False, articulos__orden__autorizar = True, articulos__orden__tipo__tipo = "normal").order_by('-created_at')
+        # Subquery para obtener la referencia de EntradaArticulo
+        referencia_subquery = EntradaArticulo.objects.filter(
+            articulo_comprado__oc__req__orden=OuterRef('articulos__orden'),  # Relacionamos con Order a través de las relaciones intermedias
+        ).values('referencia')[:1]  # Solo tomamos el primer resultado
 
+        # Consulta principal con annotate para agregar la referencia
+        productos = ArticulosparaSurtir.objects.filter(
+            salida=False, 
+            surtir=False, 
+            articulos__orden__autorizar=True, 
+            articulos__orden__tipo__tipo="normal"
+        ).order_by('-created_at').annotate(
+            referencia=Subquery(referencia_subquery)  # Aquí agregamos el subquery como un nuevo campo
+        )
     #else:
         #productos = Requis.objects.filter(complete=None)
     myfilter = ArticulosparaSurtirFilter(request.GET, queryset=productos)
@@ -172,7 +192,6 @@ def solicitudes_autorizadas_pendientes(request):
         }
     return render(request, 'requisiciones/solicitudes_autorizadas_no_surtidas.html',context)
 
-
 def update_devolucion(request):
     data= json.loads(request.body)
     action = data["action"]
@@ -180,11 +199,68 @@ def update_devolucion(request):
     devolucion = data["devolucion"]
     producto_id = data["id"]
     comentario = data["comentario"]
+
     devolucion = Devolucion.objects.get(id = devolucion)
     
-    
     if devolucion.tipo.nombre == "SALIDA":
-        producto = Salidas.objects.get(vale_salida=devolucion.salida.vale_salida, producto__id = producto_id)
+        producto = Salidas.objects.get(vale_salida=devolucion.salida.vale_salida, producto__id = producto_id,)
+        inv_del_producto = Inventario.objects.get(producto = producto.producto.articulos.producto.producto)
+    else:
+        producto = ArticulosparaSurtir.objects.get(id = producto_id)
+        inv_del_producto = Inventario.objects.get(producto = producto.articulos.producto.producto)
+        
+
+
+    if action == "add":
+        cantidad_total = producto.cantidad - cantidad
+        if cantidad_total < 0:
+            messages.error(request,f'La cantidad que se quiere ingresar sobrepasa la cantidad disponible. {cantidad_total} mayor que {producto.cantidad}')
+        else:
+            if devolucion.tipo.nombre == "SALIDA":
+                devolucion_articulos, created = Devolucion_Articulos.objects.get_or_create(producto= producto.producto, vale_devolucion = devolucion, complete=False)
+            else:
+                devolucion_articulos, created = Devolucion_Articulos.objects.get_or_create(producto=producto, vale_devolucion = devolucion, complete=False)
+            
+            producto.seleccionado = True
+            #Se le resta a la cantidad de artículos para surtir
+            producto.cantidad = producto.cantidad - cantidad
+            #La cantidad de la devolución es igual a la cantidad que se marcó en la devolución (daaa)
+            devolucion_articulos.cantidad = cantidad
+            devolucion_articulos.comentario = comentario
+            devolucion_articulos.precio = producto.precio
+            devolucion_articulos.complete = True
+            if producto.cantidad == 0: #Si la cantidad de artículos para surtir es igual a 0, si la cantidad a devolver es 0 entonces ya no se puede surtir
+                producto.surtir = False
+            messages.success(request,'Has agregado producto para devolución de manera exitosa')
+            producto.save()
+            devolucion_articulos.save()
+    if action == "remove":
+        if devolucion.tipo.nombre == "SALIDA":
+            item = Devolucion_Articulos.objects.get(producto=producto.producto, vale_devolucion = devolucion, complete = True)
+        else:
+            item = Devolucion_Articulos.objects.get(producto=producto, vale_devolucion = devolucion, complete = True)
+        producto.cantidad = producto.cantidad + item.cantidad
+        producto.seleccionado = False
+        messages.success(request,'Has eliminado un producto de tu listado')
+        producto.save()
+        item.delete()
+
+    return JsonResponse('Item updated, action executed: '+data["action"], safe=False)
+
+def update_devolucion_salida(request):
+    data= json.loads(request.body)
+    action = data["action"]
+    cantidad = decimal.Decimal(data["val_cantidad"])
+    devolucion = data["devolucion"]
+    producto_id = data["id"]
+    comentario = data["comentario"]
+    referencia = data["referencia"]
+    devolucion = Devolucion.objects.get(id = devolucion)
+    #La referencia es necesaria a diferencia del otro lado ya que con este se puede saber el producto
+    if referencia == 'None':
+        referencia = None
+    if devolucion.tipo.nombre == "SALIDA":
+        producto = Salidas.objects.get(vale_salida=devolucion.salida.vale_salida, producto__id = producto_id, referencia=referencia)
         inv_del_producto = Inventario.objects.get(producto = producto.producto.articulos.producto.producto)
     else:
         producto = ArticulosparaSurtir.objects.get(id = producto_id)
@@ -340,8 +416,16 @@ def salida_material(request, pk):
     vale_salida, created = ValeSalidas.objects.get_or_create(almacenista = usuario,complete = False,solicitud=orden)
     salidas = Salidas.objects.filter(vale_salida = vale_salida)
     cantidad_items = salidas.count()
+    referencias_existentes = Salidas.objects.filter(vale_salida__solicitud = orden, vale_salida__complete=True).values_list('referencia', flat=True)
+    for salida in salidas:
+        # Obtener las referencias asociadas a cada producto
+        referencias = EntradaArticulo.objects.filter(
+            articulo_comprado__oc__req__orden=salida.producto.articulos.orden,articulo_comprado__producto__producto__articulos__producto__producto=salida.producto.articulos.producto.producto,
+        ).exclude(referencia__in=referencias_existentes).values_list('referencia', flat=True)
 
-
+        # Agregar las referencias al producto (puedes almacenar esto en una lista o agregarlo como un atributo)
+        salida.referencias = list(referencias)
+        
     formVale = ValeSalidasForm()
     form = SalidasForm()
     users = Profile.objects.all()
@@ -350,10 +434,17 @@ def salida_material(request, pk):
         formVale = ValeSalidasForm(request.POST, instance=vale_salida)
         
         if formVale.is_valid():
-            #formVale.save()
             vale = formVale.save(commit=False)
             cantidad_salidas = 0
             cantidad_productos = productos.count()
+
+            # Iterar sobre las salidas para asignar las referencias seleccionadas
+            for salida in salidas:
+                referencia_seleccionada = request.POST.get(f'referencia_{salida.id}', None)
+                if referencia_seleccionada:
+                    salida.referencia = referencia_seleccionada 
+                    salida.save()
+
             for producto in productos:
                 producto.seleccionado = False
                 if producto.cantidad == 0:
@@ -364,6 +455,7 @@ def salida_material(request, pk):
             if cantidad_productos == cantidad_salidas:
                 orden.requisitado == True #Esta variable creo que podría ser una variable estúpida
                 orden.save()
+            #vale.referencia = ref
             vale.complete = True
             vale.save()
             messages.success(request,'La salida se ha generado de manera exitosa')
@@ -484,7 +576,7 @@ def devolucion_material_salida(request, pk):
         'productos_sel': productos_sel,
         }
 
-    return render(request, 'requisiciones/devolucion_material.html',context)
+    return render(request, 'requisiciones/devolucion_salida.html',context)
 
 
 def solicitud_autorizada_firma(request):
@@ -538,6 +630,7 @@ def update_salida(request):
             entrada_res = EntradaArticulo.objects.filter(articulo_comprado__producto__producto__articulos__producto = inv_del_producto, articulo_comprado__producto__producto__articulos__orden__tipo__tipo = 'resurtimiento', agotado = False).order_by('id')
 
         if entradas_dir.exists():
+            print('IF')
             entradas = EntradaArticulo.objects.filter(articulo_comprado__producto__producto = producto, agotado=False, entrada__oc__req__orden= producto.articulos.orden)
             for entrada in entradas:
                 if producto.cantidad > 0:
@@ -572,6 +665,7 @@ def update_salida(request):
                     inv_del_producto.save()
         elif entrada_res.exists():   #si hay resurtimiento
             for entrada in entrada_res:
+                print('ELIF')
                 if producto.cantidad > 0:
                     salida, created = Salidas.objects.get_or_create(producto=producto, vale_salida = vale_salida, complete=False)
                     salida.cantidad = cantidad
@@ -591,6 +685,7 @@ def update_salida(request):
                     salida.precio = entrada.articulo_comprado.precio_unitario
                     salida.save()
         else:    #si no hay resurtimiento
+            print('ELSE')
             salida, created = Salidas.objects.get_or_create(producto=producto, vale_salida = vale_salida, complete=False)
             salida.cantidad = cantidad
             salida.entrada = 0
@@ -1032,7 +1127,7 @@ def render_pdf_view(request, pk):
     #Create blank list
     data =[]
 
-    data.append(['''Código''', '''Nombre''', '''Cantidad''','''Comentario'''])
+    data.append(['''Código''', '''Producto''', '''Cantidad''','''Comentario'''])
 
 
     high = 540
@@ -1099,7 +1194,7 @@ def render_pdf_view(request, pk):
         c.rect(20,high-120,70,15, fill=True, stroke=False)
         c.setFillColor(white)
         c.drawString(25,high-95,'Solicitado por:')
-        c.drawString(25,high-115, 'Aprobado por')
+        c.drawString(25,high-115, 'Aprobado por:')
         c.setFillColor(prussian_blue)
         c.rect(20,high-40,565,25, fill=True, stroke=False)
         c.setFillColor(white)
@@ -1228,10 +1323,10 @@ def reporte_entradas(request):
     return render(request,'requisiciones/reporte_entradas.html', context)
 
 def reporte_salidas(request):
-    salidas = Salidas.objects.all().order_by('-vale_salida')
+    salidas = Salidas.objects.filter(producto__isnull=False).order_by('-vale_salida')
     myfilter = SalidasFilter(request.GET, queryset=salidas)
     salidas = myfilter.qs
-    salidas_filtradas = salidas.filter(producto__articulos__producto__producto__servicio = False)
+    salidas_filtradas = salidas.filter(producto__articulos__producto__producto__servicio = False,)
 
     if request.method == "POST" and 'btnExcel' in request.POST:
         return convert_salidas_to_xls(salidas_filtradas)
@@ -1250,6 +1345,16 @@ def reporte_salidas(request):
 
     return render(request,'requisiciones/reporte_salidas.html', context)
 
+
+def editar_cliente(request, salida_id):
+    if request.method == "POST":
+        salida = get_object_or_404(Salidas, id=salida_id)
+        nuevo_cliente = request.POST.get('cliente', '').strip()
+        salida.cliente = nuevo_cliente
+        salida.save()
+        messages.success(request,f'Has actualizado los datos del cliente correctamente. Salida:{salida.id}-Vale:{salida.vale_salida.id}')
+        return redirect('reporte-salidas')  # Ajusta el nombre de tu vista principal
+    
 @login_required(login_url='user-login')
 def historico_articulos_para_surtir(request):
     registros = ArticulosparaSurtir.history.all()
@@ -1836,10 +1941,10 @@ def render_salida_pdf(request, pk):
 
     data =[]
     high = 670
-    data.append(['''Código''','''Producto''', '''Cantidad''', '''Unidad''','''P.Unitario''', '''Importe'''])
+    data.append(['''Código''','''Producto''','''Referencia''','''Cliente''','''Cantidad''', '''Unidad''','''P.Unitario''', '''Importe'''])
     for producto in productos:
         producto_nombre = Paragraph(producto.producto.articulos.producto.producto.nombre, styles["BodyText"])
-        data.append([producto.producto.articulos.producto.producto.codigo, producto_nombre, producto.cantidad, producto.producto.articulos.producto.producto.unidad, producto.precio, producto.precio * producto.cantidad])
+        data.append([producto.producto.articulos.producto.producto.codigo, producto_nombre, producto.referencia, producto.cliente, producto.cantidad, producto.producto.articulos.producto.producto.unidad, producto.precio, producto.precio * producto.cantidad])
         high = high - 18
    
     c.setFillColor(black)
@@ -1873,8 +1978,10 @@ def render_salida_pdf(request, pk):
 
     c.line(370,proyecto_y - 20,430, proyecto_y - 20)
     c.drawCentredString(400,proyecto_y - 30,'Recibió')
-    c.drawCentredString(400,proyecto_y - 40, vale.material_recibido_por.staff.first_name +' '+vale.material_recibido_por.staff.last_name)
-
+    if vale.material_recibido_por:
+        c.drawCentredString(400,proyecto_y - 40, vale.material_recibido_por.staff.first_name +' '+vale.material_recibido_por.staff.last_name)
+    else:
+        c.drawCentredString(400,proyecto_y - 40, '')
 
     #c.line(240, high-200, 310, high-200)
     c.drawCentredString(280,proyecto_y - 30,'Autorizó')
@@ -1890,7 +1997,7 @@ def render_salida_pdf(request, pk):
     c.setFillColor(white)
 
     width, height = letter
-    table = Table(data, colWidths=[1.5 * cm, 10.5 * cm, 2.0 * cm, 2.0 * cm, 2.0 * cm, 2.0 * cm])
+    table = Table(data, colWidths=[1.5 * cm, 6.5 * cm, 2.0 * cm, 2.0 * cm, 2.0 * cm, 2.0 * cm, 2.0 * cm, 2.0 * cm])
     table.setStyle(TableStyle([ #estilos de la tabla
         ('INNERGRID',(0,0),(-1,-1), 0.25, colors.white),
         ('BOX',(0,0),(-1,-1), 0.25, colors.black),
@@ -2264,3 +2371,140 @@ def render_requisicion_pdf_view(request, pk):
     buf.seek(0)
 
     return FileResponse(buf, as_attachment=True, filename='Requisición_' + str(requisicion.folio) +'.pdf')
+
+@login_required
+def reporte_devoluciones(request):
+    usuario = Profile.objects.get(staff__id=request.user.id)
+    if usuario.tipo.almacen == True:
+        entradas = Devolucion.objects.all().order_by('-fecha').select_related('solicitud')
+    else:
+        entradas = Devolucion.objects.none()
+    myfilter = DevolucionFilter(request.GET, queryset=entradas)
+    entradas = myfilter.qs
+
+    if request.method == "POST" and 'btnExcel' in request.POST:
+        #print(entradas)
+        return convert_devoluciones_to_xls2(entradas)
+    
+    #Set up pagination
+    p = Paginator(entradas, 50)
+    page = request.GET.get('page')
+    ordenes_list = p.get_page(page)
+
+    context = {
+        'ordenes_list':ordenes_list,
+        'entradas':entradas,
+        'myfilter':myfilter,
+        }
+    
+    return render(request,'requisiciones/reporte_devoluciones.html', context)
+
+def convert_devoluciones_to_xls2(entradas):
+    # Crea un objeto BytesIO para guardar el archivo Excel
+    output = BytesIO()
+
+    # Crea un libro de trabajo y añade una hoja
+    workbook = xlsxwriter.Workbook(output, {'in_memory': True})
+    worksheet = workbook.add_worksheet("Matriz_Devoluciones")
+
+     
+    date_format = workbook.add_format({'num_format': 'dd/mm/yyyy'})
+    # Define los estilos
+    head_style = workbook.add_format({'bold': True, 'font_color': 'FFFFFF', 'bg_color': '333366', 'font_name': 'Arial', 'font_size': 11})
+    body_style = workbook.add_format({'font_name': 'Calibri', 'font_size': 10})
+    money_style = workbook.add_format({'num_format': '$ #,##0.00', 'font_name': 'Calibri', 'font_size': 10})
+    date_style = workbook.add_format({'num_format': 'dd/mm/yyyy', 'font_name': 'Calibri', 'font_size': 10})
+    percent_style = workbook.add_format({'num_format': '0.00%', 'font_name': 'Calibri', 'font_size': 10})
+    messages_style = workbook.add_format({'font_name':'Arial Narrow', 'font_size':11})
+
+    #columns = ['Folio Solicitud', 'Solicitante', 'Almacenista','Proyecto', 'Subproyecto', 'Fecha creación','Productos','Tipo','Autorizada','Fecha autorización','Comentario']
+    columns = ['Folio Solicitud', 'Solicitante', 'Almacenista','Proyecto', 'Subproyecto', 'Fecha creación','Tipo','Autorizada','Fecha autorización','Comentario']
+
+    columna_max = len(columns)+2
+
+    worksheet.write(0, columna_max - 1, 'Reporte Creado Automáticamente por SAVIA 2.0 Vordcab. UH', messages_style)
+    worksheet.write(1, columna_max - 1, 'Software desarrollado por Grupo Vordcab S.A. de C.V.', messages_style)
+    worksheet.set_column(columna_max - 1, columna_max, 30)  # Ajusta el ancho de las columnas nuevas
+
+    for i, column in enumerate(columns):
+        worksheet.write(0, i, column, head_style)
+        worksheet.set_column(i, i, 15)  # Ajusta el ancho de las columnas
+
+    row_num = 0
+    for dev in entradas:
+        if dev.tipo:
+            tipo = dev.tipo.nombre
+        else:
+            tipo = ''
+        if dev.autorizada is True:
+            autorizado = 'Autorizado'
+        elif dev.autorizada is False:
+            autorizado = 'No Autorizado'
+        else:
+            autorizado = 'Pendiente'
+        row_num += 1
+        # Crear la lista de productos con nombre y cantidad
+        #productos_lista = [
+        #    f"{producto['producto__producto__nombre']} (Cantidad: {producto['cantidad']})"
+        #    for producto in dev.solicitud.productos.values('producto__producto__nombre', 'cantidad')
+        #]
+        # Unir la lista en una cadena
+        #productos_str = ", ".join(productos_lista)
+
+        row = [
+            dev.solicitud.folio,
+            f"{dev.solicitud.staff.staff.first_name} {dev.solicitud.staff.staff.last_name}",
+            f"{dev.almacenista.staff.first_name} {dev.almacenista.staff.last_name}",
+            dev.solicitud.proyecto.nombre,
+            dev.solicitud.subproyecto.nombre,
+            str(dev.created_at),
+            #productos_str,  # Productos concatenados
+            tipo,
+            autorizado,
+            str(dev.fecha),
+            dev.comentario,
+        ]
+        
+        for col_num, cell_value in enumerate(row):
+        # Define el formato por defecto
+            cell_format = body_style
+
+            # Finalmente, escribe la celda con el valor y el formato correspondiente
+            worksheet.write(row_num, col_num, cell_value, cell_format)
+
+      
+        #worksheet.write_formula(row_num, 19, f'=IF(ISBLANK(R{row_num+1}), L{row_num+1}, L{row_num+1}*R{row_num+1})', money_style)
+    
+   
+    workbook.close()
+
+    # Construye la respuesta
+    output.seek(0)
+
+    response = HttpResponse(
+        output.read(), 
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+    response['Content-Disposition'] = f'attachment; filename=Matriz_requisiciones_{dt.date.today()}.xlsx'
+      # Establecer una cookie para indicar que la descarga ha iniciado
+    response.set_cookie('descarga_iniciada', 'true', max_age=20)  # La cookie expira en 20 segundos
+    output.close()
+    return response
+
+@login_required
+def terminado_salida_surtir(request, pk):
+    entrada = get_object_or_404(EntradaArticulo, id=pk)
+    perfil = Profile.objects.get(staff__id=request.user.id)
+    vale, created = ValeSalidas.objects.get_or_create(solicitud_terminado = entrada.producto_terminado.solicitud,almacenista=perfil,proyecto=entrada.producto_terminado.solicitud.proyecto,subproyecto=entrada.producto_terminado.solicitud.subproyecto,complete=True)
+    vale.save()
+    salida, created = Salidas.objects.get_or_create(vale_salida=vale,producto_terminado=entrada.producto_terminado,cantidad=entrada.cantidad,complete =True)
+    salida.save()
+    entrada.liberado = True
+    entrada.save()
+    #Modificar el inventario para la salida
+    inventario = entrada.producto_terminado.producto
+    inventario.cantidad -= entrada.cantidad
+    inventario.comentario = 'Salida de producto terminado'
+    inventario.save()
+    messages.success(request,f'Salida creada para la entrada: {entrada.id}, producto {entrada.producto_terminado.producto.producto.nombre}') 
+    return redirect('producto-terminado-salida')

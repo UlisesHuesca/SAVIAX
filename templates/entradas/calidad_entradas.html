@@ -135,7 +135,7 @@
             <table class="table bg-white">
                 <thead class="text-black" style="background-color: #F5F5F5;">
                     <tr>
-                        <th scope="col">Compra</th>
+                        <th scope="col">Folio</th>
                         <th scope="col">Entrada</th>
                         <th class="d-none d-lg-table-cell">Req.</th>
                         <th class="d-none d-lg-table-cell">Solicitado por</th>
@@ -148,13 +148,13 @@
                         <th>Cantidad</th>
                         <th>Comentario Calidad</th>
                         <th>Editar comentario</th>
-                        <th>Autorización</th>
+                        <th>Validar</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for item in articulos_recepcionados_list %}
                     <tr>
-                        <td scope="col">{{item.entrada.oc.get_folio}}</td>
+                        <td scope="col">{{item.referencia}}</td>
                         <td scope="col">{{item.id}}</td>
                         <td class="d-none d-lg-table-cell">{{item.entrada.oc.req.folio}}</td>
                         <td class="d-none d-lg-table-cell">{{item.entrada.oc.req.orden.staff.staff.first_name}} {{item.entrada.oc.req.orden.staff.staff.last_name}}</td>
@@ -202,11 +202,11 @@
                             </div>
                         </td>
                         <td>
-                            <button class="btn btn-success" onclick="autorizarCalidad('{{ item.id }}', true)">
-                                <i class="fa-regular fa-circle-check"></i>
+                            <button class="btn btn-outline-success btn-lg" onclick="autorizarCalidad('{{ item.id }}', true)">
+                                <i class="fa-solid fa-check"></i>
                             </button>
-                            <button class="btn btn-danger" onclick="autorizarCalidad('{{ item.id }}', false)">
-                                <i class="fa-solid fa-circle-xmark"></i>
+                            <button class="btn btn-outline-danger btn-lg" onclick="autorizarCalidad('{{ item.id }}', false)">
+                                <i class="fa-solid fa-xmark"></i>
                             </button>
                         </td>
                     </tr>
