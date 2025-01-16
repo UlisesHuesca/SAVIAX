@@ -194,16 +194,16 @@ function mini_ajax(familia_id){
 };
 
 function actualizarSubfamilia(data) {
-    //console.log(data)
+    // Referencia correcta a los datos recibidos
     var $subfamiliaSelect = $('#id_subfamilia');
     $subfamiliaSelect.empty(); // Limpiar las opciones actuales
 
     // Añadir una opción placeholder
-    $subfamiliaSelect.append(new Option('Seleccione una familia', '', true, true));
+    $subfamiliaSelect.append(new Option('Seleccione una subfamilia', '', true, true));
 
-    // Añadir nuevas opciones
-    $.each(data, function(index, subproyecto) {
-        $subfamiliaSelect.append(new Option(subfamilia.nombre, subfamilia.id, false, false));
+    // Añadir nuevas opciones con la referencia correcta al objeto en el array
+    $.each(data, function(index, item) {
+        $subfamiliaSelect.append(new Option(item.nombre, item.id, false, false));
     });
 
     // Necesitas reinicializar el select2 para reflejar los cambios
@@ -261,6 +261,5 @@ function formatRepo (repo) {
 function formatRepoSelection (repo) {
     return repo.text || repo.id;
 }
-  </script>
   </script>
 {% endblock %}
