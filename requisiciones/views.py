@@ -192,7 +192,6 @@ def solicitudes_autorizadas_pendientes(request):
         }
     return render(request, 'requisiciones/solicitudes_autorizadas_no_surtidas.html',context)
 
-
 def update_devolucion(request):
     data= json.loads(request.body)
     action = data["action"]
@@ -200,11 +199,68 @@ def update_devolucion(request):
     devolucion = data["devolucion"]
     producto_id = data["id"]
     comentario = data["comentario"]
+
     devolucion = Devolucion.objects.get(id = devolucion)
     
-    
     if devolucion.tipo.nombre == "SALIDA":
-        producto = Salidas.objects.get(vale_salida=devolucion.salida.vale_salida, producto__id = producto_id)
+        producto = Salidas.objects.get(vale_salida=devolucion.salida.vale_salida, producto__id = producto_id,)
+        inv_del_producto = Inventario.objects.get(producto = producto.producto.articulos.producto.producto)
+    else:
+        producto = ArticulosparaSurtir.objects.get(id = producto_id)
+        inv_del_producto = Inventario.objects.get(producto = producto.articulos.producto.producto)
+        
+
+
+    if action == "add":
+        cantidad_total = producto.cantidad - cantidad
+        if cantidad_total < 0:
+            messages.error(request,f'La cantidad que se quiere ingresar sobrepasa la cantidad disponible. {cantidad_total} mayor que {producto.cantidad}')
+        else:
+            if devolucion.tipo.nombre == "SALIDA":
+                devolucion_articulos, created = Devolucion_Articulos.objects.get_or_create(producto= producto.producto, vale_devolucion = devolucion, complete=False)
+            else:
+                devolucion_articulos, created = Devolucion_Articulos.objects.get_or_create(producto=producto, vale_devolucion = devolucion, complete=False)
+            
+            producto.seleccionado = True
+            #Se le resta a la cantidad de artículos para surtir
+            producto.cantidad = producto.cantidad - cantidad
+            #La cantidad de la devolución es igual a la cantidad que se marcó en la devolución (daaa)
+            devolucion_articulos.cantidad = cantidad
+            devolucion_articulos.comentario = comentario
+            devolucion_articulos.precio = producto.precio
+            devolucion_articulos.complete = True
+            if producto.cantidad == 0: #Si la cantidad de artículos para surtir es igual a 0, si la cantidad a devolver es 0 entonces ya no se puede surtir
+                producto.surtir = False
+            messages.success(request,'Has agregado producto para devolución de manera exitosa')
+            producto.save()
+            devolucion_articulos.save()
+    if action == "remove":
+        if devolucion.tipo.nombre == "SALIDA":
+            item = Devolucion_Articulos.objects.get(producto=producto.producto, vale_devolucion = devolucion, complete = True)
+        else:
+            item = Devolucion_Articulos.objects.get(producto=producto, vale_devolucion = devolucion, complete = True)
+        producto.cantidad = producto.cantidad + item.cantidad
+        producto.seleccionado = False
+        messages.success(request,'Has eliminado un producto de tu listado')
+        producto.save()
+        item.delete()
+
+    return JsonResponse('Item updated, action executed: '+data["action"], safe=False)
+
+def update_devolucion_salida(request):
+    data= json.loads(request.body)
+    action = data["action"]
+    cantidad = decimal.Decimal(data["val_cantidad"])
+    devolucion = data["devolucion"]
+    producto_id = data["id"]
+    comentario = data["comentario"]
+    referencia = data["referencia"]
+    devolucion = Devolucion.objects.get(id = devolucion)
+    #La referencia es necesaria a diferencia del otro lado ya que con este se puede saber el producto
+    if referencia == 'None':
+        referencia = None
+    if devolucion.tipo.nombre == "SALIDA":
+        producto = Salidas.objects.get(vale_salida=devolucion.salida.vale_salida, producto__id = producto_id, referencia=referencia)
         inv_del_producto = Inventario.objects.get(producto = producto.producto.articulos.producto.producto)
     else:
         producto = ArticulosparaSurtir.objects.get(id = producto_id)
@@ -520,7 +576,7 @@ def devolucion_material_salida(request, pk):
         'productos_sel': productos_sel,
         }
 
-    return render(request, 'requisiciones/devolucion_material.html',context)
+    return render(request, 'requisiciones/devolucion_salida.html',context)
 
 
 def solicitud_autorizada_firma(request):
@@ -574,6 +630,7 @@ def update_salida(request):
             entrada_res = EntradaArticulo.objects.filter(articulo_comprado__producto__producto__articulos__producto = inv_del_producto, articulo_comprado__producto__producto__articulos__orden__tipo__tipo = 'resurtimiento', agotado = False).order_by('id')
 
         if entradas_dir.exists():
+            print('IF')
             entradas = EntradaArticulo.objects.filter(articulo_comprado__producto__producto = producto, agotado=False, entrada__oc__req__orden= producto.articulos.orden)
             for entrada in entradas:
                 if producto.cantidad > 0:
@@ -608,6 +665,7 @@ def update_salida(request):
                     inv_del_producto.save()
         elif entrada_res.exists():   #si hay resurtimiento
             for entrada in entrada_res:
+                print('ELIF')
                 if producto.cantidad > 0:
                     salida, created = Salidas.objects.get_or_create(producto=producto, vale_salida = vale_salida, complete=False)
                     salida.cantidad = cantidad
@@ -627,6 +685,7 @@ def update_salida(request):
                     salida.precio = entrada.articulo_comprado.precio_unitario
                     salida.save()
         else:    #si no hay resurtimiento
+            print('ELSE')
             salida, created = Salidas.objects.get_or_create(producto=producto, vale_salida = vale_salida, complete=False)
             salida.cantidad = cantidad
             salida.entrada = 0

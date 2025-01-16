@@ -1140,6 +1140,15 @@ def add_product(request):
 def product_update(request, pk):
     usuario = Profile.objects.get(staff=request.user)
     item = Product.objects.get(id=pk)
+    familias = Familia.objects.all()
+    familia_select = item.familia
+    subfamilia_select = item.subfamilia
+    familias_para_select2 = [
+        {
+            'id': item.id, 
+            'text': str(item.nombre)
+        } for item in familias
+    ]
     error_messages = {}
     if request.method =='POST':
         form = AddProduct_Form(request.POST, request.FILES or None, instance=item, )
@@ -1205,6 +1214,9 @@ def product_update(request, pk):
         'error_messages':error_messages,
         'form': form,
         'item':item,
+        'familias_para_select2':familias_para_select2,
+        'familia_select':familia_select,
+        'subfamilia_select':subfamilia_select,
         }
     return render(request,'dashboard/product_update.html', context)
 
