@@ -2418,6 +2418,14 @@ def convert_excel_solicitud_matriz_productos(productos):
 
     (ws.cell(column = columna_max, row = 1, value='{Reporte Creado Automáticamente por SAVIA Vordtec. UH}')).style = messages_style
     (ws.cell(column = columna_max, row = 2, value='{Software desarrollado por Vordcab S.A. de C.V.}')).style = messages_style
+    # Calcular el número total de OCs únicas
+    total_ocs = productos.values('oc').distinct().count()
+
+    # Agregar la información al costado de la tabla
+    (ws.cell(column=columna_max , row=3, value='Total de OCs')).style = messages_style
+    (ws.cell(column=columna_max + 1 , row=3, value=total_ocs)).style = messages_style
+
+
     ws.column_dimensions[get_column_letter(columna_max)].width = 20
 
     rows = []
