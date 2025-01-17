@@ -3,7 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse, HttpResponse, FileResponse
 from django.contrib import messages
 from django.core.paginator import Paginator
-from django.db.models import F, Avg, Value, ExpressionWrapper, fields, Sum, Q, Case, When, DecimalField, Max, Prefetch, OuterRef, Subquery
+from django.db.models import F, Avg, Value, ExpressionWrapper, fields, Sum, Q, Case, When, DecimalField, Max, Prefetch, OuterRef, Subquery, Count
 from django.db.models.functions import Concat, Coalesce
 from django.conf import settings
 from django.core.mail import EmailMessage, BadHeaderError
@@ -2421,12 +2421,36 @@ def convert_excel_solicitud_matriz_productos(productos):
     # Calcular el número total de OCs únicas
     total_ocs = productos.values('oc').distinct().count()
 
-    # Agregar la información al costado de la tabla
-    (ws.cell(column=columna_max , row=3, value='Total de OCs')).style = messages_style
-    (ws.cell(column=columna_max + 1 , row=3, value=total_ocs)).style = messages_style
+    ocs_por_proveedor = (
+    productos.values('oc__proveedor__nombre__razon_social')  # Agrupar por proveedor
+    .annotate(total_ocs=Count('oc', distinct=True))  # Contar OCs únicas
+    .order_by('-total_ocs')  # Ordenar por el mayor número de OCs
+    )
 
+    # Agregar los encabezados de los proveedores al costado de la tabla principal
+   
+    (ws.cell(column=columna_max, row=1, value='Proveedor')).style = head_style
+    (ws.cell(column=columna_max + 1, row=1, value='Total de OCs')).style = head_style
 
-    ws.column_dimensions[get_column_letter(columna_max)].width = 20
+    # Agregar datos por proveedor
+    fila_inicio = 2
+    for index, proveedor_data in enumerate(ocs_por_proveedor, start=fila_inicio):
+        proveedor_nombre = proveedor_data['oc__proveedor__nombre__razon_social']
+        total_ocs = proveedor_data['total_ocs']
+
+        ws.cell(column=columna_max, row=index, value=proveedor_nombre).style = body_style
+        ws.cell(column=columna_max + 1, row=index, value=total_ocs).style = body_style
+
+        ws.column_dimensions[get_column_letter(columna_max)].width = 30
+
+    fila_total = row_num + 2
+    columna_total = columna_max + 3
+    ws.cell(row=fila_total, column=columna_total, value="Total de OCs").style = head_style
+    ws.cell(
+        row=fila_total,
+        column=columna_total + 1,
+        value=f"=SUM({get_column_letter(columna_max + 1)}:{get_column_letter(columna_max + 1)})"
+    ).style = body_style
 
     rows = []
 
