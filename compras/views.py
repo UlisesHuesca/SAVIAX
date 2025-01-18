@@ -3,7 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse, HttpResponse, FileResponse
 from django.contrib import messages
 from django.core.paginator import Paginator
-from django.db.models import F, Avg, Value, ExpressionWrapper, fields, Sum, Q, Case, When, DecimalField, Max, Prefetch, OuterRef, Subquery, Count
+from django.db.models import F, Avg, Value, ExpressionWrapper, fields, Sum, Q, Case, When, DecimalField, Max, Prefetch, OuterRef, Subquery, Count, FloatField
 from django.db.models.functions import Concat, Coalesce
 from django.conf import settings
 from django.core.mail import EmailMessage, BadHeaderError
@@ -2421,30 +2421,52 @@ def convert_excel_solicitud_matriz_productos(productos):
     # Calcular el número total de OCs únicas
     total_ocs = productos.values('oc').distinct().count()
 
+    #ocs_por_proveedor = (
+    #productos.values('oc__proveedor__nombre__razon_social')  # Agrupar por proveedor
+    #.annotate(total_ocs=Count('oc', distinct=True))  # Contar OCs únicas
+    #.order_by('-total_ocs')  # Ordenar por el mayor número de OCs
+    #)
     ocs_por_proveedor = (
-    productos.values('oc__proveedor__nombre__razon_social')  # Agrupar por proveedor
-    .annotate(total_ocs=Count('oc', distinct=True))  # Contar OCs únicas
+    productos.values('oc__proveedor__nombre__razon_social', 'oc__proveedor__estatus__nombre')  # Agrupar por proveedor y estatus
+    .annotate(
+        total_ocs=Count('oc', distinct=True),  # Contar OCs únicas
+        total_costo_oc=Sum(
+            Case(
+                When(producto__producto__articulos__producto__producto__iva=True, then=F('precio_unitario') * F('cantidad') * Value(1.16)),  # Con IVA
+                default=F('precio_unitario') * F('cantidad'),  # Sin IVA
+                output_field=FloatField()
+            )
+        )
+    )
     .order_by('-total_ocs')  # Ordenar por el mayor número de OCs
     )
-
     # Agregar los encabezados de los proveedores al costado de la tabla principal
    
     (ws.cell(column=columna_max, row=1, value='Proveedor')).style = head_style
     (ws.cell(column=columna_max + 1, row=1, value='Total de OCs')).style = head_style
+    (ws.cell(column=columna_max + 2, row=1, value='Estatus del Proveedor')).style = head_style
+    (ws.cell(column=columna_max + 3, row=1, value='Costo Total de OCs')).style = head_style
 
     # Agregar datos por proveedor
     fila_inicio = 2
     for index, proveedor_data in enumerate(ocs_por_proveedor, start=fila_inicio):
         proveedor_nombre = proveedor_data['oc__proveedor__nombre__razon_social']
         total_ocs = proveedor_data['total_ocs']
+        estatus_proveedor = proveedor_data['oc__proveedor__estatus__nombre']
+        total_costo_oc = proveedor_data['total_costo_oc'] or 0  # Manejar valores nulos en la suma
 
         ws.cell(column=columna_max, row=index, value=proveedor_nombre).style = body_style
         ws.cell(column=columna_max + 1, row=index, value=total_ocs).style = body_style
+        ws.cell(column=columna_max + 2, row=index, value=estatus_proveedor).style = body_style
+        ws.cell(column=columna_max + 3, row=index, value=total_costo_oc).style = money_style
 
         ws.column_dimensions[get_column_letter(columna_max)].width = 30
+        ws.column_dimensions[get_column_letter(columna_max + 1)].width = 15
+        ws.column_dimensions[get_column_letter(columna_max + 2)].width = 20
+        ws.column_dimensions[get_column_letter(columna_max + 3)].width = 18
 
     fila_total = row_num + 2
-    columna_total = columna_max + 3
+    columna_total = columna_max + 6
     ws.cell(row=fila_total, column=columna_total, value="Total de OCs").style = head_style
     ws.cell(
         row=fila_total,
