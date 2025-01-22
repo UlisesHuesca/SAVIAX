@@ -3451,7 +3451,7 @@ def generar_oc_comparativas_pdf(request, pk):
     current_height = max_height_per_page
     pages = []  # Lista para almacenar los datos de cada página
     current_item_count = 0  # Contador de elementos por página
-    for i in range(5):
+    for i in range(1):
         for producto in productos:
             # Crear filas para la tabla
             nombre = Paragraph(safe_string(producto.producto.producto.nombre), style=custom_style_tight)
