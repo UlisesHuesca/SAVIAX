@@ -160,5 +160,6 @@ class Devolucion_Articulos(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     history = HistoricalRecords(history_change_reason_field=models.TextField(null=True))
     complete = models.BooleanField(default=False)
+    referencia = models.CharField(max_length=50, null=True, blank=True)
 
 

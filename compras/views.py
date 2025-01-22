@@ -3394,93 +3394,73 @@ def generar_oc_comparativas_pdf(request, pk):
         Paragraph('Cotización 3', style=header_style),
     ]
 
-    # Inserta el encabezado al inicio de los datos
-    data.insert(0, header)
-    for producto in productos:
-        # Usar la función safe_string para manejar None
-        nombre =  safe_string(producto.producto.producto.nombre)
-        proveedor1 = safe_string(producto.comparativo.proveedor.nombre.razon_social)
-        proveedor2 = safe_string(producto.comparativo.proveedor2.nombre.razon_social)
-        proveedor3 = safe_string(producto.comparativo.proveedor3.nombre.razon_social)
-        modelo1 = safe_string(producto.modelo)
-        modelo2 = safe_string(producto.modelo2)
-        modelo3 = safe_string(producto.modelo3)
-        marca1 = safe_string(producto.marca)
-        marca2 = safe_string(producto.marca2)
-        marca3 = safe_string(producto.marca3)
-        precio1 = safe_string(str(producto.precio))
-        precio2 = safe_string(str(producto.precio2))
-        precio3 = safe_string(str(producto.precio3))
+    row_height = 35  # Altura de cada fila
+    max_items_per_page = 12  # Máximo de 12 elementos por página
+    max_height_per_page = 600  # Altura máxima para datos en una página
+    page_margin = 100  # Margen superior
 
-        # Verificar si hay cotización o no
-        coti1 = 'Si' if producto.comparativo.cotizacion is not None else 'Sin documento'
-        coti2 = 'Si' if producto.comparativo.cotizacion is not None else 'Sin documento'
-        coti3 = 'Si' if producto.comparativo.cotizacion is not None else 'Sin documento'
-        # Convertir todos los valores a Paragraph
-        nombre = Paragraph(nombre, style=custom_style_tight)
-        proveedor1 = Paragraph(proveedor1, style=custom_style_tight)
-        proveedor2 = Paragraph(proveedor2, style=custom_style_tight)
-        proveedor3 = Paragraph(proveedor3, style=custom_style_tight)
-        modelo1 = Paragraph(modelo1, style=custom_style_tight)
-        modelo2 = Paragraph(modelo2, style=custom_style_tight)
-        modelo3 = Paragraph(modelo3, style=custom_style_tight)
-        marca1 = Paragraph(marca1, style=custom_style_tight)
-        marca2 = Paragraph(marca2, style=custom_style_tight)
-        marca3 = Paragraph(marca3, style=custom_style_tight)
-        precio1 = Paragraph('$'+precio1, style=custom_style_tight)
-        precio2 = Paragraph('$'+precio2, style=custom_style_tight)
-        precio3 = Paragraph('$'+precio3, style=custom_style_tight)
-        coti1 = Paragraph(coti1, style=custom_style_tight)
-        coti2 = Paragraph(coti2, style=custom_style_tight)
-        coti3 = Paragraph(coti3, style=custom_style_tight)
+    # Preparar datos para la tabla
+    data = [header]
+    current_height = max_height_per_page
+    pages = []  # Lista para almacenar los datos de cada página
+    current_item_count = 0  # Contador de elementos por página
+    for i in range(5):
+        for producto in productos:
+            # Crear filas para la tabla
+            nombre = Paragraph(safe_string(producto.producto.producto.nombre), style=custom_style_tight)
+            proveedor1 = Paragraph(safe_string(producto.comparativo.proveedor.nombre.razon_social), style=custom_style_tight)
+            precio1 = Paragraph('$' + safe_string(str(producto.precio)), style=custom_style_tight)
+            coti1 = Paragraph('Si' if producto.comparativo.cotizacion else 'Sin documento', style=custom_style_tight)
+            proveedor2 = Paragraph(safe_string(producto.comparativo.proveedor2.nombre.razon_social), style=custom_style_tight)
+            precio2 = Paragraph('$' + safe_string(str(producto.precio2)), style=custom_style_tight)
+            coti2 = Paragraph('Si' if producto.comparativo.cotizacion else 'Sin documento', style=custom_style_tight)
+            proveedor3 = Paragraph(safe_string(producto.comparativo.proveedor3.nombre.razon_social), style=custom_style_tight)
+            precio3 = Paragraph('$' + safe_string(str(producto.precio3)), style=custom_style_tight)
+            coti3 = Paragraph('Si' if producto.comparativo.cotizacion else 'Sin documento', style=custom_style_tight)
 
-        # Agregar los datos a la tabla en una sola fila
-        #data.append([
-        #    nombre, proveedor1, modelo1, marca1, precio1, coti1,
-        #    proveedor2, modelo2, marca2, precio2, coti2,
-        #    proveedor3, modelo3, marca3, precio3, coti3
-        #])
-        data.append([
-            nombre, proveedor1, precio1, coti1,
-            proveedor2, precio2, coti2,
-            proveedor3, precio3, coti3
-        ])
-                                #4
-    table = Table(data, colWidths=[2 * cm] * 10)
-    table_style = TableStyle([
-        ('INNERGRID', (0, 1), (-1, -1), 0.25, colors.black),
-        ('BOX', (0, 0), (-1, -1), 0.25, colors.black),
-        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            # Agregar fila al conjunto actual
+            row = [nombre, proveedor1, precio1, coti1, proveedor2, precio2, coti2, proveedor3, precio3, coti3]
+            data.append(row)
+            current_item_count += 1
+            current_height -= row_height  # Reducir la altura disponible
 
-        # Estilo para el encabezado
-        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#003153')),
-        ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
+            # Si hemos alcanzado el límite de 12 elementos o no hay suficiente espacio
+            if current_item_count >= max_items_per_page or current_height < page_margin:
+                pages.append(data)  # Guardar las filas de la página actual
+                data = [header]  # Reiniciar con el encabezado para la nueva página
+                current_height = max_height_per_page  # Reiniciar la altura disponible
+                current_item_count = 0  # Reiniciar el contador de elementos por página
 
-        # Estilo para el cuerpo de la tabla
-        ('TEXTCOLOR', (0, 1), (-1, -1), colors.black),
-        ('FONTSIZE', (0, 1), (-1, -1), 5),
-    ])
-    
-    frame = Frame(135, 0, width-145, height-648, id='normal')   
-    table.setStyle(table_style)
-    table.wrapOn(c, width, height)
-    table.drawOn(c, 20, 550) 
-    c.setFillColor(black)
-    c.setLineWidth(.2)
-    c.setFont('Helvetica',8)
-    
-    caja_proveedor = caja_iso - 65
-    c.setFont('Helvetica', 12)
-    c.setFillColor(prussian_blue)
-    c.rect(20,30,565,30, fill=True, stroke=False)
+    # Agregar la última página si quedan elementos
+    if data:
+        pages.append(data)
 
-    c.showPage()
-    
+    # Dibujar la tabla
+    for page_data in pages:
+        table = Table(page_data, colWidths=[2 * cm] * 10)
+        table.setStyle(TableStyle([
+            ('INNERGRID', (0, 0), (-1, -1), 0.25, colors.black),
+            ('BOX', (0, 0), (-1, -1), 0.25, colors.black),
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#003153')),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+            ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
+            ('FONTSIZE', (0, 1), (-1, -1), 5),
+        ]))
+
+        # Calcular la altura de inicio para la página actual
+        start_height = max_height_per_page - (row_height * current_item_count) - row_height  # Ajustar altura en función de los productos en la página
+
+        table.wrapOn(c, width, height)
+        table.drawOn(c, 20, start_height)  # Dibujar la tabla en la posición ajustada
+
+        c.showPage()  # Crear nueva página
+
+    # Guardar el archivo PDF
     c.save()
     buf.seek(0)
 
-    #return FileResponse(buf, as_attachment=True, filename='Comparativa_' + str(compras.folio) +'.pdf')
-    return FileResponse(buf, as_attachment=True, filename='Comparativas_prueba'  +'.pdf')
+
+    return FileResponse(buf, as_attachment=True, filename='Comparativo_'+ str(comparativo.id)  + '.pdf')
 
 @login_required(login_url='user-login')
 def comparativo_historico(request):
