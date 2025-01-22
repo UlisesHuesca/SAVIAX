@@ -15,6 +15,7 @@ class Articulos_RequisitadosAdmin(admin.ModelAdmin):
     raw_id_fields = ('req','producto')
 
 class SalidasAdmin(admin.ModelAdmin):
+    raw_id_fields = ('producto',)
     list_display = ('id','producto','cantidad','precio','complete','entrada')
     search_fields = ['producto__articulos__producto__producto__nombre']
     raw_id_fields = ('producto','activo',)

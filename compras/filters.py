@@ -1,7 +1,7 @@
 import django_filters
 from requisiciones.models import ArticulosRequisitados
 from .models import Compra, ArticuloComprado, Comparativo, Item_Comparativo
-from django_filters import CharFilter, DateFilter
+from django_filters import CharFilter, DateFilter, ChoiceFilter
 from django.db.models import Q
 
 class CompraFilter(django_filters.FilterSet):
@@ -20,10 +20,27 @@ class CompraFilter(django_filters.FilterSet):
         fields = ['proveedor','creada_por','req','proyecto','subproyecto','start_date','end_date', 'costo_oc', 'id',]
 
 class ArticuloCompradoFilter(django_filters.FilterSet):
+    ESTATUS_CHOICES = [
+        ('Aprobada', 'Aprobada'),
+        ('Cancelada', 'Cancelada'),
+        ('No Aprobada aún', 'No Aprobada aún'),
+    ]
+
+
     producto = CharFilter(field_name='producto__producto__articulos__producto__producto__nombre', lookup_expr='icontains')
     oc = CharFilter(field_name='oc__id', lookup_expr='icontains')
+    estatus = ChoiceFilter(choices=ESTATUS_CHOICES, method='filter_estatus', label='Estatus')
     start_date = DateFilter(field_name = 'oc__created_at', lookup_expr='gte')
     end_date = DateFilter(field_name='oc__created_at',lookup_expr='lte')
+
+    def filter_estatus(self, queryset, name, value):
+        if value == 'Aprobada':
+            return queryset.filter(oc__autorizado2=True)
+        elif value == 'Cancelada':
+            return queryset.filter(oc__autorizado2=False)
+        elif value == 'No Aprobada aún':
+            return queryset.filter(oc__autorizado2__isnull=True)
+        return queryset
 
     class Meta:
         model = ArticuloComprado
