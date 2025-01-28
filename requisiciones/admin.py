@@ -4,6 +4,7 @@ from .models import Salidas, Requis, ArticulosRequisitados, ValeSalidas, Devoluc
 class RequisAdmin(admin.ModelAdmin):
     list_display = ('id','folio','orden','autorizar')
     list_filter = ('folio',)
+    search_fields = ['folio']
     raw_id_fields = ('orden',)
 
 class ValeSalidasAdmin(admin.ModelAdmin):
