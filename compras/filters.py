@@ -1,7 +1,7 @@
 import django_filters
 from requisiciones.models import ArticulosRequisitados
 from .models import Compra, ArticuloComprado, Comparativo, Item_Comparativo
-from django_filters import CharFilter, DateFilter, ChoiceFilter
+from django_filters import CharFilter, DateFilter, ChoiceFilter, MultipleChoiceFilter
 from django.db.models import Q
 
 class CompraFilter(django_filters.FilterSet):
