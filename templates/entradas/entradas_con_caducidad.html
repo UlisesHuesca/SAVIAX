@@ -120,6 +120,7 @@
                 <tr>
                     <th>ID Entrada</th>
                     <th>OC</th>
+                    <th>Sol.</th>
                     <th scope="col">Producto</th>
                     <th scope="col">Proveedor</th>
                     <th scope="col">Cantidad</th>
@@ -135,6 +136,7 @@
                 <tr>
                     <td>{{entrada.id}}</td>
                     <td>{{entrada.entrada.oc.id}}</td>
+                    <td>{{entrada.entrada.oc.req.orden.id}}</td>
                     <td scope="col">{{entrada.articulo_comprado.producto.producto.articulos.producto.producto.nombre}}</th>
                     <td scope="col">{{entrada.entrada.oc.proveedor.nombre}}</td>
                     <td scope="col">{{entrada.cantidad}}</td>

@@ -163,9 +163,11 @@
                                     <th scope="col">{{item.entrada}}</th>
                                     <th scope="col">
                                         <select class="form-select referencia-select" name="referencia_{{ item.id |unlocalize }}">
-                                            <option value="" selected disabled>Selecciona una referencia</option>
+                                            <option value="" disabled {% if not item.referencia %}selected{% endif %}>Selecciona una referencia</option>
                                             {% for referencia in item.referencias %}
-                                                <option value="{{ referencia }}">{{ referencia }}</option>
+                                                <option value="{{ referencia }}" {% if referencia == item.referencia %}selected{% endif %}>
+                                                    {{ referencia }}
+                                                </option>
                                             {% endfor %}
                                         </select>
                                     </th>
@@ -285,7 +287,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function actualizarOpciones() {
         // Recopilar todas las referencias seleccionadas
-        const referenciasSeleccionadas = Array.from(selects).map(select => select.value).filter(val => val !== "");
+        const referenciasSeleccionadas = Array.from(selects)
+            .map(select => select.value)
+            .filter(val => val !== ""); // Ignorar valores vacíos
 
         selects.forEach(select => {
             const options = select.querySelectorAll('option');
@@ -300,6 +304,9 @@ document.addEventListener('DOMContentLoaded', function () {
             });
         });
     }
+
+    // Llamar a actualizarOpciones al cargar la página para procesar valores iniciales
+    actualizarOpciones();
 
     // Escuchar cambios en todos los selects
     selects.forEach(select => {

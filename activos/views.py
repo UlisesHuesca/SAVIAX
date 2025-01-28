@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.urls import reverse
 from dashboard.models import Inventario, Profile, Marca
-from solicitudes.filters import InventarioFilter
+from solicitudes.filters import InventarioActivoFilter
 from django.core import serializers
 from .models import Activo, Tipo_Activo
 from requisiciones.models import Salidas 
@@ -1165,7 +1165,7 @@ def activos_producto(request):
         items = Inventario.objects.none()
     
 
-    myfilter=InventarioFilter(request.GET, queryset=items)
+    myfilter=InventarioActivoFilter(request.GET, queryset=items)
     items = myfilter.qs
 
     #Set up pagination

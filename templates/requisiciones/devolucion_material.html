@@ -143,6 +143,7 @@
                         <th scope="col">Código</th>
                         <th scope="col">Producto</th>
                         <th scope="col">Cantidad</th>
+                        <th scope="col">Referencia pend script</th>
                         <!--<th scope="col">Precio</th>-->
                         <th scope="col">Comentario</th>
                         </tr>
@@ -154,11 +155,21 @@
                             <th scope="col">{{item.producto.articulos.producto.producto.codigo|unlocalize}}</th>
                             <th scope="col">{{item.producto.articulos.producto.producto.nombre}}</th>
                             <th scope="col">{{item.cantidad}}</th>
+                            <th scope="col">
+                                <select class="form-select referencia-select" name="referencia_{{ item.id |unlocalize }}">
+                                    <option value="" disabled {% if not item.referencia %}selected{% endif %}>Selecciona una referencia</option>
+                                    {% for referencia in item.referencias %}
+                                        <option value="{{ referencia }}" {% if referencia == item.referencia %}selected{% endif %}>
+                                            {{ referencia }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </th>
                             <!--<th scope="col">${{item.precio}}</th>-->
                             <th scope="col">{{item.comentario}}</th>
                             <th scope="col">
                             <td>
-                                <button type="button" class="btn btn-danger" onclick="deleteRow(this)" id="delete" value="Delete" id_salida ="{{item.vale_devolucion.id}}" cantidad="{{item.cantidad}}" producto="{{item.producto}}" producto_id="{{item.producto.id|unlocalize}}" action="remove">
+                                <button type="button" class="btn btn-danger" onclick="deleteRow(this)" id="delete" value="Delete" id_salida ="{{item.vale_devolucion.id}}" cantidad="{{item.cantidad}}" producto="{{item.producto}}" producto_id="{{item.producto.id|unlocalize}}" id_articulo ="{{item.id}}" action="remove">
                                     <i class="fa-solid fa-trash-can"></i>
                                 </button>
                             </td>
@@ -305,33 +316,46 @@ function deleteRow(element) {
     devolucion = devolucion.getAttribute('id_salida')
     id = element.getAttribute('producto_id');
     val_cantidad = element.getAttribute('cantidad');
+    id_articulo = element.getAttribute('id_articulo');
     var action = "remove"
     comentario = ""
-    ActualizarArticulos(devolucion,id,val_cantidad,action,comentario);
+    ActualizarArticulos(devolucion,id,val_cantidad,action,comentario,id_articulo);
 }
 
 
 
-function ActualizarArticulos(devolucion,id,val_cantidad,action,comentario){
-    console.log('User is logged in, sending data...' )
+function ActualizarArticulos(devolucion, id, val_cantidad, action, comentario, id_articulo = null) {
+    console.log('User is logged in, sending data...');
 
-    var url = '/requisiciones/update_devolucion/'
+    var url = '/requisiciones/update_devolucion/';
 
-    fetch( url, {
-        method:'POST',
-        headers:{
-            'Content-Type':'application/json',
+    // Construir el cuerpo de la solicitud
+    let bodyData = {
+        devolucion: devolucion,
+        id: id,
+        val_cantidad: val_cantidad,
+        action: action,
+        comentario: comentario,
+    };
+
+    // Solo añadir id_articulo si no es null
+    if (id_articulo) {
+        bodyData.id_articulo = id_articulo;
+    }
+
+    fetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
             'X-CSRFToken': csrftoken,
         },
-        body:JSON.stringify({'devolucion':devolucion, 'id':id, 'val_cantidad':val_cantidad, 'action':action,'comentario':comentario})
+        body: JSON.stringify(bodyData),
     })
-    .then((response)=>{
-        return response.json()
-    })
-    .then((data)=>{
-        console.log('data:', data)
-        location.reload()
-    })
+    .then((response) => response.json())
+    .then((data) => {
+        console.log('data:', data);
+        location.reload();
+    });
 }
 
 </script>

@@ -199,7 +199,6 @@ def update_devolucion(request):
     devolucion = data["devolucion"]
     producto_id = data["id"]
     comentario = data["comentario"]
-
     devolucion = Devolucion.objects.get(id = devolucion)
     
     if devolucion.tipo.nombre == "SALIDA":
@@ -212,35 +211,61 @@ def update_devolucion(request):
 
 
     if action == "add":
-        cantidad_total = producto.cantidad - cantidad
-        if cantidad_total < 0:
-            messages.error(request,f'La cantidad que se quiere ingresar sobrepasa la cantidad disponible. {cantidad_total} mayor que {producto.cantidad}')
+        if producto.articulos.producto.producto.critico.nombre == "Crítico":
+            cantidad_total = int(cantidad)
+            cantidad = 1
+            for i in range(0, cantidad_total):
+                if devolucion.tipo.nombre == "SALIDA":
+                    devolucion_articulos, created = Devolucion_Articulos.objects.get_or_create(producto= producto.producto, vale_devolucion = devolucion, complete=False)
+                else:
+                    devolucion_articulos, created = Devolucion_Articulos.objects.get_or_create(producto=producto, vale_devolucion = devolucion, complete=False)
+                
+                producto.seleccionado = True
+                #Se le resta a la cantidad de artículos para surtir
+                producto.cantidad = producto.cantidad - cantidad
+                #La cantidad de la devolución es igual a la cantidad que se marcó en la devolución (daaa)
+                devolucion_articulos.cantidad = cantidad
+                devolucion_articulos.comentario = comentario
+                devolucion_articulos.precio = producto.precio
+                devolucion_articulos.complete = True
+                if producto.cantidad == 0: #Si la cantidad de artículos para surtir es igual a 0, si la cantidad a devolver es 0 entonces ya no se puede surtir
+                    producto.surtir = False
+                messages.success(request,'Has agregado producto para devolución de manera exitosa')
+                producto.save()
+                devolucion_articulos.save() 
         else:
-            if devolucion.tipo.nombre == "SALIDA":
-                devolucion_articulos, created = Devolucion_Articulos.objects.get_or_create(producto= producto.producto, vale_devolucion = devolucion, complete=False)
+            cantidad_total = producto.cantidad - cantidad
+            if cantidad_total < 0:
+                messages.error(request,f'La cantidad que se quiere ingresar sobrepasa la cantidad disponible. {cantidad_total} mayor que {producto.cantidad}')
             else:
-                devolucion_articulos, created = Devolucion_Articulos.objects.get_or_create(producto=producto, vale_devolucion = devolucion, complete=False)
-            
-            producto.seleccionado = True
-            #Se le resta a la cantidad de artículos para surtir
-            producto.cantidad = producto.cantidad - cantidad
-            #La cantidad de la devolución es igual a la cantidad que se marcó en la devolución (daaa)
-            devolucion_articulos.cantidad = cantidad
-            devolucion_articulos.comentario = comentario
-            devolucion_articulos.precio = producto.precio
-            devolucion_articulos.complete = True
-            if producto.cantidad == 0: #Si la cantidad de artículos para surtir es igual a 0, si la cantidad a devolver es 0 entonces ya no se puede surtir
-                producto.surtir = False
-            messages.success(request,'Has agregado producto para devolución de manera exitosa')
-            producto.save()
-            devolucion_articulos.save()
+                if devolucion.tipo.nombre == "SALIDA":
+                    devolucion_articulos, created = Devolucion_Articulos.objects.get_or_create(producto= producto.producto, vale_devolucion = devolucion, complete=False)
+                else:
+                    devolucion_articulos, created = Devolucion_Articulos.objects.get_or_create(producto=producto, vale_devolucion = devolucion, complete=False)
+                
+                producto.seleccionado = True
+                #Se le resta a la cantidad de artículos para surtir
+                producto.cantidad = producto.cantidad - cantidad
+                #La cantidad de la devolución es igual a la cantidad que se marcó en la devolución (daaa)
+                devolucion_articulos.cantidad = cantidad
+                devolucion_articulos.comentario = comentario
+                devolucion_articulos.precio = producto.precio
+                devolucion_articulos.complete = True
+                if producto.cantidad == 0: #Si la cantidad de artículos para surtir es igual a 0, si la cantidad a devolver es 0 entonces ya no se puede surtir
+                    producto.surtir = False
+                messages.success(request,'Has agregado producto para devolución de manera exitosa')
+                producto.save()
+                devolucion_articulos.save()
     if action == "remove":
+        articulo_id = data["id_articulo"]
         if devolucion.tipo.nombre == "SALIDA":
-            item = Devolucion_Articulos.objects.get(producto=producto.producto, vale_devolucion = devolucion, complete = True)
+            item = Devolucion_Articulos.objects.get(id=articulo_id, producto=producto.producto, vale_devolucion = devolucion, complete = True)
         else:
-            item = Devolucion_Articulos.objects.get(producto=producto, vale_devolucion = devolucion, complete = True)
+            item = Devolucion_Articulos.objects.get(id=articulo_id, producto=producto, vale_devolucion = devolucion, complete = True)
         producto.cantidad = producto.cantidad + item.cantidad
         producto.seleccionado = False
+        #Esta linea la pongo debido a que es necesaria para que vuelva a aparecer el producto cuando se elimina:
+        producto.surtir = True
         messages.success(request,'Has eliminado un producto de tu listado')
         producto.save()
         item.delete()
@@ -432,18 +457,29 @@ def salida_material(request, pk):
 
     if request.method == 'POST':
         formVale = ValeSalidasForm(request.POST, instance=vale_salida)
-        
-        if formVale.is_valid():
+
+        falta_referencia_critica = False 
+
+        # Iterar sobre las salidas para asignar las referencias seleccionadas y verificar
+        for salida in salidas:
+            referencia_seleccionada = request.POST.get(f'referencia_{salida.id}', None)
+
+            if referencia_seleccionada:
+                salida.referencia = referencia_seleccionada
+                #Para limpiar el dato si es que no se selecciona nada
+            else:
+                salida.referencia = None
+            salida.save()
+            # Verificar si el producto es crítico y no tiene referencia
+            if (salida.producto.articulos.producto.producto.critico.nombre == 'Crítico' and not salida.referencia):
+                falta_referencia_critica = True
+        # Si falta una referencia crítica, mostrar mensaje de error
+        if falta_referencia_critica:
+            messages.error(request, 'Falta una referencia de asignar')
+        elif formVale.is_valid():
             vale = formVale.save(commit=False)
             cantidad_salidas = 0
             cantidad_productos = productos.count()
-
-            # Iterar sobre las salidas para asignar las referencias seleccionadas
-            for salida in salidas:
-                referencia_seleccionada = request.POST.get(f'referencia_{salida.id}', None)
-                if referencia_seleccionada:
-                    salida.referencia = referencia_seleccionada 
-                    salida.save()
 
             for producto in productos:
                 producto.seleccionado = False
@@ -630,24 +666,29 @@ def update_salida(request):
             entrada_res = EntradaArticulo.objects.filter(articulo_comprado__producto__producto__articulos__producto = inv_del_producto, articulo_comprado__producto__producto__articulos__orden__tipo__tipo = 'resurtimiento', agotado = False).order_by('id')
 
         if entradas_dir.exists():
-            print('IF')
             entradas = EntradaArticulo.objects.filter(articulo_comprado__producto__producto = producto, agotado=False, entrada__oc__req__orden= producto.articulos.orden)
             for entrada in entradas:
                 if producto.cantidad > 0:
                     salida, created = Salidas.objects.get_or_create(producto=producto, vale_salida = vale_salida, complete=False)
                     salida.precio = entrada.articulo_comprado.precio_unitario
+                    #Aquí siempre van a entrar los productos con criticidad ya que al tener entrada limitada a 1, entonces solo pueden caer en este >=
                     if entrada.cantidad_por_surtir >= cantidad:
-                        salida.cantidad = cantidad 
+                        salida.cantidad = cantidad
+                        if producto.articulos.producto.producto.critico:
+                            if producto.articulos.producto.producto.critico.nombre == 'Crítico':
+                                cantidad = 1
+                        else:
+                            cantidad = 0 #la cantidad se vuelve 0 porque si la condición se cumple indica que la cantidad por surtir es capaz de abastecer toda la cantidad
                         producto.cantidad = producto.cantidad - salida.cantidad
                         salida.entrada = entrada.id
                         entrada.cantidad_por_surtir = entrada.cantidad_por_surtir - salida.cantidad
                         salida.complete = True
-                        if entrada.cantidad_por_surtir == 0:
+                        if entrada.cantidad_por_surtir <= 0:
                             entrada.agotado = True
                         producto.save()
                         entrada.save()
                         salida.save()
-                    elif entrada.cantidad_por_surtir < cantidad:
+                    elif entrada.cantidad_por_surtir < cantidad and cantidad > 0: #Le meto la condicional para que no se repita el proceso si la cantidad es igual o menor que 0 
                         salida.cantidad = entrada.cantidad_por_surtir #No puedo surtir mas que la cantidad que tengo disponible en la entrada
                         cantidad = cantidad - salida.cantidad #La nueva cantidad a surtir es la cantidad menos lo que ya salió
                         producto.cantidad = producto.cantidad - salida.cantidad
@@ -665,21 +706,41 @@ def update_salida(request):
                     inv_del_producto.save()
         elif entrada_res.exists():   #si hay resurtimiento
             for entrada in entrada_res:
-                print('ELIF')
-                if producto.cantidad > 0:
+                if cantidad > 0: #Se cambia producto.cantidad, se tiene que comparar con la cantidad de la salida no contra la cantidad disponible
                     salida, created = Salidas.objects.get_or_create(producto=producto, vale_salida = vale_salida, complete=False)
-                    salida.cantidad = cantidad
-                    #inv_del_producto.cantidad = inv_del_producto.cantidad - salida.cantidad #    Este falló ya con el nuevo método salida.precio = entrada_res.articulo_comprado.precio_unitario
-                    entrada.cantidad_por_surtir = entrada.cantidad_por_surtir - salida.cantidad
+                    #Que hace el código a continuación la cantidad de la salida se compara contra la cantidad por surtir de la entrada
+                    #L1 si es mayor la se guarda la cantidad_ant 
+                    #L2 se le resta a la cantidad lo que queda en la entrada, es decir la nueva cantidad es lo que no se pudo surtir con esa entrada(cantidad) 
+                    #L3 la cantidad de la salida es igual a la cantidad original menos la cantidad que no se pudo surtir con esa entrada
+                    #L4 se vacía la entrada y por lo tanto se marca como agotada.
+                    # Y si no la cantidad de la salida es igual a la cantidad(puede ser modificada por el bucle anterior o no) y 
+                    # entrada por surtir es igual a la cantidad por surtir menos la cantidad de la salida y la cantidad se agota 04/12/2024 
+                    print('entrada_res',cantidad)
+                    #Aquí siempre van a entrar los productos con criticidad ya que al tener entrada limitada a 1, entonces solo pueden caer en este >=
+                    if cantidad >= entrada.cantidad_por_surtir:
+                        cantidad_ant = cantidad
+                        if producto.articulos.producto.producto.critico:
+                            if producto.articulos.producto.producto.critico.nombre == 'Crítico':
+                                cantidad = 1
+                        else:
+                            cantidad = cantidad - entrada.cantidad_por_surtir
+                        salida.cantidad = cantidad_ant - cantidad
+                        entrada.cantidad_por_surtir = 0
+                        entrada.agotado = True
+                    else:
+                        salida.cantidad = cantidad
+                        entrada.cantidad_por_surtir = entrada.cantidad_por_surtir - salida.cantidad
+                        cantidad = 0
                     producto.cantidad = producto.cantidad - salida.cantidad
-                    #producto.cantidad_requisitar = producto.cantidad_requisitar + salida.cantidad
                     salida.entrada = entrada.id
                     salida.complete = True
-                    if producto.cantidad_requisitar == 0:
-                        producto.requisitar = False
-                    if entrada.cantidad_por_surtir == 0:
-                        entrada.agotado = True
+                    #if producto.cantidad_requisitar <= 0: #Esta línea se considera errónea 04/12/2024
+                    #    producto.requisitar = False  #Esta línea se considera errónea 04/12/2024
+                    if producto.cantidad <= 0:
+                        producto.surtir = False
+                    print(salida)
                     entrada.save()
+                    producto.save()
                     inv_del_producto.cantidad_entradas = inv_del_producto.cantidad_entradas - salida.cantidad
                     inv_del_producto._change_reason = f'Esta es la salida de un artículo desde un resurtimiento de inventario {salida.id}'
                     salida.precio = entrada.articulo_comprado.precio_unitario
