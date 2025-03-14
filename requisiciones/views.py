@@ -470,9 +470,8 @@ def salida_material(request, pk):
             else:
                 salida.referencia = None
             salida.save()
-            critico = getattr(salida.producto.articulos.producto.producto, 'critico', None)
             # Verificar si el producto es crítico y no tiene referencia
-            if critico and getattr(critico, 'nombre', '') == 'Crítico' and not salida.referencia:
+            if (salida.producto.articulos.producto.producto.critico.nombre == 'Crítico' and not salida.referencia):
                 falta_referencia_critica = True
         # Si falta una referencia crítica, mostrar mensaje de error
         if falta_referencia_critica:
