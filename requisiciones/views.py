@@ -656,7 +656,7 @@ def update_salida(request):
         #con cantidad total establezco si la "cantidad" no sobrepasa lo que tengo que surtir(producto.cantidad)     
         cantidad_total = producto.cantidad - cantidad
         producto.seleccionado = True
-        entradas_dir = EntradaArticulo.objects.filter(articulo_comprado__producto__producto=producto, agotado=False, entrada__oc__req__orden=producto.articulos.orden, articulo_comprado__producto__producto__articulos__orden__tipo__tipo = 'normal')
+        entradas_dir = EntradaArticulo.objects.filter(articulo_comprado__producto__producto=producto, agotado=False, entrada__oc__req__orden=producto.articulos.orden, articulo_comprado__producto__producto__articulos__orden__tipo__tipo = 'normal').order_by('id')
 
         try:
             EntradaArticulo.objects.filter(articulo_comprado__producto__producto__articulos__producto = inv_del_producto, articulo_comprado__producto__producto__articulos__orden__tipo__tipo = 'resurtimiento', agotado = False)
@@ -718,13 +718,19 @@ def update_salida(request):
                     # entrada por surtir es igual a la cantidad por surtir menos la cantidad de la salida y la cantidad se agota 04/12/2024 
                     print('entrada_res',cantidad)
                     #Aquí siempre van a entrar los productos con criticidad ya que al tener entrada limitada a 1, entonces solo pueden caer en este >=
+                    #if cantidad >= entrada.cantidad_por_surtir:
+                    #    cantidad_ant = cantidad
+                    #    if producto.articulos.producto.producto.critico:
+                    #        if producto.articulos.producto.producto.critico.nombre == 'Crítico':
+                    #            cantidad = 1
+                    #    else:
+                    #        cantidad = cantidad - entrada.cantidad_por_surtir
+                    #    salida.cantidad = cantidad_ant - cantidad
+                    #    entrada.cantidad_por_surtir = 0
+                    #    entrada.agotado = True
                     if cantidad >= entrada.cantidad_por_surtir:
                         cantidad_ant = cantidad
-                        if producto.articulos.producto.producto.critico:
-                            if producto.articulos.producto.producto.critico.nombre == 'Crítico':
-                                cantidad = 1
-                        else:
-                            cantidad = cantidad - entrada.cantidad_por_surtir
+                        cantidad = cantidad - entrada.cantidad_por_surtir
                         salida.cantidad = cantidad_ant - cantidad
                         entrada.cantidad_por_surtir = 0
                         entrada.agotado = True
@@ -767,21 +773,27 @@ def update_salida(request):
         
     if action == "remove":
         item = Salidas.objects.get(vale_salida = vale_salida, id = id_salida)
-        if item.entrada != 0:
-            entrada = EntradaArticulo.objects.get(id=item.entrada)
-            inv_del_producto.cantidad_entradas = inv_del_producto.cantidad_entradas + item.cantidad
-            entrada.cantidad_por_surtir = entrada.cantidad_por_surtir + item.cantidad
-            entrada.agotado = False
-            entrada.save()
+        id_entrada = item.entrada
+        if id_entrada != None:
+            if id_entrada != 0:
+                entrada = EntradaArticulo.objects.get(id=item.entrada)
+                inv_del_producto.cantidad_entradas = inv_del_producto.cantidad_entradas + item.cantidad
+                entrada.cantidad_por_surtir = entrada.cantidad_por_surtir + item.cantidad
+                entrada.agotado = False
+                entrada.save()
             #if entrada.entrada.oc.req.orden.tipo.tipo == "normal":
             #    inv_del_producto.cantidad_apartada = inv_del_producto.cantidad_apartada + item.cantidad
         if vale_salida.solicitud.tipo.tipo == "normal":
             inv_del_producto.cantidad_apartada = inv_del_producto.cantidad_apartada + item.cantidad
         #inv_del_producto.cantidad = inv_del_producto.cantidad + item.cantidad
-        producto.seleccionado = False
+        producto.seleccionado_salida = False
         producto.salida= False
         producto.cantidad = producto.cantidad + item.cantidad
-        inv_del_producto._change_reason = f'Esta es una cancelación de un artìculo en una salida {item.id}'
+        producto.surtir = True
+        producto.seleccionado_por = None 
+        #producto.cantidad_requisitar = producto.cantidad_requisitar + producto.cantidad
+        producto._change_reason = f'Esto es una eliminación de un artículo en una salida'
+        inv_del_producto._change_reason = f'Esta es una eliminación de un artìculo en una salida {item.id}'
         producto.save()
         inv_del_producto.save()
         item.delete()
