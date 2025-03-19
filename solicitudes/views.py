@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect
-from dashboard.models import Inventario, Order, ArticulosOrdenados, ArticulosparaSurtir, Inventario_Batch, Marca, Product, Tipo_Orden, Plantilla, ArticuloPlantilla, Producto_Calidad, Productos_Solicitud_Terminado, Solicitud_Producto_Terminado
+from dashboard.models import Inventario, Order, ArticulosOrdenados, ArticulosparaSurtir, Inventario_Batch, Marca, Product, Tipo_Orden, Plantilla, ArticuloPlantilla, Producto_Calidad, Productos_Solicitud_Terminado, Solicitud_Producto_Terminado, Unidad, Criticidad, Almacen
 from requisiciones.models import Requis, ArticulosRequisitados, ValeSalidas, Salidas
 from compras.models import Compra
 from tesoreria.models import Pago
@@ -16,8 +16,10 @@ from user.models import Profile, Distrito, Almacen
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse, HttpResponse, FileResponse
 from django.conf import settings
+from django.utils import timezone
 import json
 from django.shortcuts import get_object_or_404
+import pandas as pd
 
 import io
 from django.db.models import Sum, Value, F, Sum, When, Case, DecimalField, Q, Exists, OuterRef
@@ -1029,6 +1031,107 @@ def upload_batch_inventario(request):
     return render(request,'dashboard/upload_batch_inventario.html', context)
 
 
+@login_required(login_url='user-login')
+def upload_batch_inventario_actualizacion(request):
+    form = Inventario_BatchForm(request.POST or None, request.FILES or None)
+
+    if request.method == 'POST' and form.is_valid():
+        batch = form.save()
+        file_path = batch.file_name.path
+        errores = []
+        try:
+            df = pd.read_csv(file_path, encoding='latin1')
+        except Exception as e:
+            return HttpResponse(f"Error al leer el archivo CSV: {e}", status=400)
+
+        for index, row in df.iterrows():
+            codigo_producto = row.iloc[0]
+            ubicacion = row.iloc[1]
+            cantidad = row.iloc[3]
+            almacen_nombre = row.iloc[2]
+            precio = row.iloc[4]
+            nombre_producto = row.iloc[5] 
+            unidad_nombre = row.iloc[6] 
+            critico_nombre = row.iloc[7] 
+            caducidad_str = row.iloc[8]
+            print(codigo_producto)
+            print(nombre_producto)
+            print(almacen_nombre)
+            try:
+                producto = Product.objects.get(codigo=codigo_producto)
+                print(producto)
+                almacen = Almacen.objects.get(nombre=almacen_nombre)
+                print(almacen)
+                inventario = Inventario.objects.filter(producto=producto).first()
+                print(inventario)
+                
+                if inventario:
+                    inventario.ubicacion = ubicacion
+                    inventario.cantidad = cantidad
+                    inventario.almacen = almacen
+                    inventario.price = precio
+                    inventario.complete = True
+                    inventario.save()
+                    # Actualizar producto
+                    if nombre_producto:
+                        producto.nombre = nombre_producto
+                    if unidad_nombre:
+                        try:
+                            unidad = Unidad.objects.get(nombre=unidad_nombre)
+                            producto.unidad = unidad
+                        except Unidad.DoesNotExist:
+                            errores.append({codigo_producto, f"Unidad '{unidad_nombre}' no encontrada"})
+                    if critico_nombre:
+                        try:
+                            critico = Criticidad.objects.get(nombre=critico_nombre)
+                            producto.critico = critico
+                            producto.fecha_criticidad = timezone.now()
+                        except Criticidad.DoesNotExist:
+                            errores.append({codigo_producto, f"Criticidad '{critico_nombre}' no encontrada"})
+                    if caducidad_str:
+                        producto.caducidad = True if caducidad_str.strip().upper() == 'SI' else False
+
+                    producto.updated_at = timezone.now()
+                    producto.save()
+
+                    articulos_surtir = ArticulosparaSurtir.objects.filter(
+                        surtir=True, 
+                        articulos__producto= inventario
+                    )
+                    print(articulos_surtir)
+                    for articulo in articulos_surtir:
+                        articulo.surtir = False
+                        articulo.cantidad = 0
+                        articulo.save()
+
+            except Product.DoesNotExist:
+                errores.append({codigo_producto, f"Producto no encontrado"})
+            except Almacen.DoesNotExist:
+                errores.append({codigo_producto, f"Almacen '{almacen_nombre}' no encontrado"})
+
+        batch.activated = True
+        batch.save()
+        # Si hay errores, guardar archivo y devolver enlace
+        # Si hay errores, guardar archivo CSV
+        # Si hay errores, generar y devolver el archivo como descarga directa
+        if errores:
+            print('Estoy entrando en errores')
+            errores_df = pd.DataFrame(errores)
+            root_dir = settings.BASE_DIR
+            error_dir = os.path.join(root_dir, 'errores_batch')
+            os.makedirs(error_dir, exist_ok=True)
+
+            error_file_name = f'errores_batch_{batch.id}.csv'
+            error_file_path = os.path.join(error_dir, error_file_name)
+
+            errores_df.to_csv(error_file_path, index=False, encoding='utf-8')
+
+            # Si lo quieres servir vía navegador local, solo devuelves la ruta relativa o absoluta:
+            error_file_url = f"/errores_batch/{error_file_name}"
+            return JsonResponse({'status': 'partial', 'error_file': error_file_url}, status=207)
+        return HttpResponse(status=204)
+
+    return render(request, 'dashboard/upload_batch_inventario.html', {'form': form})
 
 
 def inventario_add(request):
