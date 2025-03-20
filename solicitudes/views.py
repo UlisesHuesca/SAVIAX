@@ -1135,7 +1135,7 @@ def upload_batch_inventario_actualizacion(request):
 
 
 @login_required(login_url='user-login')
-def upload_batch_inventario_actualizacion2(request):
+def upload_batch_inventario_nuevos(request):
     form = Inventario_BatchForm(request.POST or None, request.FILES or None)
 
     if request.method == 'POST' and form.is_valid():
@@ -1159,24 +1159,28 @@ def upload_batch_inventario_actualizacion2(request):
             critico_nombre = row.iloc[7]
             caducidad_str = row.iloc[8]
 
-            try:
-                # Obtener o crear producto
-                producto, created = Product.objects.get_or_create(
-                    codigo=codigo_producto,
-                    defaults={'nombre': nombre_producto, 'updated_at': timezone.now()}
-                )
+            # Validar que no exista producto con ese código o nombre
+            if Product.objects.filter(codigo=codigo_producto).exists():
+                errores.append({'Código': codigo_producto, 'Razón': "El código ya existe"})
+                continue
 
-                if not created:
-                    # Si el producto ya existía, actualizar datos desde CSV
-                    if nombre_producto:
-                        producto.nombre = nombre_producto
+            if Product.objects.filter(nombre=nombre_producto).exists():
+                errores.append({'Código': codigo_producto, 'Razón': f"El nombre '{nombre_producto}' ya existe"})
+                continue
+
+            try:
+                producto = Product(
+                    codigo=codigo_producto,
+                    nombre=nombre_producto,
+                    updated_at=timezone.now()
+                )
 
                 if unidad_nombre:
                     try:
                         unidad = Unidad.objects.get(nombre=unidad_nombre)
                         producto.unidad = unidad
                     except Unidad.DoesNotExist:
-                        errores.append({codigo_producto, f"Unidad '{unidad_nombre}' no encontrada"})
+                        errores.append({'Código': codigo_producto, 'Razón': f"Unidad '{unidad_nombre}' no encontrada"})
                         continue
 
                 if critico_nombre:
@@ -1185,45 +1189,31 @@ def upload_batch_inventario_actualizacion2(request):
                         producto.critico = critico
                         producto.fecha_criticidad = timezone.now()
                     except Criticidad.DoesNotExist:
-                        errores.append({codigo_producto, f"Criticidad '{critico_nombre}' no encontrada"})
+                        errores.append({'Código': codigo_producto, 'Razón': f"Criticidad '{critico_nombre}' no encontrada"})
                         continue
 
                 if caducidad_str:
                     producto.caducidad = True if caducidad_str.strip().upper() == 'SI' else False
 
-                producto.updated_at = timezone.now()
                 producto.save()
 
                 try:
                     almacen = Almacen.objects.get(nombre=almacen_nombre)
                 except Almacen.DoesNotExist:
-                    errores.append({codigo_producto, f"Almacén '{almacen_nombre}' no encontrado"})
+                    errores.append({'Código': codigo_producto, 'Razón': f"Almacén '{almacen_nombre}' no encontrado"})
                     continue
 
-                # Verificar si existe inventario
-                inventario, inventario_created = Inventario.objects.get_or_create(
+                Inventario.objects.create(
                     producto=producto,
-                    almacen=almacen,
-                    defaults={
-                        'ubicacion': ubicacion,
-                        'cantidad': cantidad,
-                        'price': precio,
-                        'complete': True,
-                        'distrito': almacen.distrito
-                    }
+                    ubicacion=ubicacion,
+                    cantidad=cantidad,
+                    price=precio,
+                    complete=True,
+                    distrito=almacen.distrito
                 )
 
-                if not inventario_created:
-                    # Si ya existía, actualizarlo desde CSV
-                    inventario.ubicacion = ubicacion
-                    inventario.cantidad = cantidad
-                    inventario.price = precio
-                    inventario.complete = True
-                    inventario.almacen = almacen
-                    inventario.save()
-
             except Exception as e:
-                errores.append({codigo_producto, f"Error inesperado: {str(e)}"})
+                errores.append({'Código': codigo_producto, 'Razón': f"Error inesperado: {str(e)}"})
 
         batch.activated = True
         batch.save()
@@ -1234,7 +1224,7 @@ def upload_batch_inventario_actualizacion2(request):
             error_dir = os.path.join(root_dir, 'errores_batch')
             os.makedirs(error_dir, exist_ok=True)
 
-            error_file_name = f'errores_creacion_batch_{batch.id}.csv'
+            error_file_name = f'errores_nuevos_batch_{batch.id}.csv'
             error_file_path = os.path.join(error_dir, error_file_name)
 
             errores_df.to_csv(error_file_path, index=False, encoding='utf-8', sep=';')
