@@ -1,0 +1,10 @@
+0;1
+"Error inesperado: (1062, 'Duplicate entry \'ABRAZADERA SIN FIN 1 1/2""\' for key \'dashboard_product.nombre\'')";4044
+"Error inesperado: (1062, 'Duplicate entry \'TORNILLO ALLEN 5/8"" X 2"" AC \' for key \'dashboard_product.nombre\'')";4093
+4108;"Error inesperado: (1062, 'Duplicate entry \'TUERCA HEXAGONAL 1 3/8"" AC \' for key \'dashboard_product.nombre\'')"
+4134;"Error inesperado: (1062, 'Duplicate entry \'MANGUERA 2"" 3100 PSI\' for key \'dashboard_product.nombre\'')"
+"Error inesperado: (1062, ""Duplicate entry 'PLASTER VERDE' for key 'dashboard_product.nombre'"")";4149
+4158;"Error inesperado: (1062, 'Duplicate entry \'TUBO 2"" CED 80\' for key \'dashboard_product.nombre\'')"
+4159;"Error inesperado: (1062, 'Duplicate entry \'TUBO 4"" CED 80\' for key \'dashboard_product.nombre\'')"
+4163;"Error inesperado: (1062, 'Duplicate entry \'PTR 3"" X 3"" X 3/16""\' for key \'dashboard_product.nombre\'')"
+Unidad 'GALON' no encontrada;4206

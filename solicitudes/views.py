@@ -1039,6 +1039,7 @@ def upload_batch_inventario_actualizacion(request):
         batch = form.save()
         file_path = batch.file_name.path
         errores = []
+
         try:
             df = pd.read_csv(file_path, encoding='latin1')
         except Exception as e:
@@ -1050,85 +1051,94 @@ def upload_batch_inventario_actualizacion(request):
             cantidad = row.iloc[3]
             almacen_nombre = row.iloc[2]
             precio = row.iloc[4]
-            nombre_producto = row.iloc[5] 
-            unidad_nombre = row.iloc[6] 
-            critico_nombre = row.iloc[7] 
+            nombre_producto = row.iloc[5]
+            unidad_nombre = row.iloc[6]
+            critico_nombre = row.iloc[7]
             caducidad_str = row.iloc[8]
-            print(codigo_producto)
-            print(nombre_producto)
-            print(almacen_nombre)
+
             try:
-                producto = Product.objects.get(codigo=codigo_producto)
-                print(producto)
-                almacen = Almacen.objects.get(nombre=almacen_nombre)
-                print(almacen)
-                inventario = Inventario.objects.filter(producto=producto).first()
-                print(inventario)
-                
-                if inventario:
-                    inventario.ubicacion = ubicacion
-                    inventario.cantidad = cantidad
-                    inventario.almacen = almacen
-                    inventario.price = precio
-                    inventario.complete = True
-                    inventario.save()
-                    # Actualizar producto
+                # Obtener o crear producto
+                producto, created = Product.objects.get_or_create(
+                    codigo=codigo_producto,
+                    defaults={'nombre': nombre_producto, 'updated_at': timezone.now()}
+                )
+
+                if not created:
+                    # Si el producto ya existía, actualizar datos desde CSV
                     if nombre_producto:
                         producto.nombre = nombre_producto
-                    if unidad_nombre:
-                        try:
-                            unidad = Unidad.objects.get(nombre=unidad_nombre)
-                            producto.unidad = unidad
-                        except Unidad.DoesNotExist:
-                            errores.append({codigo_producto, f"Unidad '{unidad_nombre}' no encontrada"})
-                    if critico_nombre:
-                        try:
-                            critico = Criticidad.objects.get(nombre=critico_nombre)
-                            producto.critico = critico
-                            producto.fecha_criticidad = timezone.now()
-                        except Criticidad.DoesNotExist:
-                            errores.append({codigo_producto, f"Criticidad '{critico_nombre}' no encontrada"})
-                    if caducidad_str:
-                        producto.caducidad = True if caducidad_str.strip().upper() == 'SI' else False
 
-                    producto.updated_at = timezone.now()
-                    producto.save()
+                if unidad_nombre:
+                    try:
+                        unidad = Unidad.objects.get(nombre=unidad_nombre)
+                        producto.unidad = unidad
+                    except Unidad.DoesNotExist:
+                        errores.append({codigo_producto, f"Unidad '{unidad_nombre}' no encontrada"})
+                        continue
 
-                    articulos_surtir = ArticulosparaSurtir.objects.filter(
-                        surtir=True, 
-                        articulos__producto= inventario
-                    )
-                    print(articulos_surtir)
-                    for articulo in articulos_surtir:
-                        articulo.surtir = False
-                        articulo.cantidad = 0
-                        articulo.save()
+                if critico_nombre:
+                    try:
+                        critico = Criticidad.objects.get(nombre=critico_nombre)
+                        producto.critico = critico
+                        producto.fecha_criticidad = timezone.now()
+                    except Criticidad.DoesNotExist:
+                        errores.append({codigo_producto, f"Criticidad '{critico_nombre}' no encontrada"})
+                        continue
 
-            except Product.DoesNotExist:
-                errores.append({codigo_producto, f"Producto no encontrado"})
-            except Almacen.DoesNotExist:
-                errores.append({codigo_producto, f"Almacen '{almacen_nombre}' no encontrado"})
+                if caducidad_str:
+                    producto.caducidad = True if caducidad_str.strip().upper() == 'SI' else False
+
+                producto.updated_at = timezone.now()
+                producto.save()
+
+                try:
+                    almacen = Almacen.objects.get(nombre=almacen_nombre)
+                except Almacen.DoesNotExist:
+                    errores.append({codigo_producto, f"Almacén '{almacen_nombre}' no encontrado"})
+                    continue
+
+                # Verificar si existe inventario
+                inventario, inventario_created = Inventario.objects.get_or_create(
+                    producto=producto,
+                    almacen=almacen,
+                    defaults={
+                        'ubicacion': ubicacion,
+                        'cantidad': cantidad,
+                        'price': precio,
+                        'complete': True,
+                        'distrito': almacen.distrito
+                    }
+                )
+
+                if not inventario_created:
+                    # Si ya existía, actualizarlo desde CSV
+                    inventario.ubicacion = ubicacion
+                    inventario.cantidad = cantidad
+                    inventario.price = precio
+                    inventario.complete = True
+                    inventario.almacen = almacen
+                    inventario.save()
+
+            except Exception as e:
+                errores.append({codigo_producto, f"Error inesperado: {str(e)}"})
 
         batch.activated = True
         batch.save()
-        # Si hay errores, guardar archivo y devolver enlace
-        # Si hay errores, guardar archivo CSV
-        # Si hay errores, generar y devolver el archivo como descarga directa
+
         if errores:
-            print('Estoy entrando en errores')
             errores_df = pd.DataFrame(errores)
             root_dir = settings.BASE_DIR
             error_dir = os.path.join(root_dir, 'errores_batch')
             os.makedirs(error_dir, exist_ok=True)
 
-            error_file_name = f'errores_batch_{batch.id}.csv'
+            error_file_name = f'errores_creacion_batch_{batch.id}.csv'
             error_file_path = os.path.join(error_dir, error_file_name)
 
-            errores_df.to_csv(error_file_path, index=False, encoding='utf-8')
+            errores_df.to_csv(error_file_path, index=False, encoding='utf-8', sep=';')
 
-            # Si lo quieres servir vía navegador local, solo devuelves la ruta relativa o absoluta:
             error_file_url = f"/errores_batch/{error_file_name}"
             return JsonResponse({'status': 'partial', 'error_file': error_file_url}, status=207)
+
         return HttpResponse(status=204)
 
     return render(request, 'dashboard/upload_batch_inventario.html', {'form': form})
