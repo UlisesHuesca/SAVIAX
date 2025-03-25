@@ -1070,6 +1070,7 @@ def upload_batch_inventario_actualizacion(request):
                     inventario.almacen = almacen
                     inventario.price = precio
                     inventario.complete = True
+                    inventario.updated_at = timezone.now()
                     inventario.save()
                     # Actualizar producto
                     if nombre_producto:
@@ -1250,6 +1251,7 @@ def inventario_add(request):
         form = InventarioForm(request.POST)
         if form.is_valid():
             item = form.save(commit=False)
+            item.updated_at = timezone.now()
             item.complete = True
             item._change_reason = 'Se agrega producto el inventario en view: inventario_add'
             item.distrito = perfil.distrito

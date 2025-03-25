@@ -14,7 +14,7 @@ class ProductAdmin(admin.ModelAdmin):
 
 
 class InventarioAdmin(SimpleHistoryAdmin):
-    list_display = ('id','producto','cantidad','cantidad_apartada','price','minimo')
+    list_display = ('id','producto','cantidad','cantidad_apartada','price','minimo','updated_at')
     list_filter = ('producto',)
     history_list_display = ('status')
     search_fields = ['producto__nombre','producto__codigo']

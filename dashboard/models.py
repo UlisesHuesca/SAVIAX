@@ -155,7 +155,7 @@ class Inventario(models.Model):
     minimo = models.PositiveIntegerField(default =0)
     history = HistoricalRecords(history_change_reason_field=models.TextField(null=True))
     created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    updated_at = models.DateTimeField(null=True, blank=True)
     complete = models.BooleanField(default=False)
     comentario = models.CharField(max_length=100, null=True, blank=True)
     activo_disponible = models.BooleanField(default=False)
