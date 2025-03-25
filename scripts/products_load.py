@@ -1,10 +1,13 @@
 import csv
-from dashboard.models import Unidad, Familia, Subfamilia, Product, Inventario
+from dashboard.models import Unidad, Familia, Subfamilia, Product, Inventario, ArticulosparaSurtir
 from django.db import connection
 from django.contrib import messages
 import pandas as pd
 from django.conf import settings
 import os
+import datetime
+from django.utils import timezone
+
 
 def run():
     fhand = open('template_products.csv')
@@ -89,3 +92,26 @@ def eliminar_duplicados_inventario():
             print(f"Eliminados {eliminados} duplicados para código: {producto.codigo}")
         except Product.DoesNotExist:
             print(f"Producto con ID {producto_id} no encontrado, pero duplicados eliminados.")
+
+
+def resetear_inventario_y_articulos(fecha_limite):
+    fecha_corte = timezone.make_aware(datetime.datetime.strptime(fecha_limite, "%d/%m/%Y"))
+
+    inventarios_a_resetear = Inventario.objects.filter(updated_at__lt=fecha_corte)
+    print(f"Inventarios encontrados antes de {fecha_limite}: {inventarios_a_resetear.count()}")
+
+    for inventario in inventarios_a_resetear:
+        print(f"Reseteando inventario ID {inventario.id} | Producto: {inventario.producto.codigo}")
+        inventario.cantidad = 0
+        inventario.save()
+
+        articulos_surtir = ArticulosparaSurtir.objects.filter(
+            surtir=True,
+            articulos__producto=inventario
+        )
+
+        print(f"Cancelando {articulos_surtir.count()} artículos para surtir para producto {inventario.producto.codigo}")
+        for articulo in articulos_surtir:
+            articulo.surtir = False
+            articulo.cantidad = 0
+            articulo.save()
