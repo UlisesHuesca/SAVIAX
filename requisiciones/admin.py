@@ -2,7 +2,7 @@ from django.contrib import admin
 from .models import Salidas, Requis, ArticulosRequisitados, ValeSalidas, Devolucion, Devolucion_Articulos, Tipo_Devolucion
 
 class RequisAdmin(admin.ModelAdmin):
-    list_display = ('id','folio','orden','autorizar')
+    list_display = ('id','folio','orden','autorizar','created_at')
     list_filter = ('folio',)
     search_fields = ['folio']
     raw_id_fields = ('orden',)
