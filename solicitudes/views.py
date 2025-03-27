@@ -295,8 +295,9 @@ def checkout(request):
                         requi, created = Requis.objects.get_or_create(complete = True, orden = order)
                         requitem, created = ArticulosRequisitados.objects.get_or_create(req = requi, producto= ordensurtir, cantidad = producto.cantidad, almacenista = usuario)
                         requi.folio = str(abrev) + str(folio_number).zfill(4)
-                        if productos.count() == 1: 
-                            order.requisitar=False
+                        numero_servicios = productos.filter(producto = producto.producto.producto.servicio).count()
+                        if productos.count() == numero_servicios: 
+                            order.requisitar= False
                             order.requisitado = True
                         ordensurtir.requisitar=False
                         requi.save()
