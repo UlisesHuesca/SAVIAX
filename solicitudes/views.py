@@ -40,6 +40,7 @@ import ast
 import os
 from django.core.mail import EmailMessage, BadHeaderError
 from smtplib import SMTPException
+import socket
 
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import letter, landscape
@@ -369,7 +370,7 @@ def checkout(request):
                     email.content_subtype = "html " # Importante para que se interprete como HTML
                     email.send()
                     messages.success(request, f'La solicitud {order.folio} ha sido creada')
-                except (BadHeaderError, SMTPException) as e:
+                except (BadHeaderError, SMTPException, socket.gaierror) as e:
                     error_message = f'La solicitud {order.folio} ha sido creada, pero el correo no ha sido enviado debido a un error: >>> {e}'
                     messages.warning(request, error_message)
                 order.sol_autorizada_por = Profile.objects.get(staff__id=request.user.id)    
@@ -411,7 +412,7 @@ def checkout(request):
                     email.content_subtype = "html " # Importante para que se interprete como HTML
                     email.send()
                     messages.success(request, f'La solicitud {order.folio} ha sido creada')
-                except (BadHeaderError, SMTPException) as e:
+                except (BadHeaderError, SMTPException, socket.gaierror) as e:
                     error_message = f'La solicitud {order.folio} ha sido creada, pero el correo no ha sido enviado debido a un error: {e}'
                     messages.warning(request, error_message)
             order.complete = True
@@ -1197,6 +1198,7 @@ def upload_batch_inventario_nuevos(request):
                 if caducidad_str:
                     producto.caducidad = True if caducidad_str.strip().upper() == 'SI' else False
 
+                producto.updated_at = timezone.now()
                 producto.save()
 
                 try:
@@ -1211,7 +1213,8 @@ def upload_batch_inventario_nuevos(request):
                     cantidad=cantidad,
                     price=precio,
                     complete=True,
-                    distrito=almacen.distrito
+                    distrito = almacen.distrito,
+                    updated_at = timezone.now()
                 )
 
             except Exception as e:

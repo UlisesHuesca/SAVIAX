@@ -31,6 +31,7 @@ from openpyxl.utils import get_column_letter
 import datetime as dt
 from django.db.models.functions import Concat
 import os
+import socket
 from django.urls import reverse
 
 
@@ -209,7 +210,7 @@ def compras_pagos(request, pk):
                                     )
                                     email.attach(f'folio:{compra.get_folio}.pdf',archivo_oc,'application/pdf')
                                     email.send()
-                        except (BadHeaderError, SMTPException) as e:
+                        except (BadHeaderError, SMTPException, socket.gaierror) as e:
                             error_message = f'Gracias por registrar tu pago, {usuario.staff.first_name} Atencion: el correo de notificación no ha sido enviado debido a un error: {e}'
                             messages.warning(request, error_message) 
 
@@ -620,7 +621,7 @@ def factura_eliminar(request, pk):
 
         email.send()
         messages.success(request, f'La factura {factura.id} ha sido eliminada exitosamente')
-    except (BadHeaderError, SMTPException) as e:
+    except (BadHeaderError, SMTPException, socket.gaierror) as e:
         error_message = f'La factura {factura.id} ha sido eliminada, pero el correo no ha sido enviado debido a un error: {e}'
         messages.success(request, error_message)
     factura.delete()

@@ -21,6 +21,7 @@ import base64
 from decimal import Decimal, ROUND_HALF_UP
 from django.conf import settings
 import io
+import socket
 #PDF generator
 from reportlab.pdfgen import canvas
 from reportlab.lib import colors
@@ -602,7 +603,7 @@ def eliminar_factura_viatico(request, pk):
 
         email.send()
         messages.success(request, f'La factura {factura.id} ha sido eliminada exitosamente')
-    except (BadHeaderError, SMTPException) as e:
+    except (BadHeaderError, SMTPException, socket.gaierror) as e:
         error_message = f'La factura {factura.id} ha sido eliminada, pero el correo no ha sido enviado debido a un error: {e}'
         messages.success(request, error_message)
     factura.delete()

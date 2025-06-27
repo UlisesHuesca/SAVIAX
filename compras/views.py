@@ -533,7 +533,7 @@ def oc_modal(request, pk):
                 email.content_subtype = "html " # Importante para que se interprete como HTML
                 email.send()
                 messages.success(request,f'{usuario.staff.first_name}, Has generado la OC {oc.get_folio} correctamente')
-            except (BadHeaderError, SMTPException) as e:
+            except (BadHeaderError, SMTPException, socket.gaierror) as e:
                 error_message = f'{usuario.staff.first_name}, Has generado la OC {oc.get_folio} correctamente pero el correo de notificación no ha sido enviado debido a un error: {e}'
                 messages.warning(request, error_message)
             return redirect('requisicion-autorizada')
@@ -1122,7 +1122,7 @@ def autorizar_oc1(request, pk):
             email.content_subtype = "html " # Importante para que se interprete como HTML
             email.send()
             messages.success(request, f'{usuario.staff.first_name} has autorizado la solicitud {compra.get_folio}')
-        except (BadHeaderError, SMTPException) as e:
+        except (BadHeaderError, SMTPException, socket.gaierror) as e:
             error_message = f'{usuario.staff.first_name} has autorizado la compra {compra.get_folio} pero el correo de notificación no ha sido enviado debido a un error: {e}'
             messages.success(request, error_message)  
         return redirect('autorizacion-oc1')
@@ -1265,7 +1265,7 @@ def autorizar_oc2(request, pk):
                 email.content_subtype = "html " # Importante para que se interprete como HTML
                 email.attach(f'folio:{compra.get_folio}.pdf',archivo_oc,'application/pdf')
                 email.send()
-            except (BadHeaderError, SMTPException) as e:
+            except (BadHeaderError, SMTPException, socket.gaierror) as e:
                 error_message = f'correo de notificación no ha sido enviado debido a un error: {e}'
             html_message = f"""
                 <html>
@@ -1305,7 +1305,7 @@ def autorizar_oc2(request, pk):
                         email.attach(f'folio:{compra.get_folio}.pdf',archivo_oc,'application/pdf')
                         email.send()
                 messages.success(request, f'{usuario.staff.first_name} has autorizado la solicitud {compra.get_folio}')
-            except (BadHeaderError, SMTPException) as e:
+            except (BadHeaderError, SMTPException, socket.gaierror) as e:
                 error_message = f'{usuario.staff.first_name} has autorizado la compra {compra.folio} pero el correo de notificación no ha sido enviado debido a un error: {e}'
                 messages.warning(request, error_message)   
         else:
@@ -1336,7 +1336,7 @@ def autorizar_oc2(request, pk):
                 email.content_subtype = "html " # Importante para que se interprete como HTML
                 email.send()
                 messages.success(request, f'{usuario.staff.first_name} has autorizado la compra {compra.get_folio}')
-            except (BadHeaderError, SMTPException) as e:
+            except (BadHeaderError, SMTPException, socket.gaierror) as e:
                 error_message = f'{usuario.staff.first_name} has autorizado la compra {compra.get_folio} pero el correo de notificación no ha sido enviado debido a un error: {e}'
                 messages.warning(request, error_message)   
         return redirect('autorizacion-oc2')

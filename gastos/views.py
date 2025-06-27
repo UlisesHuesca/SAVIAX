@@ -2,6 +2,7 @@ from django.shortcuts import render, redirect
 from datetime import date, datetime
 from django.contrib import messages
 from django.core.mail import EmailMessage, BadHeaderError
+import socket
 from smtplib import SMTPException
 from dashboard.models import Inventario, Order, ArticulosparaSurtir, ArticulosOrdenados, Tipo_Orden 
 from solicitudes.models import Proyecto, Subproyecto, Operacion
@@ -447,7 +448,7 @@ def pago_gasto(request, pk):
                             email.attach(f'Gasto{gasto.id}_P{item.id}.pdf',item.comprobante_pago.read(),'application/pdf')
                     email.send()
                     messages.success(request,f'Gracias por registrar tu pago, {usuario.staff.first_name}')
-                except (BadHeaderError, SMTPException) as e:
+                except (BadHeaderError, SMTPException, socket.gaierror) as e:
                     error_message = f'{usuario.staff.first_name}, Gracias por registrar tu pago, pero el correo de notificación no ha sido enviado debido a un error: {e}'
                     messages.warning(request, error_message)
                 return HttpResponse(status=204) #No content to render nothing and send a "signal" to javascript in order to close window
@@ -596,7 +597,7 @@ def eliminar_factura_gasto(request, pk):
 
         email.send()
         messages.success(request, f'La factura {factura.id} ha sido eliminada exitosamente')
-    except (BadHeaderError, SMTPException) as e:
+    except (BadHeaderError, SMTPException, socket.gaierror) as e:
         error_message = f'La factura {factura.id} ha sido eliminada, pero el correo no ha sido enviado debido a un error: {e}'
         messages.success(request, error_message)
     factura.delete()
@@ -729,7 +730,7 @@ def gasto_entrada(request, pk):
                         )
                     email.send()
                     orden_producto.save()
-                except (BadHeaderError, SMTPException) as e:
+                except (BadHeaderError, SMTPException, socket.gaierror) as e:
                     error_message = f'{usuario.staff.first_name}, El correo notificación no ha sido enviado debido a un error: {e}'
                     messages.warning(request, error_message)
                 return redirect('matriz-gasto-entrada')

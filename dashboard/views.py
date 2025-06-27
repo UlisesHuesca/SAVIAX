@@ -5,6 +5,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.core.mail import EmailMessage, BadHeaderError
 from smtplib import SMTPException
+import socket
 from django.forms import inlineformset_factory
 from django.db.models import Sum, Q, Prefetch, Avg, FloatField, Case, When, F,DecimalField, ExpressionWrapper, CharField, Value, Count
 from django.db.models.functions import Concat
@@ -1069,10 +1070,8 @@ def add_product(request):
             item = form.save(commit = False)
             item.completado = True
             item.updated_by = usuario
-           
-            
             item.codigo = initial_codigo 
-            item.save()
+            #item.save()
             item.save()
             
             if item.critico.nombre == "Crítico":
@@ -1113,7 +1112,7 @@ def add_product(request):
                     email.content_subtype = "html " # Importante para que se interprete como HTML
                     email.send()
                     messages.success(request,f'Has agregado correctamente el producto {item.nombre}')
-                except (BadHeaderError, SMTPException) as e:
+                except (BadHeaderError, SMTPException, socket.gaierror) as e:
                     error_message = f'{usuario.staff.first_name}, Has dado de alta el producto {item.codigo} | {item.nombre} correctamente pero el correo de notificación no ha sido enviado debido a un error: {e}'
                     messages.warning(request, error_message)
                 return redirect('dashboard-product')
@@ -1196,7 +1195,7 @@ def product_update(request, pk):
                         email.content_subtype = "html " # Importante para que se interprete como HTML
                         email.send()
                         messages.success(request,f'Has actualizado correctamente el producto {item.codigo} | {item.nombre}')
-                    except (BadHeaderError, SMTPException) as e:
+                    except (BadHeaderError, SMTPException, socket.gaierror) as e:
                         error_message = f'{usuario.staff.first_name}, Has actualizado el producto {item.codigo} | {item.nombre} correctamente pero el correo de notificación no ha sido enviado debido a un error: {e}'
                         messages.warning(request, error_message)
                 return redirect('dashboard-product')

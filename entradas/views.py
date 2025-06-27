@@ -19,6 +19,7 @@ from django.http import JsonResponse, HttpResponse
 from datetime import date, datetime
 import decimal
 from django.core.mail import EmailMessage, BadHeaderError
+import socket
 from django.core.paginator import Paginator
 from django.conf import settings
 import os
@@ -416,7 +417,7 @@ def pendientes_entrada(request):
                 email.content_subtype = "html " # Importante para que se interprete como HTML
                 email.send()
                 messages.success(request, f'{usuario.staff.first_name} has autorizado la solicitud {compra.get_folio}')
-            except (BadHeaderError, SMTPException) as e:
+            except (BadHeaderError, SMTPException, socket.gaierror) as e:
                 error_message = f'{usuario.staff.first_name}, Has generado Recepción correctamente pero el correo de notificación no ha sido enviado debido a un error: {e}'
                 messages.warning(request, error_message)
             messages.success(request,'Haz agregado exitosamente un producto')
@@ -619,7 +620,7 @@ def articulos_recepcion(request, pk):
             email.content_subtype = "html " # Importante para que se interprete como HTML
             email.send()
             messages.success(request, f'{usuario.staff.first_name} has autorizado la solicitud {compra.get_folio}')
-        except (BadHeaderError, SMTPException) as e:
+        except (BadHeaderError, SMTPException, socket.gaierror) as e:
             error_message = f'{usuario.staff.first_name}, Has generado Recepción correctamente pero el correo de notificación no ha sido enviado debido a un error: {e}'
             messages.warning(request, error_message)
         messages.success(request, f'La entrada-recepcion {entrada.id} se ha realizado con éxito')
@@ -717,7 +718,7 @@ def articulos_recepcion_servicios(request, pk):
             email.send()
             messages.success(request, f'La recepcion del servicio {entrada.id} se ha realizado con éxito')
             return redirect('recepcion-servicios')
-        except (BadHeaderError, SMTPException) as e:
+        except (BadHeaderError, SMTPException, socket.gaierror) as e:
             error_message = f'La recepcion del servicio {entrada.id} ha sido creada, pero el correo no ha sido enviado debido a un error: {e}'
             messages.success(request, error_message)
             return redirect('recepcion-servicios')
@@ -1212,7 +1213,7 @@ def no_conformidad(request, pk):
                     ['ulises_huesc@hotmail.com',no_conf.oc.proveedor.email,no_conf.oc.creada_por.staff.email,],
                     )
                 email.send()
-            except (BadHeaderError, SMTPException) as e:
+            except (BadHeaderError, SMTPException, socket.gaierror) as e:
                 error_message = f'Se ha dado de alta correctamente la NC el correo de notificación no ha sido enviado debido a un error: {e}'
                 messages.warning(request, error_message)
             messages.success(request,'Has completado la No Conformidad de manera exitosa')
@@ -1427,7 +1428,7 @@ def no_conformidad_almacen(request, pk):
                         ['ulises_huesc@hotmail.com',no_conf.oc.proveedor.email,no_conf.oc.creada_por.staff.email,],
                         )
                     email.send()
-                except (BadHeaderError, SMTPException) as e:
+                except (BadHeaderError, SMTPException, socket.gaierror) as e:
                     error_message = f'Se ha dado de alta correctamente la NC el correo de notificación no ha sido enviado debido a un error: {e}'
                     messages.warning(request, error_message)
                 messages.success(request, 'Has completado la No Conformidad de manera exitosa')

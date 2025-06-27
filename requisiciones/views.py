@@ -15,6 +15,7 @@ from io import BytesIO
 import xlsxwriter
 from xlsxwriter.utility import xl_col_to_name
 from django.db.models import OuterRef, Subquery
+import socket
 
 from solicitudes.models import Proyecto, Subproyecto
 from dashboard.models import Inventario, Order, ArticulosparaSurtir, ArticulosOrdenados, Inventario_Batch, Product, Marca
@@ -1068,7 +1069,7 @@ def requisicion_autorizar(request, pk):
             email.content_subtype = "html " # Importante para que se interprete como HTML
             email.send()
             messages.success(request,f'Has autorizado la requisición {requi.folio} con éxito')
-        except (BadHeaderError, SMTPException) as e:
+        except (BadHeaderError, SMTPException, socket.gaierror) as e:
             error_message = f'Has autorizado la requisición {requi.folio} con éxito pero el correo de notificación no ha sido enviado debido a un error: {e}'
             messages.warning(request, error_message)
         return redirect('requisicion-autorizacion')
@@ -1104,7 +1105,7 @@ def requisicion_cancelar(request, pk):
                     )
                 email.send()
                 messages.error(request,f'Has cancelado la requisición {requis.folio}')
-            except (BadHeaderError, SMTPException) as e:
+            except (BadHeaderError, SMTPException, socket.gaierror) as e:
                 error_message = f'Has cancelado la requisición {requis.folio} con éxito, pero el correo de notificación no ha sido enviado debido a un error: {e}'
                 messages.warning(request, error_message)
             return redirect('requisicion-autorizacion')
