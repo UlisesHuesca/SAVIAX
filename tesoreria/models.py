@@ -21,7 +21,7 @@ class Cuenta(models.Model):
     moneda = models.ForeignKey(Moneda, on_delete=models.CASCADE, null=True, blank=True)
 
     def __str__(self):
-        return f'{self.id} - {self.cuenta} - {self.monto_inicial}'
+        return f'{self.id} - {self.cuenta}'
 
 class Pago(models.Model):
     tesorero = models.ForeignKey(Profile, on_delete = models.CASCADE, null=True, related_name='Tesorero')
@@ -34,6 +34,7 @@ class Pago(models.Model):
     comentario = models.CharField(max_length=100, null=True, blank=True)
     pagado_date = models.DateField(null=True, blank=True)
     pagado_hora = models.TimeField(null=True, blank=True)
+    pagado_real = models.DateField(null=True, blank=True)
     hecho = models.BooleanField(default=False)
     tipo_de_cambio = models.DecimalField(max_digits=14,decimal_places=4, null=True, blank=True)
     comprobante_pago = models.FileField(null=True, upload_to='comprobante',validators=[FileExtensionValidator(['pdf'])])

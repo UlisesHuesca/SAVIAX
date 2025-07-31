@@ -29,7 +29,7 @@ class Articulo_Gasto_Edit_Form(forms.ModelForm):
 class Pago_Gasto_Form(forms.ModelForm):
     class Meta:
         model = Pago
-        fields = ['monto','comprobante_pago','cuenta']
+        fields = ['monto','comprobante_pago','cuenta', 'pagado_real',]
 
 class Articulo_Gasto_Factura_Form(forms.ModelForm):
 

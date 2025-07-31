@@ -64,40 +64,39 @@ def compras_pagos(request, pk):
     pagos = Pago.objects.filter(oc=compra.id, hecho=True) #.aggregate(Sum('monto'))
     sub = Subproyecto.objects.get(id=compra.req.orden.subproyecto.id)
     pagos_alt = Pago.objects.filter(oc=compra.id, hecho=True)
-    #Esta es otra forma de sacar lo que hice con los pagos, me parece mas legible
-    #compra_pagos = compra.pago_set.aggregate(Sum('monto'))
-
-    #if pagos['monto__sum'] == None:
-        #    monto_anterior = 0
-    #else:
-        #if compra.moneda.nombre == 'PESOS':
-       #     monto_anterior = pagos['monto__sum']
-        #cero = Money(0, 'MXN')
-       # if compra.moneda.nombre == 'DOLARES':
-       #     monto_anterior = pagos['monto__sum']
+    
 
     suma_pago = 0
+    suma_pago_usd = 0
 
     for pago in pagos:
+        
         if pago.oc.moneda.nombre == "DOLARES":
             if pago.cuenta.moneda.nombre == "PESOS":
-                monto_pago = pago.monto/pago.tipo_de_cambio
-                suma_pago = suma_pago + monto_pago
-            else:
                 suma_pago = suma_pago + pago.monto
+                if pago.tipo_de_cambio:
+                    monto_pago_usd = pago.monto/pago.tipo_de_cambio
+                else:
+                    monto_pago_usd = pago.monto/compra.tipo_de_cambio
+                suma_pago_usd = suma_pago_usd + monto_pago_usd
+            else:
+                suma_pago = suma_pago + pago.monto * (pago.tipo_de_cambio or compra.tipo_de_cambio)
+                suma_pago_usd = suma_pago_usd + pago.monto
         else:
             suma_pago = suma_pago + pago.monto
 
 
     if compra.moneda.nombre == 'PESOS':
         cuentas = Cuenta.objects.filter(moneda__nombre = 'PESOS')
+        remanente = compra.costo_plus_adicionales - suma_pago
     if compra.moneda.nombre == 'DOLARES':
         cuentas = Cuenta.objects.all()
+        remanente = compra.costo_plus_adicionales - suma_pago_usd
 
 
     pago, created = Pago.objects.get_or_create(tesorero = usuario, distrito = usuario.distrito, oc=compra, hecho=False)
     form = PagoForm(instance=pago)
-    remanente = compra.costo_plus_adicionales - suma_pago
+    #remanente = compra.costo_plus_adicionales - suma_pago
 
 
     if request.method == 'POST':
@@ -274,16 +273,24 @@ def edit_pago(request, pk):
     sub = Subproyecto.objects.get(id=compra.req.orden.subproyecto.id)
     pagos_alt = Pago.objects.filter(oc=compra.id, hecho=True)
     suma_pago = 0
+    suma_pago_usd = 0
 
-    for item in pagos:
-        if item.oc.moneda.nombre == "DOLARES":
-            if item.cuenta.moneda.nombre == "PESOS":
-                monto_pago = item.monto/item.tipo_de_cambio
-                suma_pago = suma_pago + monto_pago
+    for pago in pagos:
+        
+        if pago.oc.moneda.nombre == "DOLARES":
+            if pago.cuenta.moneda.nombre == "PESOS":
+                suma_pago = suma_pago + pago.monto
+                if pago.tipo_de_cambio:
+                    monto_pago_usd = pago.monto/pago.tipo_de_cambio
+                else:
+                    monto_pago_usd = pago.monto/compra.tipo_de_cambio
+                suma_pago_usd = suma_pago_usd + monto_pago_usd
             else:
-                suma_pago = suma_pago + item.monto
+                suma_pago = suma_pago + pago.monto * (pago.tipo_de_cambio or compra.tipo_de_cambio)
+                suma_pago_usd = suma_pago_usd + pago.monto
         else:
-            suma_pago = suma_pago + item.monto
+            suma_pago = suma_pago + pago.monto
+
 
 
     if compra.moneda.nombre == 'PESOS':
@@ -308,7 +315,11 @@ def edit_pago(request, pk):
                 sub.gastado = sub.gastado - pago.monto
             if compra.moneda.nombre == "DOLARES":
                 if pago.cuenta.moneda.nombre == "PESOS": #Si la cuenta es en pesos
-                    sub.gastado = sub.gastado - pago.monto * pago.tipo_de_cambio
+                    if pago.tipo_de_cambio:
+                        tipo_de_cambio = pago.tipo_de_cambio
+                    else:
+                        tipo_de_cambio = compra.tipo_de_cambio
+                    sub.gastado = sub.gastado - pago.monto * tipo_de_cambio
                 if pago.cuenta.moneda.nombre == "DOLARES":
                     tipo_de_cambio = decimal.Decimal(dof())
                     sub.gastado = sub.gastado - pago.monto * tipo_de_cambio

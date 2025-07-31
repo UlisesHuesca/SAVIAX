@@ -1,10 +1,10 @@
-{% extends 'partials/base_w_nav.html' %}
+{% extends 'partials/base.html' %}
 {% load crispy_forms_tags %}
 {% load static %}
 {% load widget_tweaks %}
 <html>
 <head>
-{% block title %}Autorización OC{% endblock %}
+{% block title %}Pago Gasto{% endblock %}
 </head>
 <body>
 {% block content %}
@@ -33,40 +33,53 @@
             {% endfor %}
         {% endif %}
 </div>
+ 
 
+<h6>&nbsp;</h6>
+<h6>&nbsp;</h6>
+<h6>&nbsp;</h6>
 
-<div class="modal-dialog modal-lg"  id="document" role="document">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h5 class="modal-title" id="gasto" value="{{gasto.id}}">Gasto: {{gasto.id}} | Pago: {{pago.id}}</h5>
-            <button class="btn-close" type="button" data-bs-dismiss ="modal" aria-label="Close"></button>
-        </div>
+<div class="row">
+    <div class="col-lg-6 offset-md-3">
+        <div class="card">
+            <div class="card-header">
+                <h5 id="gasto" value="{{gasto.id}}">Gasto: {{gasto.id}}</h5>
+            </div>
 
-        <div class="modal-body">
-                <table class='table table-dark table striped'>
+        <div class="card-body">
+             {% if error_messages %}
+            <div class="alert alert-danger">
+                <ul class="mb-0">
+                {% for mensaje in error_messages %}
+                    <li>{{ mensaje }}</li>
+                {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+                <table class='table table striped'>
                     <thead>
                         <tr>
                         <th scope="col">Solicitante:</th>
-                        <th scope="col">{{pago.gasto.staff.staff.first_name}} {{pago.gasto.staff.staff.last_name}}</th>
+                        <th scope="col">{{gasto.staff.staff.first_name}} {{gasto.staff.staff.last_name}}</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr>
                             <th scope="col">Banco:</th>
-                            <th scope="col">{{pago.gasto.staff.banco}}</th>
+                            <th scope="col">{{gasto.staff.banco}}</th>
                         </tr>
                         <tr>
                             <th scope="col">Cuenta:</th>
-                            <th scope="col">{{pago.gasto.staff.cuenta_bancaria}}</th>
+                            <th scope="col">{{gasto.staff.cuenta_bancaria}}</th>
                         </tr>
                         <tr>
                             <th scope="col">Clabe:</th>
-                            <th scope="col">{{pago.gasto.staff.clabe}}</th>
+                            <th scope="col">{{gasto.staff.clabe}}</th>
                         </tr>
                     </tbody>
                 </table>
                 <hr>
-                <table class='table table-dark table striped'>
+                <table class='table table striped'>
                     <thead>
                         <tr>
                         <th scope="col">Importe Gasto</th>
@@ -85,7 +98,7 @@
                     </tbody>
                 </table>
 
-                <table class='table table-dark table-striped'>
+                <table class='table table-striped'>
                     <thead>
                         <tr>
                             <th scope="col-3">#</th>
@@ -111,42 +124,48 @@
                    {% endfor %}
                    </tbody>
                 </table>
-        </div>
 
-        <form hx-post="{{ request.path }}" hx-encoding='multipart/form-data' class="modal-content">
+        <form id="id_formulario" method="POST" enctype='multipart/form-data'>
             <div>
                 {% csrf_token %}
-                <div class="row my-2">
-                    <label class="col-auto col-form-label"><strong>Cuentas:</strong></label>
-                    <div class="col-sm-4">
-                        <div class="selector">
-                            <select class="form-select form-select-sm my-1" id="cuentas">
-                            <option id="default_sel">      </option>
-                            {% for cuenta in cuentas%}
-                            <option id="js" target={{cuenta.id}} moneda={{cuenta.moneda.nombre}}>
-                                {{cuenta.cuenta}} - {{cuenta.moneda}}
-                            </option>
-                            {% endfor %}
-                            </select>
+                <div class="row">
+                    <div class="col-lg-12 col-sm-12  col-md-12">
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1"><i class="fa-solid fa-gear"></i></span>
+                                <div class="form-floating form-floating-group flex-grow-1"> 
+                                    {{form.cuenta}}
+                                </div>
                         </div>
                     </div>
-                    <label for="form.cuenta" class="col-auto col-form-label d-none"><strong>Cuenta:</strong></label>
-                    <div class="col-sm-3 d-none">
-                        {{form.cuenta|add_class:'form-control'}}
+                </div>
+                  <div class="row">
+                    <div class="col-lg-6 col-sm-12 col-md-12">
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1"><i class="fa-regular fa-calendar"></i></span>
+                            <div class="form-floating form-floating-group flex-grow-1">   
+                                {% render_field form.pagado_real type="date" class="form-control" %}
+                                <label style="color: #121212;" for="id_subproyecto">Fecha Pago:</label>
+                            </div>
+                        </div>
                     </div>
-                    <label for="form.monto_pagado" class="col-auto col-form-label my-1"><strong>Monto:</strong></label>
-                    <div class="col-4">
-                        {{form.monto|add_class:'form-control'}}
+                  <div class="col-lg-6 col-sm-12">
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="basic-addon1"><i class="fa-solid fa-gear"></i></span>
+                                <div class="form-floating form-floating-group flex-grow-1"> 
+                                    {{form.monto|add_class:'form-control'}}
+                                </div>
+                        </div> 
                     </div>
-                    <div class="col-8">
+                </div>
+                    <div class="col-12">
                     <label for="form.comprobante_pago" class="col-auto col-form-label my-1"><strong>Comprobante de pago:</strong></label>
                         {{form.comprobante_pago|add_class:'form-control'}}
                     </div>
                 </div>
             </div>
 
-            <div class="modal-footer">
-                <h6>Registrar pago: {{pago.id}}</h6>
+            <div class="card-footer text-end">
+                
                 <button id="myBtn" type = "submit" class="btn btn-success">Registrar</button>
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
             </div>
@@ -158,17 +177,73 @@
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
-document.getElementById("cuentas").addEventListener("change", function(element){
-    var select = document.getElementById("cuentas");
-    //var tipo_cambio_txt = document.getElementById("tipo_de_cambio_0")
-    var current_option = select.options[select.selectedIndex];
-    var target = current_option.getAttribute('target');
-    //var moneda = current_option.getAttribute('moneda');
-    var select_cuenta = document.getElementById('id_cuenta');
-    //Aqui le doy la instruccion para que cambie la seleccion de acuerdo a lo seleccionado en el primer desplegable de cuentas
-    select_cuenta.selectedIndex = target;
+$(document).ready(function() {
+    $('#id_cuenta').select2({
+        allowClear: true,
+        width: '100%',
+        placeholder: 'Selecciona una cuenta',
+        //data: datosCuenta,
+        templateResult: formatRepo, // Función para renderizar los resultados
+        templateSelection: formatRepoSelection // Función para renderizar la selección
+    });
 });
 
+function formatRepo (repo) {
+    if (repo.loading) {
+        return repo.text;
+    }
+
+    var $container = $("<div class='select2-result-repository clearfix'>" +
+        "<div class='form-control form-control-lg select2-result-repository__title'></div>" +
+        "</div>");
+
+    $container.find(".select2-result-repository__title").text(repo.text);
+    
+    // Aquí podrías agregar más elementos al contenedor si es necesario.
+
+    return $container;
+}
+function formatRepoSelection (repo) {
+    return repo.text || repo.id;
+}
+
+document.getElementById('id_comprobante_pago').addEventListener('change', function(event){
+  var file = event.target.files[0];
+  var formData = new FormData();
+  formData.append('comprobante_pago', file);
+  
+  // Añadir CSRF token a la solicitud AJAX
+  formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+
+  fetch('/gastos/prellenar_formulario_gastos/', { 
+    method: 'POST',
+    body: formData,
+    headers: {
+      'X-Requested-With': 'XMLHttpRequest', // Indicar que es una solicitud AJAX
+    },
+  })
+  .then(response => response.json()) 
+  .then(data => {
+    console.log(data);
+    // Ahora puedes actualizar los valores de tu formulario con los datos extraídos
+    document.querySelector('[name="monto"]').value = data.monto;
+    //document.querySelector('[name="cuenta"]').value = data.cuenta;
+    document.querySelector('[name="pagado_real"]').value = data.pagado_real;
+    if (data.hora_operacion) {
+    // Solo deja HH:mm
+    console.log(data.hora_operacion)
+    const horaSinSegundos = data.hora_operacion.slice(0, 5);
+    document.querySelector('[name="pagado_hora"]').value=  horaSinSegundos;
+    }
+    var cuentaId = data.cuenta; // Asegúrate de que este es el ID de la Cuenta
+    var $selectElement = $('[name="cuenta"]');
+    
+   
+    $selectElement.val(cuentaId).trigger('change');
+   
+  })
+  .catch(error => console.error('Error:', error));
+});
 
 
 </script>

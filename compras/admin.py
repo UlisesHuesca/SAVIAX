@@ -24,7 +24,16 @@ class Proveedor_direccionesAdmin(admin.ModelAdmin):
 
 class MonedaAdmin(admin.ModelAdmin):
     list_display = ('id','nombre')
+
+class ComparativoAdmin(admin.ModelAdmin):
+    list_display = ('id', 'nombre', 'creada_por')
+    search_fields = ('nombre','id')
+
+class ItemComparativoAdmin(admin.ModelAdmin):
+    list_display = ('id', 'producto', 'comparativo')
+    search_fields = ('producto__producto__nombre','comparativo')
 # Register your models here.
+
 admin.site.register(Compra, CompraAdmin)
 
 admin.site.register(ArticuloComprado, ArticuloComprado_Admin)
@@ -45,9 +54,9 @@ admin.site.register(Moneda,MonedaAdmin)
 
 admin.site.register(Estado)
 
-admin.site.register(Comparativo)
+admin.site.register(Comparativo, ComparativoAdmin)
 
-admin.site.register(Item_Comparativo)
+admin.site.register(Item_Comparativo, ItemComparativoAdmin)
 
 admin.site.register(Tipo_Evaluacion)
 

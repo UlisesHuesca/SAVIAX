@@ -2612,51 +2612,51 @@ def convert_excel_productos_requisitados(articulos):
 
 
 
-    columna_max = len(columns)+2
+    #columna_max = len(columns)+2
 
-    (ws.cell(column = columna_max, row = 1, value='{Reporte Creado Automáticamente por Savia Vordtec. UH}')).style = messages_style
-    (ws.cell(column = columna_max, row = 2, value='{Software desarrollado por Grupo Vordcab S.A. de C.V.}')).style = messages_style
-    ws.column_dimensions[get_column_letter(columna_max)].width = 20
+    #(ws.cell(column = columna_max, row = 1, value='{Reporte Creado Automáticamente por Savia Vordtec. UH}')).style = messages_style
+    #(ws.cell(column = columna_max, row = 2, value='{Software desarrollado por Grupo Vordcab S.A. de C.V.}')).style = messages_style
+    #ws.column_dimensions[get_column_letter(columna_max)].width = 20
 
-    rows = []
+    #rows = []
 
-    for producto in articulos:
+    #for producto in articulos:
         # Extract the needed attributes
-        req_folio = producto.req.folio
-        orden_folio = producto.req.orden.folio
-        staff_name = f"{producto.req.orden.staff.staff.first_name} {producto.req.orden.staff.staff.last_name}"
-        proyecto_nombre = producto.req.orden.proyecto.nombre
-        subproyecto_nombre = producto.req.orden.subproyecto.nombre
-        created_at = producto.req.created_at.replace(tzinfo=None)
-        area_nombre = producto.req.orden.area.nombre
-        cantidad = producto.cantidad
-        codigo =producto.producto.articulos.producto.producto.codigo
-        producto_nombre = producto.producto.articulos.producto.producto.nombre
+    #    req_folio = producto.req.folio
+    #    orden_folio = producto.req.orden.folio
+    #    staff_name = f"{producto.req.orden.staff.staff.first_name} {producto.req.orden.staff.staff.last_name}"
+    #    proyecto_nombre = producto.req.orden.proyecto.nombre
+    #    subproyecto_nombre = producto.req.orden.subproyecto.nombre
+    #    created_at = producto.req.created_at.replace(tzinfo=None)
+    #    area_nombre = producto.req.orden.area.nombre
+    #    cantidad = producto.cantidad
+    #    codigo =producto.producto.articulos.producto.producto.codigo
+    #    producto_nombre = producto.producto.articulos.producto.producto.nombre
       
         # Constructing the row
-        row = [
-            req_folio, 
-            orden_folio, 
-            staff_name, 
-            proyecto_nombre, 
-            subproyecto_nombre, 
-            created_at,
-            area_nombre,
-            cantidad, 
-            codigo, 
-            producto_nombre, 
-        ]
-        rows.append(row)
+    #    row = [
+    #        req_folio, 
+    #        orden_folio, 
+    #        staff_name, 
+    #        proyecto_nombre, 
+    #        subproyecto_nombre, 
+    #        created_at,
+    #        area_nombre,
+    #        cantidad, 
+    #        codigo, 
+    #        producto_nombre, 
+    #    ]
+    #    rows.append(row)
 
     # Building the Excel sheet with rows
-    for row in rows:
-        row_num += 1
-        for col_num, cell_value in enumerate(row):
-            ws.cell(row=row_num, column=col_num + 1, value=str(cell_value)).style = body_style
-            if col_num == 5:
-                ws.cell(row=row_num, column=col_num + 1, value=cell_value).style = body_style
-            if col_num == 9:
-                ws.cell(row=row_num, column=col_num + 1, value=cell_value).style = number_style
+    #for row in rows:
+    #    row_num += 1
+    #    for col_num, cell_value in enumerate(row):
+    #        ws.cell(row=row_num, column=col_num + 1, value=str(cell_value)).style = body_style
+            #if col_num == 5:
+            #    ws.cell(row=row_num, column=col_num + 1, value=cell_value).style = body_style
+    #        if col_num == 9:
+    #            ws.cell(row=row_num, column=col_num + 1, value=cell_value).style = number_style
            
 
     sheet = wb['Sheet']

@@ -24,4 +24,5 @@ urlpatterns = [
     path('gasto/entrada/<int:pk>', views.gasto_entrada, name='gasto-entrada'),
     path('gasto/delete_articulo_entrada/<int:pk>', views.delete_articulo_entrada, name='delete-articulo-entrada'),
     path('gasto/render_gasto/<int:pk>', views.render_pdf_gasto, name='render-pdf-gasto'),
+    path('prellenar_formulario_gastos/', views.prellenar_formulario_gastos, name='prellenar_formulario_gastos'),
     ]

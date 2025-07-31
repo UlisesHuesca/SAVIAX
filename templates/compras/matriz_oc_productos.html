@@ -160,6 +160,7 @@
                     <th class="d-none d-lg-table-cell">Área</th>
                     <th scope="col">Producto</th>
                     <th>Fecha OC</th>
+                    <th>Proveedor</th>
                     <th>Preevaluacion</th>
                     <th scope="col">P.U.</th>
                     <th scope="col">Cantidad</th>
@@ -185,6 +186,7 @@
                     <td>
                         {{item.oc.created_at|date:"d/m/Y"}}
                     </td> 
+                    <td>{{item.oc.proveedor.nombre.razon_social}}</td>
                     <td>
                         {% for preevaluacion in item.oc.proveedor.nombre.preevaluaciones.all %} 
                             

@@ -3,6 +3,7 @@ from datetime import date, datetime
 from django.contrib import messages
 from django.core.mail import EmailMessage, BadHeaderError
 import socket
+import traceback
 from smtplib import SMTPException
 from dashboard.models import Inventario, Order, ArticulosparaSurtir, ArticulosOrdenados, Tipo_Orden 
 from solicitudes.models import Proyecto, Subproyecto, Operacion
@@ -10,6 +11,7 @@ from tesoreria.models import Pago, Cuenta
 from .models import Solicitud_Gasto, Articulo_Gasto, Entrada_Gasto_Ajuste, Conceptos_Entradas, Factura
 from .forms import Solicitud_GastoForm, Articulo_GastoForm, Articulo_Gasto_Edit_Form, Pago_Gasto_Form, Articulo_Gasto_Factura_Form, Entrada_Gasto_AjusteForm, Conceptos_EntradasForm, FacturaForm, Autorizacion_Gasto_Form
 from tesoreria.forms import Facturas_Gastos_Form 
+from tesoreria.utils import extraer_texto_de_pdf, encontrar_variables
 from compras.views import attach_oc_pdf
 from .filters import Solicitud_Gasto_Filter
 from user.models import Profile
@@ -405,12 +407,13 @@ def pago_gasto(request, pk):
     pagos_alt = Pago.objects.filter(gasto=gasto, hecho=True)
     cuentas = Cuenta.objects.filter(moneda__nombre = 'PESOS')
 
-    pago, created = Pago.objects.get_or_create(tesorero = usuario, distrito = usuario.distrito, hecho=False, gasto=gasto)
+   
     form = Pago_Gasto_Form()
     remanente = gasto.get_total_solicitud - gasto.monto_pagado
 
 
     if request.method == 'POST':
+        pago, created = Pago.objects.get_or_create(tesorero = usuario, distrito = usuario.distrito, hecho=False, gasto=gasto)
         form = Pago_Gasto_Form(request.POST or None, request.FILES or None, instance = pago)
         if form.is_valid():
             pago = form.save(commit = False)
@@ -458,7 +461,7 @@ def pago_gasto(request, pk):
 
     context= {
         'gasto':gasto,
-        'pago':pago,
+        #'pago':pago,
         'form':form,
         'pagos_alt':pagos_alt,
         'cuentas':cuentas,
@@ -466,6 +469,72 @@ def pago_gasto(request, pk):
     }
 
     return render(request,'gasto/pago_gasto.html',context)
+
+
+def prellenar_formulario_gastos(request):
+    #print('prellenar_formulario_gastos')
+    if request.method == 'POST' and request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        pdf_content = request.FILES.get('comprobante_pago')
+        
+        if not pdf_content:
+            return JsonResponse({'error': 'No file uploaded'}, status=400)
+        
+        pdf_content = pdf_content.read()
+        
+        
+        texto_extraido = extraer_texto_de_pdf(pdf_content)
+        datos_extraidos = encontrar_variables(texto_extraido)
+            #divisa_cuenta_extraida = datos_extraidos.get('divisa_cuenta', '').strip()
+
+     
+        divisa_cuenta_extraida = datos_extraidos.get('divisa_cuenta', '').strip()
+
+        
+        fecha_str = datos_extraidos.get('fecha', '').strip()
+        #print(fecha_str)
+        fecha_formato_correcto = None  # Valor por defecto en caso de que no se pueda procesar la fecha
+        
+        if fecha_str:
+            try:
+                fecha_obj = datetime.strptime(fecha_str, '%d/%m/%Y')
+                fecha_formato_correcto = fecha_obj.strftime('%Y-%m-%d')
+            except ValueError:
+                # Opcional: Agregar alguna forma de logging o notificación de que la fecha no es válida
+                print('Se lo llevó madres')
+                pass
+        
+        numero_cuenta_extraido = datos_extraidos.get('cuenta_retiro', '').strip().lstrip('0')
+       
+        cuenta_objeto = None
+       
+        #print('numero_cuenta_extraido',numero_cuenta_extraido)
+        if numero_cuenta_extraido:
+            try:
+                
+                cuenta_objeto = Cuenta.objects.get(cuenta__contains=numero_cuenta_extraido)
+                print('cuenta_objeto:', cuenta_objeto)
+            except Cuenta.DoesNotExist:
+                print('Cuenta retiro no encontrada:', numero_cuenta_extraido)
+                return JsonResponse({'error': 'Cuenta retiro no encontrada'}, status=404)
+            except Exception as e:
+                print('Error inesperado al buscar cuenta retiro:', e)
+                print(traceback.format_exc())
+                return JsonResponse({'error': 'Error interno'}, status=500)
+            
+        
+        
+        #print("destino_cuenta",datos_extraidos.get('cuenta_deposito', '').strip().lstrip('0') or None) 
+        datos_para_formulario = {
+            'monto': datos_extraidos.get('importe_operacion', '').replace('MXP', '').replace(',', '').strip() or None,
+            'pagado_real': fecha_formato_correcto,  # Valor procesado o None
+            'cuenta': cuenta_objeto.id if cuenta_objeto else None,
+            'divisa_cuenta': divisa_cuenta_extraida or None,
+            #'hora_operacion': datos_extraidos.get('hora_operacion', '') or None,
+        }
+        
+        return JsonResponse(datos_para_formulario)
+    
+    return JsonResponse({'error': 'Invalid request'}, status=400)
 
 
 @login_required(login_url='user-login')

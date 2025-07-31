@@ -150,7 +150,7 @@
                     <td>
                         <ul class="nav nav-pills">
                             <li class="nav-item mx-1">
-                                <button id="myBtn" type="button" class="btn btn-outline-info" data-bs-toggle="modal" data-bs-target='#dialog' hx-target="#document" hx-get="{% url 'pago-gasto' gasto.id %}">Pago</button>
+                                <a id="myBtn" type="button" class="btn btn-outline-info"  href="{% url 'pago-gasto' gasto.id %}">Pago</a>
                             </li>
                         </ul>
                     <td>
