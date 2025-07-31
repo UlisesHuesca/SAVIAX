@@ -46,7 +46,7 @@
         <div class="card card-body">
             <h5>Filtro de Productos Pendientes</h5>
             <hr>
-           
+            {% csrf_token %}
             <form method="GET">
                 <div class="row g-12">
                     <label for="myfilter.form.codigo" class="col-sm-auto col-form-label text-right my-2"><strong>Producto:</strong></label>
@@ -59,7 +59,7 @@
                 </div>
             <hr>
             </form>
-            <form method="POST" action="{% url 'productos-pendientes' %}">
+            <form method="POST">
                 {% csrf_token %}
                 <ul class="nav nav-pills">
                     <li class="nav-item m-1">
