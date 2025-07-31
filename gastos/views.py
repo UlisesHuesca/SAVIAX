@@ -454,7 +454,7 @@ def pago_gasto(request, pk):
                 except (BadHeaderError, SMTPException, socket.gaierror) as e:
                     error_message = f'{usuario.staff.first_name}, Gracias por registrar tu pago, pero el correo de notificación no ha sido enviado debido a un error: {e}'
                     messages.warning(request, error_message)
-                return HttpResponse(status=204) #No content to render nothing and send a "signal" to javascript in order to close window
+                return redirect('pago-gastos-autorizados')
         else:
             form = Pago_Gasto_Form()
             messages.error(request,f'{usuario.staff.first_name}, No se pudo subir tu documento')
