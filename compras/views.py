@@ -1686,9 +1686,14 @@ def generar_pdf(compra):
     name.drawOn(c, inicio_central + 115, caja_proveedor - height)
     #c.drawString(inicio_central + 115,caja_proveedor-8, name)
     c.drawString(inicio_central + 115,caja_proveedor-28, compra.proveedor.nombre.rfc)
-    c.drawString(inicio_central + 115,caja_proveedor-38, compra.proveedor.cuenta)
-    c.drawString(inicio_central + 115,caja_proveedor-48, compra.proveedor.banco.nombre)
-    c.drawString(inicio_central + 115,caja_proveedor-58, compra.proveedor.clabe)
+    if compra.proveedor.cuenta:
+        c.drawString(inicio_central + 115,caja_proveedor-38, compra.proveedor.cuenta)
+        c.drawString(inicio_central + 115,caja_proveedor-48, compra.proveedor.banco.nombre)
+        c.drawString(inicio_central + 115,caja_proveedor-58, compra.proveedor.clabe)
+    else:
+        c.drawString(inicio_central + 115,caja_proveedor-38, 'No definido')
+        c.drawString(inicio_central + 115,caja_proveedor-48, 'No definido')
+        c.drawString(inicio_central + 115,caja_proveedor-58, 'No definido')
     if compra.proveedor.swift:
         c.drawString(inicio_central + 115,caja_proveedor-68, compra.proveedor.swift)
     c.drawString(inicio_central + 115,caja_proveedor-78, compra.proveedor.estatus.nombre)
