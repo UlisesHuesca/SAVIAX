@@ -153,7 +153,7 @@
                         {% csrf_token %}
                         <tr>
                             <th scope="row">{{p.id}}</th>
-                            <td>{{p.monto}}</td>
+                            <td>{{p.monto|floatformat:2}}</td>
                             <td>{{p.cuenta.moneda}}</td>
                             {% if p.tipo_de_cambio %}
                             <td>{{p.tipo_de_cambio}}</td>
