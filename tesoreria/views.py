@@ -118,7 +118,7 @@ def compras_pagos(request, pk):
             if compra.moneda.nombre == "DOLARES":
                 if pago.cuenta.moneda.nombre == "PESOS": #Si la cuenta es en pesos
                     sub.gastado = sub.gastado + monto_actual * pago.tipo_de_cambio
-                    monto_actual = monto_actual/pago.tipo_de_cambio
+                    monto_actual = monto_actual * pago.tipo_de_cambio
             #        cuenta.saldo = cuenta_pagos['monto__sum'] + monto_actual * decimal.Decimal(request.POST['tipo_de_cambio'])
                 if pago.cuenta.moneda.nombre == "DOLARES":
                     tipo_de_cambio = decimal.Decimal(dof())
