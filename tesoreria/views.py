@@ -222,7 +222,7 @@ def compras_pagos(request, pk):
                 messages.success(request,f'Gracias por registrar tu pago, {usuario.staff.first_name}')
                 return redirect('compras-autorizadas') 
             elif monto_total > compra.costo_plus_adicionales:
-                messages.error(request,'El monto total pagado es mayor que el costo de la compra')
+                messages.error(request,'El monto total pagado {monto_total} es mayor que el costo de la compra {costo_oc}')
             else:
                 form = PagoForm()
                 messages.error(request,f'{usuario.staff.first_name}, No se pudo subir tu documento')
