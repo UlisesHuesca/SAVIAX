@@ -195,25 +195,29 @@ def solicitudes_autorizadas_pendientes(request):
 
 def update_devolucion(request):
     data= json.loads(request.body)
+    print('creo que no entra')
     action = data["action"]
     cantidad = decimal.Decimal(data["val_cantidad"])
     devolucion = data["devolucion"]
     producto_id = data["id"]
     comentario = data["comentario"]
     devolucion = Devolucion.objects.get(id = devolucion)
-    
+    print(devolucion,comentario,producto_id,cantidad,action)
     if devolucion.tipo.nombre == "SALIDA":
         producto = Salidas.objects.get(vale_salida=devolucion.salida.vale_salida, producto__id = producto_id,)
         inv_del_producto = Inventario.objects.get(producto = producto.producto.articulos.producto.producto)
     else:
         producto = ArticulosparaSurtir.objects.get(id = producto_id)
         inv_del_producto = Inventario.objects.get(producto = producto.articulos.producto.producto)
-        
+        print(producto)    
 
 
     if action == "add":
+        print('sí')
         if producto.articulos.producto.producto.critico:
+            print('sí')
             if producto.articulos.producto.producto.critico.nombre == "Crítico":
+                print('sí')
                 cantidad_total = int(cantidad)
                 cantidad = 1
                 for i in range(0, cantidad_total):
@@ -236,6 +240,7 @@ def update_devolucion(request):
                     producto.save()
                     devolucion_articulos.save() 
             else:
+                print('no')
                 cantidad_total = producto.cantidad - cantidad
                 if cantidad_total < 0:
                     messages.error(request,f'La cantidad que se quiere ingresar sobrepasa la cantidad disponible. {cantidad_total} mayor que {producto.cantidad}')
@@ -258,6 +263,30 @@ def update_devolucion(request):
                     messages.success(request,'Has agregado producto para devolución de manera exitosa')
                     producto.save()
                     devolucion_articulos.save()
+        else:
+            print('else')
+            cantidad_total = producto.cantidad - cantidad
+            if cantidad_total < 0:
+                messages.error(request,f'La cantidad que se quiere ingresar sobrepasa la cantidad disponible. {cantidad_total} mayor que {producto.cantidad}')
+            else:
+                if devolucion.tipo.nombre == "SALIDA":
+                    devolucion_articulos, created = Devolucion_Articulos.objects.get_or_create(producto= producto.producto, vale_devolucion = devolucion, complete=False)
+                else:
+                    devolucion_articulos, created = Devolucion_Articulos.objects.get_or_create(producto=producto, vale_devolucion = devolucion, complete=False)
+                    
+                producto.seleccionado = True
+                #Se le resta a la cantidad de artículos para surtir
+                producto.cantidad = producto.cantidad - cantidad
+                #La cantidad de la devolución es igual a la cantidad que se marcó en la devolución (daaa)
+                devolucion_articulos.cantidad = cantidad
+                devolucion_articulos.comentario = comentario
+                devolucion_articulos.precio = producto.precio
+                devolucion_articulos.complete = True
+                if producto.cantidad == 0: #Si la cantidad de artículos para surtir es igual a 0, si la cantidad a devolver es 0 entonces ya no se puede surtir
+                    producto.surtir = False
+                messages.success(request,'Has agregado producto para devolución de manera exitosa')
+                producto.save()
+                devolucion_articulos.save()
     if action == "remove":
         articulo_id = data["id_articulo"]
         if devolucion.tipo.nombre == "SALIDA":
