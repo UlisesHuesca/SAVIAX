@@ -376,7 +376,16 @@ def autorizar_devolucion(request, pk):
                 inv_del_producto = Inventario.objects.get(producto = producto_surtir.articulos.producto.producto)
                 inv_del_producto._change_reason = f'Esta es una devolucion desde un surtimiento de inventario {devolucion.id}'
                 try:
-                    entrada = EntradaArticulo.objects.filter(articulo_comprado__producto__producto=producto_surtir, entrada__oc__req__orden=producto_surtir.articulos.orden, agotado = False).order_by('id').first()
+                    qs = EntradaArticulo.objects.filter(
+                        articulo_comprado__producto__producto=producto_surtir,
+                        entrada__oc__req__orden=producto_surtir.articulos.orden, 
+                        agotado=False
+                        )
+
+                    if qs.count() > 1:
+                        entrada = qs.order_by('id').first()
+                    else:
+                        entrada = qs.first()  # si hay 0 o 1, devuelve ese único o None
                     
                     # Verificar si la cantidad en la entrada es suficiente
                     if entrada.cantidad_por_surtir >= producto.cantidad:
