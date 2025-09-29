@@ -379,7 +379,6 @@ def autorizar_devolucion(request, pk):
                     qs = EntradaArticulo.objects.filter(
                         articulo_comprado__producto__producto=producto_surtir,
                         entrada__oc__req__orden=producto_surtir.articulos.orden, 
-                        agotado=False
                         )
 
                     if qs.count() > 1:
