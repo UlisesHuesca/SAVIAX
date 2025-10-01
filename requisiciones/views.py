@@ -1525,32 +1525,41 @@ def convert_solicitud_autorizada_to_xls(productos):
     (ws.cell(column = columna_max, row = 1, value='{Reporte Creado Automáticamente por Savia Vordtec. UH}')).style = messages_style
     (ws.cell(column = columna_max, row = 2, value='{Software desarrollado por Vordcab S.A. de C.V.}')).style = messages_style
 
-    rows = productos.values_list(
-        'articulos__orden__folio',
-        Concat('articulos__orden__staff__staff__first_name',Value(' '),'articulos__orden__staff__staff__last_name'),
-        'articulos__orden__proyecto__nombre',
-        'articulos__orden__subproyecto__nombre',
-        'articulos__producto__producto__codigo',
-        'articulos__producto__producto__nombre',
-        'articulos__orden__approved_at',
-        'cantidad')
+    row_num = 1
 
-    for row in rows:
+    for producto in productos.select_related(
+        "articulos__orden",
+        "articulos__orden__proyecto",
+        "articulos__orden__subproyecto",
+        "articulos__producto__producto"
+    ):
+        row = [
+            producto.articulos.orden.folio,
+            f"{producto.articulos.orden.staff.staff.first_name} {producto.articulos.orden.staff.staff.last_name}",
+            producto.articulos.orden.proyecto.nombre if producto.articulos.orden.proyecto else '',
+            producto.articulos.orden.subproyecto.nombre if producto.articulos.orden.subproyecto else '',
+            producto.articulos.producto.producto.codigo,
+            producto.articulos.producto.producto.nombre,
+            producto.articulos.orden.approved_at,   # ← tipo datetime.date
+            producto.cantidad
+        ]
+
         row_num += 1
-        for col_num in range(len(row)):
-            if col_num == 6:
-                (ws.cell(row = row_num, column = col_num+1, value=row[col_num])).style = date_style
-            if col_num == 7 or col_num == 4:
-                (ws.cell(row = row_num, column = col_num+1, value=row[col_num])).style = number_style
-            else:
-                (ws.cell(row = row_num, column = col_num+1, value=str(row[col_num]))).style = body_style
-    
+        for col_num, value in enumerate(row):
+            if col_num == 6:  # fecha
+                ws.cell(row=row_num, column=col_num+1, value=value).style = date_style
+            elif col_num in [7, 4]:  # números
+                ws.cell(row=row_num, column=col_num+1, value=value).style = number_style
+            else:  # texto
+                ws.cell(row=row_num, column=col_num+1, value=str(value)).style = body_style
+
+    # limpiar hoja inicial
     sheet = wb['Sheet']
     wb.remove(sheet)
     wb.save(response)
 
-    return(response)
-    #Aquí termina la implementación del XLSX
+    return response
+
 
 def convert_solicitud_autorizada_orden_to_xls(ordenes):
     response= HttpResponse(content_type = "application/ms-excel")

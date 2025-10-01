@@ -29,7 +29,7 @@ from io import BytesIO
 import xlsxwriter
 from xlsxwriter.utility import xl_col_to_name
 from openpyxl import Workbook
-from openpyxl.styles import NamedStyle, Font, PatternFill
+from openpyxl.styles import NamedStyle, Font, PatternFill, Alignment
 from openpyxl.utils import get_column_letter
 import io
 from django.db.models.functions import Concat
@@ -175,6 +175,9 @@ def pendientes_entrada(request):
 
     myfilter = EntradaArticuloFilter(request.GET, queryset=articulos_recepcionados)
     articulos_recepcionados = myfilter.qs
+
+    if request.method == "POST" and 'btnExcel' in request.POST:
+        return reporte_recepcionados(articulos_recepcionados)
 
     if request.method == "POST" and 'entrada' in request.POST:
         pk = request.POST.get('entrada_articulo_id')
@@ -759,6 +762,7 @@ def articulos_entrada(request, pk):
         #entrada.completo = True                #Lo comenté porque esto ya está sucediendo en la recepción
         entrada.entrada_date = date.today()                                    #Se actualiza la fecha de la entrada
         entrada.entrada_hora = datetime.now().time()                           #Se actualiza la hora de la entrada
+        entrada.almacenista = usuario                                          #Se actualiza almacenista que hizo la entrada
         articulos_comprados = ArticuloComprado.objects.filter(oc=pk)           #Traigo todos los articulos comprados 
         num_art_comprados = articulos_comprados.count()                         #Hago un conteo de los artículos comprados
         articulos_entregados = articulos_comprados.filter(entrada_completa=True) #Traigo todo los articulos que tienen la entrada completa de esa entrada
@@ -1558,66 +1562,69 @@ def convert_caducidad_to_xls2(entradas):
     response.set_cookie('descarga_iniciada', 'true', max_age=10)  # La cookie expira en 10 segundos
 
     # Crear un nuevo libro de trabajo y hoja de trabajo
-    wb = Workbook()
-    ws = wb.active
-    ws.title = 'Entradas'
+    wb = xlsxwriter.Workbook(output, {'in_memory': True})
+    ws = wb.add_worksheet('Entradas')
+    #ws.title = 'Entradas'
 
-    # Definir estilos
-    styles = {
-        'head_style': NamedStyle(name="head_style", font=Font(name='Arial', color='FFFFFF', bold=True, size=11),
-                                 fill=PatternFill("solid", fgColor='333366')),
-        'body_style': NamedStyle(name="body_style", font=Font(name='Calibri', size=10)),
-        'messages_style': NamedStyle(name="messages_style", font=Font(name="Arial Narrow", size=11)),
-        'date_style': NamedStyle(name='date_style', number_format='DD/MM/YYYY', font=Font(name='Calibri', size=10))
-    }
+    head_style = wb.add_format({'bold': True, 'font_color': 'FFFFFF', 'bg_color': '333366', 'font_name': 'Arial', 'font_size': 11})
+    body_style = wb.add_format({'font_name': 'Calibri', 'font_size': 10})
+    number_style = wb.add_format({'num_format': '##0', 'font_name': 'Calibri', 'font_size': 10})
+    date_style = wb.add_format({'num_format': 'dd/mm/yyyy', 'font_name': 'Calibri', 'font_size': 10})
+    messages_style = wb.add_format({'font_name': 'Arial Narrow', 'font_size': 11})
 
-    for style in styles.values():
-        if not style.name in wb.named_styles:  # Evitar duplicados si el estilo ya existe
-            wb.add_named_style(style)
+   
 
     # Configurar encabezados de columna
     columns = ['Entrada', 'OC', 'Producto','Proveedor', 'Cantidad', 'Cantidad por surtir', 'Fecha entrada',
                'Comentario', 'Fecha caducidad', 'Almacenista']
-    for col_num, column_title in enumerate(columns, start=1):
-        cell = ws.cell(row=1, column=col_num, value=column_title)
-        cell.style = styles['head_style']
-        ws.column_dimensions[get_column_letter(col_num)].width = 25 if col_num in [3, 7] else 16
+    
+    for i, column in enumerate(columns):
+        ws.write(0, i, column, head_style)
+        ws.set_column(i, i, 20)  # Ancho de columna
 
     # Agregar mensajes
-    max_col = len(columns) + 1
-    ws.cell(row=1, column=max_col, value='{Reporte creado automáticamente por Savia X. UH}').style = styles['messages_style']
-    ws.cell(row=2, column=max_col, value='{Software desarrollado por Vordcab S.A. de C.V.}').style = styles['messages_style']
-    ws.column_dimensions[get_column_letter(max_col)].width = 20
+    max_col = len(columns) + 2
+    ws.write(0, max_col - 1, 'Reporte Creado Automáticamente por SAVIA Vordcab. UH', messages_style)
+    ws.write(1, max_col - 1, 'Software desarrollado por Grupo Vordcab S.A. de C.V.', messages_style)
+    ws.set_column(max_col - 1, max_col, 30)  # Ajusta el ancho de las columnas nuevas
 
     # Agregar datos de entradas
-    for row_num, dev in enumerate(entradas, start=2):
+    row_num = 1
+    for dev in entradas:
         if dev.entrada.comentario:
             comentario = dev.entrada.comentario
         else:
             comentario = ''
         row = [
-            str(dev.id),
-            str(dev.entrada.oc.id),
+            dev.id,
+            dev.entrada.oc.id,
             str(dev.articulo_comprado.producto.producto.articulos.producto.producto.nombre),
             str(dev.entrada.oc.proveedor.nombre),###
-            str(dev.entrada.entrada_date),
-            str(dev.cantidad),
-            str(dev.cantidad_por_surtir),
+            dev.cantidad,
+            dev.cantidad_por_surtir,
+            dev.entrada.entrada_date,
             #productos_str,  # Productos concatenados
             comentario,
-            str(dev.fecha_caducidad),
+            dev.fecha_caducidad,
             f"{dev.entrada.almacenista.staff.first_name} {dev.entrada.almacenista.staff.last_name}",
         ]
 
-        for col_num, value in enumerate(row, start=1):
-            cell = ws.cell(row=row_num, column=col_num, value=value)
-            cell.style = styles['date_style'] if col_num in [6, 8] else styles['body_style']
-
+        for col_num, cell_value in enumerate(row):
+            cell_format = number_style
+            if col_num in [6, 8]:  # Columnas de fecha
+                cell_format = date_style
+            if col_num in [2, 3, 9]:  # Columnas numéricas
+                cell_format = body_style
+            ws.write(row_num, col_num, cell_value, cell_format)
+        row_num += 1
+            
+    wb.close()
+    
     # Eliminar la hoja predeterminada si existe y guardar el archivo en el objeto BytesIO
-    if 'Sheet' in wb.sheetnames:
-        wb.remove(wb['Sheet'])
+    #if 'Sheet' in wb.sheetnames:
+    #    wb.remove(wb['Sheet'])
 
-    wb.save(output)
+    #wb.save(output)
     output.seek(0)  # Asegurarse de que el puntero esté al principio del flujo de bytes
 
     # Establecer el contenido del archivo en la respuesta HTTP
@@ -2057,4 +2064,84 @@ def convert_excel_salida_terminados(entradas):
     response.write(output.getvalue())
     output.close()
     
+    return response
+
+
+
+def reporte_recepcionados(entradas):
+    
+    output = io.BytesIO()
+    wb = xlsxwriter.Workbook(output, {'in_memory': True})
+    ws = wb.add_worksheet("Artículos Recepcionados")
+
+
+    # Define los estilos
+    head_style = wb.add_format({'bold': True, 'font_color': 'FFFFFF', 'bg_color': '333366', 'font_name': 'Arial', 'font_size': 11})
+    body_style = wb.add_format({'font_name': 'Calibri', 'font_size': 10})
+    money_style = wb.add_format({'num_format': '$ #,##0.00', 'font_name': 'Calibri', 'font_size': 10})
+    date_style = wb.add_format({'num_format': 'dd/mm/yyyy', 'font_name': 'Calibri', 'font_size': 10})
+    percent_style = wb.add_format({'num_format': '0.00%', 'font_name': 'Calibri', 'font_size': 10})
+    messages_style = wb.add_format({'font_name':'Arial Narrow', 'font_size':11})
+
+
+    # 🔹 Aquí defines los encabezados antes de usarlos
+    columns = [
+        "Compra", "Crítico", "Req.", "Sol.",
+        "Solicitado por", "Proyecto", "Subproyecto", "Fecha Recepción",
+        "Proveedor", "Concepto", "Cantidad"
+    ]
+    
+    # Encabezados
+    for i, column in enumerate(columns):
+        ws.write(0, i, column, head_style)
+        ws.set_column(i, i, 15)  # Ajusta el ancho de las columnas
+
+    row_num = 0
+    for articulo in entradas:
+        row_num += 1
+
+        compra = articulo.articulo_comprado.oc.id if articulo.articulo_comprado.oc else 'ND'
+        critico = "Sí" if articulo.articulo_comprado.producto.producto.articulos.producto.producto.critico in [1,2] else "No"
+        #terminado = "Sí" if articulo.articulo_comprado.producto.producto.articulos.producto.producto.terminado else "No"
+        req = articulo.articulo_comprado.oc.req.folio if articulo.articulo_comprado.oc.req else ''
+        sol = articulo.articulo_comprado.oc.req.folio if articulo.articulo_comprado.oc.req else ''
+        solicitado_por = f"{articulo.articulo_comprado.oc.req.orden.staff.staff.first_name} {articulo.articulo_comprado.oc.req.orden.staff.staff.last_name}" if articulo.articulo_comprado.oc.req and articulo.articulo_comprado.oc.req.orden.staff.staff else ''
+        proyecto = articulo.articulo_comprado.oc.req.orden.proyecto.nombre if articulo.articulo_comprado.oc.req and articulo.articulo_comprado.oc.req.orden.proyecto else ''
+        subproyecto = articulo.articulo_comprado.oc.req.orden.subproyecto.nombre if articulo.articulo_comprado.oc.req and articulo.articulo_comprado.oc.req.orden.subproyecto else ''
+        fecha_recepcion = articulo.entrada.entrada_date
+        proveedor = f"{articulo.articulo_comprado.oc.proveedor.nombre}" if articulo.articulo_comprado.oc and articulo.articulo_comprado.oc.proveedor else ''
+        concepto = f"{articulo.articulo_comprado.producto.producto.articulos.producto.producto.codigo}|{articulo.articulo_comprado.producto.producto.articulos.producto.producto.id}|{articulo.articulo_comprado.producto.producto.articulos.producto.producto.nombre}"
+        cantidad = articulo.cantidad
+
+        row = [
+            compra, 
+            critico, 
+            req, 
+            sol, 
+            solicitado_por,
+            proyecto, 
+            subproyecto, 
+            fecha_recepcion, 
+            proveedor,
+            concepto, 
+            cantidad
+        ]
+
+        for col_num, value in enumerate(row):
+            cell_format = body_style
+            if col_num == 7:  # Columna de fecha
+                cell_format = date_style
+            ws.write(row_num, col_num, value, cell_format)
+
+    wb.close()
+
+    output.seek(0)  # Asegurarse de que el puntero esté al principio del flujo de bytes
+    # Preparar respuesta HTTP
+    response = HttpResponse(
+        output.read(),
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        )
+    response['Content-Disposition'] = f'attachment; filename=articulos_recepcionados.xlsx'
+    output.close()
+
     return response
