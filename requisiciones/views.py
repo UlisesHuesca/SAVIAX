@@ -1598,7 +1598,7 @@ def convert_solicitud_autorizada_orden_to_xls(ordenes):
     (ws.cell(column = columna_max, row = 1, value='{Reporte Creado Automáticamente por Savia Vordtec. UH}')).style = messages_style
     (ws.cell(column = columna_max, row = 2, value='{Software desarrollado por Vordcab S.A. de C.V.}')).style = messages_style
 
-    rows = ordenes.values_list('id',Concat('staff__staff__first_name',Value(' '),'staff__staff__last_name'),
+    rows = ordenes.values_list('folio',Concat('staff__staff__first_name',Value(' '),'staff__staff__last_name'),
                             'proyecto__nombre','subproyecto__nombre','created_at')
 
     for row in rows:
