@@ -224,7 +224,7 @@ class ArticuloPlantilla(models.Model):
     # otros campos que consideres necesarios
 
 class Order(models.Model):
-    folio = models.CharField(max_length=6, null=True, unique=True)
+    folio = models.CharField(max_length=8, null=True, unique=True)
     last_folio_number = models.IntegerField(null=True)
     staff = models.ForeignKey(Profile, on_delete = models.CASCADE, null=True, related_name='Crea')
     proyecto = models.ForeignKey(Proyecto, on_delete = models.CASCADE, null=True)
