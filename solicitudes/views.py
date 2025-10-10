@@ -22,7 +22,8 @@ from django.shortcuts import get_object_or_404
 import pandas as pd
 
 import io
-from django.db.models import Sum, Value, F, Sum, When, Case, DecimalField, Q, Exists, OuterRef
+from django.db.models import Sum, Value, F, Sum, When, Case, DecimalField, Q, Exists, OuterRef, IntegerField
+from django.db.models.functions import Cast, Replace
 from .filters import InventoryFilter, SolicitudesFilter, SolicitudesProdFilter, InventarioFilter, HistoricalInventarioFilter, HistoricalProductoFilter
 from django.contrib import messages
 import decimal
@@ -623,12 +624,34 @@ def solicitud_matriz(request):
 
 
      #Este es un filtro por perfil supervisor o superintendente, es decir puede ver todo lo del distrito
-    if perfil.tipo.superintendente == True or perfil.tipo.nombre == "Control":
-        ordenes = Order.objects.filter(complete=True, staff__distrito=perfil.distrito).order_by('-folio')
-    elif perfil.tipo.supervisor == True:
-        ordenes = Order.objects.filter(complete=True, staff__distrito=perfil.distrito, supervisor=perfil).order_by('-folio')
+    #if perfil.tipo.superintendente == True or perfil.tipo.nombre == "Control":
+    #    ordenes = Order.objects.filter(complete=True, staff__distrito=perfil.distrito).order_by('-folio')
+    #elif perfil.tipo.supervisor == True:
+    #    ordenes = Order.objects.filter(complete=True, staff__distrito=perfil.distrito, supervisor=perfil).order_by('-folio')
+    #else:
+    #    ordenes = Order.objects.filter(complete=True, staff = perfil).order_by('-folio')
+
+    if perfil.tipo.superintendente or perfil.tipo.nombre == "Control":
+        ordenes = (
+            Order.objects
+            .filter(complete=True, staff__distrito=perfil.distrito)
+            .annotate(folio_num=Cast(Replace('folio', 'PL', ''), IntegerField()))
+            .order_by('-folio_num')
+            )
+    elif perfil.tipo.supervisor:
+        ordenes = (
+            Order.objects
+            .filter(complete=True, staff__distrito=perfil.distrito, supervisor=perfil)
+            .annotate(folio_num=Cast(Replace('folio', 'PL', ''), IntegerField()))
+            .order_by('-folio_num')
+        )
     else:
-        ordenes = Order.objects.filter(complete=True, staff = perfil).order_by('-folio')
+        ordenes = (
+            Order.objects
+            .filter(complete=True, staff=perfil)
+            .annotate(folio_num=Cast(Replace('folio', 'PL', ''), IntegerField()))
+            .order_by('-folio_num')
+        )
 
     myfilter=SolicitudesFilter(request.GET, queryset=ordenes)
     ordenes = myfilter.qs
