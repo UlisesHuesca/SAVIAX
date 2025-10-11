@@ -1,5 +1,6 @@
 from django.shortcuts import render, redirect
 from dashboard.models import Inventario, Order, ArticulosOrdenados, ArticulosparaSurtir, Inventario_Batch, Marca, Product, Tipo_Orden, Plantilla, ArticuloPlantilla, Producto_Calidad, Productos_Solicitud_Terminado, Solicitud_Producto_Terminado, Unidad, Criticidad, Almacen
+from django.db import models
 from requisiciones.models import Requis, ArticulosRequisitados, ValeSalidas, Salidas
 from compras.models import Compra
 from tesoreria.models import Pago
