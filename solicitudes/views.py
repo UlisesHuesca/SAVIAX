@@ -630,26 +630,31 @@ def solicitud_matriz(request):
     #    ordenes = Order.objects.filter(complete=True, staff__distrito=perfil.distrito, supervisor=perfil).order_by('-folio')
     #else:
     #    ordenes = Order.objects.filter(complete=True, staff = perfil).order_by('-folio')
-
     if perfil.tipo.superintendente or perfil.tipo.nombre == "Control":
         ordenes = (
             Order.objects
             .filter(complete=True, staff__distrito=perfil.distrito)
-            .annotate(folio_num=Cast(Replace('folio', 'PL', ''), IntegerField()))
-            .order_by('-folio_num')
+            .annotate(
+                folio_num=Cast(Replace('folio', models.Value('PL'), models.Value('')), IntegerField())
             )
+            .order_by('-folio_num')
+        )
     elif perfil.tipo.supervisor:
         ordenes = (
             Order.objects
             .filter(complete=True, staff__distrito=perfil.distrito, supervisor=perfil)
-            .annotate(folio_num=Cast(Replace('folio', 'PL', ''), IntegerField()))
+            .annotate(
+                folio_num=Cast(Replace('folio', models.Value('PL'), models.Value('')), IntegerField())
+            )
             .order_by('-folio_num')
         )
     else:
         ordenes = (
             Order.objects
             .filter(complete=True, staff=perfil)
-            .annotate(folio_num=Cast(Replace('folio', 'PL', ''), IntegerField()))
+            .annotate(
+                folio_num=Cast(Replace('folio', models.Value('PL'), models.Value('')), IntegerField())
+            )
             .order_by('-folio_num')
         )
 
