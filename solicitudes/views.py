@@ -796,13 +796,21 @@ def solicitud_matriz_productos(request):
 
      #Este es un filtro por perfil supervisor o superintendente, es decir puede ver todo lo del distrito
     if perfil.tipo.superintendente == True or perfil.tipo.nombre == "Control":
-        productos = ArticulosOrdenados.objects.filter(orden__complete=True, orden__staff__distrito=perfil.distrito).order_by('-orden__folio')
+        productos = ArticulosOrdenados.objects.filter(orden__complete=True, orden__staff__distrito=perfil.distrito).annotate(
+                folio_num=Cast(Replace('folio', models.Value('PL'), models.Value('')), IntegerField())
+            ).order_by('-folio_num')
     elif perfil.tipo.supervisor == True:
-        productos = ArticulosOrdenados.objects.filter(orden__complete=True, orden__staff__distrito=perfil.distrito, orden__supervisor=perfil).order_by('-orden__folio')
+        productos = ArticulosOrdenados.objects.filter(orden__complete=True, orden__staff__distrito=perfil.distrito, orden__supervisor=perfil).annotate(
+                folio_num=Cast(Replace('folio', models.Value('PL'), models.Value('')), IntegerField())
+            ).order_by('-folio_num')
     elif perfil.tipo.nombre == "Almacen":
-        productos = ArticulosOrdenados.objects.filter(orden__complete=True).order_by('-orden__folio')
+        productos = ArticulosOrdenados.objects.filter(orden__complete=True).annotate(
+                folio_num=Cast(Replace('folio', models.Value('PL'), models.Value('')), IntegerField())
+            ).order_by('-folio_num')
     else:
-        productos = ArticulosOrdenados.objects.filter(orden__complete=True, orden__staff = perfil).order_by('-orden__folio')
+        productos = ArticulosOrdenados.objects.filter(orden__complete=True, orden__staff = perfil).annotate(
+                folio_num=Cast(Replace('folio', models.Value('PL'), models.Value('')), IntegerField())
+            ).order_by('-folio_num')
 
     myfilter=SolicitudesProdFilter(request.GET, queryset=productos)
     productos = myfilter.qs
