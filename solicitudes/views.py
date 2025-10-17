@@ -605,7 +605,7 @@ def solicitud_pendiente(request):
     else:
         ordenes = Order.objects.filter(complete=True, staff = perfil).annotate(
                 folio_num=Cast(Replace('folio', models.Value('PL'), models.Value('')), IntegerField())
-            )
+            ).order_by('-folio_num')
 
     myfilter=SolicitudesFilter(request.GET, queryset=ordenes)
     ordenes = myfilter.qs

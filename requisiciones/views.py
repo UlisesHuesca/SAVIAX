@@ -1,14 +1,15 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
-from django.http import HttpResponse
-from django.db.models.functions import Concat
-from django.db.models import Value, Sum, Case, When, F, Value, Q, DecimalField, Avg
+from django.http import HttpResponse, JsonResponse, FileResponse
+from django.db.models.functions import Concat, Cast, Replace
+from django.db.models import Value, Sum, Case, When, F, Value, Q, DecimalField, Avg, IntegerField
+from django.db import models
+
 from django.contrib import messages
-from django.http import JsonResponse
+ 
 from django.core.mail import EmailMessage, BadHeaderError
 from smtplib import SMTPException
 from django.core.paginator import Paginator
-from django.http import FileResponse
 from django.core.files.base import ContentFile
 from django.conf import settings
 from io import BytesIO
@@ -43,7 +44,6 @@ import ast # Para leer el csr many to many
 import decimal
 import base64
 
-#PDF generator
 #PDF generator
 
 from reportlab.pdfgen import canvas
@@ -876,11 +876,13 @@ def solicitud_autorizada_orden(request):
     #usuario = request.user.id
 
     perfil = Profile.objects.get(staff__id=request.user.id)
-    ordenes = Order.objects.filter(requisitar = True, complete=True, autorizar=True, staff__distrito=perfil.distrito, requisitado = False).order_by('-folio')
-
+    ordenes = Order.objects.filter(requisitar = True, complete=True, autorizar=True, staff__distrito=perfil.distrito, requisitado = False).annotate(
+                folio_num=Cast(Replace('folio', models.Value('PL'), models.Value('')), IntegerField())).order_by('-folio_num')
+  
 
     if perfil.tipo.almacenista == True:
-        ordenes = Order.objects.filter(requisitar = True, requisitado=False).order_by('-folio')
+        ordenes = Order.objects.filter(requisitar = True, requisitado=False).annotate(
+                folio_num=Cast(Replace('folio', models.Value('PL'), models.Value('')), IntegerField())).order_by('-folio_num')
         #ordenes = Order.objects.filter(requisitar = True, complete=True, autorizar =True)
     #perfil = Profile.objects.get(id=usuario)
 
