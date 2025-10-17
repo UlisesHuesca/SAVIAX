@@ -861,8 +861,9 @@ def cancelar_oc1(request, pk):
     #Escenario con dólares
     if compra.tipo_de_cambio:
         costo_oc = compra.costo_oc * compra.tipo_de_cambio
-        if compra.costo_fletes:
+        if compra.costo_fletes != None:
             costo_fletes = compra.costo_fletes * compra.tipo_de_cambio
+
     #Escenario con pesos
     else:
         costo_oc = compra.costo_oc
