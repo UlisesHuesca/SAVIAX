@@ -591,13 +591,21 @@ def solicitud_pendiente(request):
 
     #Este es un filtro por perfil supervisor o superintendente, es decir puede ver todo lo del distrito
     if perfil.tipo.superintendente == True or perfil.tipo.nombre == "Control":
-        ordenes = Order.objects.filter(complete=True, staff__distrito=perfil.distrito).order_by('-folio')
+        ordenes = Order.objects.filter(complete=True, staff__distrito=perfil.distrito).annotate(
+                folio_num=Cast(Replace('folio', models.Value('PL'), models.Value('')), IntegerField())
+            ).order_by('-folio_num')
     elif perfil.tipo.supervisor == True:
-        ordenes = Order.objects.filter(complete=True, staff__distrito=perfil.distrito, supervisor=perfil).order_by('-folio')
+        ordenes = Order.objects.filter(complete=True, staff__distrito=perfil.distrito, supervisor=perfil) .annotate(
+                folio_num=Cast(Replace('folio', models.Value('PL'), models.Value('')), IntegerField())
+            ).order_by('-folio_num')
     elif perfil.tipo.nombre == "Almacen":
-        ordenes = Order.objects.filter(complete=True).order_by('-folio')
+        ordenes = Order.objects.filter(complete=True).annotate(
+                folio_num=Cast(Replace('folio', models.Value('PL'), models.Value('')), IntegerField())
+            ).order_by('-folio_num')
     else:
-        ordenes = Order.objects.filter(complete=True, staff = perfil).order_by('-folio')
+        ordenes = Order.objects.filter(complete=True, staff = perfil).annotate(
+                folio_num=Cast(Replace('folio', models.Value('PL'), models.Value('')), IntegerField())
+            )
 
     myfilter=SolicitudesFilter(request.GET, queryset=ordenes)
     ordenes = myfilter.qs
