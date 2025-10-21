@@ -314,7 +314,7 @@ function guardar_comentario(itemId) {
 
 function autorizarCalidad(entradaArticuloId, autorizado) {
     entradaArticuloId = entradaArticuloId.replace(/,/g, '');
-
+    console.log(entradaArticuloId);
     fetch("{% url 'autorizar_calidad' %}", {
         method: 'POST',
         headers: {

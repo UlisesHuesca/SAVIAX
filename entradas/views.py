@@ -1667,6 +1667,7 @@ def autorizar_calidad(request):
 
         # Actualiza los campos de EntradaArticulo y Reporte_Calidad
         if autorizado:
+            print('autorizado')
             entrada_articulo.calidad = True
             reporte_calidad.autorizado = True
         else:
@@ -1691,7 +1692,7 @@ def calidad_entradas(request):
         subquery_total_recepcionado = EntradaArticulo.objects.filter(
             articulo_comprado=OuterRef('articulo_comprado'),
             entrada__oc=OuterRef('entrada__oc'),
-            recepcion=True
+            recepcion=True,
         ).values('articulo_comprado').annotate(
             total_recepcionado=Sum('cantidad')
         ).values('total_recepcionado')
@@ -1708,7 +1709,8 @@ def calidad_entradas(request):
         articulos_recepcionados = EntradaArticulo.objects.filter(
             recepcion=True,
             cantidad__gt=0,
-            almacenado=False,
+            almacenado = False,
+            calidad = False,
             articulo_comprado__producto__producto__articulos__producto__producto__servicio=False,
             articulo_comprado__producto__producto__articulos__producto__producto__critico__in=[1, 2]  # Filtro para id 1 y 2 
         ).exclude(
