@@ -68,6 +68,16 @@
                         </div>
                     </div>
                 </div>
+                 <div class="col-lg-4 col-sm-12">
+                    <div class="input-group mb-3">
+                    <span class="input-group-text" id="basic-addon1"><i class="fa-solid fa-hashtag"></i></span>
+                        <div class="form-floating form-floating-group flex-grow-1">   
+                            {{myfilter.form.producto_codigo|add_class:"form-control"|append_attr:"placeholder= Producto Código"}}
+                            <label style="color: #121212;" for="id_proyecto">Producto Código</label>
+                        </div>
+                    </div>
+                </div>
+               
                 <div class="col-auto">
                 <button class="btn btn-outline-success btn-lg mt-1" type="submit" value="Buscar"><i class="fa-solid fa-magnifying-glass"></i></button>
             </div>
@@ -127,13 +137,13 @@
                             <div class="modal-dialog modal-lg">
                                 <div class="modal-content">
                                     <div class="modal-header">
-                                        <h5 class="modal-title" id="productosModalLabel{{ orden.id }}">Productos de la Solicitud {{ orden.solicitud.folio }}</h5>
+                                        <h5 class="modal-title" id="productosModalLabel{{ orden.id }}">Productos de la Solicitud: {{ orden.solicitud.folio }}</h5>
                                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                                     </div>
                                     <div class="modal-body">
                                         <ul>
-                                            {% for producto in orden.solicitud.productos.all %}
-                                                <li>{{ producto.producto.producto.nombre}} Cantidad: {{ producto.cantidad }}</li>
+                                            {% for producto in orden.devolucion_articulos.all %}
+                                                <li>{{ producto.producto.articulos.producto.producto.codigo}} | {{ producto.producto.articulos.producto.producto.nombre}} | Cantidad: {{ producto.cantidad }}</li>
                                             {% empty %}
                                                 <li>No hay productos para esta solicitud.</li>
                                             {% endfor %}

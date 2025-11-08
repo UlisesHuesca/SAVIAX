@@ -2519,6 +2519,8 @@ def reporte_devoluciones(request):
     
     return render(request,'requisiciones/reporte_devoluciones.html', context)
 
+
+
 def convert_devoluciones_to_xls2(entradas):
     # Crea un objeto BytesIO para guardar el archivo Excel
     output = BytesIO()

@@ -152,7 +152,7 @@ class Devolucion(models.Model):
         return f'{self.id}|{self.solicitud.folio}'
 
 class Devolucion_Articulos(models.Model):
-    vale_devolucion = models.ForeignKey(Devolucion, on_delete = models.CASCADE, null=True)
+    vale_devolucion = models.ForeignKey(Devolucion, on_delete = models.CASCADE, null=True, related_name='devolucion_articulos')
     producto = models.ForeignKey(ArticulosparaSurtir, on_delete = models.CASCADE, null=True)
     cantidad = models.DecimalField(max_digits=14, decimal_places=2, default=0)
     precio = models.DecimalField(max_digits=14, decimal_places=2,default=0)

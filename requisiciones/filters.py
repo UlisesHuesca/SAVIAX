@@ -1,6 +1,8 @@
 import django_filters
-from dashboard.models import ArticulosparaSurtir
-from requisiciones.models import Salidas, Devolucion, Requis
+import re
+from django.db.models import OuterRef, Exists, Q, Subquery
+from dashboard.models import ArticulosparaSurtir, Product
+from requisiciones.models import Salidas, Devolucion, Requis, Devolucion_Articulos
 from entradas.models import EntradaArticulo
 from django_filters import CharFilter, DateFilter
 from django.db.models import Q
@@ -66,18 +68,27 @@ class DevolucionFilter(django_filters.FilterSet):
     start_date = DateFilter(field_name = 'created_at', lookup_expr='gte')
     end_date = DateFilter(field_name='created_at',lookup_expr='lte')
     folio = CharFilter(field_name = 'solicitud__folio', lookup_expr='icontains')
-    #fecha = DateFilter(field_name='created_at',lookup_expr='lte')
+    # NUEVO: busca por texto en el producto
+     # ✅ Filtro sencillo por CÓDIGO de producto
+    producto_codigo = CharFilter(
+        field_name='devolucion_articulos__producto__articulos__producto__producto__codigo',
+        lookup_expr='icontains',
+        label='Código de producto',
+    )
+    
     #hora = models.TimeField(null=True)
 
     class Meta:
         model = Devolucion
-        fields = ['solicitud','almacenista','start_date','end_date',]
+        fields = ['solicitud','almacenista','start_date','end_date','producto_codigo']
 
     def solicitante_custom_filter(self, queryset, name, value):
         return queryset.filter(Q(solicitud__staff__staff__first_name__icontains = value) | Q(solicitud__staff__staff__last_name__icontains=value))
 
     def almacenista_custom_filter(self, queryset, name, value):
         return queryset.filter(Q(almacenista__staff__first_name__icontains = value) | Q(almacenista__staff__last_name__icontains=value))
+    
+
 
 class RequisFilter(django_filters.FilterSet):
     requisicion = CharFilter(field_name='folio', lookup_expr='icontains')

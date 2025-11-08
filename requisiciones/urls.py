@@ -43,6 +43,6 @@ urlpatterns = [
     path('requisiciones/estatus', views.requisiciones_status, name='requisiciones-status'),
     path('requisicion_pdf/<int:pk>/', views.render_requisicion_pdf_view, name='requisicion-pdf'),
     path('matriz/devolucion_ordenes', views.reporte_devoluciones, name='devolucion_ordenes'),
-
+    
     path('salida_producto_terminado_crear/<int:pk>/', views.terminado_salida_surtir, name='salida_producto_terminado_crear'),
     ]
