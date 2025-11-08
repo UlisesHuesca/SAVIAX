@@ -2502,9 +2502,12 @@ def reporte_devoluciones(request):
     myfilter = DevolucionFilter(request.GET, queryset=entradas)
     entradas = myfilter.qs
 
-    if request.method == "POST" and 'btnExcel' in request.POST:
-        #print(entradas)
-        return convert_devoluciones_to_xls2(entradas)
+    if request.method == "POST":
+        
+        if 'btnExcel' in request.POST:
+            return convert_devoluciones_to_xls2(entradas)
+        if 'btnproductosxl' in request.POST:
+            return convert_devoluciones_productos_to_xls(entradas)       
     
     #Set up pagination
     p = Paginator(entradas, 50)
@@ -2607,11 +2610,119 @@ def convert_devoluciones_to_xls2(entradas):
         output.read(), 
         content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
         )
-    response['Content-Disposition'] = f'attachment; filename=Matriz_requisiciones_{dt.date.today()}.xlsx'
+    response['Content-Disposition'] = f'attachment; filename=Matriz_devoluciones_{dt.date.today()}.xlsx'
       # Establecer una cookie para indicar que la descarga ha iniciado
     response.set_cookie('descarga_iniciada', 'true', max_age=20)  # La cookie expira en 20 segundos
     output.close()
     return response
+
+
+def convert_devoluciones_productos_to_xls(entradas_qs):
+    dev_ids = list(entradas_qs.values_list('id', flat=True))
+    renglones = (
+        Devolucion_Articulos.objects
+        .filter(vale_devolucion_id__in=dev_ids)
+        .select_related(
+            'vale_devolucion__solicitud__staff__staff',
+            'vale_devolucion__solicitud__proyecto',
+            'vale_devolucion__solicitud__subproyecto',
+            'vale_devolucion__tipo',
+            'vale_devolucion__almacenista__staff',
+            'producto__articulos__producto__producto',
+        )
+        .order_by('-vale_devolucion__fecha', '-created_at', 'id')
+    )
+
+    output = BytesIO()
+    wb = xlsxwriter.Workbook(output, {'in_memory': True})
+    ws = wb.add_worksheet("Matriz_Devoluciones_Prod")
+
+    head_style  = wb.add_format({'bold': True, 'font_color': 'FFFFFF', 'bg_color': '333366', 'font_name': 'Arial',  'font_size': 11})
+    body_style  = wb.add_format({'font_name': 'Calibri', 'font_size': 10})
+    money_style = wb.add_format({'num_format': '$ #,##0.00', 'font_name': 'Calibri', 'font_size': 10})
+    date_style  = wb.add_format({'num_format': 'dd/mm/yyyy', 'font_name': 'Calibri', 'font_size': 10})
+    dt_style    = wb.add_format({'num_format': 'dd/mm/yyyy hh:mm', 'font_name': 'Calibri', 'font_size': 10})
+
+    columns = [
+        'Folio Solicitud', 'Solicitante', 'Almacenista', 'Proyecto', 'Subproyecto',
+        'Fecha creación', 'Tipo', 'Autorizada', 'Fecha autorización', 'Comentario Devolución',
+        'ID Devolución', 'Código Producto', 'Nombre Producto', 'Cantidad', 'Precio', 'Importe',
+        'Comentario Producto'
+    ]
+    for i, c in enumerate(columns):
+        ws.write(0, i, c, head_style)
+        ws.set_column(i, i, 18)
+    leyenda_fmt = wb.add_format({'font_name':'Arial Narrow', 'font_size':11})
+    ws.write(0, len(columns)+1, 'Reporte Creado Automáticamente por SAVIA 2.0 Vordtec. UH', leyenda_fmt)
+    ws.write(1, len(columns)+1, 'Software desarrollado por Grupo Vordcab S.A. de C.V.',   leyenda_fmt)
+    ws.set_column(len(columns)+1, len(columns)+1, 32)
+
+    row = 0
+    for r in renglones:
+        row += 1
+        d = r.vale_devolucion
+
+        folio   = d.solicitud.folio if d and d.solicitud else ''
+        solicit = f"{d.solicitud.staff.staff.first_name} {d.solicitud.staff.staff.last_name}".strip() if (d and d.solicitud and d.solicitud.staff and d.solicitud.staff.staff) else ''
+        almac   = f"{d.almacenista.staff.first_name} {d.almacenista.staff.last_name}".strip() if (d and d.almacenista and d.almacenista.staff) else ''
+        proy    = d.solicitud.proyecto.nombre if (d and d.solicitud and d.solicitud.proyecto) else ''
+        subproy = d.solicitud.subproyecto.nombre if (d and d.solicitud and d.solicitud.subproyecto) else ''
+        # ⬇️ FECHAS como objetos datetime/date (SIN str)
+        f_crea  = d.created_at if d else None                    # DateTimeField
+        f_aut   = d.fecha if d else None                         # DateField (o None)
+        tipo    = d.tipo.nombre if (d and d.tipo) else ''
+        if d and d.autorizada is True:   autorizada = 'Autorizado'
+        elif d and d.autorizada is False: autorizada = 'No Autorizado'
+        else:                             autorizada = 'Pendiente'
+        cdev    = d.comentario or '' if d else ''
+
+        try:
+            base_prod = r.producto.articulos.producto.producto
+            codigo = base_prod.codigo or ''
+            nombre = base_prod.nombre or ''
+        except Exception:
+            codigo, nombre = '', ''
+
+        cantidad = float(r.cantidad or 0)
+        precio   = float(r.precio   or 0)
+        importe  = cantidad * precio
+        cren     = r.comentario or ''
+        #refren   = r.referencia or ''
+        #f_reng   = r.created_at  # ⬅️ DateTimeField (mantener datetime)
+
+        fila = [
+            folio, solicit, almac, proy, subproy, f_crea, tipo, autorizada, f_aut, cdev,
+            r.id, codigo, nombre, cantidad, precio, importe, cren
+        ]
+
+        for col, val in enumerate(fila):
+            # Columnas con fechas: creación(5), autorización(8), renglón(18)
+            if col in (5, 8, 18) and val:
+                # Si viene con timezone, la limpiamos
+                if hasattr(val, 'tzinfo'):
+                    val = val.replace(tzinfo=None)
+                # Convertir a datetime solo si es date
+                if isinstance(val, dt.date) and not isinstance(val, dt.datetime):
+                    val = dt.datetime.combine(val, dt.time.min)
+                ws.write_datetime(row, col, val, date_style)
+            elif col in (13, 14, 15):  # Cantidad, Precio, Importe
+                ws.write_number(row, col, float(val), money_style if col in (14, 15) else body_style)
+            else:
+                ws.write(row, col, val, body_style)
+
+
+    wb.close()
+    output.seek(0)
+    resp = HttpResponse(
+        output.read(),
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
+    resp['Content-Disposition'] = f'attachment; filename=Matriz_devoluciones_productos_{dt.date.today()}.xlsx'
+    resp.set_cookie('descarga_iniciada', 'true', max_age=20)
+    output.close()
+    return resp
+
+
 
 @login_required
 def terminado_salida_surtir(request, pk):
