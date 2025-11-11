@@ -25,7 +25,7 @@ from user.models import Profile, User
 from .models import ArticulosRequisitados, Requis, Devolucion, Devolucion_Articulos, Tipo_Devolucion
 from entradas.models import Entrada, EntradaArticulo
 from requisiciones.models import Salidas, ValeSalidas
-from .filters import ArticulosparaSurtirFilter, SalidasFilter, EntradasFilter, DevolucionFilter, RequisFilter
+from .filters import ArticulosparaSurtirFilter, SalidasFilter, EntradasFilter, DevolucionFilter, RequisFilter, Historical_Articulos_surtir_Filter
 from .forms import SalidasForm, ArticulosRequisitadosForm, ValeSalidasForm, ValeSalidasProyForm, RequisForm, Rechazo_Requi_Form, DevolucionArticulosForm, DevolucionForm
 from solicitudes.filters import SolicitudesFilter
 from tesoreria.models import Pago
@@ -1470,8 +1470,17 @@ def editar_cliente(request, salida_id):
 def historico_articulos_para_surtir(request):
     registros = ArticulosparaSurtir.history.all()
 
+    myfilter = Historical_Articulos_surtir_Filter(request.GET, queryset=registros)
+    registros = myfilter.qs
+
+    #Set up pagination
+    p = Paginator(registros, 30)
+    page = request.GET.get('page')
+    registros_list = p.get_page(page)
+
     context = {
-        'registros':registros,
+        'registros_list':registros_list,
+        'myfilter':myfilter,
         }
 
     return render(request,'requisiciones/historicos_articulos_para_surtir.html',context)
