@@ -1407,7 +1407,8 @@ def render_pdf_view(request, pk):
     return FileResponse(buf, as_attachment=True, filename='Solicitud_' + str(orden.folio) +'.pdf')
 
 def reporte_entradas(request):
-    entradas = EntradaArticulo.objects.filter(entrada__completo = True, articulo_comprado__producto__producto__articulos__producto__producto__servicio = False, almacenado = True)
+    entradas = EntradaArticulo.objects.filter(entrada__completo = True, articulo_comprado__producto__producto__articulos__producto__producto__servicio = False
+                                              ).filter(Q(almacenado = True)|Q(agotado = True)|Q(cantidad_por_surtir = 0) )
     myfilter = EntradasFilter(request.GET, queryset=entradas)
     entradas = myfilter.qs
 
@@ -2003,7 +2004,7 @@ def render_entrada_pdf(request, pk):
     c.save()
     c.showPage()
     buf.seek(0)
-    return FileResponse(buf, as_attachment=True, filename='vale_salida_'+str(vale.id) +'.pdf')
+    return FileResponse(buf, as_attachment=True, filename='vale_entrada_'+str(vale.id) +'.pdf')
 
 
 def render_salida_pdf(request, pk):

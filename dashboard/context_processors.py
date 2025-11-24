@@ -104,8 +104,22 @@ def contadores_processor(request):
             articulo_comprado__producto__producto__articulos__producto__producto__critico__in=[1, 2]  # Filtro para id 1 y 2 
             ).exclude(reportes_calidad__autorizado=True)  # Excluye aquellos que tienen un Reporte_Calidad con autorizado=True
             entradas_calidad = articulos_recepcionados.count()
-        entradas = Compra.objects.filter(Q(cond_de_pago__nombre ='CREDITO') | Q(pagada = True), solo_servicios= False, entrada_completa = False, autorizado2= True).order_by('-folio')
-        conteo_entradas = entradas.count()
+        articulos_recepcionados = EntradaArticulo.objects.filter(
+            recepcion=True,
+            cantidad__gt=0,
+            agotado = False,
+            almacenado = False,
+            articulo_comprado__producto__producto__articulos__producto__producto__servicio=False
+        ).filter(
+            # Filtro condicional usando Q
+            Q(
+                articulo_comprado__producto__producto__articulos__producto__producto__critico__in=[1, 2], 
+                calidad=True
+            ) | Q(
+                ~Q(articulo_comprado__producto__producto__articulos__producto__producto__critico__in=[1, 2])  # Excluye critico en [1, 2]
+            )
+        )
+        pendientes_entrada = articulos_recepcionados.count()
         
         servicios = Compra.objects.filter(Q(cond_de_pago__nombre ='CREDITO') | Q(pagada = True), solo_servicios= True, recepcion_completa = False, autorizado2= True, req__orden__staff = usuario).order_by('-folio')
         conteo_servicios = servicios.count()
@@ -123,7 +137,7 @@ def contadores_processor(request):
     'conteo_viaticos': conteo_viaticos,
     'conteo_viaticos_gerencia':conteo_viaticos_gerencia,
     'conteo_requis_pendientes':conteo_requis_pendientes,
-    'conteo_entradas':conteo_entradas,
+    'conteo_entradas':pendientes_entrada,
     'conteo_gastos_gerencia':conteo_gastos_gerencia,
     'conteo_solicitudes': conteo_solicitudes,
     'conteodeordenes':conteo,
