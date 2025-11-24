@@ -322,6 +322,7 @@ def pendientes_entrada(request):
                     producto_inv._change_reason = 'Se modifica el inventario en view: update_entrada. Esto es una entrada para solicitud normal'
                     entrada.entrada_date = date.today()
                     entrada.entrada_hora = datetime.now().time()
+                    
                     entrada.save()
                     entrada_item.almacenado = True #Esto esta bien
 
@@ -453,6 +454,7 @@ def pendientes_calidad(request):
         liberado=False
         )
     
+    print(articulos_entrada)
   
     context = {
         'articulos_entrada':articulos_entrada,
@@ -1732,6 +1734,7 @@ def calidad_entradas(request):
         articulos_recepcionados = None
         articulos_recepcionados_list = None
 
+    print(articulos_recepcionados)
     context = {
         'articulos_recepcionados':articulos_recepcionados,
         'myfilter':myfilter,

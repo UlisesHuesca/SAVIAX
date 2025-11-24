@@ -510,9 +510,9 @@ def salida_material(request, pk):
             if critico and getattr(critico, 'nombre', '') == 'Crítico' and not salida.referencia:
                 falta_referencia_critica = True
         # Si falta una referencia crítica, mostrar mensaje de error
-        if falta_referencia_critica:
-            messages.error(request, 'Falta una referencia de asignar')
-        elif formVale.is_valid():
+        #if falta_referencia_critica:
+            #messages.error(request, 'Falta una referencia de asignar')
+        if formVale.is_valid():
             vale = formVale.save(commit=False)
             cantidad_salidas = 0
             cantidad_productos = productos.count()
