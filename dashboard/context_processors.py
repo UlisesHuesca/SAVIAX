@@ -38,6 +38,7 @@ def contadores_processor(request):
     conteo_ordenes = 0
     conteo_servicios = 0
     entradas_calidad = 0 #Para calidad 
+    pendientes_entrada = 0
 
     conteo_usuario = Profile.objects.all().count()
     conteo_productos = Inventario.objects.filter(cantidad__gt = 0).count()
