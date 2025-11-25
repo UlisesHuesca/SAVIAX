@@ -344,19 +344,19 @@ document.addEventListener('DOMContentLoaded', function () {
     const cantidad = document.getElementById('id_cantidad'); // Campo de cantidad
 
     // Escuchar el evento "change" del select
-    productoSelect.addEventListener('change', function () {
-        const selectedOption = productoSelect.options[productoSelect.selectedIndex];
-        const criticoValue = selectedOption.getAttribute('critico');
+    //productoSelect.addEventListener('change', function () {
+        //const selectedOption = productoSelect.options[productoSelect.selectedIndex];
+        //const criticoValue = selectedOption.getAttribute('critico');
 
-        if (criticoValue === 'Crítico') {
+        //if (criticoValue === 'Crítico') {
             // Marcar el switch si el valor es "Crítico"
-            cantidad.value = 1; // Asignar un valor fijo
-            cantidad.disabled = true; // Deshabilitar el campo para evitar modificaciones
-        } else {
+        //    cantidad.value = 1; // Asignar un valor fijo
+        //    cantidad.disabled = true; // Deshabilitar el campo para evitar modificaciones
+        //} else {
             // Desmarcar el switch en caso contrario
-            cantidad.disabled = false; // Habilitar el campo si no es "Crítico"
-        }
-    });
+        //    cantidad.disabled = false; // Habilitar el campo si no es "Crítico"
+        //}
+    //});
 });
 </script>
 {% endblock %}
