@@ -534,12 +534,10 @@ $(document).ready(function(){
             },
             processResults: function (data) {
                 return {
-                    results: $.map(data, function(item){
-                        return {id: item.id, text: item.producto__nombre};
-                    })
-
-                };
-            },
+                    results: data //$.map(data, function(item){
+                        //return {id: item.id, text: item.producto__nombre};
+                    };
+           },
             cache: true
         },
         minimumInputLength: 1, // Número mínimo de caracteres para empezar a filtrar

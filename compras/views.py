@@ -1502,10 +1502,24 @@ def carga_productos(request):
     #colaborador_sel = Profile.objects.all()
     #usuario = colaborador_sel.get(id = pk_perfil)
     term = request.GET.get('term')
-    articulos = Inventario.objects.filter(producto__nombre__icontains = term).values('id','producto__nombre')
+    articulos =(Inventario.objects.filter( Q(producto__nombre__icontains=term) |
+            Q(producto__codigo__icontains=term)
+        )
+        .values(
+            'id',
+            'producto__codigo',
+            'producto__nombre'
+        )[:20]  # límite recomendable
+    )
+
     
-    #data = [{"id": item['id'], "text": item['producto__nombre']} for item in articulos]
-    data = list(articulos)
+    data = [
+        {
+            "id": item['id'], 
+            "text": f"{item['producto__codigo']} - {item['producto__nombre']}" 
+        } for item in articulos
+    ]
+    #data = list(articulos)
         
     return JsonResponse(data, safe=False)
 
