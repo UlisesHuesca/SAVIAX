@@ -1,5 +1,6 @@
 from django import forms
 from .models import Compra, ArticuloComprado, Comparativo, Item_Comparativo, Preevaluacion, Proveedor_direcciones, Proveedor
+from dashboard.models import Inventario
 from requisiciones.models import ArticulosRequisitados
 
 class CompraForm(forms.ModelForm):
@@ -47,13 +48,51 @@ class ArticulosRequisitadosForm(forms.ModelForm):
 class ComparativoForm(forms.ModelForm):
     class Meta:
         model = Comparativo
-        fields = ['nombre','comentarios','proveedor', 'proveedor2','proveedor3','cotizacion','cotizacion2', 'cotizacion3']
+        fields = ['nombre','comentarios','proveedor', 'proveedor2','proveedor3', 'cotizacion','cotizacion2','cotizacion3']
+
+    def __init__(self,*args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['proveedor'].queryset = Proveedor_direcciones.objects.none()
+        self.fields['proveedor2'].queryset = Proveedor_direcciones.objects.none()
+        self.fields['proveedor3'].queryset = Proveedor_direcciones.objects.none()
+        if 'proveedor' in self.data:
+            try:
+                seleccion_actual = int(self.data.get('proveedor'))
+                # Lógica para determinar el nuevo queryset basado en la selección actual
+                self.fields['proveedor'].queryset = Proveedor_direcciones.objects.filter(id= seleccion_actual)
+            except (ValueError, TypeError):
+                pass  # Manejo de errores en caso de entrada no válida
+        if 'proveedor2' in self.data:
+            try:
+                seleccion_actual = int(self.data.get('proveedor2'))
+                # Lógica para determinar el nuevo queryset basado en la selección actual
+                self.fields['proveedor2'].queryset = Proveedor_direcciones.objects.filter(id= seleccion_actual)
+            except (ValueError, TypeError):
+                pass  # Manejo de errores en caso de entrada no válida
+        if 'proveedor3' in self.data:
+            try:
+                seleccion_actual = int(self.data.get('proveedor3'))
+                # Lógica para determinar el nuevo queryset basado en la selección actual
+                self.fields['proveedor3'].queryset = Proveedor_direcciones.objects.filter(id= seleccion_actual)
+            except (ValueError, TypeError):
+                pass  # Manejo de errores en caso de entrada no válida
 
 class Item_ComparativoForm(forms.ModelForm):
     class Meta:
         model = Item_Comparativo
         fields = ['producto','modelo','marca','cantidad', 'precio','dias_de_entrega', 'modelo2', 'marca2','dias_de_entrega2', 
                   'precio2','modelo3','marca3','precio3','dias_de_entrega3',]
+        
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['producto'].queryset = Inventario.objects.none()
+        if 'producto' in self.data:
+            try:
+                seleccion_actual = int(self.data.get('producto'))
+                # Lógica para determinar el nuevo queryset basado en la selección actual
+                self.fields['producto'].queryset = Inventario.objects.filter(id= seleccion_actual)
+            except (ValueError, TypeError):
+                pass  # Manejo de errores en caso de entrada no válida
 
 class Compra_ComentarioForm(forms.ModelForm):
     especs_b = forms.BooleanField(required=False)

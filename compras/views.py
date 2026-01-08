@@ -1384,16 +1384,15 @@ def crear_comparativo(request):
     #Tengo que revisar primero si ya existe una orden pendiente del usuario
     
     comparativo, created = Comparativo.objects.get_or_create(completo= False, creada_por=usuario)
-    
     productos = Item_Comparativo.objects.filter(comparativo = comparativo, completo = True)
 
-    proveedores = Proveedor_direcciones.objects.all()
+    #proveedores = Proveedor_direcciones.objects.all()
     articulos = Inventario.objects.all()
     form_item = Item_ComparativoForm()
     form = ComparativoForm()
 
     if request.method =='POST':
-        if "btn_agregar" in request.POST:
+        if "btn_creacion" in request.POST:
             form = ComparativoForm(request.POST, request.FILES or None, instance=comparativo)
             #abrev= usuario.distrito.abreviado
             if form.is_valid():
@@ -1422,7 +1421,7 @@ def crear_comparativo(request):
         'form_item':form_item,
         'articulos':articulos,
         'comparativo':comparativo,
-        'proveedores':proveedores,
+        #'proveedores':proveedores,
     }
 
     return render(request, 'compras/crear_comparativo.html', context)
@@ -1475,6 +1474,39 @@ def carga_proveedor(request):
         #print(comparativo_items)
         data.append(prov)
     #print(proveedores)
+    return JsonResponse(data, safe=False)
+
+
+def carga_proveedor_comparativo(request):
+    pk_perfil = request.session.get('selected_profile_id')
+    
+    #print(pk_perfil)
+    colaborador_sel = Profile.objects.all()
+    #usuario = colaborador_sel.get(id = pk_perfil)
+    term = request.GET.get('term')
+    proveedores = (
+        Proveedor_direcciones.objects
+        .filter(nombre__razon_social__icontains=term)
+        .annotate(text=F('nombre__razon_social'))
+        .values('id', 'text')
+        .distinct()
+    )
+
+    data = list(proveedores)
+    print(data)    
+    return JsonResponse(data, safe=False)
+
+#Ajax Select2
+def carga_productos(request):
+    #pk_perfil = request.session.get('selected_profile_id')
+    #colaborador_sel = Profile.objects.all()
+    #usuario = colaborador_sel.get(id = pk_perfil)
+    term = request.GET.get('term')
+    articulos = Inventario.objects.filter(producto__nombre__icontains = term).values('id','producto__nombre')
+    
+    #data = [{"id": item['id'], "text": item['producto__nombre']} for item in articulos]
+    data = list(articulos)
+        
     return JsonResponse(data, safe=False)
 
 @login_required(login_url='user-login')
