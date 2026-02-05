@@ -1408,7 +1408,7 @@ def render_pdf_view(request, pk):
 
 def reporte_entradas(request):
     entradas = EntradaArticulo.objects.filter(entrada__completo = True, articulo_comprado__producto__producto__articulos__producto__producto__servicio = False
-                                              ).filter(Q(almacenado = True)|Q(agotado = True)|Q(cantidad_por_surtir = 0) ).order_by('-entrada__entrada_date')
+                                              ).filter(Q(almacenado = True)|Q(agotado = True)|Q(cantidad_por_surtir = 0) ).order_by('-entrada_date')
     myfilter = EntradasFilter(request.GET, queryset=entradas)
     entradas = myfilter.qs
 
