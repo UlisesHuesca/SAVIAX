@@ -359,16 +359,16 @@ document.addEventListener('DOMContentLoaded', function () {
         const selectedOption = productoSelect.options[productoSelect.selectedIndex];
         const criticoValue = selectedOption.getAttribute('critico');
 
-        if (criticoValue === 'Crítico') {
+        //if (criticoValue === 'Crítico') {
             // Marcar el switch si el valor es "Crítico"
-            switchReferencia.checked = true;
-            cantidad.value = 1; // Asignar un valor fijo
-            cantidad.disabled = true; // Deshabilitar el campo para evitar modificaciones
-        } else {
+        //    switchReferencia.checked = true;
+        //    cantidad.value = 1; // Asignar un valor fijo
+        //    cantidad.disabled = true; // Deshabilitar el campo para evitar modificaciones
+        //} else {
             // Desmarcar el switch en caso contrario
-            switchReferencia.checked = false;
-            cantidad.disabled = false; // Habilitar el campo si no es "Crítico"
-        }
+        //    switchReferencia.checked = false;
+        //    cantidad.disabled = false; // Habilitar el campo si no es "Crítico"
+        //  }
     });
 });
 
