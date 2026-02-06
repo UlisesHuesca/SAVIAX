@@ -6,7 +6,7 @@
 {% load l10n %}
 <html>
 <head>
-{% block title %}Calidad Entradas{% endblock %}
+{% block title %}Entradas Calidad{% endblock %}
 </head>
 <body>
 {% block content %}
@@ -155,7 +155,7 @@
                     {% for item in articulos_recepcionados_list %}
                     <tr>
                         <td scope="col">{{item.referencia}}</td>
-                        <td scope="col">{{item.id}}</td>
+                        <td scope="col">{{item.id|unlocalize}}</td>
                         <td class="d-none d-lg-table-cell">{{item.entrada.oc.req.folio}}</td>
                         <td class="d-none d-lg-table-cell">{{item.entrada.oc.req.orden.staff.staff.first_name}} {{item.entrada.oc.req.orden.staff.staff.last_name}}</td>
                         <td>{{item.entrada.oc.req.orden.proyecto.nombre}}</td>
@@ -202,7 +202,7 @@
                             </div>
                         </td>
                         <td>
-                            <button class="btn btn-outline-success btn-lg" onclick="autorizarCalidad('{{ item.id }}', true)">
+                            <button class="btn btn-outline-success btn-lg" onclick="autorizarCalidad('{{ item.id|unlocalize }}', true)">
                                 <i class="fa-solid fa-check"></i>
                             </button>
                             <button class="btn btn-outline-danger btn-lg" onclick="autorizarCalidad('{{ item.id }}', false)">
@@ -330,9 +330,17 @@ function autorizarCalidad(entradaArticuloId, autorizado) {
     .then(data => {
         if (data.status === 'success') {
 
-            console.log('Autorización actualizada', data);
-            // Recargar la página para reflejar los cambios
-            window.location.reload();
+            Swal.fire({
+                title: 'Excelente',
+                text: autorizado
+                    ? 'Entrada validada exitosamente ✅'
+                    : 'Entrada rechazada ❌',
+                icon: 'success',
+                confirmButtonText: 'Aceptar'
+            }).then(() => {
+                window.location.reload();
+            });
+
         }
     })
     .catch(error => {
