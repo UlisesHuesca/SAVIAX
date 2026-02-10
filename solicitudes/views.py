@@ -241,6 +241,13 @@ def checkout(request):
     subproyectos = Subproyecto.objects.all()
     tipo = Tipo_Orden.objects.get(tipo ='normal')
 
+    proyectos_para_select2 = [
+        {
+            'id': item.id, 
+            'text': str(item.nombre) + ' |' + str(item.descripcion)
+        } for item in proyectos
+    ]
+
     order, created = ordenes.get_or_create(staff = usuario, complete = False, tipo=tipo, distrito = usuario.distrito)
 
     if usuario.tipo.supervisor:
@@ -429,9 +436,10 @@ def checkout(request):
         'productos':productos,
         'orden':order,
         'productosordenados':cartItems,
+        'proyectos_para_select2': proyectos_para_select2,
         'supervisores':supervisores,
         'superintendentes':superintendentes,
-        'proyectos':proyectos,
+        #'proyectos':proyectos,
         'subproyectos':subproyectos,
     }
     return render(request, 'solicitud/checkout.html', context)
@@ -1556,9 +1564,10 @@ def status_sol(request, pk):
 def load_subproyectos(request):
 
     proyecto_id = request.GET.get('proyecto_id')
-    subproyectos = Subproyecto.objects.filter(proyecto_id = proyecto_id)
-
-    return render(request, 'solicitud/subproyecto_dropdown_list_options.html',{'subproyectos': subproyectos})
+    subproyectos =Subproyecto.objects.filter(proyecto__id = proyecto_id, status__nombre = "Activo" ).values('id','nombre')
+    data = list(subproyectos)
+    print('data:', data)
+    return JsonResponse(data, safe=False)
 
 def convert_excel_inventario(existencia, valor_inventario, dict_entradas, dict_resultados):
     response= HttpResponse(content_type = "application/ms-excel")

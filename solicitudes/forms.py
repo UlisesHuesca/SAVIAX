@@ -39,6 +39,28 @@ class OrderForm(forms.ModelForm):
     class Meta:
         model = Order
         fields = ['proyecto','subproyecto', 'area','superintendente','supervisor','comentario','soporte']
+
+    def __init__(self,*args, **kwargs):
+        
+        super().__init__(*args, **kwargs)
+        #usuario_distrito = getattr(self.instance, 'distrito', None)
+         # Modificar la etiqueta de "Superintendente" a "Gerente" si el distrito es BRASIL
+        #if usuario_distrito == "BRASIL":
+        #    self.fields['superintendente'].label = _("Gerente*")
+
+
+        self.fields['proyecto'].queryset = Proyecto.objects.none()
+        self.fields['subproyecto'].queryset = Subproyecto.objects.none()
+
+        if 'proyecto' in self.data:
+            try:
+                seleccion_actual = int(self.data.get('proyecto'))
+                # Lógica para determinar el nuevo queryset basado en la selección actual
+                self.fields['subproyecto'].queryset = Subproyecto.objects.filter(proyecto= seleccion_actual)  
+                self.fields['proyecto'].queryset = Proyecto.objects.filter(id= seleccion_actual)
+                        
+            except (ValueError, TypeError):
+                pass  # Manejo de errores en caso de entrada no válida
         
 class Order_Resurtimiento_Form(forms.ModelForm):
     class Meta:

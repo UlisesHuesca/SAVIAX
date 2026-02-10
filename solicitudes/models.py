@@ -71,7 +71,8 @@ class Proyecto(models.Model):
     def __str__(self):
         return f'{self.nombre}-{self.distrito}'
 
-
+class Status_Subproyecto(models.Model):
+    nombre = models.CharField(max_length=30, null=True)
 
 class Subproyecto(models.Model):
     proyecto = models.ForeignKey(Proyecto, on_delete = models.CASCADE, null=True, related_name = "subproyectos")
@@ -81,6 +82,7 @@ class Subproyecto(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     gastado = models.DecimalField(max_digits=14, decimal_places=2, default=0)
+    status = models.ForeignKey(Status_Subproyecto, on_delete = models.CASCADE, null=True)
 
     class Meta:
         unique_together = ('nombre', 'proyecto',)

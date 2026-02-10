@@ -1,9 +1,13 @@
 from django.contrib import admin
-from .models import Proyecto, Subproyecto, Sector, Operacion, St_Entrega, Cliente
+from .models import Proyecto, Subproyecto, Sector, Operacion, St_Entrega, Cliente, Status_Subproyecto
 
 class ProyectoAdmin(admin.ModelAdmin):
     list_display = ('nombre','distrito')
     list_filter = ('distrito',)
+
+class Status_SubproyectoAdmin(admin.ModelAdmin):
+    list_display = ('nombre',)
+  
 
 class ActivoAdmin(admin.ModelAdmin):
     list_display = ('eco_unidad','distrito','tipo','serie','cuenta','factura_interna')
@@ -21,4 +25,6 @@ admin.site.register(Subproyecto)
 admin.site.register(Sector)
 
 admin.site.register(Operacion)
+
+admin.site.register(Status_Subproyecto, Status_SubproyectoAdmin)
 
