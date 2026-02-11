@@ -52,6 +52,13 @@ def solicitud_viatico(request):
 
     form = Solicitud_ViaticoForm(instance = viatico)
 
+    proyectos_para_select2 = [
+        {
+            'id': item.id, 
+            'text':  str(item.nombre) + ' |' + str(item.descripcion)
+        } for item in proyectos
+    ]
+
     if request.method =='POST':
         if "btn_agregar" in request.POST:
             form = Solicitud_ViaticoForm(request.POST, instance=viatico)
@@ -76,8 +83,8 @@ def solicitud_viatico(request):
         'colaborador':colaborador,
         'viatico':viatico,
         'superintendentes':superintendentes,
-        'proyectos':proyectos,
-        'subproyectos':subproyectos,
+        'proyectos_para_select2':proyectos_para_select2,
+        #'subproyectos':subproyectos,
     }
     return render(request, 'viaticos/crear_viaticos.html', context)
 
