@@ -359,6 +359,7 @@ def subproyectos_add(request, pk):
         if form.is_valid():
             subproyecto = form.save(commit=False)
             subproyecto.proyecto = proyecto
+            subproyecto.status_id = 1
             subproyecto.save()
             messages.success(request,'Has agregado correctamente el subproyecto')
             return redirect('subproyectos', pk=proyecto.id)

@@ -74,6 +74,9 @@ class Proyecto(models.Model):
 class Status_Subproyecto(models.Model):
     nombre = models.CharField(max_length=30, null=True)
 
+    def __str__(self):
+        return f'{self.nombre}'
+
 class Subproyecto(models.Model):
     proyecto = models.ForeignKey(Proyecto, on_delete = models.CASCADE, null=True, related_name = "subproyectos")
     nombre = models.CharField(max_length=50, null=True)
