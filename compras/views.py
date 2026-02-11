@@ -19,7 +19,7 @@ from tesoreria.models import Facturas
 from .forms import CompraForm, ArticuloCompradoForm, ArticulosRequisitadosForm, ComparativoForm, Item_ComparativoForm, Compra_ComentarioForm, PreevaluacionForm, Compra_Comment_Form
 from requisiciones.forms import Articulo_Cancelado_Form
 from tesoreria.forms import Facturas_Form
-from entradas.models import Entrada, No_Conformidad
+from entradas.models import Entrada, No_Conformidad, NC_Articulo
 import json
 from datetime import date, datetime, timedelta
 from num2words import num2words
@@ -2456,7 +2456,7 @@ def convert_excel_solicitud_matriz_productos(productos):
     money_resumen_style.font = Font(name ='Calibri', size = 14, bold = True)
     wb.add_named_style(money_resumen_style)
 
-    columns = ['OC','RQ','Sol','Solicitante','Proyecto','Subproyecto','Fecha','Proveedor','Estatus Proveedor','Área','Cantidad','Código', 'Producto','Criticidad','P.U.','Moneda','Tipo de Cambio','Subtotal','IVA','Total','Estatus','Pagada']
+    columns = ['OC','RQ','Sol','Solicitante','Proyecto','Subproyecto','Fecha','Proveedor','Estatus Proveedor','Área','Cantidad','Código', 'Producto','Criticidad','P.U.','Moneda','Tipo de Cambio','Subtotal','IVA','Total','Estatus','Pagada','NC']
 
     for col_num in range(len(columns)):
         (ws.cell(row = row_num, column = col_num+1, value=columns[col_num])).style = head_style
@@ -2559,6 +2559,13 @@ def convert_excel_solicitud_matriz_productos(productos):
         subtotal = producto.subtotal_parcial
         iva = producto.iva_parcial
         total = subtotal + iva
+
+        tiene_nc = NC_Articulo.objects.filter(
+            Q(articulo_comprado=producto) |
+            Q(entrada_articulo__articulo_comprado=producto)
+        ).exists()
+
+        nc_txt = "SI" if tiene_nc else "NO"
        
 
         # Handling the currency conversion logic
@@ -2597,7 +2604,9 @@ def convert_excel_solicitud_matriz_productos(productos):
             iva, #18
             total, #19
             estatus, #20
-            pagada #21
+            pagada, #21
+            nc_txt #22
+
         ]
         rows.append(row)
 
@@ -2608,6 +2617,8 @@ def convert_excel_solicitud_matriz_productos(productos):
             ws.cell(row=row_num, column=col_num + 1, value=str(cell_value)).style = body_style
             if col_num == 5:
                 ws.cell(row=row_num, column=col_num + 1, value=cell_value).style = body_style
+            if col_num == 6:
+                ws.cell(row=row_num, column=col_num + 1, value=cell_value).style = date_style
             if col_num == 10:
                 ws.cell(row=row_num, column=col_num + 1, value=cell_value).style = number_style
             if col_num in [14, 16,17, 18, 19] :
