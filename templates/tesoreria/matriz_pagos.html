@@ -159,6 +159,7 @@
                     <th scope="col">Autorizado</th>
                     <th scope="col">Proveedor/Colaborador</th>
                     <th scope="col">Facturas Completas</th>
+                    <th>Facturas</th>
                     <th scope="col">Importe</th>
                     <th scope="col">Fecha</th>
                     <th scope="col">Acción</th>
@@ -184,6 +185,17 @@
                     {% else %}
                     <td>Incompletas</td>
                     {% endif %}
+                         <td>
+                                <ul class="nav nav-pills">
+                                    <li class="nav-item mx-1">
+                                       
+                                        <a type="button" class="btn btn-outline-info" href="{% url 'matriz-facturas-nomodal' pago.oc.id %}?next={{ request.path }}" data-bs-toggle="tooltip" data-bs-placement="top" title="Todas las Facturas validadas">
+                                            <i class="fa-solid fa-file-circle-check"></i>
+                                        </a>
+                                      
+                                    </li>
+                                </ul>
+                            </td>
 
                     {% endif %}
                     {% if pago.gasto %}
@@ -202,23 +214,44 @@
                         {% else %}
                         <td>Incompletas</td>
                         {% endif %}
+                        <td>
+                            <ul class="nav nav-pills">
+                                <li class="nav-item mx-1">
+                                    <a type="button" class="btn btn-outline-info" href="{% url 'matriz-facturas-gasto' pago.gasto.id %}?next={{ request.path }}" data-bs-toggle="tooltip" data-bs-placement="top" title="Todas las Facturas validadas">
+                                        <i class="fa-solid fa-file-circle-check"></i>
+                                    </a>
+                                      
+                                </li>
+                            </ul>
+                        </td>
                     {% endif %}
                     {% if pago.viatico %}
-                    <td>V{{pago.viatico.id}}</td>
-                    <td class="d-none d-lg-table-cell">{{pago.viatico.staff.staff.first_name}} {{pago.viatico.staff.staff.last_name}}</td>
-                    <td>{{pago.viatico.proyecto.nombre}}</td>
-                    <td  class="d-none d-lg-table-cell">{{pago.viatico.subproyecto.nombre}}</td>
-                    <td>{{pago.viatico.superintendente.staff.first_name}} {{pago.viatico.superintendente.staff.last_name}}</td>
-                    {% if pago.viatico.colaborador %}
-                    <td>{{pago.viatico.colaborador.staff.first_name}} {{pago.viatico.colaborador.staff.last_name}}</td>
-                    {% else %}
-                    <td>{{pago.viatico.staff.staff.first_name}} {{pago.viatico.staff.staff.last_name}}</td>
-                    {% endif %}
-                    {% if pago.viatico.facturas_completas == True %}
-                    <td>Completas</td>
-                    {% else %}
-                    <td>Incompletas</td>
-                    {% endif %}
+                        <td>V{{pago.viatico.id}}</td>
+                        <td class="d-none d-lg-table-cell">{{pago.viatico.staff.staff.first_name}} {{pago.viatico.staff.staff.last_name}}</td>
+                        <td>{{pago.viatico.proyecto.nombre}}</td>
+                        <td  class="d-none d-lg-table-cell">{{pago.viatico.subproyecto.nombre}}</td>
+                        <td>{{pago.viatico.superintendente.staff.first_name}} {{pago.viatico.superintendente.staff.last_name}}</td>
+                        {% if pago.viatico.colaborador %}
+                            <td>{{pago.viatico.colaborador.staff.first_name}} {{pago.viatico.colaborador.staff.last_name}}</td>
+                        {% else %}
+                            <td>{{pago.viatico.staff.staff.first_name}} {{pago.viatico.staff.staff.last_name}}</td>
+                        {% endif %}
+                        {% if pago.viatico.facturas_completas == True %}
+                            <td>Completas</td>
+                        {% else %}
+                            <td>Incompletas</td>
+                        {% endif %}
+                             <td>
+                                <ul class="nav nav-pills">
+                                    <li class="nav-item mx-1">
+                                       
+                                        <a type="button" class="btn btn-outline-info" href="{% url 'matriz-facturas-viaticos' pago.viatico.id %}?next={{ request.path }}" data-bs-toggle="tooltip" data-bs-placement="top" title="Todas las Facturas validadas">
+                                            <i class="fa-solid fa-file-circle-check"></i>
+                                        </a>
+                                      
+                                    </li>
+                                </ul>
+                            </td>
                     {% endif %}
                     <td>{{pago.monto}}</td>
                     <td>{{pago.pagado_date}}</td>
