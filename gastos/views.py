@@ -5,7 +5,7 @@ from django.core.mail import EmailMessage, BadHeaderError
 import socket
 import traceback
 from smtplib import SMTPException
-from dashboard.models import Inventario, Order, ArticulosparaSurtir, ArticulosOrdenados, Tipo_Orden 
+from dashboard.models import Inventario, Order, ArticulosparaSurtir, ArticulosOrdenados, Tipo_Orden, Product
 from solicitudes.models import Proyecto, Subproyecto, Operacion
 from tesoreria.models import Pago, Cuenta
 from .models import Solicitud_Gasto, Articulo_Gasto, Entrada_Gasto_Ajuste, Conceptos_Entradas, Factura
@@ -58,7 +58,7 @@ def crear_gasto(request):
     usuario = colaborador.get(staff__id=request.user.id)
     superintendentes = colaborador.filter(tipo__superintendente=True)
     proyectos = Proyecto.objects.filter(activo=True)
-    subproyectos = Subproyecto.objects.all()
+    #subproyectos = Subproyecto.objects.all()
     #colaborador = Profile.objects.all()
     #Tengo que revisar primero si ya existe una orden pendiente del usuario
     gasto, created = Solicitud_Gasto.objects.get_or_create(complete= False, staff=usuario)
@@ -66,9 +66,26 @@ def crear_gasto(request):
     articulo, created = articulos_gasto.get_or_create(completo = False, staff=usuario)
 
     productos = articulos_gasto.filter(gasto=gasto, completo = True)
+    articulos_gasto = Inventario.objects.filter(producto__gasto = True, producto__baja_item = False) #Cuando Alberto envie los conceptos se implementa
     
+    proyectos_para_select2 = [
+        {
+            'id': item.id, 
+            'text': str(item.nombre) + ' |' + str(item.descripcion)
+        } for item in proyectos
+    ]
 
-    articulos_gasto = inventario.filter(producto__gasto = True)
+
+
+    productos_para_select2 = [
+        {
+            'id': item.id,
+            'text': str(item.producto.nombre),
+            'iva': str(item.producto.iva)
+        } for item in articulos_gasto
+    ]
+
+  
     articulos = inventario.filter(producto__gasto = False)
     facturas = Factura.objects.filter(solicitud_gasto = gasto)
     form_product = Articulo_GastoForm()
@@ -112,15 +129,14 @@ def crear_gasto(request):
     context= {
         'facturas':facturas,
         'productos':productos,
+        'productos_para_select2':productos_para_select2,
         'colaborador':colaborador,
         'form':form,
         'form_product': form_product,
-        'articulos':articulos,
-        'articulos_gasto':articulos_gasto,
         'gasto':gasto,
         'superintendentes':superintendentes,
-        'proyectos':proyectos,
-        'subproyectos':subproyectos,
+        'proyectos_para_select2':proyectos_para_select2,
+        #'subproyectos':subproyectos,
         'factura_form': factura_form,
     }
     return render(request, 'gasto/crear_gasto.html', context)
