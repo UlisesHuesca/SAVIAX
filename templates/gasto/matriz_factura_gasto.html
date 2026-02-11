@@ -100,7 +100,8 @@
                         <th scope="col">Concepto [XML]</th>
                         <th scope="col">Proveedor [XML]</th>
                         <th scope="col">Monto [XML]</th>
-                        <th>Archivos</th>
+                        <th>PDF</th>
+                        <th>XML</th>
                         <th>Eliminar</th>
                     </tr>
                 </thead>
@@ -110,24 +111,42 @@
                         <td>{% if factura.archivo_xml %} {{ factura.emisor.resultados }} {% endif %}</td>
                         <td>{% if factura.archivo_xml %} {{ factura.emisor.nombre }} {% endif %}</td>
                         <td>{% if factura.archivo_xml %} ${{ factura.emisor.total }} {% endif %}</td>
+                        
+                        {% if p.factura_pdf %}
                         <td>
-                            <ul class="nav nav-pills">
-                                {% if factura.archivo_pdf %}
-                                <li class="nav-item mx-1">
-                                    <a href="{{ factura.archivo_pdf.url }}" download class="btn btn-outline-danger">
-                                        <i class="fa-solid fa-file-pdf"></i> PDF
-                                    </a>
-                                </li>
-                                {% endif %}
-                                {% if factura.archivo_xml %}
-                                <li class="nav-item mx-1">
-                                    <a href="{{ factura.archivo_xml.url }}" download class="btn btn-outline-secondary">
-                                        <i class="fa-solid fa-file-code"></i> XML
-                                    </a>
-                                </li>
-                                {% endif %}
-                            </ul>
+                                <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#pdfModal{{ p.id|unlocalize }}" title="Ver representación impresa Factura">
+                                    <i class="fa-duotone fa-solid fa-file-pdf fa-xl"></i>
+                                </button>
+                               
+                                <!-- Modal con visor de PDF -->
+                                <div class="modal fade" id="pdfModal{{p.id|unlocalize }}" tabindex="-1" aria-labelledby="pdfModalLabel{{p.id|unlocalize }}" aria-hidden="true">
+                                    <div class="modal-dialog modal-xl">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title" id="pdfModalLabel{{p.id|unlocalize }}">Ver factura</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                <iframe src="{{ p.factura_pdf.url }}#zoom=80" width="100%" height="750px"></iframe>
+                                            </div>
+                                        </div>
+                                    </div>
+                            </div>
+                        </td>       
+                        {% else %}
+                        <td> </td>
+                        {% endif %}
+                        {% if p.factura_xml %}
+                        <td>
+                            <a href="{{p.factura_xml.url}}" download class="btn btn-outline-info">
+                                <i class="fa-solid fa-file-invoice-dollar"></i>
+                            </a>
                         </td>
+                        {% else %}
+                        <td> </td>
+                        {% endif %}
+                    
+                       
                         <td>
                             <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#confirmModal" onclick="setDeleteUrl({{ factura.id | unlocalize }})">
                                 <i class="fa-regular fa-trash-can"></i>
