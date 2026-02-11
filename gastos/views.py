@@ -56,7 +56,7 @@ def crear_gasto(request):
     articulos_gasto = Articulo_Gasto.objects.all()
     inventario = Inventario.objects.all()
     usuario = colaborador.get(staff__id=request.user.id)
-    superintendentes = colaborador.filter(tipo__superintendente=True)
+    superintendentes = colaborador.filter(tipo__superintendente=True, staff__is_active=True,).exclude(tipo__nombre="Admin")
     proyectos = Proyecto.objects.filter(activo=True)
     #subproyectos = Subproyecto.objects.all()
     #colaborador = Profile.objects.all()
