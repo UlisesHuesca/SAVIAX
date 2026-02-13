@@ -6,6 +6,7 @@ import socket
 import traceback
 from smtplib import SMTPException
 from dashboard.models import Inventario, Order, ArticulosparaSurtir, ArticulosOrdenados, Tipo_Orden, Product
+from inventoryproject.settings import EMAIL_HOST_USER
 from solicitudes.models import Proyecto, Subproyecto, Operacion
 from tesoreria.models import Pago, Cuenta
 from .models import Solicitud_Gasto, Articulo_Gasto, Entrada_Gasto_Ajuste, Conceptos_Entradas, Factura
@@ -785,7 +786,8 @@ def gasto_entrada(request, pk):
                 area = Operacion.objects.get(nombre="GASTO")
                 orden_producto.area = area
                 orden_producto.complete = True
-                
+                destinatarios = Profile.objects.filter(tipo__almacen=True).values_list('staff__email', flat=True)
+                destinatarios += ['ulises_huesc@hotmail.com',articulo_gasto.staff.staff.email]
                 for item_producto in productos:
                     producto_inventario = Inventario.objects.get(producto= item_producto.concepto_material.producto)
                     #productos_por_surtir = ArticulosparaSurtir.objects.filter(articulos__producto=producto_inventario, requisitar = True)
@@ -795,7 +797,7 @@ def gasto_entrada(request, pk):
                         cantidad=item_producto.cantidad,
                         precio = item_producto.precio_unitario,
                         surtir=True,
-                        comentario="esta solicitud es proveniente de un gasto",
+                        comentario=f"Esta solicitud es proveniente del gasto {articulo_gasto.gasto.folio}",
                         created_at=date.today(),
                         created_at_time=datetime.now().time(),
                     )
@@ -808,10 +810,11 @@ def gasto_entrada(request, pk):
                     producto_inventario.save()
                 try:
                     email = EmailMessage(
-                        f'Entrada de producto por gasto: {articulo_gasto.producto.producto.nombre} |Gasto: {articulo_gasto.gasto.id}',
+                        f'Entrada de producto por gasto: {articulo_gasto.producto.producto.nombre} |Gasto: {articulo_gasto.gasto.folio}|Solicitud:{orden_producto.folio}',
                         f'Estimado {articulo_gasto.staff.staff.first_name} {articulo_gasto.staff.staff.last_name},\n Estás recibiendo este correo porque tu producto: {articulo_gasto.producto.producto.nombre} ha sido validado por el almacenista {usuario.staff.first_name} {usuario.staff.last_name}, favor de pasar a firmar el vale de salida para terminar con este proceso.\n\n Este mensaje ha sido automáticamente generado por SAVIA VORDTEC',
-                        'savia@vordtec.com',
-                        ['ulises_huesc@hotmail.com',articulo_gasto.staff.staff.email],
+                        f'Solicitud para surtir: {orden_producto.folio}',
+                        EMAIL_HOST_USER,
+                        destinatarios,
                         )
                     email.send()
                     orden_producto.save()
