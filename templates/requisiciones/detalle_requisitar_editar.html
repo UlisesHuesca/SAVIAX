@@ -17,7 +17,7 @@
     <div class="card col-lg-6 col-md-12">
             <div class="card-header mt-3">
             <!-- Aqui es el encabezado de los filtros -->
-                <h5 id="requi" orden={{orden.id|unlocalize}} target={{requi.id|unlocalize}}>Requisición: {{requi.id}}</h5>
+                <h5 id="requi" orden={{orden.id|unlocalize}} target={{requi.id|unlocalize}}>Requisición sin folio aún</h5>
             </div>
             <form method="POST" onsubmit="mostrarIndicadorCarga();">
             <div class="card-body">
@@ -75,6 +75,7 @@
                     <h6>Comentario:</h6><h6 style="color: #121212;" id="comentario"></h6>   
                     </div>
                 </div>
+                
                     
                 <div class="col-sm-1">
                     <a class="btn btn-outline-success update-purchase" id="update-requi" name="requi">
@@ -92,6 +93,7 @@
                     <th scope="col">Cantidad</th>
                     <th>Comentario</th>
                     <th scope="col" class="col-sm-2">Acción</th>
+                    <th></th>
                 </tr>
             </thead>
             <tbody id="mytbl">
@@ -99,9 +101,16 @@
                 <tr>
                     <td scope="col">{{product.producto.articulos.producto.producto.codigo}}</td>
                     <td scope="col">{{product.producto.articulos.producto.producto.nombre}}</td>
-                    <td scope="col">{{product.cantidad}}</td>
+                    <td scope="col">{{product.cantidad|unlocalize}}</td>
                     <td>{{product.producto.articulos.comentario}}</td>
-                    <td scope="col"><button type="button" class="btn" style="background-color: #980F0F; color:ghostwhite" value="Delete" onclick="deleteRow(this)" id="delete" producto="{{product.producto.id|unlocalize}}" cantidad="{{product.cantidad}}" aria-label="Close"><i class="fa-solid fa-trash-can"></i></button></td>
+                    <td scope="col"><button type="button" class="btn" style="background-color: #980F0F; color:ghostwhite" value="Delete" onclick="deleteRow(this)" id="delete" producto="{{product.producto.id|unlocalize}}" cantidad="{{product.cantidad|unlocalize}}" aria-label="Close"><i class="fa-solid fa-trash-can"></i></button></td>
+                    <td>
+                    {% if product.producto.articulos.producto.producto.critico and product.producto.articulos.producto.producto.producto_calidad.hecho %}
+                        <button type="button" class = "btn btn-danger" data-bs-toggle="modal" data-bs-target="#dialog" hx-target="#document" hx-get="{% url 'select-product-quality' product.producto.articulos.producto.producto.id %}">
+                            <i class="fa-solid fa-q"></i>
+                        </button>
+                    {% endif %}
+                    </td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -114,7 +123,6 @@
 <!--Este es el modal-->
 <div class="modal fade" id ="dialog" tabindex="-1" role="dialog">
     <div class="modal-dialog modal-lg" id="document" role="document">
-
     </div>
 </div>
 <div id="loadingIndicator" style="display:none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); z-index: 1000;">
@@ -169,10 +177,8 @@ document.getElementById("producto").addEventListener("change", function(element)
     var current_option = select.options[select.selectedIndex];
     let cantidad = current_option.getAttribute('cantidad');
     let comment = current_option.getAttribute('comentario');
-
-    console.log(comment);
-    var solicitado = document.getElementById('solicitado');
-    var comentario = document.getElementById('comentario');
+   
+    
     solicitado.innerHTML = cantidad;
     comentario.innerHTML = comment;
 });

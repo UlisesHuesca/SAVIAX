@@ -1030,8 +1030,8 @@ def requisicion_detalle(request, pk):
             return redirect('solicitud-autorizada-orden')
         else:
              messages.error(request,'No se puede crear la requisición debido a que no hay productos agregados')
-    else:
-        messages.error(request,'El formulario no es válido')
+    #else:
+        #messages.error(request,'El formulario no es válido')
 
 
     context = {

@@ -481,7 +481,7 @@ def revision_producto_calidad(request, pk):
     context = {
         'error_messages':error_messages,
         'form': form,
-        'item':item,
+        'producto':item,
         }
     return render(request,'dashboard/revision_producto_calidad.html', context)
 

@@ -34,7 +34,7 @@
                     <td><img class="row-image" src="{{producto.producto.producto.imageURL}}"></td>
                     <td>{{producto.producto.producto.codigo}}</td>
                     <td>{{producto.producto.producto.nombre}}</td>
-                    <td>{{producto.cantidad}}</td>
+                    <td>{{producto.cantidad|unlocalize}}</td>
                     <td>{{producto.producto.producto.unidad}}</td>
                     <td>{% if producto.comentario %} {{producto.comentario}} {% endif %}</td>
                     <td>
@@ -47,6 +47,11 @@
                         <button type="button" class="btn add-btn update-cart" style="color:ghostwhite; background-color:#980F0F ;" value="Delete" data-product={{producto.producto.id|unlocalize}} data-action="remove" aria-label="Close">
                             <i class="fa-solid fa-trash-can"></i>
                         </button>
+                        {% if producto.producto.producto.critico and producto.producto.producto.producto_calidad.hecho %}
+                        <button type="button" class = "btn btn-danger" data-bs-toggle="modal" data-bs-target="#dialog" hx-target="#document" hx-get="{% url 'select-product-quality' producto.producto.producto.id %}">
+                            <i class="fa-solid fa-q"></i>
+                        </button>
+                        {% endif %}
                     </td>
                 </tr>
                 {% endfor %}
@@ -55,7 +60,7 @@
         </table>
     </div>
     <hr>     
-    <h5>Artículos: {{orden.get_cart_quantity}}</h5>
+    <h5>Artículos: {{orden.get_cart_quantity|unlocalize}}</h5>
 </div>
 </body>
 </html>

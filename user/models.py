@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
+from simple_history.models import HistoricalRecords
 # Create your models here.
 
 class Banco(models.Model):
@@ -64,6 +65,7 @@ class Profile(models.Model):
     image = models.ImageField(blank=True, upload_to='profile_images')
     tipo = models.ForeignKey(Tipo_perfil, on_delete = models.CASCADE, null=True)
     nivel = models.PositiveSmallIntegerField(default=4)
+    history = HistoricalRecords(history_change_reason_field=models.TextField(null=True))
 
     def __str__(self):
         return f'{self.staff.username}'
