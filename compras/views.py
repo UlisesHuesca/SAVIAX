@@ -2456,7 +2456,8 @@ def convert_excel_solicitud_matriz_productos(productos):
     money_resumen_style.font = Font(name ='Calibri', size = 14, bold = True)
     wb.add_named_style(money_resumen_style)
 
-    columns = ['OC','RQ','Sol','Solicitante','Proyecto','Subproyecto','Fecha','Proveedor','Estatus Proveedor','Área','Cantidad','Código', 'Producto','Criticidad','P.U.','Moneda','Tipo de Cambio','Subtotal','IVA','Total','Estatus','Pagada','NC']
+    columns = ['OC','RQ','Sol','Solicitante','Proyecto','Subproyecto','Fecha','Proveedor','Estatus Proveedor','Área','Cantidad','Código', 
+               'Producto','Criticidad','P.U.','Moneda','Tipo de Cambio','Subtotal','IVA','Total','Estatus','Pagada','NC','Status Entrega']
 
     for col_num in range(len(columns)):
         (ws.cell(row = row_num, column = col_num+1, value=columns[col_num])).style = head_style
@@ -2529,7 +2530,7 @@ def convert_excel_solicitud_matriz_productos(productos):
     ).style = body_style
 
     rows = []
-
+    #cumplimiento_por_oc = {} 
     for producto in productos:
         # Extract the needed attributes
         compra_id = producto.oc.id
@@ -2572,6 +2573,61 @@ def convert_excel_solicitud_matriz_productos(productos):
         pagos = Pago.objects.filter(oc_id=compra_id)
         tipo_de_cambio_promedio_pagos = pagos.aggregate(Avg('tipo_de_cambio'))['tipo_de_cambio__avg']
         tipo_de_cambio = tipo_de_cambio_promedio_pagos or producto.oc.tipo_de_cambio
+        condicion_fecha_ultima_entrada = True
+        fecha_referencia = datetime.strptime("27/03/2024","%d/%m/%Y").date()
+        ultima_fecha_recepcion = producto.oc.vale_entrada.aggregate(
+            ultima_fecha=Max('articulos__fecha_recepcion')
+        )['ultima_fecha']
+       
+        if ultima_fecha_recepcion:
+        # Comparamos la fecha de vale_entrada con la fecha de referencia
+            if ultima_fecha_recepcion.date() >= fecha_referencia:
+                if producto.oc.recepcion_completa:
+                    # Si la recepción está completa, usamos la fecha de recepción del vale
+                    fecha_ultima_entrada = ultima_fecha_recepcion.date()
+        elif producto.oc.entrada_completa:  # Verificamos si entrada es True para esta compra
+            entradas = Entrada.objects.filter(oc=producto.oc)
+            ultima_entrada = entradas.order_by('-entrada_date').first()
+           
+            if ultima_entrada:  # Verificamos si existe al menos una entrada
+                fecha_ultima_entrada = ultima_entrada.entrada_date
+              
+            else:
+                # No hay entradas para esta compra
+                fecha_ultima_entrada = "No existe"
+                condicion_fecha_ultima_entrada = False
+        else:
+        # El atributo 'entrada' en Compra no es True
+            fecha_ultima_entrada = "No existe"
+            condicion_fecha_ultima_entrada = False
+           
+        ultimo_pago = None
+        if producto.oc.pagada:
+            ultimo_pago = pagos.order_by('-pagado_date').first()
+
+        if producto.oc.cond_de_pago.nombre == "CONTADO" and producto.oc.autorizado2 and producto.oc.pagada:
+            fecha_inicio = ultimo_pago.pagado_date
+        elif producto.oc.cond_de_pago.nombre == "CREDITO" and producto.oc.autorizado2:
+            fecha_inicio = producto.oc.autorizado_date2
+        else:
+            fecha_inicio = "No existe"
+
+        if condicion_fecha_ultima_entrada != False and fecha_inicio != "No existe" or fecha_inicio is not None:
+            if fecha_ultima_entrada != None: 
+                diferencia_fechas = dias_laborables(fecha_inicio, fecha_ultima_entrada)
+        elif fecha_inicio != "No existe" and fecha_inicio is not None:
+            diferencia_fechas = dias_laborables(fecha_inicio, date.today())
+        else:
+            diferencia_fechas = 0
+
+        if producto.oc.dias_de_entrega == None:
+            producto.oc.dias_de_entrega = 0
+        if fecha_inicio == "No existe":
+            cumplimiento_entrada = "No Evaluable"
+        elif producto.oc.dias_de_entrega >= diferencia_fechas:
+            cumplimiento_entrada = "En tiempo"
+        else:
+            cumplimiento_entrada = "Fuera de tiempo"
 
         #if moneda_nombre == "DOLARES" and tipo_de_cambio:
         #    total = total * tipo_de_cambio
@@ -2605,7 +2661,8 @@ def convert_excel_solicitud_matriz_productos(productos):
             total, #19
             estatus, #20
             pagada, #21
-            nc_txt #22
+            nc_txt, #22
+            cumplimiento_entrada #23
 
         ]
         rows.append(row)
