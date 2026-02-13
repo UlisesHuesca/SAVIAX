@@ -18,6 +18,7 @@ from .models import ArticuloComprado, Compra, Proveedor, Proveedor_direcciones, 
 from tesoreria.models import Facturas
 from .forms import CompraForm, ArticuloCompradoForm, ArticulosRequisitadosForm, ComparativoForm, Item_ComparativoForm, Compra_ComentarioForm, PreevaluacionForm, Compra_Comment_Form
 from requisiciones.forms import Articulo_Cancelado_Form
+from requisiciones.filters import RequisFilter
 from tesoreria.forms import Facturas_Form
 from entradas.models import Entrada, No_Conformidad, NC_Articulo
 import json
@@ -73,6 +74,10 @@ def requisiciones_autorizadas(request):
     else:
         requis = Requis.objects.filter(complete=None)
     #requis = Requis.objects.filter(autorizar=True, colocada=False)
+    myfilter = RequisFilter(request.GET, queryset=requis)
+    requis = myfilter.qs
+
+
 
     tag = dof()
      #Set up pagination
@@ -81,6 +86,7 @@ def requisiciones_autorizadas(request):
     requis = p.get_page(page)
 
     context= {
+        'myfilter':myfilter,
         'requis':requis,
         'tags':tag,
         }
@@ -2034,7 +2040,7 @@ def generar_pdf(compra):
     for producto in productos:
         item = item + 1
         try:
-            producto_calidad = str(producto.producto.articulos.producto.producto.producto_calidad.requisitos)
+            producto_calidad = str(producto.producto.producto.articulos.producto.producto.producto_calidad.requisitos)
         except AttributeError:
             producto_calidad = ' '  # Mostrar espacio en lugar de None
         
@@ -2054,7 +2060,7 @@ def generar_pdf(compra):
             count += 1
     # Dibuja la primera página
     first_page_data = data_c[:rows_per_page_first + 1]  # Incluye encabezado
-    table = Table(first_page_data, colWidths=[0.5 * cm, 1.5 * cm, 2 * cm, 1.5 * cm, 1.5 * cm, 6.3 * cm, 5.2 * cm, 1.5 * cm])
+    table = Table(first_page_data, colWidths=[0.5 * cm, 1 * cm, 2 * cm, 1.5 * cm, 1.5 * cm, 4 * cm, 4 * cm, 6* cm])
     table.setStyle(table_style)
     table.wrapOn(c, width, height)
     table.drawOn(c, 20, high)
