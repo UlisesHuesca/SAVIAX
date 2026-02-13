@@ -90,7 +90,7 @@ class Comparativo(models.Model):
     creada_por = models.ForeignKey(Profile, on_delete = models.CASCADE, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     completo = models.BooleanField(default=False)
-    comentarios = models.TextField(max_length=200, null=True)
+    comentarios = models.TextField(max_length=600, null=True)
 
     def __str__(self):
         return f'{self.nombre}'
@@ -219,7 +219,7 @@ class Compra(models.Model):
     recepcion_completa = models.BooleanField(default=False)
     solo_servicios = models.BooleanField(default=False)
     regresar_oc = models.BooleanField(default=False)
-    comentarios = models.TextField(max_length=400, null=True)
+    comentarios = models.TextField(max_length=600, null=True)
     saldo_a_favor = models.DecimalField(max_digits=14,decimal_places=2, default=0)
     comentario_gerencia = models.TextField(null=True, blank=True)
 
