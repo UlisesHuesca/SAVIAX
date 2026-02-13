@@ -31,15 +31,10 @@
                                 <th>Comentario Usuario</th>
                                 <th>Especificaciones Técnicas</th>
                                 <th>Criticidad</th>
-                                {% if producto.producto.articulos.producto.producto.critico.nombre == "Crítico" %}
                                 <th>Requisitos</th>
-                                <th style="text-align: center;">Documental</th>
-                                <th style="text-align: center;">Grado</th>
-                                <th style="text-align: center;">Inspección</th>
-                                <th style="text-align: center;">Grado</th>
-                                <th style="text-align: center;">Cumplimiento</th>
-                                <th style="text-align: center;">Grado</th>
-                                {% endif %}
+                                <th style="text-align: center;">Documental-Grado</th>
+                                <th style="text-align: center;">Inspección-Grado</th>
+                                <th style="text-align: center;">Cumplimiento-Grado</th>
                             </tr>
                         </thead>
                         <tbody id="mytbl">
@@ -53,38 +48,32 @@
                                 <td>{% if producto.producto.articulos.comentario %}{{producto.producto.articulos.comentario}}{% else %} NR {% endif %}</td>
                                 <td>{% if producto.producto.articulos.producto.producto.especs %} {{producto.producto.articulos.producto.producto.especs}} {% else %} NR {% endif %}</td>
                                 <td>{% if producto.producto.articulos.producto.producto.critico %}{{producto.producto.articulos.producto.producto.critico}} {% else %} NE {% endif %}</td>
-                                {% if producto.producto.articulos.producto.producto.critico.nombre == "Crítico" %}
-                                <td>
-                                    <button type="button" class="btn btn-danger"><i class="fa-solid fa-q"></i></button>
-                                </td>
                                 <td>
                                     {{producto.producto.articulos.producto.producto.producto_calidad.requisitos}}
                                 </td>
                                 <td style="text-align: center;">
-                                    {%if producto.producto.articulos.producto.producto.producto_calidad.documental %}
-                                        <div class="alert alert-success" role="alert">
-                                        <i class="fa-regular fa-circle-check"></i>
-                                        </div>
+                                    {%if producto.producto.articulos.producto.producto.producto_calidad.documental %} 
+                                        <i class="fa-regular fa-circle-check"></i> - {{producto.producto.articulos.producto.producto.producto_calidad.g_documental}}
+                                    {% else %}
+                                        No
                                     {% endif %} 
                                 </td>
-                                <td style="text-align: center;">{{producto.producto.articulos.producto.producto.producto_calidad.g_documental}}</td>
                                 <td style="text-align: center;">
                                     {% if producto.producto.articulos.producto.producto.producto_calidad.inspeccion %}
-                                    <div class="alert alert-success" role="alert">
-                                        <i class="fa-regular fa-circle-check"></i>
-                                    </div>
+                                   
+                                        <i class="fa-regular fa-circle-check"></i> - {{producto.producto.articulos.producto.producto.producto_calidad.g_inspeccion}}
+                                    
+                                    {% else %}
+                                        No
                                     {% endif %} 
                                 </td>
-                                <td style="text-align: center;">{{producto.producto.articulos.producto.producto.producto_calidad.g_inspeccion}}</td>
                                 <td style="text-align: center;">
                                     {% if producto.producto.articulos.producto.producto.producto_calidad.cumplimiento %}
-                                    <div class="alert alert-success" role="alert">
-                                        <i class="fa-regular fa-circle-check"></i>
-                                    </div>
+                                        <i class="fa-regular fa-circle-check"></i> - {{producto.producto.articulos.producto.producto.producto_calidad.g_cumplimiento}}
+                                    {% else %}
+                                        No
                                     {% endif %} 
                                 </td>
-                                <td>{{producto.producto.articulos.producto.producto.producto_calidad.g_cumplimiento}}</td>
-                                {% endif %}
                             </tr>
                             {% endfor %}
                         </tbody>
@@ -105,7 +94,12 @@
         </div>
     </div>
 </div>
+<!--Este es el modal-->
+<div class="modal fade" id ="dialog" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg" id="document" role="document">
 
+    </div>
+</div>
 
 
 {% endblock %}

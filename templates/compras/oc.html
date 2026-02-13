@@ -18,7 +18,7 @@
         <div class="card" id="form-wrapper">
             <div class="card-header mb-4">
             <!-- Aqui es el encabezado de los filtros -->
-                <h5 id="oc" target={{oc.id|unlocalize}}>ORDEN DE COMPRA: {{oc.id}}</h5>
+                <h5 id="oc" target={{oc.id|unlocalize}}>ORDEN DE COMPRA: {{oc.id|unlocalize}}</h5>
             </div>
             <div class="card-body">
             <form id="id_formulario" method="POST">
@@ -197,18 +197,6 @@
                         </div>
                     </div>
                 </div>
-                <!--<div class="row ms-3 my-2">
-                    <div class="form-check form-switch col-sm">
-                    <label for="form.logistica" class="form-check-label"><strong>Logística</strong></label>
-                        {{form.logistica|add_class:"form-check-input"}}
-                    </div>
-                </div>
-                <div class="row ms-3 my-2">
-                    <div class="form-check form-switch col-sm">
-                    <label for="form.tesoreria_local" class="form-check-label"><strong>Tesorería Matriz</strong></label>
-                        {{form.tesoreria_matriz|add_class:"form-check-input"}}
-                    </div>
-                </div>-->
                 <div class="row my-2">
                     <div id="etiqueta_domicilio" class="col-12">
                         <div class="alert alert-secondary" role="alert">
@@ -320,7 +308,8 @@
                         <th scope="col">Cantidad</th>
                         <th scope="col">P.U.</th>
                         <th scope="col">Subtotal</th>
-                        <th scope="col" class="col-sm-2">Acción</th>
+                        <th scope="col" >Eliminar</th>
+                        <th>Calidad</th>
                     </tr>
                 </thead>
                 <tbody id="mytbl">
@@ -329,12 +318,17 @@
                         <td class="d-none d-lg-table-cell">{{product.producto.producto.articulos.producto.producto.codigo}}</td>
                         <!--<td>{{product.producto.producto.articulos.producto.producto.id|unlocalize}}</td>-->
                         <td>{{product.producto.producto.articulos.producto.producto.nombre}}</td>
-                        <td>{{product.cantidad}}</td>
+                        <td>{{product.cantidad|unlocalize}}</td>
                         <td>${{product.precio_unitario|floatformat:2}}</td>
                         {% if product.precio_unitario != None  and product.cantidad != None %}
                         <td scope="col">${% widthratio product.precio_unitario 1 product.cantidad %}</td>
                         {% endif %}
                         <td><button type="button" class="btn btn-danger" value="Delete" onclick="deleteRow({{product.producto.id|unlocalize}})" iva="{{product.producto.producto.articulos.producto.producto.iva}}" id="delete" producto="{{product.producto.id|unlocalize}}" cantidad="{{product.cantidad|unlocalize}}" precio="{{product.precio_unitario.amount}}" aria-label="Close"><i class="fa-solid fa-trash-can"></i></button></td>
+                        <td>
+                            {% if product.producto.producto.articulos.producto.producto.critico and product.producto.producto.articulos.producto.producto.producto_calidad.hecho %}
+                                <button type="button" class = "btn btn-danger" data-bs-toggle="modal" data-bs-target="#dialog" hx-target="#document" hx-get="{% url 'select-product-quality' product.producto.id %}"><i class="fa-solid fa-q"></i></button>
+                            {% endif %}
+                        </td>
                     </tr>
                     {% endfor %}
                 </tbody>

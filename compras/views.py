@@ -69,7 +69,7 @@ import ssl
 def requisiciones_autorizadas(request):
     perfil = Profile.objects.get(staff__id=request.user.id)
     if perfil.tipo.compras == True:
-        requis = Requis.objects.filter(autorizar=True, colocada=False)
+        requis = Requis.objects.filter(autorizar=True, colocada=False).order_by('-approved_at')
     else:
         requis = Requis.objects.filter(complete=None)
     #requis = Requis.objects.filter(autorizar=True, colocada=False)
