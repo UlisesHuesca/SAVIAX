@@ -130,15 +130,11 @@
                             <td>{{producto.producto.producto.unidad}}</td>
                             <td>{% if producto.comentario %} {{producto.comentario}} {% endif %}</td>
                             <td>
-                                {% if producto.producto.producto.subfamilia and producto.serie == None %}
-                                    <a class="btn btn-outline-danger" type="button" data-bs-toggle="modal" data-bs-target="#dialog" hx-target="#document" hx-get="{% url 'producto_terminado_cantidad' producto.id %}" title="Pendiente # serie">
-                                        <i class="fa-solid fa-pen-to-square"></i>
-                                    </a>
-                                {% else %}
+                               
                                     <a class="btn btn-outline-info" type="button" data-bs-toggle="modal" data-bs-target="#dialog" hx-target="#document" hx-get="{% url 'producto_terminado_cantidad' producto.id %}" title="Editar cantidad y serie">
                                         <i class="fa-solid fa-pen-to-square"></i>
                                     </a>
-                                {% endif %}
+                               
                                 <a class="btn btn-outline-info" type="button" data-bs-toggle="modal" data-bs-target="#dialog" hx-target="#document" hx-get="{% url 'producto_terminado_comentario' producto.id %}" title="Editar comentario">
                                     <i class="fa-regular fa-comment"></i>
                                 </a>

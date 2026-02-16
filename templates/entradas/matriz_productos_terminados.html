@@ -148,8 +148,9 @@
             <thead class="text-black" style="background-color: #F5F5F5;">
                 <tr>
                     <th scope="col">Solicitud</th>
-                    <th scope="col">EntradaArt</th>
                     <th scope="col">Entrada</th>
+                    <th>Fecha</th>
+                    <th>Status</th>
                     <!--<th scope="col">Articulo</th>-->
                     <th scope="col">Solicito</th>
                     <th scope="col" class="toggle-solicitado d-none">Solicitado</th>
@@ -170,7 +171,19 @@
                 <tr>
                     <th scope="row">{{entrada.producto_terminado.solicitud.id|unlocalize}}</th>
                     <th scope="row">{{entrada.id|unlocalize}}</th>
-                    <th scope="row">{{entrada.entrada.id|unlocalize}}</th>
+                    <th>{{entrada.entrada_date}}</th>
+                    <th>{% if not entrada.liberado and entrada.entrada_date %}
+                            {% if entrada.entrada_date|timesince > "5 days" %}
+                                <span class="badge bg-danger">+5 días</span>
+                            {% else %}
+                                <span class="badge bg-success">En tiempo</span>
+                            {% endif %}
+                        {% else %}
+                            {% if entrada.liberado %} 
+                                <span class="badge bg-primary">Liberado</span>
+                            {% endif %}
+                    {% endif %}
+                    </th>
                     <!--<th scope="row">{{entrada.id|unlocalize}}</th>-->
                     <th scope="row">{{entrada.producto_terminado.solicitud.staff.staff.first_name}} {{entrada.producto_terminado.solicitud.staff.staff.last_name}}</th>
                     <th scope="row" class="toggle-solicitado d-none">{{entrada.producto_terminado.solicitud.created_at}}</th>
@@ -182,7 +195,7 @@
                         <th scope="row" class="toggle-serie d-none">{{entrada.producto_terminado.serie}}</th>
                     {% else %}
                         <th scope="row"></th>
-                        <th scope="row" class="toggle-serie d-none"</th>
+                        <th scope="row" class="toggle-serie d-none"></th>
                     {% endif%}
                     <th scope="row">{{entrada.cantidad}}</th>
                     <th scope="row">

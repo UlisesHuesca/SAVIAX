@@ -55,20 +55,17 @@
                         <tbody>
                             <tr>
                                 <td>{{ producto.producto.producto.nombre }}</td>
-                                {% if producto.producto.producto.subfamilia %}
-                                <td>
-                                    <input type="number" step="0.01" min="0.01" name="cantidad" id="cantidad" value="{{ producto.cantidad }}" class="form-control" readonly style="background-color: #e9ecef; color: #6c757d;">
-                                </td>
-                                {% else %}
+                                
+                               
                                 <td>
                                     <input type="number" step="0.01" min="0.01" name="cantidad" id="cantidad" value="{{ producto.cantidad }}" class="form-control">
                                 </td>
-                                {% endif %}
-                                {% if producto.producto.producto.subfamilia %}
+                               
+                               
                                 <td>
                                     <input type="text" name="numero_serie" id="numero_serie" maxlength="20" class="form-control" value="{{ producto.serie }}" placeholder="Ingresa # Serie">
                                 </td>
-                                {% endif %}
+                               
                             </tr>
                         </tbody>
                     </table>

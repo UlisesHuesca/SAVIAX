@@ -1878,7 +1878,7 @@ def solicitud_productos_terminados(request):
     #productos_verificar = productos.filter(producto__producto__subfamilia__isnull=False).count()
     productos_verificar = productos.filter(producto__producto__subfamilia__isnull=False, serie = None).count() #Productos de la solicitud que necesitan numero de serie por que no tienen
     productos_terminados = productos.count() #productos totales 
-    proyectos = Proyecto.objects.all()
+    proyectos = Proyecto.objects.filter(activo = True)
     subproyectos = Subproyecto.objects.all()
 
     proyecto_para_select2 = [
