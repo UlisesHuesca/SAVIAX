@@ -68,11 +68,11 @@ class Solicitud_Gasto(models.Model):
         return total
 
     #@property
-    #def get_total_impuesto(self):
-    #    productos = self.articulos.all()
-    #    productos = productos.filter(completo=True)
-    #    suma = round(sum([(producto.get_iva + producto.get_otros_impuestos) for producto in productos]),2)
-    #    return suma
+    def get_total_impuesto(self):
+        productos = self.articulos.all()
+        productos = productos.filter(completo=True)
+        suma = round(sum([(producto.get_iva + producto.get_otros_impuestos) for producto in productos]),2)
+        return suma
 
     @property
     def get_total_solicitud(self):
@@ -171,9 +171,9 @@ class Articulo_Gasto(models.Model):
 
     @property
     def total_parcial(self):
-        #impuesto = self.get_iva
-        # total = round(self.get_subtotal + impuesto +self.get_otros_impuestos, 2)
-        total = round(self.get_subtotal + self.get_otros_impuestos, 2)
+        impuesto = self.get_iva
+        total = round(self.get_subtotal + impuesto +self.get_otros_impuestos, 2)
+        #total = round(self.get_subtotal + self.get_otros_impuestos, 2)
         return total
 
 class Factura(models.Model):

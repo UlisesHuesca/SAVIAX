@@ -206,17 +206,17 @@
                     <td scope="col" id="total-sum">0.00</td>
                 </tr>
             </thead> 
-            <!--<tbody>
-                <tr>
+            <tbody>
+                <!--<tr>
                     <th scope="col">Impuestos</th>
                     <td scope="col" id="iva">${{gasto.get_total_impuesto}}</td>
-                </tr>
+                </tr>-->
                 <tr>
                     <th scope="col">Total</th>
                     <td scope="col" id="total">${{gasto.get_total_solicitud|floatformat:2}}</td>
                 </tr>
                 
-            </tbody>-->
+            </tbody>
             </table>
         </div>
            
@@ -225,7 +225,7 @@
     <div class="col-lg-7">
         <div class="card">
             <div class="card-header">
-                <h2>Líneas de Gasto</h2>
+                <h2 id="linea_gasto">Líneas de Gasto</h2>
             </div>
             <div class="form-check form-switch col-auto mx-4 d-none" id="usarXML">
                 <input class="form-check-input" type="checkbox" role="switch" id="SwitchUsarXML">
@@ -446,10 +446,10 @@
                 </tr>
                 </thead>
             <tbody>
-                <!--<tr>
+                <tr>
                     <th scope="col">Impuestos</th>
                     <td scope="col" id="iva">${{gasto.get_total_impuesto}}</td>
-                </tr>-->
+                </tr>
                 <tr>
                     <th scope="col">Total</th>
                     <td scope="col" id="total">${{gasto.get_total_solicitud|floatformat:2}}</td>
@@ -620,10 +620,12 @@ $(document).ready(function() {
     });
     $('#id_producto').on('select2:select', function(e){
         var data = e.params.data;
-        //var iva = data.iva
-        //console.log(data.iva)
-        //var linea_gasto = document.getElementById('linea_gasto');
-        //linea_gasto.setAttribute('iva_producto',iva)
+        
+        var iva = data.iva
+        console.log(data.iva)
+        var linea_gasto = document.getElementById('linea_gasto');
+        linea_gasto.setAttribute('iva_producto',iva)
+
         var datos = JSON.parse(localStorage.getItem("id_solicitud_"+gasto_id));
         cambio_en_formulario(data,'producto') //Acá lo que hago es mediante esta función guardo los valores en el local storage
     });
@@ -681,14 +683,21 @@ function f_calculo_previo(){
     precio = document.getElementById('id_precio_unitario').value
     otros_impuestos = document.getElementById('id_otros_impuestos').value
     retenidos = document.getElementById('id_impuestos_retenidos').value
-    //iva = document.getElementById('id_iva').value
-    console.log(iva)
+    var linea_gasto = document.getElementById('linea_gasto');
+    var iva = linea_gasto.getAttribute('iva_producto')
+
+    if (iva === "True") {
+        iva_valor = 1.16
+    } else {
+        iva_valor = 1
+    }
     calculo_previo = document.getElementById('calculo_previo')
 
   
         
         console.log(precio, cantidad, otros_impuestos, retenidos)
-        subtotal = (Number(precio) * Number(cantidad) + Number(otros_impuestos) - Number(retenidos))
+        subtotal = (Number(precio) * Number(cantidad) + Number(otros_impuestos) - Number(retenidos)) * iva_valor
+        console.log(subtotal)
         calculo_previo.innerHTML = parseFloat(subtotal).toFixed(4)
         
 
@@ -698,7 +707,7 @@ function f_calculo_previo(){
 var check_otros_imp = document.getElementById("Switch_Otros_impuestos")
 
 check_otros_imp.addEventListener("change", function(element){
-    //let otros_imp = document.getElementById('id_otros_impuestos')
+    let otros_imp = document.getElementById('id_otros_impuestos')
     let otros_impuestos = document.getElementById('otros_impuestos')
 
     if (check_otros_imp.checked){
