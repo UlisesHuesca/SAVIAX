@@ -273,13 +273,13 @@ document.getElementById("producto").addEventListener("change", function(element)
     var cantidad_pendiente = cantidad}
 
     console.log('stock',stock);
-    console.log('critico',critico);
+    //console.log('critico',critico);
     //console.log('referencias',referencias);
     var solicitado = document.getElementById('solicitado');
-    var critico = document.getElementById('critico');
+    //var critico = document.getElementById('critico');
     //var referencias = document.getElementById('referencias');
     solicitado.innerHTML = cantidad_pendiente;
-    critico.innerHTML = nombre || 'No asignado';
+    //critico.innerHTML = nombre || 'No asignado';
     //referencias.innerHTML = datos || 'No asignado';
 });
 document.addEventListener('DOMContentLoaded', function () {
@@ -313,29 +313,29 @@ document.addEventListener('DOMContentLoaded', function () {
         select.addEventListener('change', actualizarOpciones);
     });
 });
-document.addEventListener('DOMContentLoaded', function () {
-    const productoSelect = document.getElementById('producto');
-    const cantidad = document.getElementById('id_cantidad'); // Campo de cantidad
-    const btn = document.getElementById('update-salida');
+//document.addEventListener('DOMContentLoaded', function () {
+ //   const productoSelect = document.getElementById('producto');
+ //   const cantidad = document.getElementById('id_cantidad'); // Campo de cantidad
+ //   const btn = document.getElementById('update-salida');
 
     // Escuchar el evento "change" del select
-    productoSelect.addEventListener('change', function () {
-        const selectedOption = productoSelect.options[productoSelect.selectedIndex];
-        const criticoValue = selectedOption.getAttribute('critico');
+    //productoSelect.addEventListener('change', function () {
+    //    const selectedOption = productoSelect.options[productoSelect.selectedIndex];
+    //     const criticoValue = selectedOption.getAttribute('critico');
 
-        if (criticoValue === 'Crítico') {
+        //if (criticoValue === 'Crítico') {
             // Marcar el switch si el valor es "Crítico"
-            cantidad.value = 1; // Asignar un valor fijo
-            cantidad.disabled = true; // Deshabilitar el campo para evitar modificaciones
-            btn.classList.remove('d-none')
-        } else {
+        //    cantidad.value = 1; // Asignar un valor fijo
+        //    cantidad.disabled = true; // Deshabilitar el campo para evitar modificaciones
+        //    btn.classList.remove('d-none')
+        //} else {
             // Desmarcar el switch en caso contrario
-            cantidad.value = 0;
-            cantidad.disabled = false; // Habilitar el campo si no es "Crítico"
-            btn.classList.add('d-none')
-        }
-    });
-});
+        //    cantidad.value = 0;
+        //    cantidad.disabled = false; // Habilitar el campo si no es "Crítico"
+        //    btn.classList.add('d-none')
+        //}
+ //   });
+//});
 
 document.getElementById("txt_usuario").addEventListener("change", (event)=>{
     var select = document.getElementById("txt_usuario");
