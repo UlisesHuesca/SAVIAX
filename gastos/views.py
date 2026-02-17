@@ -805,7 +805,7 @@ def gasto_entrada(request, pk):
                     producto_inventario.price = ((item_producto.precio_unitario * item_producto.cantidad)+ ((producto_inventario.cantidad_apartada + producto_inventario.cantidad) * producto_inventario.price))/(producto_inventario.cantidad + item_producto.cantidad + producto_inventario.cantidad_apartada)
                     #La cantidad en inventario + la cantidad del producto en la entrada
                     producto_inventario.cantidad_apartada = producto_inventario.cantidad_apartada + item_producto.cantidad
-                    producto_inventario.save()
+                    #producto_inventario.save()
                     producto_inventario._change_reason = f'Esta es una entrada desde un gasto {item_producto.id}'
                     producto_inventario.save()
                 try:
