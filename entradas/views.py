@@ -560,7 +560,9 @@ def articulos_recepcion(request, pk):
             articulo_comprado.save() #guarda el articulo comprado
 
         num_art_entregados = ArticuloComprado.objects.filter(oc=compra, entrada_completa=True).count() #Articulos completos
-        num_art_recepcionados = ArticuloComprado.objects.filter(oc=compra, recepcion_completa=True).count()
+        articulos_recepcionados = ArticuloComprado.objects.filter(oc=compra,recepcion_completa=True)
+        
+        num_art_recepcionados = articulos_recepcionados.count()
         if num_art_comprados == num_art_recepcionados:
             compra.recepcion_completa = True #Define la OC como recepcion completa
         if num_art_comprados == num_art_entregados: #Concuerda con el numero de pedidos
@@ -615,12 +617,31 @@ def articulos_recepcion(request, pk):
             </body>
         </html>
         """
+        # 1) Obtener correos de almacenistas
+        almacenistas = Profile.objects.filter(tipo__almacenista=True)
+
+        correos_almacenistas = list(
+            almacenistas.values_list('staff__email', flat=True)
+        )
+
+        # 2) Correos fijos
+        correos_fijos = [
+            compra.req.orden.staff.staff.email,
+            compra.creada_por.staff.email,
+            'ulises_huesc@hotmail.com',
+        ]
+
+        # 3) Unir todo
+        destinatarios = correos_almacenistas + correos_fijos
+
+        # (opcional pero recomendado) eliminar duplicados
+        destinatarios = list(set(destinatarios))
         try:
             email = EmailMessage(
                 f'OC Autorizada {compra.get_folio}|RQ: {compra.req.folio} |Sol: {compra.req.orden.folio}',
                 body=html_message,
                 from_email = settings.DEFAULT_FROM_EMAIL,
-                to= [compra.req.orden.staff.staff.email,compra.creada_por.staff.email,'ulises_huesc@hotmail.com'],
+                to= destinatarios,
                 headers={'Content-Type': 'text/html'}
                 )
             email.content_subtype = "html " # Importante para que se interprete como HTML
