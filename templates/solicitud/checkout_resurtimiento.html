@@ -2,6 +2,7 @@
 {% load crispy_forms_tags %}
 {% load static %}
 {% load widget_tweaks %}
+{% load l10n %}
 <html>
 <head>
 {% block title %}Crear Solicitud{% endblock %}
@@ -17,57 +18,30 @@
     <div class="col-lg-4">
         <div class="card" id="form-wrapper">
             <div class="card-header">
-            <h2>Información de Solicitud</h2>
+            	<h2 id="order" tipo="{{orden.tipo}}" orden="{{orden.id|unlocalize}}">Información de Solicitud:</h2>
             </div>
             <div class="card-body"   id="Solicitud-info">
-					<form method="POST" id='OrderForm'>
+					<form id="myForm" method="POST" id='OrderForm' enctype="multipart/form-data" onsubmit="mostrarIndicadorCarga();">
                         {% csrf_token %}
-                            <div class="row my-2">
-                                <label for="form.proyecto" class="col-auto col-form-label my-1 d-none"><strong>Proyecto*</strong></label>
-                                <div class="col-4 d-none">
-                                    <div class="input-group">
-                                    <!--    <span class="input-group-text" id="basic-addon1"><i class="fa-solid fa-industry"></i></span>-->
-                                    {{form.proyecto|add_class:"form-select"}}
-                                    </div>
-                                </div>
-                                <div class="col-sm-12 col-lg-12">
+                             <div class="row">
+                                <div class="col-12">
                                     <div class="input-group mb-3">
                                         <span class="input-group-text" id="basic-addon1"><i class="fa-solid fa-diagram-project"></i></span>
-                                        <div class="form-floating form-floating-group flex-grow-1"> 
-                                            <input type="text" list="proyectos" id="txt_proyectos" valor="{{proyectos.id}}" placeholder="Proyecto..." class="form-control">
-                                            <label for="txt_proyectos">Proyectos*</label>
+                                        <div class="form-floating form-floating-group flex-grow-1">   
+                                            {{form.proyecto}}
                                         </div>
-                                        <datalist id="proyectos" name='proyectos'>
-                                        {% for item in proyectos %}
-                                        <option valor="{{item.id}}" value="{{item.nombre}} {{item.descripcion}}"></option>
-                                        {% endfor %}
-                                        </datalist>
                                     </div>
                                 </div>
-
                             </div>
-                            <div id="row-subproyecto" class="row my-2">
-                                    <div class="col-12">
-                                        <div id="input_subproyecto" class="input-group mb-3 d-none">
-                                            <span class="input-group-text" id="basic-addon1"><i class="fa-solid fa-diagram-project"></i></span>
-                                            <div class="form-floating form-floating-group flex-grow-1">
-                                                <label  style="font-size:10px; color:gray;" for="subproyecto">Subproyecto*</label>
-                                                <select style="font-size:16px" class="form-select form-select-sm" placeholder="Subproyecto" id="subproyecto">
-                                                    <option style="color:gray;" value="" selected disabled>Subproyecto</option>
-                                                    {% for subproyecto in subproyectos %}
-                                                    <option id="js" target="{{subproyecto.proyecto.id}}" sub="{{subproyecto.id}}">
-                                                    {{subproyecto.nombre}}
-                                                    </option>
-                                                    {% endfor %}
-                                                </select>
-                                            </div>
+                            <div class="row">
+                                <div class="col-12">
+                                    <div class="input-group mb-3">
+                                        <span class="input-group-text" id="basic-addon1"><i class="fa-solid fa-diagram-project"></i></span>
+                                        <div class="form-floating form-floating-group flex-grow-1">   
+                                            {{form.subproyecto}}
                                         </div>
                                     </div>
-                                    <div class="col-4 d-none">
-                                        <div class="input-group">
-                                        {{form.subproyecto|add_class:"form-select"}}
-                                        </div>
-                                    </div>
+                                </div>
                             </div>
                                 
     
@@ -201,130 +175,192 @@
   <script>
     
     
-    document.getElementById("txt_proyectos").addEventListener("change", (event)=>{
-    var select = document.getElementById("txt_proyectos");
-    var row_subproyecto = document.getElementById("row-subproyecto"); 
-    console.log(select.value)
-    var browserChildren = document.getElementById('proyectos').children;
-    //var browserChildren = document.getElementById('proveedor')
-    //var dataList = document.getElementById(browserChildren.getAttribute("valor"))
-    var other_select = document.getElementById('id_proyecto');
+   var datosProyectos = {{proyectos_para_select2|safe}}
 
-
-    cont = 0
-
-    for(let i = 0; i < browserChildren.length; i++){
-        console.log(browserChildren[i].value)
-
-        if (browserChildren[i].value === select.value) {
-            console.log(browserChildren[i])
-            console.log(select.value)
-            let id = browserChildren[i].getAttribute('valor');
-            console.log(id)
-            other_select.value = id;
-            var target = id;
-            cont = 1
-            } //else {
-            //    console.log(browserChildren[i].value)
-            //  console.log(select)
-           // }
-    }
-    //console.log(select.value)
-    //El cont = 0 es un indicador/bandera si encuentra al menos una similitud en el for no se activa
-    if ((!select.value) || (cont = 0)){
-        other_select.value = 0
-    }
-    //var select2 = document.getElementById("id_proyecto");
-    var text_subproyectos = document.getElementById("subproyecto")
-    var subproyectos = text_subproyectos.children;
-    //var current_option2 = select2.options[select.selectedIndex];
+$(document).ready(function() {
+    var orden = document.getElementById('order');
+    var orden_id = orden.getAttribute('orden');
     
-    var sub = document.getElementById('id_subproyecto')
-    console.log(target)
-    text_subproyectos.setAttribute('class','form-select')
+    $('#id_proyecto').select2({
+        allowClear: true,
+        width: '100%',
+        placeholder: 'Proyecto',
+        data: datosProyectos,
+        templateResult: formatRepo, // Función para renderizar los resultados
+        templateSelection: formatRepoSelection // Función para renderizar la selección
+    });
+    $('#id_proyecto').on('select2:select', function(e){
+        var data = e.params.data;
+        cambio_en_formulario(data,'proyecto') //Acá lo que hago es mediante esta función guardo los valores en el local storage, como argumentos los parámetros que serán los valores guardados y la palabra que definira la variable donde se guardara ese valor
+        var datos = JSON.parse(localStorage.getItem("id_solicitud_"+orden_id));
+        proyecto_id = datos.proyecto
+        console.log(datos)
+        if (proyecto_id != ""){
+            mini_ajax(proyecto_id)  //Esta función la llamo cuando se selecciona un nuevo proyecto o cuando ya está seleccionado
+        }
+    }); //Aquí termina el select2:select
+    var proyectoSelect = $('#id_proyecto');
+    var subproyectoSelect = $('#id_subproyecto');
+    var datos = JSON.parse(localStorage.getItem("id_solicitud_"+orden_id));
+    console.log(datos)
+    if (datos) {
+        if (datos.proyecto){
+            var option = new Option(datos.proyecto_text, datos.proyecto, true, true);
+            proyectoSelect.append(option).trigger('change');
+            if (!datos.subproyecto){
+                proyecto_id = datos.proyecto
+                //console.log(proyecto_id)
+                if (proyecto_id != ""){
+                    mini_ajax(proyecto_id) //Esta función la llamo cuando se selecciona un nuevo proyecto o cuando ya está seleccionado
+                }
+            }
+        }
+        $('#id_proyecto').on('select2:unselect', function(e){
+            //Limpiar las entradas de proyecto y subproyecto en el objeto almacenado
+            var datos = JSON.parse(localStorage.getItem("id_solicitud_"+orden_id));
+            
+            datos.proyecto_text = '';
+            datos.proyecto = '';
+            datos.subproyecto = '';
+            datos.subproyecto_text ='';
+            localStorage.setItem("id_solicitud_" + orden_id, JSON.stringify(datos));
+        
+            //console.log(datos)
+            // Limpiar la selección actual en #id_subproyecto
+            $('#id_subproyecto').val(null).trigger('change');
+        });//Aquí termina el select2:unselect
 
-
-
-    text_subproyectos.value = ""
-    sub.value =""
-
-
-     for(let i = 0; i < subproyectos.length; i++){
-        proyecto_num  = subproyectos[i].getAttribute('target')
-        if (proyecto_num === target) {
-            subproyectos[i].setAttribute('class','')
-            row_subproyecto.setAttribute("class","row my-2")
-        } else {
-            subproyectos[i].setAttribute('class','d-none')
-     }
-     }
+    }
 });
 
-    document.getElementById("subproyecto").addEventListener("change", function(event){
-        var select = this;
-        var current_option = select.options[select.selectedIndex];
-        var target = current_option.getAttribute('sub')
-        console.log(target)
-        var other_select = document.getElementById('id_subproyecto')
-        other_select.value = target
+function mini_ajax(proyecto_id){
+    //console.log(proyecto_id)
+    $.ajax({
+            url: "{% url 'ajax_load_subproyectos' %}",
+            datatype: 'json',
+            data: {
+                'proyecto_id':proyecto_id
+            },
+            success: function (data) {
+                actualizarSubproyectos(data); 
+                //console.log(data)            
+            }  
+        })    
+
+};
+
+function actualizarSubproyectos(data) {
+    //console.log(data)
+    var $subproyectoSelect = $('#id_subproyecto');
+    $subproyectoSelect.empty(); // Limpiar las opciones actuales
+
+    // Añadir una opción placeholder
+    $subproyectoSelect.append(new Option('Seleccione un subproyecto', '', true, true));
+
+    // Añadir nuevas opciones
+    $.each(data, function(index, subproyecto) {
+        let texto = subproyecto.nombre + " - " + subproyecto.descripcion;
+        $subproyectoSelect.append(new Option(texto, subproyecto.id, false, false));
     });
 
-    document.getElementById("txt_proyectos").addEventListener("change", (event)=>{
-    var select = document.getElementById("txt_proyectos");
-    console.log(select.value)
-    var browserChildren = document.getElementById('proyectos').children;
-    //var browserChildren = document.getElementById('proveedor')
-    //var dataList = document.getElementById(browserChildren.getAttribute("valor"))
-    var other_select = document.getElementById('id_proyecto');
+    // Necesitas reinicializar el select2 para reflejar los cambios
+    $subproyectoSelect.trigger('change');
+}
 
+$(document).ready(function() {
+    var orden = document.getElementById('order');
+    var orden_id = orden.getAttribute('orden');
+    $('#id_subproyecto').select2({
+        allowClear: true,
+        width: '100%',
+        placeholder: 'Subproyecto',
+        //data: ,
+        templateResult: formatRepo, // Función para renderizar los resultados
+        templateSelection: formatRepoSelection // Función para renderizar la selección
+    });
 
-    cont = 0
+    $('#id_subproyecto').on('select2:select', function(e){
+        var data = e.params.data;
+        var datos = JSON.parse(localStorage.getItem("id_solicitud_"+orden_id));
+        cambio_en_formulario(data,'subproyecto') //Acá lo que hago es mediante esta función guardo los valores en el local storage
+    });
 
-    for(let i = 0; i < browserChildren.length; i++){
-        console.log(browserChildren[i].value)
+    var datos = JSON.parse(localStorage.getItem("id_solicitud_"+orden_id));
+    var subproyectoSelect = $('#id_subproyecto');
+    if (datos) {
+        if (datos.subproyecto){
+            var option = new Option(datos.subproyecto_text, datos.subproyecto, true, true);
+            subproyectoSelect.append(option).trigger('change');
+        }
+        $('#id_subproyecto').on('select2:unselect', function(e){
 
-        if (browserChildren[i].value === select.value) {
-            console.log(browserChildren[i])
-            console.log(select.value)
-            let id = browserChildren[i].getAttribute('valor');
-            console.log(id)
-            other_select.value = id;
-            var target = id;
-            cont = 1
-            } //else {
-            //    console.log(browserChildren[i].value)
-            //  console.log(select)
-           // }
+            datos.subproyecto = '';
+            datos.subproyecto_text ='';
+            localStorage.setItem("id_solicitud_" + orden_id, JSON.stringify(datos));
+
+        })
     }
-    //console.log(select.value)
-    //El cont = 0 es un indicador/bandera si encuentra al menos una similitud en el for no se activa
-    if ((!select.value) || (cont = 0)){
-        other_select.value = 0
-    }
-    //var select2 = document.getElementById("id_proyecto");
-    var input_subproyecto = document.getElementById("input_subproyecto")
-    var text_subproyectos = document.getElementById("subproyecto")
-    var subproyectos = text_subproyectos.children;
-    //var current_option2 = select2.options[select.selectedIndex];
-    
-    var sub = document.getElementById('id_subproyecto')
-    console.log(target)
-    input_subproyecto.setAttribute('class','input-group mb-3')
-
-
-    text_subproyectos.value = ""
-    sub.value =""
-
-
-     for(let i = 0; i < subproyectos.length; i++){
-        proyecto_num  = subproyectos[i].getAttribute('target')
-        if (proyecto_num === target) {
-            subproyectos[i].setAttribute('class','')
-        } else {
-            subproyectos[i].setAttribute('class','d-none')
-     }
-     }
 });
+
+function cambio_en_formulario(data,key) {
+    //console.log(data)
+
+    //var formulario = document.getElementById('formulario_encabezado')
+    //var formData = new FormData(formulario);
+    var orden = document.getElementById('order')
+    var orden_id = orden.getAttribute('orden')
+    var datosGuardados = JSON.parse(localStorage.getItem("id_solicitud_" + orden_id )) || {};
+    var value = data.id;
+    var text = data.text;
+    datosGuardados[key] = value;
+    datosGuardados[key+'_text'] = text; 
+    localStorage.setItem("id_solicitud_" + orden_id , JSON.stringify(datosGuardados));
+    
+};
+
+function mostrarIndicadorCarga() {
+    document.getElementById('loadingIndicator').style.display = 'block';
+}
+
+// Función para ocultar el indicador de carga
+function ocultarIndicadorCarga() {
+    document.getElementById('loadingIndicator').style.display = 'none';
+}
+
+// Asignar evento al formulario
+document.getElementById('myForm').addEventListener('submit', function(event) {
+    mostrarIndicadorCarga();
+
+    // Verifica si el formulario tiene validaciones que puedan impedir el envío
+    // Si hay un error, oculta el indicador
+    if (!this.checkValidity()) {
+        ocultarIndicadorCarga();
+    }
+});
+
+// Opcional: ocultar el indicador tras recibir respuesta de AJAX (si se usa AJAX)
+document.addEventListener('htmx:afterRequest', function(event) {
+    ocultarIndicadorCarga();
+});
+
+function formatRepo (repo) {
+    if (repo.loading) {
+        return repo.text;
+    }
+
+    var $container = $("<div class='select2-result-repository clearfix'>" +
+        "<div class='form-control form-control-lg select2-result-repository__title'></div>" +
+        "</div>");
+
+    $container.find(".select2-result-repository__title").text(repo.text);
+    
+    // Aquí podrías agregar más elementos al contenedor si es necesario.
+
+    return $container;
+}
+function formatRepoSelection (repo) {
+    return repo.text || repo.id;
+}
 
 
 

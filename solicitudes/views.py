@@ -490,7 +490,12 @@ def checkout_resurtimiento(request):
     last_order = orders.order_by('-last_folio_number').first()
     #consecutivo = orders.count()+1
 
-
+    proyectos_para_select2 = [
+        {
+            'id': item.id, 
+            'text': str(item.nombre) + ' |' + str(item.descripcion)
+        } for item in proyectos
+    ]
 
     tipo = Tipo_Orden.objects.get(tipo ='resurtimiento')
     order, created = Order.objects.get_or_create(staff = usuario, complete = False, tipo=tipo, distrito = usuario.distrito)
@@ -551,6 +556,7 @@ def checkout_resurtimiento(request):
 
     context= {
         'proyectos':proyectos,
+        'proyectos_para_select2':proyectos_para_select2,
         'form':form,
         'productos':productos,
         'orden':order,
