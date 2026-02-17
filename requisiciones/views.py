@@ -2070,62 +2070,18 @@ def render_salida_pdf(request, pk):
 
 
     data =[]
-    high = 670
+    #high = 670
     data.append(['''Código''','''Producto''','''Referencia''','''Cliente''','''Cantidad''', '''Unidad''','''P.Unitario''', '''Importe'''])
     for producto in productos:
         producto_nombre = Paragraph(producto.producto.articulos.producto.producto.nombre, styles["BodyText"])
         data.append([producto.producto.articulos.producto.producto.codigo, producto_nombre, producto.referencia, producto.cliente, producto.cantidad, producto.producto.articulos.producto.producto.unidad, producto.precio, producto.precio * producto.cantidad])
-        high = high - 18
+        #high = high - 18
    
     c.setFillColor(black)
     c.setFont('Helvetica',8)
-    proyecto_y = 485 if high > 500 else high - 30
+    proyecto_y = 760
 
-    c.setFillColor(prussian_blue)
-    # REC (Dist del eje Y, Dist del eje X, LARGO DEL RECT, ANCHO DEL RECT)
-    c.rect(20,proyecto_y - 5 ,250,20, fill=True, stroke=False) #3ra linea azul
-    c.setFillColor(black)
-    c.setFont('Helvetica',7)
-
-
-    c.setFillColor(white)
-    c.setLineWidth(.1)
-    c.setFont('Helvetica-Bold',10)
-    c.drawCentredString(70,proyecto_y,'Proyecto')
-    c.drawCentredString(165,proyecto_y,'Subproyecto')
-
-    c.setFont('Helvetica',8)
-    c.setFillColor(black)
-    c.drawCentredString(70,proyecto_y - 15, str(vale.solicitud.proyecto.nombre))
-    c.drawCentredString(165,proyecto_y - 15, str(vale.solicitud.subproyecto.nombre))
-
-
-    c.setFillColor(black)
-    c.setFont('Helvetica',8)
-    #c.line(135,high-200,215, high-200) #Linea de Autorizacion
-    c.drawCentredString(150,proyecto_y - 30,'Entregó')
-    c.drawCentredString(150,proyecto_y - 40, vale.almacenista.staff.first_name +' '+vale.almacenista.staff.last_name)
-
-    c.line(370,proyecto_y - 20,430, proyecto_y - 20)
-    c.drawCentredString(400,proyecto_y - 30,'Recibió')
-    if vale.material_recibido_por:
-        c.drawCentredString(400,proyecto_y - 40, vale.material_recibido_por.staff.first_name +' '+vale.material_recibido_por.staff.last_name)
-    else:
-        c.drawCentredString(400,proyecto_y - 40, '')
-
-    #c.line(240, high-200, 310, high-200)
-    c.drawCentredString(280,proyecto_y - 30,'Autorizó')
-    c.drawCentredString(280,proyecto_y - 40, vale.solicitud.staff.staff.first_name + ' ' + vale.solicitud.staff.staff.last_name)
-
-    c.setFont('Helvetica',10)
-    c.setFillColor(prussian_blue)
-    c.setFont('Helvetica', 9)
-    c.setFillColor(black)
-
-    c.setFillColor(prussian_blue)
-    c.rect(20,proyecto_y - 65,565,20, fill=True, stroke=False)
-    c.setFillColor(white)
-
+    
     width, height = letter
     table = Table(data, colWidths=[1.5 * cm, 6.5 * cm, 2.0 * cm, 2.0 * cm, 2.0 * cm, 2.0 * cm, 2.0 * cm, 2.0 * cm])
     table.setStyle(TableStyle([ #estilos de la tabla
@@ -2140,8 +2096,54 @@ def render_salida_pdf(request, pk):
         ('TEXTCOLOR',(0,1),(-1,-1), colors.black),
         ('FONTSIZE',(0,1),(-1,-1), 6),
         ]))
-    table.wrapOn(c, width, height)
-    table.drawOn(c, 20, high)
+    # 1) Decidimos el "top" donde quieremos que INICIE la tabla (debajo del bloque azul o debajo del encabezado)
+    top_table_y = proyecto_y - 85   # ajusta este margen a tu gusto
+   
+    # 2) Calculamos alto real
+    tw, th = table.wrap(width - 40, height)
+    # 3) Dibuja usando esquina inferior = top - alto
+    table.drawOn(c, 20, top_table_y - th)
+
+    gap_after_table = 25
+    proyecto_y = top_table_y - th - gap_after_table  # aquí anclas tu bloque 
+
+    # ---- tu bloque original usando proyecto_y ----
+    c.setFillColor(prussian_blue)
+    c.rect(20, proyecto_y - 5, 250, 20, fill=True, stroke=False)
+
+    c.setFillColor(colors.white)
+    c.setFont('Helvetica-Bold', 10)
+    c.drawCentredString(70,  proyecto_y, 'Proyecto')
+    c.drawCentredString(165, proyecto_y, 'Subproyecto')
+
+    c.setFillColor(colors.black)
+    c.setFont('Helvetica', 8)
+    c.drawCentredString(70,  proyecto_y - 15, str(vale.solicitud.proyecto.nombre))
+    c.drawCentredString(165, proyecto_y - 15, str(vale.solicitud.subproyecto.nombre))
+
+    # Firmas (igual que ya lo tienes, pero basadas en proyecto_y)
+    c.setFont('Helvetica', 8)
+    c.drawCentredString(150, proyecto_y - 30, 'Entregó')
+    c.drawCentredString(150, proyecto_y - 40, vale.almacenista.staff.first_name +' '+vale.almacenista.staff.last_name)
+
+    c.line(370, proyecto_y - 20, 430, proyecto_y - 20)
+    c.drawCentredString(400, proyecto_y - 30, 'Recibió')
+    c.drawCentredString(400, proyecto_y - 40,
+        (vale.material_recibido_por.staff.first_name +' '+vale.material_recibido_por.staff.last_name)
+        if vale.material_recibido_por else ''
+    )
+
+    c.drawCentredString(280, proyecto_y - 30, 'Autorizó')
+    c.drawCentredString(280, proyecto_y - 40, vale.solicitud.staff.staff.first_name + ' ' + vale.solicitud.staff.staff.last_name)
+
+    # Franja azul final debajo de firmas
+    c.setFillColor(prussian_blue)
+    c.rect(20, proyecto_y - 65, 565, 20, fill=True, stroke=False)
+
+
+
+
+   
     c.save()
     c.showPage()
     buf.seek(0)
