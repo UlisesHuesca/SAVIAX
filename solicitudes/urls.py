@@ -34,6 +34,7 @@ urlpatterns = [
     path('solicitud/autorizada/<int:pk>/', views.autorizada_sol, name='solicitud-autorizada'),
     path('solicitud/cancelada/<int:pk>/', views.cancelada_sol, name='solicitud-cancelada'),
     path('inventario/', views.inventario, name='solicitud-inventario'),
+    path('inventario_producto_terminado/', views.inventario_producto_terminado, name='inventario-producto-terminado'),
     path('inventario/delete/<int:pk>/', views.inventario_delete, name='solicitud-inventario-delete'),
     path('inventario/add/', views.inventario_add, name='solicitud-inventario-add'),
     path('inventario/update/<int:pk>/', views.inventario_update_modal, name='solicitud-inventario-update-modal'),

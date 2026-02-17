@@ -561,7 +561,27 @@ def articulos_recepcion(request, pk):
 
         num_art_entregados = ArticuloComprado.objects.filter(oc=compra, entrada_completa=True).count() #Articulos completos
         articulos_recepcionados = ArticuloComprado.objects.filter(oc=compra,recepcion_completa=True)
+
+        detalle = []
+        for art in articulos_recepcionados:
+            detalle.append({
+                "codigo": art.producto.producto.articulos.producto.producto.codigo,
+                "nombre": art.producto.producto.articulos.producto.producto.nombre,
+                "cantidad": art.cantidad,   # <- ajusta si tu campo se llama distinto
+            })
+
         
+        filas_html = "".join(
+            f"""
+            <tr>
+                <td style="border:1px solid #ddd; padding:8px;">{d['codigo']}</td>
+                <td style="border:1px solid #ddd; padding:8px;">{d['nombre']}</td>
+                <td style="border:1px solid #ddd; padding:8px; text-align:right;">{d['cantidad']}</td>
+            </tr>
+            """
+            for d in detalle
+        )
+
         num_art_recepcionados = articulos_recepcionados.count()
         if num_art_comprados == num_art_recepcionados:
             compra.recepcion_completa = True #Define la OC como recepcion completa
@@ -599,6 +619,18 @@ def articulos_recepcion(request, pk):
                                             Estás recibiendo este correo porque tu OC <strong>{compra.get_folio}</strong> | RQ: <strong>{compra.req.folio}</strong> |Sol: <strong>{compra.req.orden.folio}</strong> ha sido recibida en el módulo de recepción por el 
                                             <strong>Departamento de Compras.</strong>
                                         </p>
+                                        <table width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse; font-size:14px;">
+                                            <thead>
+                                                <tr style="background:#0B2D4A; color:#fff;">
+                                                    <th style="border:1px solid #ddd; padding:8px; text-align:left;">Código</th>
+                                                    <th style="border:1px solid #ddd; padding:8px; text-align:left;">Producto</th>
+                                                    <th style="border:1px solid #ddd; padding:8px; text-align:right;">Cantidad</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {filas_html}
+                                            </tbody>
+                                        </table>
                                         <p style="font-size: 16px; text-align: justify;">
                                             El siguiente paso del sistema: Entrada por parte del Almacén.
                                         </p>
@@ -618,7 +650,7 @@ def articulos_recepcion(request, pk):
         </html>
         """
         # 1) Obtener correos de almacenistas
-        almacenistas = Profile.objects.filter(tipo__almacenista=True)
+        almacenistas = Profile.objects.filter(tipo__almacenista=True, activo=True)
 
         correos_almacenistas = list(
             almacenistas.values_list('staff__email', flat=True)
@@ -628,7 +660,7 @@ def articulos_recepcion(request, pk):
         correos_fijos = [
             compra.req.orden.staff.staff.email,
             compra.creada_por.staff.email,
-            'ulises_huesc@hotmail.com',
+            'ulises.huesca@grupovordcab.com',
         ]
 
         # 3) Unir todo
@@ -637,8 +669,9 @@ def articulos_recepcion(request, pk):
         # (opcional pero recomendado) eliminar duplicados
         destinatarios = list(set(destinatarios))
         try:
+            print(destinatarios)
             email = EmailMessage(
-                f'OC Autorizada {compra.get_folio}|RQ: {compra.req.folio} |Sol: {compra.req.orden.folio}',
+                f'Desarrollo SAVIA. Información Recepción| SAVIA | OC Autorizada {compra.get_folio}|RQ: {compra.req.folio} |Sol: {compra.req.orden.folio}',
                 body=html_message,
                 from_email = settings.DEFAULT_FROM_EMAIL,
                 to= destinatarios,
@@ -1846,7 +1879,7 @@ def productos_terminados_salida(request):
 
 def terminado_salida_editar_cliente(request, pk):
     entrada = get_object_or_404(EntradaArticulo, id=pk)
-    producto = entrada.producto_terminado
+    producto = entrada
 
     if request.method == 'POST':
         cliente = request.POST.get('cliente')
@@ -1856,8 +1889,13 @@ def terminado_salida_editar_cliente(request, pk):
         producto.save()
         messages.success(request, 'Datos del cliente agregados exitosamente.')
         return HttpResponse(status=204)
+    
+    context = {
+        'producto': producto,
+    }
 
-    return render(request, 'entradas/terminado_salida_editar_cliente.html', {'producto': producto})
+
+    return render(request, 'entradas/terminado_salida_editar_cliente.html', context)
 
 @login_required(login_url='user-login')
 def validar_entrada_terminado(request, pk):

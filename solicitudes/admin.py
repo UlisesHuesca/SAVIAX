@@ -28,3 +28,5 @@ admin.site.register(Operacion)
 
 admin.site.register(Status_Subproyecto, Status_SubproyectoAdmin)
 
+
+

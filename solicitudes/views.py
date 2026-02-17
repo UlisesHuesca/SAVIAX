@@ -938,6 +938,97 @@ def inventario(request):
     return render(request,'dashboard/inventario.html', context)
 
 @login_required(login_url='user-login')
+def inventario_producto_terminado(request):
+    sql_apartadas = """SELECT 
+    dashboard_inventario.id AS id,
+    SUM(dashboard_articulosparasurtir.cantidad) AS total_cantidad_por_surtir
+    FROM
+        dashboard_inventario
+    JOIN
+        dashboard_articulosordenados ON dashboard_inventario.id = dashboard_articulosordenados.producto_id
+    JOIN
+        dashboard_articulosparasurtir ON dashboard_articulosordenados.id = dashboard_articulosparasurtir.articulos_id
+    WHERE
+        dashboard_articulosparasurtir.surtir = TRUE
+    GROUP BY
+        dashboard_inventario.id; """
+
+    sql_entradas = """SELECT 
+    dashboard_inventario.id AS id,
+        SUM(entradas_entradaarticulo.cantidad_por_surtir) AS total_entradas_por_surtir
+    FROM
+        dashboard_inventario
+    JOIN
+        dashboard_product ON dashboard_inventario.producto_id = dashboard_product.id
+    JOIN
+        dashboard_articulosordenados ON dashboard_inventario.id = dashboard_articulosordenados.producto_id
+    JOIN
+        dashboard_articulosparasurtir ON dashboard_articulosordenados.id = dashboard_articulosparasurtir.articulos_id
+    JOIN
+        requisiciones_articulosrequisitados ON dashboard_articulosparasurtir.id = requisiciones_articulosrequisitados.producto_id
+    JOIN
+        compras_articulocomprado ON requisiciones_articulosrequisitados.id = compras_articulocomprado.producto_id
+    JOIN
+        entradas_entradaarticulo ON compras_articulocomprado.id = entradas_entradaarticulo.articulo_comprado_id
+    WHERE 
+        dashboard_inventario.complete = TRUE AND
+        dashboard_product.servicio = FALSE AND
+        dashboard_product.gasto = FALSE
+    GROUP BY
+        dashboard_inventario.id;
+    """
+
+    resultados_sql_apartadas = Inventario.objects.raw(sql_apartadas)
+    resultados_sql_entradas = Inventario.objects.raw(sql_entradas)
+    dict_resultados = {r.id: r.total_cantidad_por_surtir for r in resultados_sql_apartadas}
+    dict_entradas = {r.id: r.total_entradas_por_surtir for r in resultados_sql_entradas}
+    perfil = Profile.objects.get(staff=request.user)
+    existencia = Inventario.objects.filter(
+        complete=True,
+        producto__servicio = False, 
+        producto__gasto = False,
+        producto__familia__nombre="PRODUCTO TERMINADO",
+        cantidad__gt=0
+        ).order_by('producto__codigo')
+
+    if perfil.tipo.nombre == 'Admin' or perfil.tipo.nombre == 'SuperAdm':
+        perfil_flag = True
+    else:
+        perfil_flag = False
+
+    valor_inv = 0
+    for inv in existencia:
+        inv.total_entradas = dict_entradas.get(inv.id,0)
+        inv.total_apartado = dict_resultados.get(inv.id,0) #2 ciclos for uno para calcular el valor del inventario
+        valor_inv += (inv.cantidad + inv.total_apartado) * inv.price # y otro para calcular los apartados
+   
+
+    myfilter = InventarioFilter(request.GET, queryset=existencia)
+    existencia = myfilter.qs
+
+    #Set up pagination
+    p = Paginator(existencia, 50)
+    page = request.GET.get('page')
+    existencia_list = p.get_page(page)
+
+    cuenta_productos = existencia.count()
+
+    if request.method =='POST' and 'btnExcel' in request.POST:
+        return convert_excel_inventario(existencia, valor_inv, dict_entradas, dict_resultados)
+
+    context = {
+        'cuenta_productos':cuenta_productos,
+        'perfil_flag':perfil_flag,
+        'existencia': existencia,
+        'myfilter': myfilter,
+        'existencia_list':existencia_list,
+        #'entradas':entradas,
+        'valor_inv': valor_inv,
+        }
+
+    return render(request,'dashboard/inventario.html', context)
+
+@login_required(login_url='user-login')
 def ajuste_inventario(request):
     usuario = Profile.objects.get(staff__id=request.user.id)
     productos_sel = Inventario.objects.filter(complete=True, producto__servicio = False, producto__gasto = False)

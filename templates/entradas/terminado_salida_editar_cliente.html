@@ -1,5 +1,6 @@
 {% extends 'partials/base_w_nav.html' %}
 {% load crispy_forms_tags %}
+{% load l10n %}
 <html>
 <head>
     {% block title %}Editar Cliente{% endblock %}
@@ -16,7 +17,7 @@
             <div class="modal-body" style="color:white">
                 <div>
                     <h6 class="modal-title">Producto: {{producto.producto_terminado.producto.producto.nombre}}</h6>
-                    <h6 class="modal-title">Entrada Articulo: {{producto.id}}</h6>
+                    <h6 class="modal-title">Entrada Articulo: {{producto.id|unlocalize}}</h6>
                     <br>
                     {% csrf_token %}
                     <table class="table table-dark table-striped mx-3">
