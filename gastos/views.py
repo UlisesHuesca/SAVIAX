@@ -786,6 +786,7 @@ def gasto_entrada(request, pk):
                 area = Operacion.objects.get(nombre="GASTO")
                 orden_producto.area = area
                 orden_producto.complete = True
+                orden_producto.save()
                 destinatarios = list(Profile.objects.filter(tipo__almacen=True).values_list('staff__email', flat=True))
 
                 destinatarios.extend(['ulises_huesc@hotmail.com', articulo_gasto.staff.staff.email])
@@ -811,7 +812,7 @@ def gasto_entrada(request, pk):
                     #producto_inventario.save()
                     producto_inventario._change_reason = f'Esta es una entrada desde un gasto {item_producto.id}'
                     producto_inventario.save()
-                orden_producto.save()
+               
                 try:
                     email = EmailMessage(
                         subject=f'Entrada de producto por gasto: {articulo_gasto.producto.producto.nombre} |Gasto: {articulo_gasto.gasto.folio}|Solicitud:{orden_producto.folio}',
