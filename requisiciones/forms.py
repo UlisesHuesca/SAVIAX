@@ -21,6 +21,11 @@ class ValeSalidasForm(forms.ModelForm):
         model = ValeSalidas
         fields = ['material_recibido_por']
 
+class ValeSalidasForm_Ext(forms.ModelForm):
+    class Meta:
+        model = ValeSalidas
+        fields = ['cliente','destino']
+
 class ValeSalidasProyForm(forms.ModelForm):
     class Meta:
         model = ValeSalidas

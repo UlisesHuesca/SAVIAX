@@ -9,6 +9,7 @@ urlpatterns = [
     #path('sol_autorizadas/producto_terminado', views.salidas_producto_terminado, name='salida-producto-terminado'),
     path('sol_autorizadas_pendientes/', views.solicitudes_autorizadas_pendientes, name='solicitudes-autorizadas-pendientes'),
     path('salida_material/<int:pk>/', views.salida_material, name='salida-material'),
+    path('salida_material_externo/<int:pk>/', views.salida_material_externo, name='salida-material-externo'),
     path('devolucion_material/<int:pk>/', views.devolucion_material, name='devolucion-material'),
     path('devolucion_salida/<int:pk>/', views.devolucion_material_salida, name='devolucion-material-salida'),
     path('devolucion/matriz_autorizar', views.matriz_autorizar_devolucion, name='matriz-autorizar-devolucion'),

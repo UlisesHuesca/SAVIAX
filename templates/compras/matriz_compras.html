@@ -196,6 +196,7 @@
                     <th class="d-none d-lg-table-cell">Status Autorización</th>
                     <th class="d-none d-lg-table-cell">Días de Entrega</th>
                     <th scope="col">Documentos</th>
+                    <th>Ver OC</th>
                     {% if usuario.tipo.nombre == "Admin" %}
                     <th>Devolver</th>
                     {% endif %}
@@ -236,6 +237,28 @@
                                 <a type="button" class="btn btn-outline-info" href="{% url 'oc-pdf' compra.id%}"><i class="fa-solid fa-file-pdf fa-2xl"></i></a>
                             </li>
                         </ul>
+                    </td>
+                    <td>
+                        <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#pdfModal" data-pdf-url="{% url 'ver_oc_pdf' compra.id %}">
+                            Ver PDF
+                        </button>
+
+                        <!-- Modal -->
+                        <div class="modal fade" id="pdfModal" tabindex="-1" aria-hidden="true">
+                            <div class="modal-dialog modal-xl modal-dialog-centered">
+                                <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title">Orden de compra</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                </div>
+
+                                <div class="modal-body" style="height:80vh;">
+                                    <iframe id="pdfFrame" src="" style="width:100%; height:100%; border:0;"></iframe>
+                                </div>
+                                </div>
+                            </div>
+                        </div>
+
                     </td>
                     <td>
                         {% if compra.pagada == False %}
@@ -293,6 +316,17 @@ dataSpyList.forEach(function (dataSpyEl) {
   bootstrap.ScrollSpy.getInstance(dataSpyEl)
     .refresh()
 })
+
+
+document.getElementById('pdfModal').addEventListener('show.bs.modal', function (event) {
+  const button = event.relatedTarget;
+  const url = button.getAttribute('data-pdf-url');
+  document.getElementById('pdfFrame').src = url;
+});
+
+document.getElementById('pdfModal').addEventListener('hidden.bs.modal', function () {
+  document.getElementById('pdfFrame').src = ""; // limpia
+});
 
 // Función para obtener el valor de una cookie por su nombre
 function getCookie(name) {

@@ -1,5 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
+from django.views.decorators.clickjacking import xframe_options_sameorigin
 from django.http import JsonResponse, HttpResponse, FileResponse
 from django.contrib import messages
 from django.core.paginator import Paginator
@@ -1615,6 +1616,16 @@ def descargar_pdf(request, pk):
     compra = get_object_or_404(Compra, id=pk)
     buf = generar_pdf(compra)
     return FileResponse(buf, as_attachment=True, filename='oc_' + str(compra.id) + '.pdf')
+
+@xframe_options_sameorigin
+def ver_oc_pdf(request, compra_id):
+    compra = get_object_or_404(Compra, pk=compra_id)
+    buf = generar_pdf(compra)  # tu función
+    filename = f"OC_{compra.get_folio}.pdf"
+
+    resp = FileResponse(buf, content_type="application/pdf")
+    resp["Content-Disposition"] = f'inline; filename="{filename}"'
+    return resp
 
 
 def preevaluacion_pdf(request, pk):

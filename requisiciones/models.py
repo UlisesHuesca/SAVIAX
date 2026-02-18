@@ -92,7 +92,8 @@ class ValeSalidas(models.Model):
     created_at = models.DateField(auto_now_add=True)
     complete = models.BooleanField(null=True, default=False)
     firmado = models.BooleanField(null=True, default=False)
-    
+    cliente = models.CharField(max_length=150, blank=True, null=True)
+    destino = models.CharField(max_length=150, blank=True, null=True)
 
     @property
     def get_costo_vale(self):
@@ -123,6 +124,7 @@ class Salidas(models.Model):
     activo = models.ForeignKey(Activo, on_delete = models.CASCADE, null=True, blank=True)
     referencia = models.CharField(max_length=50, null=True, blank=True)
     cliente = models.CharField(max_length=150, blank=True, null=True)
+    #destino = models.CharField(max_length=150, blank=True, null=True)
     
     @property
     def get_costo_salida(self):

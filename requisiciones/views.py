@@ -26,7 +26,7 @@ from .models import ArticulosRequisitados, Requis, Devolucion, Devolucion_Articu
 from entradas.models import Entrada, EntradaArticulo
 from requisiciones.models import Salidas, ValeSalidas
 from .filters import ArticulosparaSurtirFilter, SalidasFilter, EntradasFilter, DevolucionFilter, RequisFilter, Historical_Articulos_surtir_Filter
-from .forms import SalidasForm, ArticulosRequisitadosForm, ValeSalidasForm, ValeSalidasProyForm, RequisForm, Rechazo_Requi_Form, DevolucionArticulosForm, DevolucionForm
+from .forms import SalidasForm, ArticulosRequisitadosForm, ValeSalidasForm, ValeSalidasProyForm, RequisForm, Rechazo_Requi_Form, DevolucionArticulosForm, DevolucionForm, ValeSalidasForm_Ext
 from solicitudes.filters import SolicitudesFilter
 from tesoreria.models import Pago
 
@@ -547,6 +547,88 @@ def salida_material(request, pk):
         }
 
     return render(request, 'requisiciones/salida_material.html',context)
+
+
+@login_required(login_url='user-login')
+def salida_material_externo(request, pk):
+    print('salida_externo')
+    usuario = Profile.objects.get(staff__id=request.user.id)
+    orden = Order.objects.get(id = pk)
+    productos= ArticulosparaSurtir.objects.filter(articulos__orden = orden, surtir=True)
+    vale_salida, created = ValeSalidas.objects.get_or_create(almacenista = usuario,complete = False,solicitud=orden)
+    salidas = Salidas.objects.filter(vale_salida = vale_salida)
+    cantidad_items = salidas.count()
+    referencias_existentes = Salidas.objects.filter(vale_salida__solicitud = orden, vale_salida__complete=True).values_list('referencia', flat=True)
+    for salida in salidas:
+        # Obtener las referencias asociadas a cada producto
+        referencias = EntradaArticulo.objects.filter(
+            articulo_comprado__oc__req__orden=salida.producto.articulos.orden,articulo_comprado__producto__producto__articulos__producto__producto=salida.producto.articulos.producto.producto,
+        ).exclude(referencia__in=referencias_existentes).values_list('referencia', flat=True)
+
+        # Agregar las referencias al producto (puedes almacenar esto en una lista o agregarlo como un atributo)
+        salida.referencias = list(referencias)
+        
+    formVale = ValeSalidasForm_Ext()
+    form = SalidasForm()
+    users = Profile.objects.all()
+
+    if request.method == 'POST':
+        formVale = ValeSalidasForm_Ext(request.POST, instance=vale_salida)
+
+        falta_referencia_critica = False 
+
+        # Iterar sobre las salidas para asignar las referencias seleccionadas y verificar
+        for salida in salidas:
+            referencia_seleccionada = request.POST.get(f'referencia_{salida.id}', None)
+
+            if referencia_seleccionada:
+                salida.referencia = referencia_seleccionada
+                #Para limpiar el dato si es que no se selecciona nada
+            else:
+                salida.referencia = None
+            salida.save()
+            critico = getattr(salida.producto.articulos.producto.producto, 'critico', None)
+            # Verificar si el producto es crítico y no tiene referencia
+            if critico and getattr(critico, 'nombre', '') == 'Crítico' and not salida.referencia:
+                falta_referencia_critica = True
+        # Si falta una referencia crítica, mostrar mensaje de error
+        #if falta_referencia_critica:
+            #messages.error(request, 'Falta una referencia de asignar')
+        if formVale.is_valid():
+            vale = formVale.save(commit=False)
+            cantidad_salidas = 0
+            cantidad_productos = productos.count()
+
+            for producto in productos:
+                producto.seleccionado = False
+                if producto.cantidad == 0:
+                    producto.salida = True
+                    producto.surtir = False
+                    cantidad_salidas = cantidad_salidas + 1
+                producto.save()
+            if cantidad_productos == cantidad_salidas:
+                orden.requisitado == True #Esta variable creo que podría ser una variable estúpida
+                orden.save()
+            #vale.referencia = ref
+            vale.complete = True
+            vale.save()
+            messages.success(request,'La salida se ha generado de manera exitosa')
+            return redirect('reporte-salidas')
+        if not formVale.is_valid():
+            messages.error(request,'No capturaste el usuario')
+
+    context= {
+        'productos':productos,
+        'form':form,
+        'formVale':formVale,
+        'users': users,
+        #'disponible':disponible,
+        'vale_salida':vale_salida,
+        'cantidad_items':cantidad_items,
+        'salidas':salidas,
+        }
+
+    return render(request, 'requisiciones/salida_material_externo.html',context)
 
 @login_required(login_url='user-login')
 def devolucion_material(request, pk):

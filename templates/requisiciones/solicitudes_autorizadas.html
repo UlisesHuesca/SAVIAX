@@ -184,6 +184,7 @@
                     <th scope="col">[Apartada]</th>
                     <th class="d-none d-lg-table-cell">Status</th>
                     <th class="d-none d-lg-table-cell">Creado</th>
+                    <th>Detalle</th>
                     <th scope="col">Acción</th>
                     <th class="d-none d-lg-table-cell">Documentos</th>
                 </tr>
@@ -208,17 +209,19 @@
                     <td>{{producto.articulos.producto.producto}}</td>
                     <td>{{producto.articulos.cantidad}}</td>
                     <td>{{producto.articulos.producto.apartada}}</td>
+                    
                     {% if producto.salida == True %}
                     <td class="d-none d-lg-table-cell">Salida realizada</td>
                     {% else %}
                     <td class="d-none d-lg-table-cell">Salida no realizada aún</td>
                     {% endif %}
                     <td class="d-none d-lg-table-cell">{{producto.articulos.orden.created_at}}</td>
+                    <td> 
+                        <a type="button" class="btn btn-outline-info" data-bs-toggle="modal" data-bs-target='#dialog' hx-target="#document" hx-get="{% url 'detalle-orden' producto.articulos.orden.id %}">Detalle</a>
+                    </td>
                     <td>
                         <ul class="nav nav-pills">
-                            <li class="nav-item m-1">
-                                <a type="button" class="btn btn-outline-info" data-bs-toggle="modal" data-bs-target='#dialog' hx-target="#document" hx-get="{% url 'detalle-orden' producto.articulos.orden.id %}">Detalle</a>
-                            </li>
+                           
                             <!--<li class="nav-item mx-2">
                                 {% if orden.requisitar == True and producto.requisitar == True %}
                                 <div class='visible'>
@@ -228,15 +231,20 @@
                                     <a type="button" class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target='#dialog' hx-target="#document" hx-get="{% url 'requisicion-detalle' producto.articulos.orden.id %}">Requisitar</a>
                                 </div>
                             </li>-->
-                            <li class="nav-item m-1">
+                           
                                 {% if producto.surtir == True %}
                                 <div class='visible'>
                                 {% else %}
                                 <div class='invisible'>
                                 {% endif %}
-                                    <a type="button" class="btn btn-outline-success" href="{% url 'salida-material' producto.articulos.orden.id %}">Surtir</a>
-                                </div>
-                            </li>
+                                {% if producto.articulos.producto.producto.familia.nombre == 'PRODUCTO TERMINADO' %}
+                                <li class="nav-item m-1">
+                                    <a type="button" class="btn btn-outline-info" href="{% url 'salida-material-externo' producto.articulos.orden.id %}">Surtir Externo</a>
+                                </li>
+                                {% endif %}
+                                <li class="nav-item m-1">
+                                    <a type="button" class="btn btn-outline-success" href="{% url 'salida-material' producto.articulos.orden.id %}">Surtir Interno</a>
+                                </li>
                             <li class="nav-item m-1">
                                 <a type="button" class="btn btn-outline-danger" href="{% url 'devolucion-material' producto.articulos.orden.id %}">R<i class="fa-solid fa-backward"></i></a>
                             </li>
