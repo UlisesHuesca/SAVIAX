@@ -811,6 +811,7 @@ def gasto_entrada(request, pk):
                     #producto_inventario.save()
                     producto_inventario._change_reason = f'Esta es una entrada desde un gasto {item_producto.id}'
                     producto_inventario.save()
+                orden_producto.save()
                 try:
                     email = EmailMessage(
                         subject=f'Entrada de producto por gasto: {articulo_gasto.producto.producto.nombre} |Gasto: {articulo_gasto.gasto.folio}|Solicitud:{orden_producto.folio}',
@@ -825,7 +826,7 @@ def gasto_entrada(request, pk):
                         to = destinatarios,
                         )
                     email.send()
-                    orden_producto.save()
+                    
                 except (BadHeaderError, SMTPException, socket.gaierror) as e:
                     error_message = f'{usuario.staff.first_name}, El correo notificación no ha sido enviado debido a un error: {e}'
                     messages.warning(request, error_message)
