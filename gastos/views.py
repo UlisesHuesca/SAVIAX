@@ -786,8 +786,9 @@ def gasto_entrada(request, pk):
                 area = Operacion.objects.get(nombre="GASTO")
                 orden_producto.area = area
                 orden_producto.complete = True
-                destinatarios = Profile.objects.filter(tipo__almacen=True).values_list('staff__email', flat=True)
-                destinatarios += ['ulises_huesc@hotmail.com',articulo_gasto.staff.staff.email]
+                destinatarios = list(Profile.objects.filter(tipo__almacen=True).values_list('staff__email', flat=True))
+
+                destinatarios.extend(['ulises_huesc@hotmail.com', articulo_gasto.staff.staff.email])
                 for item_producto in productos:
                     producto_inventario = Inventario.objects.get(producto= item_producto.concepto_material.producto)
                     #productos_por_surtir = ArticulosparaSurtir.objects.filter(articulos__producto=producto_inventario, requisitar = True)
