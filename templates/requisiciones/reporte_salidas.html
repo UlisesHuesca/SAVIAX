@@ -196,7 +196,7 @@
                     <th scope="col-sm">Precio</th>
                     <!--<th scope="col-sm">Costo Vale</th>
                     <th scope="col-sm">Cliente Nombre</th>-->
-                    <th class="d-none d-lg-table-cell">Cliente</th>
+                    <!--<th class="d-none d-lg-table-cell">Cliente</th>-->
                     <th class="d-none d-lg-table-cell">Vale</th>
                     <th class="d-none d-lg-table-cell">Devolución</th>
                 </tr>
@@ -215,12 +215,18 @@
                     <td>{{salida.producto.articulos.orden.proyecto.nombre}}</td>
                     <td class="d-none d-lg-table-cell">{{salida.producto.articulos.orden.subproyecto.nombre}}</td>
                     <td>{{salida.producto.articulos.producto.producto.codigo}} {{salida.producto.articulos.producto.producto.nombre}}</td>
-                    <td class="d-none d-md-table-cell">{{salida.vale_salida.material_recibido_por.staff.first_name}} {{salida.vale_salida.material_recibido_por.staff.last_name}}</td>
-                    <td>{{salida.cantidad}}</td>
+                    <td class="d-none d-md-table-cell">
+                        {% if salida.vale_salida.material_recibido_por %}
+                            {{salida.vale_salida.material_recibido_por.staff.first_name}} {{salida.vale_salida.material_recibido_por.staff.last_name}}
+                        {% else %}
+                            {{salida.vale_salida.cliente}} - {{salida.vale_salida.destino}}
+                        {% endif %}
+                    </td>
+                    <td>{{salida.cantidad| unlocalize}}</td>
                     <td>{% if salida.precio > 0 %} {{salida.precio}} {% elif salida.producto.precio > 0 %} {{salida.producto.precio}} {% else %} {{salida.producto.articulos.producto.price}} {% endif %}</td>
                     <!--<td>{{salida.vale_salida.get_costo_vale}}</td>
                     <td>{{salida.cliente}}</td>-->
-                    <td>
+                    <!--<td>
                         <a class="btn btn-outline-info m-1" 
                         type="button" 
                         data-bs-toggle="modal" 
@@ -228,7 +234,7 @@
                         onclick="openEditModal('{{ salida.id|unlocalize }}', '{{ salida.cliente }}')">
                             <i class="fa-solid fa-user"></i>
                         </a>
-                    </td>
+                    </td>-->
                     <td class="d-none d-lg-table-cell">
                         <a type="submit" href="{% url 'vale-salida-pdf' salida.id %}" class="btn btn-outline-info btn-lg">
                             <i class="fa-solid fa-file-pdf fa-2xl"></i>
