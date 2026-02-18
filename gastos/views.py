@@ -789,6 +789,8 @@ def gasto_entrada(request, pk):
                 destinatarios = list(Profile.objects.filter(tipo__almacen=True).values_list('staff__email', flat=True))
 
                 destinatarios.extend(['ulises_huesc@hotmail.com', articulo_gasto.staff.staff.email])
+                destinatarios = [e.strip() for e in destinatarios if e and e.strip()]
+                destinatarios = list(dict.fromkeys(destinatarios))
                 for item_producto in productos:
                     producto_inventario = Inventario.objects.get(producto= item_producto.concepto_material.producto)
                     #productos_por_surtir = ArticulosparaSurtir.objects.filter(articulos__producto=producto_inventario, requisitar = True)
@@ -811,11 +813,16 @@ def gasto_entrada(request, pk):
                     producto_inventario.save()
                 try:
                     email = EmailMessage(
-                        f'Entrada de producto por gasto: {articulo_gasto.producto.producto.nombre} |Gasto: {articulo_gasto.gasto.folio}|Solicitud:{orden_producto.folio}',
-                        f'Estimado {articulo_gasto.staff.staff.first_name} {articulo_gasto.staff.staff.last_name},\n Estás recibiendo este correo porque tu producto: {articulo_gasto.producto.producto.nombre} ha sido validado por el almacenista {usuario.staff.first_name} {usuario.staff.last_name}, favor de pasar a firmar el vale de salida para terminar con este proceso.\n\n Este mensaje ha sido automáticamente generado por SAVIA VORDTEC',
-                        f'Solicitud para surtir: {orden_producto.folio}',
-                        EMAIL_HOST_USER,
-                        destinatarios,
+                        subject=f'Entrada de producto por gasto: {articulo_gasto.producto.producto.nombre} |Gasto: {articulo_gasto.gasto.folio}|Solicitud:{orden_producto.folio}',
+                        body=(
+                            f'Estimado {articulo_gasto.staff.staff.first_name} {articulo_gasto.staff.staff.last_name},\n'
+                            f'Estás recibiendo este correo porque tu producto: {articulo_gasto.producto.producto.nombre}'
+                            f'ha sido validado por el almacenista {usuario.staff.first_name} {usuario.staff.last_name}, '
+                            f'favor de pasar a firmar el vale de salida para terminar con este proceso.\n\n'
+                            f' Este mensaje ha sido automáticamente generado por SAVIA VORDTEC'
+                        ),
+                        from_email = EMAIL_HOST_USER,
+                        to = destinatarios,
                         )
                     email.send()
                     orden_producto.save()
