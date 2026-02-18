@@ -45,7 +45,7 @@
         <div class="card" id="form-wrapper">
             <div class="card-header">
                 <!-- Aquí es el encabezado de los filtros -->
-                <h3 target="">Vale de Salida</h3>
+                <h3 target="">Vale de Salida Externo</h3>
             </div>
             <div class="card-body" id="Solicitud-info">
                 <form id="myForm" method="POST" id="OrderForm" data-subproyecto-url="{% url 'ajax_load_subproyectos' %}">
@@ -192,8 +192,9 @@
                 </div>
                 </form>
             </div>
-            <hr>
-            <h5>Artículos: {{cantidad_items}}</h5>
+            <div class="card-footer">
+                <h5>Artículos: {{cantidad_items}}</h5>
+            </div>
         </div>
     </div>
     <div class="modal fade" id="dialog" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" role="dialog">
