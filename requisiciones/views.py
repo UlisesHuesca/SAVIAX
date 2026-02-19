@@ -2106,6 +2106,7 @@ def render_salida_pdf(request, pk):
     articulo = Salidas.objects.get(id=pk)
     vale = ValeSalidas.objects.get(id = articulo.vale_salida.id)
     productos = Salidas.objects.filter(vale_salida = vale)
+    
     styles = getSampleStyleSheet()
     styles['BodyText'].fontSize = 6
 
@@ -2214,18 +2215,18 @@ def render_salida_pdf(request, pk):
 
     # Firmas (igual que ya lo tienes, pero basadas en proyecto_y)
     c.setFont('Helvetica', 8)
-    c.drawCentredString(150, proyecto_y - 30, 'Entregó')
-    c.drawCentredString(150, proyecto_y - 40, vale.almacenista.staff.first_name +' '+vale.almacenista.staff.last_name)
+    c.drawCentredString(100, proyecto_y - 30, 'Entregó')
+    c.drawCentredString(100, proyecto_y - 40, vale.almacenista.staff.first_name +' '+vale.almacenista.staff.last_name)
 
-    c.line(370, proyecto_y - 20, 430, proyecto_y - 20)
-    c.drawCentredString(400, proyecto_y - 30, 'Recibió')
-    c.drawCentredString(400, proyecto_y - 40,
-        (vale.material_recibido_por.staff.first_name +' '+vale.material_recibido_por.staff.last_name)
-        if vale.material_recibido_por else ''
-    )
+    #c.line(370, proyecto_y - 20, 430, proyecto_y - 20)
+    c.drawCentredString(500, proyecto_y - 30, 'Recibió')
+    if vale.material_recibido_por:
+        c.drawCentredString(500, proyecto_y - 40,vale.material_recibido_por.staff.first_name +' '+vale.material_recibido_por.staff.last_name)
+    elif vale.cliente:
+        c.drawCentredString(500, proyecto_y - 40, str(vale.cliente+ ' ' + vale.destino))
 
-    c.drawCentredString(280, proyecto_y - 30, 'Autorizó')
-    c.drawCentredString(280, proyecto_y - 40, vale.solicitud.staff.staff.first_name + ' ' + vale.solicitud.staff.staff.last_name)
+    c.drawCentredString(300, proyecto_y - 30, 'Autorizó')
+    c.drawCentredString(300, proyecto_y - 40, vale.solicitud.staff.staff.first_name + '--' + vale.solicitud.staff.staff.last_name)
 
     # Franja azul final debajo de firmas
     c.setFillColor(prussian_blue)
