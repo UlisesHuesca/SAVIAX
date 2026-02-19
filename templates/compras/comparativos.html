@@ -9,7 +9,6 @@
 </head>
 <body>
 {% block content %}
-<hr>
 <div class = "row mt-2 bg-white">
     <ul class="nav nav-pills" >
         <li class="nav-item mx-2 pl-5">
@@ -24,6 +23,7 @@
         </li>
     </ul>
 </div>
+<h6>&nbsp;</h6>
 
 
 
@@ -56,22 +56,24 @@
 </div>
 {% if usuario.tipo.comprador == True %}
 <div class="row">
-    <div class="card text-center" style="width: 15rem;">
-        <div class="card-header">
-            <h5 class="card-title">Acciones</h5>
-        </div>
-        <div class="card-body">
-        <ul class="nav nav-pills">
-            <li class="nav-item mx-2">      
-            <a type="button" class="btn btn-outline-info" href="{% url 'crear_comparativo' %}"><i class="fa-solid fa-plus"></i> Comparativo</a>
-            </li>
-        </ul>
-        </div>
-        <div class="card-footer text-muted">
-            
+    <div class="col-lg-2 col-sm-12">
+        <div class="card" >
+            <div class="card-header">
+                <h5 class="card-title text-center">Acciones</h5>
+            </div>
+            <div class="card-body">
+                <ul class="nav nav-pills">
+                    <li class="nav-item mx-2">      
+                    <a type="button" class="btn btn-outline-info" href="{% url 'crear_comparativo' %}"><i class="fa-solid fa-plus"></i> Comparativo</a>
+                    </li>
+                </ul>
+            </div>
+            <div class="card-footer text-muted">
+                
+            </div>
         </div>
     </div>
-    <div class="col-10">
+    <div class="col-sm-10">
         <div class="card">
             <div class="card-header">
                 <h5 class="card-title">Filtros</h5>
@@ -174,7 +176,8 @@
                     <th>Cotización 2</th>
                     <th>Cotización 3</th>
                     <th>Editar</th>
-                    <th scope="col">Acción</th>
+                    <th>Detalle</th>
+                    <!--<th scope="col">Acción</th>-->
                     
                 </tr>
             </thead>
@@ -221,6 +224,7 @@
                             </li>
                         </ul>
                     </td>
+                
                 </tr>
                 {% endfor %}
             </tbody>
@@ -257,7 +261,7 @@
 
 <!--Este es el modal-->
 <div class="modal fade" id ="dialog" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" role="dialog">
-    <div class="modal-dialog modal-lg-12 modal-dialog-centered" id="document" role="document" hx-target="this">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable" style="--bs-modal-width:95vw" id="document" hx-target="this">
 
     </div>
 </div>

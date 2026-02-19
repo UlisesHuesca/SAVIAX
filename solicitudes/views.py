@@ -1980,7 +1980,7 @@ def solicitud_productos_terminados(request):
     proyectos = Proyecto.objects.filter(activo = True)
     subproyectos = Subproyecto.objects.all()
 
-    last_order = Order.objects.filter(tipo=tipo, complete = True).order_by('last_folio_number').first()
+    last_order = Order.objects.filter(tipo=tipo, complete = True).order_by('-folio').first()
 
     proyecto_para_select2 = [
         {
@@ -2008,7 +2008,7 @@ def solicitud_productos_terminados(request):
             if last_order is None:
                 folio_number = 1
             else:
-                folio_number = last_order.last_folio_number + 1
+                folio_number = last_order.folio + 1
             solicitud.complete = True
             solicitud.created_at = datetime.now()
             solicitud.created_at_time = datetime.now().time()
