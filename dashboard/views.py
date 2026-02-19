@@ -1066,7 +1066,7 @@ def add_product(request):
     error_messages = {}
 
     if request.method =='POST':
-        form = AddProduct_Form(request.POST, request.FILES or None, instance = item)
+        form = ProductForm(request.POST, request.FILES or None, instance = item)
         if form.is_valid():
             item = form.save(commit = False)
             item.completado = True
@@ -1124,7 +1124,7 @@ def add_product(request):
             for field, errors in form.errors.items():
                 error_messages[field] = errors.as_text()
     else:
-        form = AddProduct_Form()
+        form = ProductForm()
 
 
     context = {

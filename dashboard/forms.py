@@ -32,7 +32,7 @@ class PrecioMax_Form(forms.ModelForm):
 class AddProduct_Form(forms.ModelForm):
     class Meta:
         model = Product
-        fields = ['nombre','unidad','familia','subfamilia','iva','caducidad','activo','servicio','image','gasto','critico','especs','preevaluacion', 'descripcion_especifica']
+        fields = ['nombre','unidad','familia','subfamilia','iva','caducidad','activo','servicio','image','gasto','critico','especs','preevaluacion', 'descripcion_especifica','baja_item']
 
 #Sobreescribiendo el método __init__ y configurando el queryset para que esté vacío
     def __init__(self, *args, **kwargs):
