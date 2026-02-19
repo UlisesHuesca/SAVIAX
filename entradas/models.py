@@ -8,7 +8,7 @@ from dashboard.models import Proyecto, Subproyecto, Inventario, Solicitud_Produc
 class Entrada(models.Model):
     almacenista = models.ForeignKey(Profile, on_delete = models.CASCADE, null=True, blank=True)
     oc = models.ForeignKey(Compra, on_delete = models.CASCADE, null=True, related_name = 'vale_entrada', blank=True)
-    solicitud = models.ForeignKey(Solicitud_Producto_Terminado, on_delete = models.CASCADE, null=True, related_name = 'soliciutd_entrada', blank=True)
+    #solicitud = models.ForeignKey(Solicitud_Producto_Terminado, on_delete = models.CASCADE, null=True, related_name = 'soliciutd_entrada', blank=True)
     orden = models.ForeignKey(Order, on_delete = models.CASCADE, null=True, related_name='orden_entrada', blank=True)
     comentario = models.CharField(max_length=250, null=True, blank=True)
     entrada_date = models.DateField(null=True, blank=True)
