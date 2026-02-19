@@ -24,7 +24,7 @@ class EntradaArticulo(models.Model):
     cantidad = models.DecimalField(max_digits=14, decimal_places=2, default=0)
     cantidad_por_surtir = models.DecimalField(max_digits=14, decimal_places=2, null=True) #Cambié el dafault de 0 porque eso es lo que considera la view para llenar este campo
     articulo_comprado = models.ForeignKey(ArticuloComprado, on_delete = models.CASCADE, null=True, blank=True)
-    producto_terminado = models.ForeignKey(Productos_Solicitud_Terminado, on_delete = models.CASCADE, null=True,blank=True)
+    producto_terminado = models.ForeignKey(Productos_Solicitud_Terminado, on_delete=models.SET_NULL, null=True,blank=True)
     articulo_terminado = models.ForeignKey(ArticulosOrdenados, null=True, blank=True,on_delete=models.SET_NULL)
     fecha_caducidad = models.DateField(null=True, blank=True) 
     history = HistoricalRecords(history_change_reason_field=models.TextField(null=True))
