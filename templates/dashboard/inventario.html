@@ -105,9 +105,10 @@
             {% endif %}
         </div>
         <div class="card my-2 mx-1">
-            <div class="card card-body">
+            <div class="card-header">
                 <h5>Filtro Inventario</h5>
-                <hr>
+            </div>
+            <div class="card-body">
                 {% csrf_token %}
                 <form method="GET">
                 <div class="row g-12">
@@ -162,7 +163,6 @@
                         <button class="btn btn-outline-success btn-block my-2 btn-lg" type="submit" value="Buscar"><i class="fa-solid fa-magnifying-glass"></i></button>
                     </div>
                 </div>
-                <hr>
                 </form>
             </div>
         </div>
@@ -206,7 +206,7 @@
                                     <td>{{producto.estante}}</td>
                                     {% endif %}
                                     <td>{{producto.cantidad|unlocalize}}</td>
-                                    <td>{{producto.apartada}}</td>
+                                    <td>{{producto.apartada|unlocalize}}</td>
                                     <td>{{producto.cantidad_entradas}}</td>
                                     <td>{{producto.price}}</td>
                                     <td>{{producto.get_total_producto}}</td>
