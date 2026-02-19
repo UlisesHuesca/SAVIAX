@@ -128,6 +128,7 @@
                     <th scope="col">Fecha entrada</th>
                     <th scope="col">Comentario</th>
                     <th scope="col">Fecha caducidad</th>
+                    <th>Días restantes</th>
                     <th scope="col">Almacenista</th>
                 </tr>
             </thead>
@@ -139,8 +140,8 @@
                     <td>{{entrada.entrada.oc.req.orden.id}}</td>
                     <td scope="col">{{entrada.articulo_comprado.producto.producto.articulos.producto.producto.nombre}}</th>
                     <td scope="col">{{entrada.entrada.oc.proveedor.nombre}}</td>
-                    <td scope="col">{{entrada.cantidad}}</td>
-                    <td scope="col">{{entrada.cantidad_por_surtir}}</td>
+                    <td scope="col">{{entrada.cantidad|unlocalize}}</td>
+                    <td scope="col">{{entrada.cantidad_por_surtir|unlocalize}}</td>
                     <td>{{entrada.entrada.entrada_date}}</td>
                     {% if entrada.comentario is None %}
                         <td></td>
@@ -148,6 +149,7 @@
                         <td>{{entrada.entrada.comentario}}</td>
                     {% endif %}
                     <td>{{entrada.fecha_caducidad}} </td>
+                    <td>{% if entrada.dias_restantes > 50 %}<span class="badge bg-primary">{{entrada.dias_restantes}}</span>{% else %}<span class="badge bg-danger">{{entrada.dias_restantes}}</span>{% endif %}</td>
                     <td>{{entrada.entrada.almacenista.staff.first_name}} {{entrada.entrada.almacenista.staff.last_name}}</td>
                 </tr>
                 {% endfor %}

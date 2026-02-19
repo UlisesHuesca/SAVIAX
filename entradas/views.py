@@ -1598,8 +1598,11 @@ def entradas_con_caducidad(request):
     page = request.GET.get('page')
     entradas_list = p.get_page(page)
 
+    for e in entradas_list:
+        e.dias_restantes = (e.fecha_caducidad - date.today()).days
+
+
     if request.method == "POST" and 'btnExcel' in request.POST:
-        print('hola')
         return convert_caducidad_to_xls2(entradas)
     
     context = {
