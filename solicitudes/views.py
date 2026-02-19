@@ -2005,7 +2005,7 @@ def solicitud_productos_terminados(request):
 
         if form.is_valid():
             solicitud = form.save(commit=False)
-            if not last_order is None:
+            if not last_order:
                 folio_number = 1
             else:
                 folio_number = int(last_order.folio) + 1
