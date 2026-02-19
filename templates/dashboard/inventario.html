@@ -2,6 +2,7 @@
 {% load crispy_forms_tags %}
 {% load widget_tweaks %}
 {% load tt_extras %}
+{% load l10n %}
 <html>
 <head>
 {% block title %}Página de Inventario{% endblock %}
@@ -188,33 +189,35 @@
                     </thead>
                     <tbody>
                         {% for producto in existencia_list %}
-                        <tr>
-                            <th scope="row">{{producto.producto.codigo}}</th>
-                            <td>{{producto.producto.nombre}}</td>
-                            <td>{{producto.producto.unidad}}</td>
-                            <td>{{producto.producto.familia}}</td>
-                            {% if producto.ubicacion == None %}
-                            <td></td>
-                            {% else %}
-                            <td>{{producto.ubicacion}}</td>
-                            {% endif %}
-                            {% if producto.estante == None %}
-                            <td></td>
-                            {% else %}
-                            <td>{{producto.estante}}</td>
-                            {% endif %}
-                            <td>{{producto.cantidad}}</td>
-                            <td>{{producto.apartada}}</td>
-                            <td>{{producto.cantidad_entradas}}</td>
-                            <td>{{producto.price}}</td>
-                            <td>{{producto.get_total_producto}}</td>
-                            <td>{{producto.minimo}}</td>
-                            {% if usuario.tipo.nombre == "Superintendente" %}
-                            <td></td>
-                            {% else %}
-                            <td><a class="btn btn-outline-info" id="btnActualizar" type="button" data-bs-toggle="modal" data-bs-target="#dialog" hx-target="#document" hx-get="{% url 'solicitud-inventario-update-modal' producto.id %}"><i class="fa-solid fa-pen-to-square"></i></a>
-                            {% endif %}
-                        </tr>
+                          
+                                <tr>
+                                    <th scope="row">{{producto.producto.codigo}}</th>
+                                    <td>{{producto.producto.nombre}}</td>
+                                    <td>{{producto.producto.unidad}}</td>
+                                    <td>{{producto.producto.familia}}</td>
+                                    {% if producto.ubicacion == None %}
+                                    <td></td>
+                                    {% else %}
+                                    <td>{{producto.ubicacion}}</td>
+                                    {% endif %}
+                                    {% if producto.estante == None %}
+                                    <td></td>
+                                    {% else %}
+                                    <td>{{producto.estante}}</td>
+                                    {% endif %}
+                                    <td>{{producto.cantidad|unlocalize}}</td>
+                                    <td>{{producto.apartada}}</td>
+                                    <td>{{producto.cantidad_entradas}}</td>
+                                    <td>{{producto.price}}</td>
+                                    <td>{{producto.get_total_producto}}</td>
+                                    <td>{{producto.minimo}}</td>
+                                    {% if usuario.tipo.nombre == "Superintendente" %}
+                                    <td></td>
+                                    {% else %}
+                                    <td><a class="btn btn-outline-info" id="btnActualizar" type="button" data-bs-toggle="modal" data-bs-target="#dialog" hx-target="#document" hx-get="{% url 'solicitud-inventario-update-modal' producto.id %}"><i class="fa-solid fa-pen-to-square"></i></a>
+                                    {% endif %}
+                                </tr>
+                           
                         {% endfor %}
                     </tbody>
                 </table>

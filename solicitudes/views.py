@@ -1,6 +1,9 @@
 from django.shortcuts import render, redirect
 from dashboard.models import Inventario, Order, ArticulosOrdenados, ArticulosparaSurtir, Inventario_Batch, Marca, Product, Tipo_Orden, Plantilla, ArticuloPlantilla, Producto_Calidad, Productos_Solicitud_Terminado, Solicitud_Producto_Terminado, Unidad, Criticidad, Almacen
 from django.db import models
+from django.db.models import Sum, Value, F, Sum, When, Case, DecimalField, Q, Exists, OuterRef, IntegerField
+from django.db.models.functions import Cast, Replace, Coalesce
+
 from requisiciones.models import Requis, ArticulosRequisitados, ValeSalidas, Salidas
 from compras.models import Compra
 from tesoreria.models import Pago
@@ -23,8 +26,7 @@ from django.shortcuts import get_object_or_404
 import pandas as pd
 
 import io
-from django.db.models import Sum, Value, F, Sum, When, Case, DecimalField, Q, Exists, OuterRef, IntegerField
-from django.db.models.functions import Cast, Replace
+
 from .filters import InventoryFilter, SolicitudesFilter, SolicitudesProdFilter, InventarioFilter, HistoricalInventarioFilter, HistoricalProductoFilter
 from django.contrib import messages
 import decimal
@@ -990,8 +992,18 @@ def inventario_producto_terminado(request):
         complete=True,
         producto__servicio = False, 
         producto__gasto = False,
-        producto__familia__nombre="PRODUCTO TERMINADO",
-        ).order_by('producto__codigo')
+        ).annotate(
+        apartada_calc=Coalesce(
+            Sum(
+                "articulosordenados__articulosparasurtir__cantidad",
+                filter=Q(articulosordenados__articulosparasurtir__surtir=True),
+                output_field=DecimalField(max_digits=14, decimal_places=2),
+            ),
+            Value(0, output_field=DecimalField(max_digits=14, decimal_places=2)),
+        )
+    ).filter(
+        Q(producto__familia__nombre="PRODUCTO TERMINADO") , apartada_calc__gt=0).order_by("producto__codigo")
+
 
     if perfil.tipo.nombre == 'Admin' or perfil.tipo.nombre == 'SuperAdm':
         perfil_flag = True
@@ -1026,6 +1038,7 @@ def inventario_producto_terminado(request):
         'existencia_list':existencia_list,
         #'entradas':entradas,
         'valor_inv': valor_inv,
+        #'producto_terminado': True,
         }
 
     return render(request,'dashboard/inventario.html', context)
