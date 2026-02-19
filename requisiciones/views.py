@@ -117,7 +117,7 @@ def solicitud_autorizada(request):
         referencia_subquery = EntradaArticulo.objects.filter(
             articulo_comprado__oc__req__orden=OuterRef('articulos__orden'),  # Relacionamos con Order a través de las relaciones intermedias
             ).values('referencia')[:1]  # Solo tomamos el primer resultado
-        productos= ArticulosparaSurtir.objects.filter(surtir=True, articulos__orden__autorizar = True, articulos__orden__tipo__tipo = "normal").order_by('-created_at').annotate(
+        productos= ArticulosparaSurtir.objects.filter(Q(articulos__orden__tipo__tipo = "normal")|Q(articulos__orden__tipo__tipo = "prod_terminado"), surtir=True, articulos__orden__autorizar = True).order_by('-created_at').annotate(
             referencia=Subquery(referencia_subquery))
     #else:
         #productos = Requis.objects.filter(complete=None)
@@ -784,7 +784,9 @@ def update_salida(request):
             entrada_res = EntradaArticulo.objects.filter(articulo_comprado__producto__producto__articulos__producto = inv_del_producto, articulo_comprado__producto__producto__articulos__orden__tipo__tipo = 'resurtimiento', agotado = False).order_by('id')
 
         if entradas_dir.exists():
+            print('entradas normales ??')
             entradas = EntradaArticulo.objects.filter(articulo_comprado__producto__producto = producto, agotado=False, entrada__oc__req__orden= producto.articulos.orden)
+            
             for entrada in entradas:
                 if producto.cantidad > 0:
                     salida, created = Salidas.objects.get_or_create(producto=producto, vale_salida = vale_salida, complete=False)
@@ -878,7 +880,10 @@ def update_salida(request):
             producto.cantidad = producto.cantidad - cantidad 
             if producto.cantidad_requisitar <= 0:
                 producto.requisitar = False
-            salida.precio = inv_del_producto.price
+            if producto.articulos.orden.tipo.tipo == "prod_terminado":
+                salida.precio = producto.articulos.precio
+            else:
+                salida.precio = inv_del_producto.price
             inv_del_producto._change_reason = f'Esta es la salida de inventario de un artículo'
             #inv_del_producto.cantidad = inv_del_producto.cantidad - salida.cantidad
         #inv_del_producto.cantidad_apartada = inv_del_producto.cantidad_apartada - salida.cantidad
@@ -903,7 +908,7 @@ def update_salida(request):
         if vale_salida.solicitud.tipo.tipo == "normal":
             inv_del_producto.cantidad_apartada = inv_del_producto.cantidad_apartada + item.cantidad
         #inv_del_producto.cantidad = inv_del_producto.cantidad + item.cantidad
-        producto.seleccionado_salida = False
+        producto.seleccionado = False
         producto.salida= False
         producto.cantidad = producto.cantidad + item.cantidad
         producto.surtir = True

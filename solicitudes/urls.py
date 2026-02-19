@@ -11,6 +11,7 @@ urlpatterns = [
     path("producto_terminado_comentario/<int:pk>/", views.producto_terminado_comentario, name="producto_terminado_comentario"),
     path("producto_terminado_componentes/<int:pk>/", views.producto_terminado_componentes, name="producto_terminado_componentes"),
     path("producto_terminado_remove/<int:pk>/", views.producto_terminado_remove, name="producto_terminado_remove"),
+    path("producto_terminado_precio/<int:pk>/", views.producto_terminado_precio, name="producto_terminado_precio"),
     path('matriz_productos_terminados', views.matriz_productos_terminados, name='matriz_productos_terminados'),
     path('pdf-producto-terminado/<int:pk>/', views.render_pdf_producto_terminado, name='vale-producto-terminado'),
 

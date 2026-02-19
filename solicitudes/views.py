@@ -257,7 +257,7 @@ def checkout(request):
         supervisores = usuarios.filter(staff=request.user)
         order.supervisor = usuario
     else:
-        supervisores = usuarios.filter(tipo__supervisor = True)
+        supervisores = usuarios.filter(tipo__supervisor = True, staff__is_active = True).exclude(tipo__nombre="Admin")
 
     if usuario.tipo.superintendente:
         superintendentes = usuarios.filter(staff=request.user)
@@ -376,7 +376,7 @@ def checkout(request):
                         f'Solicitud Autorizada {order.folio}',
                         body=html_message,
                         from_email= settings.DEFAULT_FROM_EMAIL,
-                        to=[order.staff.staff.email, 'ulises_huesc@hotmail.com'],
+                        to=[order.staff.staff.email],
                         headers={'Content-Type': 'text/html'}
                         )
                     email.content_subtype = "html " # Importante para que se interprete como HTML
@@ -1917,40 +1917,37 @@ def convert_excel_solicitud_matriz(ordenes):
     return response
 
 def add_producto_terminado(request):
-    if request.method == 'POST':
-        data = json.loads(request.body)
-        producto_id = data.get('producto_id')
-        
-        # Obtener el usuario y su solicitud
-        usuario = Profile.objects.get(staff__id=request.user.id)
-        solicitud, created = Solicitud_Producto_Terminado.objects.get_or_create(staff=usuario, complete=False)
-        
-        # Obtener el producto y crear el registro
-        producto = Inventario.objects.get(id=producto_id)
-        Productos_Solicitud_Terminado.objects.create(
-            producto=producto,
-            solicitud=solicitud,
-            complete = True,
-            cantidad=1  # Cantidad predeterminada
-        )
-        
-        # Devolver respuesta de éxito
-        
-        # Agregar un mensaje de éxito
-        messages.success(request, 'Producto agregado a la solicitud con éxito.')
-        return JsonResponse({'message': 'Producto agregado a la solicitud con éxito.'}, status=200)
-    
-    # Si ocurre un error, agregar un mensaje de error
-    messages.error(request, 'Hubo un error al agregar el producto.')
-    return JsonResponse({'error': 'Método no permitido.'}, status=405)
+    data= json.loads(request.body)
+    productId = data['producto_id']
+    print('productId:', productId)
+    action = data['action']
+
+    usuario = Profile.objects.get(staff__id=request.user.id)
+    producto = Inventario.objects.get(id=productId)
+    tipo = Tipo_Orden.objects.get(tipo ='prod_terminado')
+    order, created = Order.objects.get_or_create(staff=usuario, complete=False, tipo = tipo, distrito = usuario.distrito)
+
+    orderItem, created = ArticulosOrdenados.objects.get_or_create(orden = order, producto= producto)
+
+    if action == 'add':
+        orderItem.cantidad = (orderItem.cantidad + 1)
+        message = f"Item was added: {orderItem}"
+        orderItem.save()
+    elif action == 'remove':
+        orderItem.delete()
+        message = f"Item was removed: {orderItem}"
+
+    return JsonResponse(message, safe=False)
+   
 
 @login_required(login_url='user-login')
 def catalogo_selection(request):
     usuario = Profile.objects.get(staff__id=request.user.id)
     productos = Inventario.objects.filter(complete=True,producto__familia__nombre ='PRODUCTO TERMINADO').order_by('id')
-    solicitud, created = Solicitud_Producto_Terminado.objects.get_or_create(staff=usuario, complete=False,)
+    tipo = Tipo_Orden.objects.get(tipo ='prod_terminado')
+    order, created = Order.objects.get_or_create(staff=usuario, complete=False, tipo = tipo, distrito = usuario.distrito)
     # Obtener la cantidad de Productos_Solicitud_Terminado relacionados
-    productos_terminados = Productos_Solicitud_Terminado.objects.filter(solicitud=solicitud,complete=True,principal__isnull=True).count()
+    productos_terminados = ArticulosOrdenados.objects.filter(orden=order).count()
 
     myfilter=InventoryFilter(request.GET, queryset=productos)
     productos = myfilter.qs
@@ -1972,14 +1969,18 @@ def catalogo_selection(request):
 @login_required(login_url='user-login')
 def solicitud_productos_terminados(request):
     usuario = Profile.objects.get(staff__id=request.user.id)
-    solicitud, created = Solicitud_Producto_Terminado.objects.get_or_create(staff=usuario, complete=False,)
-    productos = Productos_Solicitud_Terminado.objects.filter(solicitud=solicitud,complete=True,principal__isnull=True) #Productos en la tabla todos menos los componentes
-    todos_productos  = Productos_Solicitud_Terminado.objects.filter(solicitud=solicitud,complete=True)
+    tipo = Tipo_Orden.objects.get(tipo ='prod_terminado')
+    solicitud, created = Order.objects.get_or_create(staff=usuario, complete=False, tipo = tipo, distrito = usuario.distrito)
+    productos = ArticulosOrdenados.objects.filter(orden=solicitud) #Productos en la tabla todos menos los componentes
+    todos_productos  = ArticulosOrdenados.objects.filter(orden=solicitud)
+    precio_invalido = productos.filter(precio__isnull=True).exists() or productos.filter(precio=0).exists()
     #productos_verificar = productos.filter(producto__producto__subfamilia__isnull=False).count()
-    productos_verificar = productos.filter(producto__producto__subfamilia__isnull=False, serie = None).count() #Productos de la solicitud que necesitan numero de serie por que no tienen
+    #productos_verificar = productos.filter(producto__producto__subfamilia__isnull=False, serie = None).count() #Productos de la solicitud que necesitan numero de serie por que no tienen
     productos_terminados = productos.count() #productos totales 
     proyectos = Proyecto.objects.filter(activo = True)
     subproyectos = Subproyecto.objects.all()
+
+    last_order = Order.objects.filter(tipo=tipo, complete = True).order_by('last_folio_number').first()
 
     proyecto_para_select2 = [
         {
@@ -1998,40 +1999,60 @@ def solicitud_productos_terminados(request):
 
     if request.method == 'POST':
         form = SolicitudProductoTerminadoForm(request.POST, instance=solicitud)
-        if productos_verificar > 0:
-            messages.error(request, 'Falta agregar número de serie en productos tipo: (Equipo y Serie).') 
-        else:
+        #if productos_verificar > 0:
+        #    messages.error(request, 'Falta agregar número de serie en productos tipo: (Equipo y Serie).') 
+        #else:
 
-            if form.is_valid():
-                solicitud.complete = True
-                solicitud.created_at = datetime.now()
-                solicitud.save()
-                form.save()
-                #Aquí se hacen los entrada articulo para todos los productos, desde sin subfamilia hasta componentes y equipo
-                for producto in todos_productos:
-                #AQUI SE DEBE HACER LA ENTRADA
-                    entrada, created = Entrada.objects.get_or_create(solicitud=solicitud, completo = False)
-                    entrada.entrada_date = date.today()
-                    entrada.entrada_hora = datetime.now().time()
-                    entrada.completo = True
-                    entrada.save()
-                    articuloentrada, created = EntradaArticulo.objects.get_or_create(entrada=entrada, producto_terminado=producto)
-                    articuloentrada.created_at = datetime.now()
-                    articuloentrada.fecha_recepcion = datetime.now()
-                    articuloentrada.almacenado = False
-                    articuloentrada.liberado = False
-                    articuloentrada.recepcion = True
-                    articuloentrada.cantidad = producto.cantidad
-                    articuloentrada.cantidad_por_surtir = producto.cantidad
-                    articuloentrada.save()
-                messages.success(request, 'Solicitud actualizada con éxito.')
-                return redirect('solicitud_productos_terminados')
+        if form.is_valid():
+            solicitud = form.save(commit=False)
+            if last_order is None:
+                folio_number = 1
+            else:
+                folio_number = last_order.last_folio_number + 1
+            solicitud.complete = True
+            solicitud.created_at = datetime.now()
+            solicitud.created_at_time = datetime.now().time()
+            solicitud.approved_at = datetime.now()
+            solicitud.approved_at_time = datetime.now().time()
+            solicitud.comentario = 'Solicitud de productos terminados creada. Se asigna folio y se completa la solicitud en view: solicitud_productos_terminados'
+            solicitud.autorizar = True
+            solicitud.supervisor = usuario
+            solicitud.superintendente = usuario
+            solicitud.folio = folio_number
+            solicitud.save()
+            
+            #form.save()
+            #Aquí se hacen los entrada articulo para todos los productos, desde sin subfamilia hasta componentes y equipo
+            for producto in todos_productos:
+            #AQUI SE DEBE HACER LA ENTRADA
+                entrada, created = Entrada.objects.get_or_create(orden=solicitud, completo = False)
+                entrada.entrada_date = date.today()
+                entrada.entrada_hora = datetime.now().time()
+                entrada.completo = True
+                entrada.save()
+                articuloentrada, created = EntradaArticulo.objects.get_or_create(entrada=entrada, articulo_terminado=producto)
+                articuloentrada.created_at = datetime.now()
+                articuloentrada.fecha_recepcion = datetime.now()
+                articuloentrada.almacenado = False
+                articuloentrada.liberado = False
+                articuloentrada.recepcion = True
+                articuloentrada.cantidad = producto.cantidad
+                articuloentrada.cantidad_por_surtir = producto.cantidad
+                articuloentrada.save()
+                orden_surtir, created = ArticulosparaSurtir.objects.get_or_create(articulos=producto)
+                orden_surtir.cantidad = producto.cantidad
+                orden_surtir.precio = producto.precio
+                orden_surtir.surtir = True
+                orden_surtir.save()
+            messages.success(request, 'Solicitud de Entrada de Productos Terminados creada exitosamente.')
+            return redirect('solicitud-matriz')
     else:
         form = SolicitudProductoTerminadoForm(instance=solicitud)
 
     context = {
         'productos': productos,
         'productos_terminados': productos_terminados,
+        'precio_invalido': precio_invalido,
         'form': form,
         'proyecto_para_select2':proyecto_para_select2,
         'subproyecto_para_select2':subproyecto_para_select2,
@@ -2039,13 +2060,13 @@ def solicitud_productos_terminados(request):
     return render(request, 'solicitud/solicitud_productos_terminados.html', context)
 
 def producto_terminado_cantidad(request, pk):
-    producto = get_object_or_404(Productos_Solicitud_Terminado, id=pk)
+    producto = get_object_or_404(ArticulosOrdenados, id=pk)
 
     if request.method == 'POST':
         nueva_cantidad = request.POST.get('cantidad')
         nueva_serie = request.POST.get('numero_serie')
         # Validar si el número de serie ya existe
-        if nueva_serie != None and Productos_Solicitud_Terminado.objects.filter(serie=nueva_serie).exists():
+        if nueva_serie != None and ArticulosOrdenados.objects.filter(serie=nueva_serie).exists():
             messages.error(request, 'El número de serie ya existe. Por favor, ingrese uno diferente.')
         else:
             # Guardar el nuevo componente si el número de serie no existe
@@ -2057,8 +2078,22 @@ def producto_terminado_cantidad(request, pk):
 
     return render(request, 'solicitud/modal_producto_terminado_cantidad.html', {'producto': producto})
 
+def producto_terminado_precio(request, pk):
+    producto = get_object_or_404(ArticulosOrdenados, id=pk)
+
+    if request.method == 'POST':
+        precio = request.POST.get('precio')
+       
+            # Guardar el nuevo componente si el número de serie no existe
+        producto.precio = precio
+        producto.save()
+        messages.success(request, 'Precio modificado exitosamente.')
+        return HttpResponse(status=204)
+
+    return render(request, 'solicitud/modal_producto_terminado_precio.html', {'producto': producto})
+
 def producto_terminado_comentario(request, pk):
-    producto = get_object_or_404(Productos_Solicitud_Terminado, id=pk)
+    producto = get_object_or_404(ArticulosOrdenados, id=pk)
 
     if request.method == 'POST':
         nuevo_comentario = request.POST.get('comentario')
@@ -2072,9 +2107,9 @@ def producto_terminado_comentario(request, pk):
 
 def producto_terminado_componentes(request, pk):
     usuario = Profile.objects.get(staff__id=request.user.id)
-    producto = get_object_or_404(Productos_Solicitud_Terminado, id=pk)
-    componentes = Productos_Solicitud_Terminado.objects.filter(solicitud__id=producto.solicitud.id, principal = producto)
-    componente, created = Productos_Solicitud_Terminado.objects.get_or_create(complete = False, solicitud = producto.solicitud)
+    producto = get_object_or_404(ArticulosOrdenados, id=pk)
+    componentes = ArticulosOrdenados.objects.filter(solicitud__id=producto.solicitud.id)
+    componente, created = ArticulosOrdenados.objects.get_or_create(solicitud = producto.solicitud)
     productos_select = Inventario.objects.filter(complete=True,producto__familia__nombre ='PRODUCTO TERMINADO',producto__subfamilia__nombre ='SERIE')
     if request.method == 'POST':
         comentario = request.POST.get('comentario')
@@ -2102,7 +2137,7 @@ def producto_terminado_componentes(request, pk):
 
 
 def producto_terminado_remove(request, pk):
-    producto = get_object_or_404(Productos_Solicitud_Terminado, id=pk)
+    producto = get_object_or_404(ArticulosOrdenados, id=pk)
 
     if request.method == 'POST':
         producto.delete()

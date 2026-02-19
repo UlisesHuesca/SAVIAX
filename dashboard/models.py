@@ -298,6 +298,7 @@ class ArticulosOrdenados(models.Model):
     cantidad = models.DecimalField(max_digits=14, decimal_places=2, default=0)
     created_at = models.DateTimeField(auto_now_add=True)
     comentario = models.TextField(max_length=100, null=True, blank=True)
+    precio = models.DecimalField(max_digits=14, decimal_places=2, default=0)
 
     def __str__(self):
         return f'{self.orden}|{self.producto}'
@@ -372,6 +373,7 @@ class Productos_Solicitud_Terminado(models.Model):
     serie = models.CharField(max_length=20, null=True, unique=True)
     producto = models.ForeignKey(Inventario, on_delete = models.CASCADE, null=True)
     solicitud = models.ForeignKey(Solicitud_Producto_Terminado, on_delete = models.CASCADE, null=True, related_name= "productos")
+    precio = models.DecimalField(max_digits=14, decimal_places=2, default=0)
     cantidad = models.DecimalField(max_digits=14, decimal_places=2, default=0)
     created_at = models.DateTimeField(auto_now_add=True)
     comentario = models.TextField(max_length=100, null=True, blank=True)

@@ -42,9 +42,10 @@
         <!-- Aqui es el encabezado de los filtros -->
         <div class = "card bg-white">
             <div class="col-12">
-                <div class="card card-body">
+                <div class="card-header">
                     <h5>Filtro del Catalogo Productos Terminados</h5>
-                    <hr>
+                </div>
+                 <div class="card-body">
                     {% csrf_token %}
                     <form class="row g-3" method="GET">
                         <div class="col-lg-4 col-md-12">
@@ -103,7 +104,7 @@
                     {% if producto.producto.subfamilia.nombre %}
                     <h8>Tipo: {{producto.producto.subfamilia.nombre}}</h8><br>
                     {% endif %}
-                    <h7>Descripción: {{producto.producto.descripcion_especifica}}</h7>
+                    <h7>Descripción: {% if producto.producto.descripcion_especifica %}{{producto.producto.descripcion_especifica}}{% else %} NR {% endif %}</h7>
                     
                     <hr> 
                     <button data-product={{producto.id|unlocalize}} data-action="add" class="btn btn-outline-secondary add-btn update-select">Solicitud de Entrada</button>
@@ -169,7 +170,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     'Content-Type': 'application/json',
                     'X-CSRFToken': '{{ csrf_token }}'
                 },
-                body: JSON.stringify({ producto_id: productoId })
+                body: JSON.stringify({ 'producto_id': productoId,'action':'add' })
             })
             .then(response => {
                 if (response.ok) {
