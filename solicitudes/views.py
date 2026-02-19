@@ -200,7 +200,7 @@ def product_selection(request):
     #order, created = Order.objects.get_or_create(staff = usuario, complete = False, tipo = tipo)
     order, created = Order.objects.get_or_create(staff = usuario, complete = False, tipo=tipo, distrito = usuario.distrito)
     productos = (Inventario.objects
-                 .filter(complete=True, baja_item = True)
+                 .filter(complete=True, producto__baja_item = False)
                  .filter(Q(producto__familia__nombre="PRODUCTO TERMINADO", cantidad__gt=0)|~Q(producto__familia__nombre="PRODUCTO TERMINADO"))
                  .exclude(producto__rev_calidad=False, producto__critico__id__in=[1, 2]))
     cartItems = order.get_cart_quantity
