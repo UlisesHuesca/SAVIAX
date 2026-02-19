@@ -299,6 +299,7 @@ class ArticulosOrdenados(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     comentario = models.TextField(max_length=100, null=True, blank=True)
     precio = models.DecimalField(max_digits=14, decimal_places=2, default=0)
+    serie = models.CharField(max_length=20, null=True, blank=True)
 
     def __str__(self):
         return f'{self.orden}|{self.producto}'

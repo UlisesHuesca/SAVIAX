@@ -1576,9 +1576,11 @@ def editar_comparativo(request, pk):
     return render(request, 'compras/actualizar_comparativo.html', context)
 
 def articulos_comparativo(request, pk):
+    comparativo =Comparativo.objects.get(id = pk)
     articulos = Item_Comparativo.objects.filter(comparativo__id = pk , completo = True)
 
     context= {
+        'comparativo':comparativo,
         'articulos':articulos,
     }
     return render(request, 'compras/articulos_comparativo.html', context)
