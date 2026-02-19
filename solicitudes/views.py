@@ -991,7 +991,6 @@ def inventario_producto_terminado(request):
         producto__servicio = False, 
         producto__gasto = False,
         producto__familia__nombre="PRODUCTO TERMINADO",
-        cantidad__gt=0
         ).order_by('producto__codigo')
 
     if perfil.tipo.nombre == 'Admin' or perfil.tipo.nombre == 'SuperAdm':

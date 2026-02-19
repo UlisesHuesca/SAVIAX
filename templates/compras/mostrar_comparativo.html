@@ -53,13 +53,12 @@
                 <table class='table table-striped'>
                     <thead>
                         <tr>
-                        <th class="col-2">Proveedor #1:</th>
                         <th scope="col">{{comparativo.proveedor}}</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr>
-                            <th  class="col-2">Cotización:</th>
+                            <th  class="col">Cotización:</th>
                             <th scope="col">
                                 {% if comparativo.cotizacion %}
                                 <a href="{{comparativo.cotizacion.url}}" download class="btn btn-outline-info">
@@ -75,14 +74,12 @@
                 <table class='table table-striped'>
                     <thead>
                         <tr>
-                        <th  class="col-2">Proveedor #2:</th>
-                      
                         <th scope="col">{{comparativo.proveedor2}}</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr>
-                            <th  class="col-2">Cotización:</th>
+                            <th  class="col">Cotización:</th>
                             <th scope="col">
                                 {% if comparativo.cotizacion2 %}
                                 <a href="{{comparativo.cotizacion2.url}}" download class="btn btn-outline-info">
@@ -99,13 +96,12 @@
                 <table class='table table-striped'>
                     <thead>
                         <tr>
-                        <th  class="col-2">Proveedor #3:</th>
                         <th scope="col">{{comparativo.proveedor3}}</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr>
-                            <th  class="col-2">Cotización:</th>
+                            <th  class="col">Cotización:</th>
                             <th scope="col">
                                 {% if comparativo.cotizacion3 %}
                                 <a href="{{comparativo.cotizacion3.url}}" download class="btn btn-outline-info">
@@ -126,9 +122,9 @@
                             <th scope="col-3">Producto</th>
                             <th scope="col-2">Modelo</th>
                             <th scope="col-2">Marca</th>
-                            <th scope="col-2">Precio P #1</th>
-                            <th>Precio P #2</th>
-                            <th>Precio P #3</th>
+                            <th scope="col-2">{{comparativo.proveedor}}</th>
+                            <th>{{comparativo.proveedor2}}</th>
+                            <th>{{comparativo.proveedor3}}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -141,9 +137,9 @@
                             <td> {% if p.modelo %} {{p.modelo}} {% else %} NR {% endif %}</td>
 
                             <td> {% if p.marca %}  {{p.marca}} {% else %} NR {% endif %}</td>
-                            <td>${{p.precio|floatformat:2}}</td>
-                            <td>${{p.precio2|floatformat:2}}</td>
-                            <td>${{p.precio3|floatformat:2}}</td>
+                            <td>${{p.precio|unlocalize}}</td>
+                            <td>${{p.precio2|unlocalize}}</td>
+                            <td>${{p.precio3|unlocalize}}</td>
                         </tr>
                         </form>
                    {% endfor %}
