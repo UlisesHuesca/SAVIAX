@@ -1600,12 +1600,12 @@ def evidencias_proveedor(request, pk):
     usuario = Profile.objects.get(staff__id=request.user.id)
     compra = Compra.objects.get(id = pk)
     evidencias = Evidencia.objects.filter(oc = compra, hecho=True)
+    next_url = request.GET.get('next')
+    print('next_url:', next_url)
     
-    
-    next_url = request.GET.get('next',)
 
     context={
-        'next_url':next_url,
+        'next':next_url,
         #'form':form,
         'compra':compra,
         'evidencias':evidencias,
@@ -1615,9 +1615,11 @@ def evidencias_proveedor(request, pk):
     return render(request, 'compras/evidencias_proveedor.html', context)
 
 def subir_evidencias(request, pk):
+
     usuario = Profile.objects.get(staff__id=request.user.id)
     compra = Compra.objects.get(id = pk)
     form = UploadFileForm()
+    
 
     if request.method == 'POST':
         if 'btn_registrar' in request.POST:
@@ -1647,6 +1649,7 @@ def subir_evidencias(request, pk):
     context={
         'form': form, 
         'compra': compra,
+        'next':next_url,
     }
 
     return render(request, 'compras/subir_evidencias.html', context)

@@ -45,13 +45,13 @@
 <div class="container">
     <div class="card">
         <div class="card-header d-flex align-items-center">
-            <h5>Evidencia de OC: {{compra.id|unlocalize}}</h5>
+            <h5>Evidencia de OC: {{compra.id|unlocalize}} {{next}}</h5>
+           
             <ul class="nav ms-auto">
-                <li class="nav-item">
-                    <a href="{% url 'matriz-compras' %}" class="btn btn-secondary">
-                        <i class="fa-solid fa-xmark"></i>
-                    </a>
-                </li>
+                <a href="{% if next %}{{ next }}{% else %}{% url 'matriz-compras' %}{% endif %}"
+                class="btn btn-secondary">
+                    <i class="fa-solid fa-xmark"></i>
+                </a>
             </ul>
         </div>
         <div class="card-body">

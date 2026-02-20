@@ -149,6 +149,7 @@
                         <th>Comentario Calidad</th>
                         <th>Editar comentario</th>
                         <th>Validar</th>
+                        <th>Evidencia</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -179,7 +180,7 @@
                     
                         <td>{{item.articulo_comprado.producto.producto.articulos.producto}}</td>
                         <td>{{item.articulo_comprado.producto.producto.articulos.producto.producto.critico}}</td>
-                        <td>{{item.cantidad}}</td>
+                        <td>{{item.cantidad|unlocalize}}</td>
                         <td id="comentario_{{ item.id }}">
                             {% if item.reportes_calidad.exists %}
                                 <p class="text-wrap text-break">{{ item.reportes_calidad.first.comentarios }}</p>
@@ -208,6 +209,9 @@
                             <button class="btn btn-outline-danger btn-lg" onclick="autorizarCalidad('{{ item.id }}', false)">
                                 <i class="fa-solid fa-xmark"></i>
                             </button>
+                        </td>
+                        <td>
+                            <a type="button" class="btn btn-outline-info" href="{% url 'evidencias-proveedor' item.entrada.oc.id%}?next={{ request.get_full_path|urlencode }}" data-bs-toggle="tooltip" data-bs-placement="top" title="Evidencias de Compra"><i class="fa-regular fa-images"></i></a>
                         </td>
                     </tr>
                     {% endfor %}

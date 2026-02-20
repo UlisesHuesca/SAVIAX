@@ -274,7 +274,7 @@
                         {% endif %}                   
                     </td>
                     <td>
-                        <a type="button" class="btn btn-outline-info" href="{% url 'evidencias-proveedor' compra.id%}" data-bs-toggle="tooltip" data-bs-placement="top" title="Evidencias de Compra"><i class="fa-regular fa-images"></i></a>
+                        <a type="button" class="btn btn-outline-info" href="{% url 'evidencias-proveedor' compra.id%}?next={{ request.get_full_path|urlencode }}" data-bs-toggle="tooltip" data-bs-placement="top" title="Evidencias de Compra"><i class="fa-regular fa-images"></i></a>
                     </td>
                 </tr>
                 {% endfor %}

@@ -1747,6 +1747,7 @@ def autorizar_calidad(request):
 @login_required(login_url='user-login')
 def calidad_entradas(request):
     usuario = Profile.objects.get(staff__id=request.user.id)
+  
     
     if usuario.tipo.calidad == True:
         # Subconsulta para total_recepcionado
