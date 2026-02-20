@@ -15,9 +15,9 @@ from user.models import Profile
 from tesoreria.models import Pago
 from requisiciones.views import get_image_base64
 from .filters import CompraFilter, ArticulosRequisitadosFilter,  ArticuloCompradoFilter, HistoricalArticuloCompradoFilter, ComparativoFilter, Item_ComparativoFilter
-from .models import ArticuloComprado, Compra, Proveedor, Proveedor_direcciones, Cond_credito, Uso_cfdi, Moneda, Comparativo, Item_Comparativo, Preevaluacion, Estatus_proveedor
+from .models import ArticuloComprado, Compra, Proveedor, Proveedor_direcciones, Comparativo, Item_Comparativo, Preevaluacion, Estatus_proveedor, Evidencia
 from tesoreria.models import Facturas
-from .forms import CompraForm, ArticuloCompradoForm, ArticulosRequisitadosForm, ComparativoForm, Item_ComparativoForm, Compra_ComentarioForm, PreevaluacionForm, Compra_Comment_Form
+from .forms import CompraForm, ArticuloCompradoForm, ComparativoForm, Item_ComparativoForm, Compra_ComentarioForm, PreevaluacionForm, Compra_Comment_Form, UploadFileForm
 from requisiciones.forms import Articulo_Cancelado_Form
 from requisiciones.filters import RequisFilter
 from tesoreria.forms import Facturas_Form
@@ -1594,6 +1594,62 @@ def articulo_comparativo_delete(request, pk):
     articulo.delete()
 
     return redirect('crear_comparativo')
+
+
+def evidencias_proveedor(request, pk):
+    usuario = Profile.objects.get(staff__id=request.user.id)
+    compra = Compra.objects.get(id = pk)
+    evidencias = Evidencia.objects.filter(oc = compra, hecho=True)
+    
+    
+    next_url = request.GET.get('next',)
+
+    context={
+        'next_url':next_url,
+        #'form':form,
+        'compra':compra,
+        'evidencias':evidencias,
+        'usuario':usuario,
+        }
+
+    return render(request, 'compras/evidencias_proveedor.html', context)
+
+def subir_evidencias(request, pk):
+    usuario = Profile.objects.get(staff__id=request.user.id)
+    compra = Compra.objects.get(id = pk)
+    form = UploadFileForm()
+
+    if request.method == 'POST':
+        if 'btn_registrar' in request.POST:
+            form = UploadFileForm(request.POST, request.FILES)
+            if form.is_valid():
+                
+                files_evidencia = request.FILES.getlist('evidencia_file')
+                print(request.FILES)
+                if not files_evidencia:
+                    messages.error(request, 'Debes subir al menos un archivo.')
+                    return HttpResponse(status=204)
+                for archivo_evidencia in files_evidencia:
+                    evidencia = Evidencia.objects.create(
+                        oc=compra,
+                        file = archivo_evidencia,
+                        hecho = True,
+                        uploaded = datetime.now(),
+                        subido_por = usuario
+                    )
+                    evidencia.save()
+                messages.success(request, 'Las evidencias se registraron de manera exitosa')
+
+            else:
+                messages.error(request,'No se pudo subir tu documento')
+
+
+    context={
+        'form': form, 
+        'compra': compra,
+    }
+
+    return render(request, 'compras/subir_evidencias.html', context)
 
 @login_required(login_url='user-login')
 def historico_articulos_compras(request):

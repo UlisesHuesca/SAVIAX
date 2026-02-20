@@ -197,8 +197,8 @@
                     <th class="d-none d-lg-table-cell">Días de Entrega</th>
                     <th scope="col">Documentos</th>
                     <th>Ver OC</th>
-                 
                     <th>Devolver</th>
+                    <th>Evidencia</th>
                     
                 </tr>
             </thead>
@@ -272,6 +272,9 @@
                         {% if compra.pagada == False %}
                         <a type="button" class="btn btn-outline-danger btn-lg" data-bs-toggle="modal" data-bs-target="#dialog" hx-target="#document" hx-get="{% url 'back-oc' compra.id %}">R<i class="fa-solid fa-backward"></i></a>
                         {% endif %}                   
+                    </td>
+                    <td>
+                        <a type="button" class="btn btn-outline-info" href="{% url 'evidencias-proveedor' compra.id%}" data-bs-toggle="tooltip" data-bs-placement="top" title="Evidencias de Compra"><i class="fa-regular fa-images"></i></a>
                     </td>
                 </tr>
                 {% endfor %}

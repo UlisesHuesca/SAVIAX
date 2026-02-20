@@ -1,0 +1,354 @@
+{% extends 'partials/base.html' %}
+{% load crispy_forms_tags %}
+{% load static %}
+{% load widget_tweaks %}
+{% load l10n %}
+<html>
+<head>
+{% block title %}Evidencia proveedor{% endblock %}
+</head>
+<body>
+{% block content %}
+<hr>
+<hr>
+<hr>
+<h6>&nbsp;</h6>
+
+
+<!-- Esta es la zona donde se crean los mensajes excitantes con sweet alert -->
+<div class="row my-4">
+    <div class="col-md-4">
+    <script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+        {% if messages %}
+            {% for message in messages %}
+                {% if message.tags == "error" %}
+                <script>
+                Swal.fire({
+                    "title":"Error",
+                    "text":"{{message}}",
+                    "icon":"error",
+                })
+                </script>
+                {% else %}
+                <script>
+                Swal.fire({
+                    "title":"Excelente",
+                    "text":"{{message}}",
+                    "icon":"success",
+                })
+                </script>
+                {% endif %}
+            {% endfor %}
+        {% endif %}
+    </div>
+</div>
+<div class="container">
+    <div class="card">
+        <div class="card-header d-flex align-items-center">
+            <h5>Evidencia de OC: {{compra.id|unlocalize}}</h5>
+            <ul class="nav ms-auto">
+                <li class="nav-item">
+                    <a href="{% url 'matriz-compras' %}" class="btn btn-secondary">
+                        <i class="fa-solid fa-xmark"></i>
+                    </a>
+                </li>
+            </ul>
+        </div>
+        <div class="card-body">
+            <!-- Formulario único para envío de toda la información -->
+            <form method="POST">
+                {% csrf_token %}
+                <!-- Botón para descargar todas las facturas -->
+                <!--<div class="nav-item ms-auto">
+                    <button type="submit" name="btn_descargar_todo" class="btn btn-sm btn-primary float-end">
+                        <i class="fas fa-file-archive"></i> Descargar Archivos
+                    </button>
+                </div>-->
+                <h6>&nbsp;</h6>
+                <!-- Tabla de datos XML y autorización -->
+                <table class="table bg-white">
+                    <thead class="text-black" style="background-color: #F5F5F5;">
+                        <tr>
+                            <th scope="col">#</th>
+                            <th scope="col">Comentario</th>
+                            <th>Editar</th>
+                            <th scope="col">Archivo</th>
+                            <th>Eliminar</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for evidencia in evidencias %}
+                        <tr id="evidencia-{{ evidencia.id }}">
+                            <td>{{evidencia.id}}</td>
+                            
+                            <td class="d-none" id="form_comentario_{{evidencia.id|unlocalize}}">
+                                <input type="textarea" class="form-control" id="comentario-input_{{ evidencia.id|unlocalize }}" value="{{ evidencia.comentario }}">
+                            </td>
+                            <td class="" id="comentario_{{evidencia.id|unlocalize}}">
+                                {% if evidencia.comentario %} {{evidencia.comentario}} {% else %} No hay comentario {% endif %}
+                            </td>
+                            <td>
+                            <a id="modificar_comentario_{{evidencia.id|unlocalize}}" class="btn btn-outline-info" onclick="modificar_comentario('{{evidencia.id|unlocalize}}')">
+                                <i class="fa-regular fa-comment"></i>
+                            </a>
+
+                            <button type="button" id="save_comment_{{evidencia.id|unlocalize}}" onclick="aceptar_edicion('{{evidencia.id|unlocalize}}')"    class="btn btn-outline-primary d-none">
+                                <i class="fa-regular fa-circle-check"></i>
+                            </button>
+                            <button id="cancel_edit_{{evidencia.id|unlocalize}}" type="button" class="btn add-btn d-none" onclick="cancelar_edicion('{{evidencia.id|unlocalize}}')" style="color:ghostwhite; background-color:#980F0F ;">
+                                <i class="fa-solid fa-circle-xmark"></i>
+                            </button>
+                            </td>
+                            <!-- Archivos PDF y XML -->
+                            <td>
+                                <ul class="nav nav-pills">
+                                    {% if evidencia.file %}
+                                    <li class="nav-item mx-1">
+                                        <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#pdfModal{{evidencia.id|unlocalize }}" title="Ver Evidencia">
+                                           <i class="fa-solid fa-file-pdf"></i>
+                                        </button>
+                                    </li>
+                                    <!-- Modal con visor de PDF -->
+                                    <div class="modal fade" id="pdfModal{{evidencia.id|unlocalize }}" tabindex="-1" aria-labelledby="pdfModalLabel{{evidencia.id|unlocalize }}" aria-hidden="true">
+                                        <div class="modal-dialog modal-xl">
+                                            <div class="modal-content">
+                                                <div class="modal-header">
+                                                    <h5 class="modal-title" id="pdfModalLabel{{evidencia.id|unlocalize }}">Comprobante de Pago</h5>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                </div>
+                                                <div class="modal-body">
+                                                    <iframe src="{{evidencia.file.url }}#zoom=80" width="100%" height="750px"></iframe>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                </ul>
+                            </td>
+
+                            <!-- Botón de eliminación -->
+                            <td>
+                                <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#confirmModal" onclick="abrirModalEliminar({{ evidencia.id | unlocalize }})">
+                                   <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </td> 
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+
+                <!-- Botón para subir nueva factura -->
+                <ul class="nav">
+                    <li class="nav-item">
+                        <a class="btn btn-lg btn-outline-success" data-bs-toggle="modal" data-bs-target='#dialog' hx-target="#document" hx-get="{% url 'subir-evidencias' compra.id %}">
+                            <i class="fa-solid fa-upload"></i>
+                        </a>
+                    </li>
+                </ul>
+
+                <!-- Cierre del formulario y botón de cierre de facturas -->
+               
+
+                <!-- Botón de cierre -->
+            </form>
+        </div>
+    </div>
+</div>
+
+<!--Este es el modal-->
+<div class="modal fade" id ="dialog" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg" id="document" role="document" hx-target="this">
+
+    </div>
+</div>
+<!-- Modal de Confirmación eliminación-->
+<div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="confirmModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="confirmModalLabel">Eliminar Evidencia</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="deleteForm" method="POST">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="comentario" class="form-label">Comentario</label>
+                        <input type="text" class="form-control" id="comentario" name="comentario" placeholder="Escribe un comentario" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-danger" onclick="eliminarEvidencia()">Eliminar</button>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+<script>
+ ;(function(){
+        const modal = new bootstrap.Modal(document.getElementById('dialog'))
+    
+        htmx.on('htmx:beforeSwap',(e)=>{
+            if (e.detail.target.id === "document" && !e.detail.xhr.response)
+            modal.hide()
+        })
+    })()
+
+    var myModal = document.getElementById('dialog')
+    
+    myModal.addEventListener('hidden.bs.modal', function (event) {
+        setTimeout(function() {
+            location.reload();  // Recargar la página después de 2 segundos
+        }, 2000);  // 2000 milisegundos = 2 segundos
+    })
+
+let evidenciaIdEliminar = null;
+
+function abrirModalEliminar(evidenciaId) {
+    evidenciaIdEliminar = evidenciaId;
+    const modal = new bootstrap.Modal(document.getElementById('confirmModal'));
+    modal.show();
+}
+
+//Parte del modal factura eliminar
+function eliminarEvidencia() {
+        console.log("Eliminar evidencia", evidenciaIdEliminar);
+        
+        if (!evidenciaIdEliminar) {
+            alert("No se ha seleccionado ninguna evidencia para eliminar");
+            return;
+        }
+        const comentario = document.getElementById('comentario').value;
+        console.log(comentario);
+        if (!comentario) {
+            alert("Por favor, escribe un comentario antes de continuar.");
+            return;
+        }
+        // Obtener token CSRF desde el template
+        const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+        fetch(`/proveedores_externos/eliminar_evidencia/${evidenciaIdEliminar}/`, {  // Ajusta la URL según tu configuración
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": csrftoken  // Django requiere este token para seguridad
+            },
+            body: JSON.stringify({ comentario: comentario })  // Agrega datos adicionales si es necesario
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Ocultar la fila eliminada en la tabla
+                document.getElementById(`evidencia-${evidenciaIdEliminar}`).remove();
+                const modalElement = document.getElementById('confirmModal');
+                const modalInstance = bootstrap.Modal.getInstance(modalElement);
+                if (modalInstance) {
+                    modalInstance.hide();
+                }
+            } else {
+                alert("Error: " + data.error);
+            }
+        })
+        .catch(error => console.error("Error en la solicitud:", error));
+    }
+
+/*function enviarFormulario() {
+    const comentario = document.getElementById('comentario').value;
+    if (!comentario) {
+        alert("Por favor, escribe un comentario antes de continuar.");
+    } else {
+        document.getElementById('deleteForm').submit();  
+    }
+}*/
+
+
+// Recargar la página cuando se cierre el modal de confirmación
+var confirmModal = document.getElementById('confirmModal');
+confirmModal.addEventListener('hidden.bs.modal', function (event) {
+    location.reload();  
+});
+
+
+function modificar_comentario(evidenciaId){
+    var form_comentario = document.getElementById("form_comentario_"+evidenciaId);
+    var comentario = document.getElementById("comentario_"+evidenciaId);
+    //var edit_quantity = document.getElementById("edit_quantity_"+productoId);
+    var modificar_comentario = document.getElementById("modificar_comentario_"+evidenciaId);
+    var cancel_edit = document.getElementById("cancel_edit_"+evidenciaId);
+    var save_comment = document.getElementById("save_comment_"+evidenciaId);
+    
+    form_comentario.classList.remove("d-none");
+    comentario.classList.add("d-none");
+    //edit_quantity.classList.add("d-none");
+    modificar_comentario.classList.add("d-none");
+    cancel_edit.classList.remove("d-none");
+    save_comment.classList.remove("d-none");
+};
+
+function aceptar_edicion(EvidenciaId){
+    var form_tag = document.getElementById("form_comentario_"+EvidenciaId);
+    var comentario = document.getElementById("comentario_"+ EvidenciaId);
+    var modificar_comentario = document.getElementById("modificar_comentario_"+ EvidenciaId);
+    var cancel_edit = document.getElementById("cancel_edit_"+ EvidenciaId);
+    var save_comment = document.getElementById("save_comment_"+ EvidenciaId);
+    var pk = EvidenciaId;
+    var inputElement = document.getElementById('comentario-input_' + EvidenciaId).value;
+    //var form_comentario = document.getElementById('id_form_comentario-comentario').value
+    
+    console.log(inputElement)
+    ActualizarComentario(pk,inputElement,"comentario")
+    form_tag.classList.add("d-none");
+    comentario.classList.remove("d-none");
+    //edit_quantity.classList.remove("d-none");
+    //delete_row.classList.remove("d-none");
+    modificar_comentario.classList.remove("d-none");
+    cancel_edit.classList.add("d-none");
+    save_comment.classList.add("d-none");
+};
+
+function cancelar_edicion(EvidenciaId){
+    var form_comentario = document.getElementById("form_comentario_"+ EvidenciaId);
+    var comentario = document.getElementById("comentario_"+ EvidenciaId);
+    //var edit_quantity = document.getElementById("edit_quantity_"+productoId);
+    var modificar_comentario = document.getElementById("modificar_comentario_"+ EvidenciaId);
+    //var delete_row = document.getElementById("delete_row_"+ EvidenciaId);
+    var cancel_edit = document.getElementById("cancel_edit_"+ EvidenciaId);
+    var save_comment = document.getElementById("save_comment_"+ EvidenciaId);
+    form_comentario.classList.add("d-none");
+    comentario.classList.remove("d-none");
+    //edit_quantity.classList.remove("d-none");
+    //delete_row.classList.remove("d-none");
+    modificar_comentario.classList.remove("d-none");
+    cancel_edit.classList.add("d-none");
+    save_comment.classList.add("d-none");
+};
+
+function ActualizarComentario(evidencia_id, dato , tipo){
+    console.log('User is logged in, sending data...' )
+    var url = '/proveedores_externos/update_comentario/'
+    fetch( url, {
+        method:'POST',
+        headers:{
+            'Content-Type':'application/json',
+            'X-CSRFToken': csrftoken,
+        },
+        body:JSON.stringify({'evidencia_id':evidencia_id, 'dato':dato, 'tipo':tipo})
+    })
+    .then((response)=>{
+        return response.json()
+    })
+    .then((data)=>{
+        console.log('data:', data)
+        if (data.tipo == "comentario"){
+            document.getElementById('comentario_'+ evidencia_id).innerHTML = data.dato;
+        }
+    })
+}
+</script>
+{% endblock %}
+</body>
+</html>

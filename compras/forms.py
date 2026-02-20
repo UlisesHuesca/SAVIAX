@@ -119,3 +119,6 @@ class Compra_Comment_Form(forms.ModelForm):
     class Meta:
         model = Compra
         fields = ['comentarios']
+
+class UploadFileForm(forms.Form):
+    evidencia_file = forms.FileField(required=False)
