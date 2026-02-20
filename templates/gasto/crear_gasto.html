@@ -679,11 +679,8 @@ function f_calculo_previo(){
         iva_valor = 1
     }
     calculo_previo = document.getElementById('calculo_previo')
-
-  
-        
-        console.log(precio, cantidad, otros_impuestos, retenidos)
-        subtotal = (Number(precio) * Number(cantidad) + Number(otros_impuestos) - Number(retenidos)) * iva_valor
+        console.log('precio:',precio, 'cantidad:',cantidad, 'otros impuestos:',otros_impuestos,'retenidos:', retenidos)
+        subtotal = ((Number(precio) * Number(cantidad) * iva_valor)+ Number(otros_impuestos) - Number(retenidos)) 
         console.log(subtotal)
         calculo_previo.innerHTML = parseFloat(subtotal).toFixed(4)
         
