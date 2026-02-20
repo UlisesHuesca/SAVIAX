@@ -19,123 +19,128 @@
                 <div class="card-header">
                   <h3>Agregar Producto/Servicio</h3>
                 </div>
-                <form method="POST" id='ProductForm' enctype='multipart/form-data'>
-                    {% csrf_token %}
-                    {% if error_messages %}
-                    <div class="alert alert-danger" role="alert">
-                        {{error_messages}}
-                    </div>
-                    {% endif %}
-                    <div class ="col-12"> 
-                        <div class="alert alert-primary" role="alert">
-                            <h3>Código: {{initial_codigo}}</h3>
+                <div class="card-body">
+                    <form method="POST" id='ProductForm' enctype='multipart/form-data'>
+                        {% csrf_token %}
+                        {% if error_messages %}
+                        <div class="alert alert-danger" role="alert">
+                            {{error_messages}}
                         </div>
-                    </div>
-                    <div class="col-12">
-                      <div class="input-group mb-3">
-                      <span class="input-group-text" id="basic-addon1"><i class="fa-solid fa-list"></i></span>
-                          <div class="form-floating form-floating-group flex-grow-1">   
-                          {{form.nombre|add_class:"form-control"|append_attr:"placeholder=Descripción General"}}
-                          <label for="id_razon_social">Descripción General*</label>
-                          </div>
-                      </div>
-                    </div>
-                    <div class="col-12">
+                        {% endif %}
+                        <div class ="col-12"> 
+                            <div class="alert alert-primary" role="alert">
+                                <h3>Código: {{initial_codigo}}</h3>
+                            </div>
+                        </div>
+                        <div class="col-12">
                         <div class="input-group mb-3">
                         <span class="input-group-text" id="basic-addon1"><i class="fa-solid fa-list"></i></span>
                             <div class="form-floating form-floating-group flex-grow-1">   
-                            {{form.unidad|add_class:"form-control"|append_attr:"placeholder=Unidad"}}
-                            <label for="id_razon_social">Unidad*</label>
+                            {{form.nombre|add_class:"form-control"|append_attr:"placeholder=Descripción General"}}
+                            <label for="id_razon_social">Descripción General*</label>
                             </div>
                         </div>
-                      </div>
-                    <div class="row">
+                        </div>
                         <div class="col-12">
                             <div class="input-group mb-3">
-                                <span class="input-group-text" id="basic-addon1"><i class="fa-solid fa-list"></i>&nbsp;Descripcion Especifica</span>
+                            <span class="input-group-text" id="basic-addon1"><i class="fa-solid fa-list"></i></span>
                                 <div class="form-floating form-floating-group flex-grow-1">   
-                                    {{form.especs|add_class:"form-control"|append_attr:"placeholder=Descripción Especifica"}}
+                                {{form.unidad|add_class:"form-control"|append_attr:"placeholder=Unidad"}}
+                                <label for="id_razon_social">Unidad*</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="input-group mb-3">
+                                    <span class="input-group-text" id="basic-addon1"><i class="fa-solid fa-list"></i>&nbsp;Descripcion Especifica</span>
+                                    <div class="form-floating form-floating-group flex-grow-1">   
+                                        {{form.especs|add_class:"form-control"|append_attr:"placeholder=Descripción Especifica"}}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                        <div class="col-12">
+                            <div class="input-group mb-3">
+                                <span class="input-group-text" id="basic-addon1"><i class="fa-solid fa-list"></i></span>
+                                <div class="form-floating form-floating-group flex-grow-1">   
+                                    {{form.familia}}
                                 </div>
                             </div>
                         </div>
                     </div>
                     <div class="row">
-                      <div class="col-12">
-                          <div class="input-group mb-3">
-                              <span class="input-group-text" id="basic-addon1"><i class="fa-solid fa-list"></i></span>
-                              <div class="form-floating form-floating-group flex-grow-1">   
-                                  {{form.familia}}
-                              </div>
-                          </div>
-                      </div>
-                  </div>
-                  <div class="row">
-                    <div class="col-12">
-                        <div class="input-group mb-3">
-                            <span class="input-group-text" id="basic-addon1"><i class="fa-solid fa-list"></i></span>
-                            <div class="form-floating form-floating-group flex-grow-1">   
-                                {{form.subfamilia}}
+                        <div class="col-12">
+                            <div class="input-group mb-3">
+                                <span class="input-group-text" id="basic-addon1"><i class="fa-solid fa-list"></i></span>
+                                <div class="form-floating form-floating-group flex-grow-1">   
+                                    {{form.subfamilia}}
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
-                <div class="row">
-                    <div class="col-12">
-                        <div class="input-group mb-3">
-                            <span class="input-group-text" id="basic-addon1"><i class="fa-solid fa-list"></i></span>
-                            <div class="form-floating form-floating-group flex-grow-1">   
-                                {{form.critico}}
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="input-group mb-3">
+                                <span class="input-group-text" id="basic-addon1"><i class="fa-solid fa-list"></i></span>
+                                <div class="form-floating form-floating-group flex-grow-1">   
+                                    {{form.critico}}
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
-                <div class="row">
-                    <div class="col-12">
-                        <div class="input-group mb-3">
-                            <span class="input-group-text" id="basic-addon1"><i class="fa-solid fa-list"></i>&nbsp;Especificaciones Técnicas</span>
-                            <div class="form-floating form-floating-group flex-grow-1">   
-                                {{form.especs|add_class:"form-control"|append_attr:"placeholder=Especificaciones Técnicas"}}
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="input-group mb-3">
+                                <span class="input-group-text" id="basic-addon1"><i class="fa-solid fa-list"></i>&nbsp;Especificaciones Técnicas</span>
+                                <div class="form-floating form-floating-group flex-grow-1">   
+                                    {{form.especs|add_class:"form-control"|append_attr:"placeholder=Especificaciones Técnicas"}}
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
 
-                
-                    <div class="form-check form-switch col-sm-3">
-                      <label for="form.impuesto" class="form-check-label"><strong>IVA</strong></label>
-                          {{form.iva|add_class:"form-check-input"}}
-                    </div>
-                    <div class="form-check form-switch col-sm-3">
-                      <label for="form.caducidad" class="form-check-label"><strong>Caducidad</strong></label>
-                          {{form.caducidad|add_class:"form-check-input"}}
-                    </div>
-                    <div class="form-check form-switch col-sm-3">
-                      <label for="form.impuesto" class="form-check-label"><strong>Servicio</strong></label>
-                          {{form.servicio|add_class:"form-check-input"}}
-                    </div>
-                   
-                    <div class="form-check form-switch col-sm-3">
-                      <label for="form.impuesto" class="form-check-label"><strong>Gasto</strong></label>
-                          {{form.gasto|add_class:"form-check-input"}}
-                    </div>
-                   
-                    <div class="form-check form-switch col-sm-3">
-                      <label for="form.impuesto" class="form-check-label"><strong>Activo</strong></label>
-                          {{form.activo|add_class:"form-check-input"}}
-                    </div>
-                    <div class="form-check form-switch col-sm-3">
-                        <label for="form.impuesto" class="form-check-label"><strong>Preevaluación</strong></label>
-                            {{form.preevaluacion|add_class:"form-check-input"}}
-                      </div>
                     
-                      {{form.image|add_class:"form-control"}}
-                   
-                    <h6>&nbsp;</h6>
-                    <div class="container-fluid text-end">
-                      <a class="btn btn-outline-secondary" href="{% url 'dashboard-product' %}">Cancelar</a>
-                      <input class="btn btn-outline-info" type='submit' value="Actualizar">
-                    </div>
-                </form>
+                        <div class="form-check form-switch col-sm-3">
+                        <label for="form.impuesto" class="form-check-label"><strong>IVA</strong></label>
+                            {{form.iva|add_class:"form-check-input"}}
+                        </div>
+                        <div class="form-check form-switch col-sm-3">
+                        <label for="form.caducidad" class="form-check-label"><strong>Caducidad</strong></label>
+                            {{form.caducidad|add_class:"form-check-input"}}
+                        </div>
+                        <div class="form-check form-switch col-sm-3">
+                        <label for="form.impuesto" class="form-check-label"><strong>Servicio</strong></label>
+                            {{form.servicio|add_class:"form-check-input"}}
+                        </div>
+                    
+                        <div class="form-check form-switch col-sm-3">
+                        <label for="form.impuesto" class="form-check-label"><strong>Gasto</strong></label>
+                            {{form.gasto|add_class:"form-check-input"}}
+                        </div>
+                    
+                        <div class="form-check form-switch col-sm-3">
+                        <label for="form.impuesto" class="form-check-label"><strong>Activo</strong></label>
+                            {{form.activo|add_class:"form-check-input"}}
+                        </div>
+                       <div class="col-sm-3">
+                            <div class="form-check form-switch">
+                                {{ form.preevaluacion|add_class:"form-check-input" }}
+                                <label class="form-check-label" for="{{ form.preevaluacion.id_for_label }}">
+                                <strong>Preevaluación</strong>
+                                </label>
+                            </div>
+                        </div>
+                        {{form.image|add_class:"form-control"}}
+                        </div>
+                        <h6>&nbsp;</h6>
+                        <div class="container-fluid text-end">
+                        <a class="btn btn-outline-secondary" href="{% url 'dashboard-product' %}">Cancelar</a>
+                        <input class="btn btn-outline-info" type='submit' value="Actualizar">
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
 
@@ -148,7 +153,7 @@
   <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
   <script>
 
-var datosFamilia = {{familias_para_select2|safe}}
+//var datosFamilia = {{familias_para_select2|safe}}
 
 $(document).ready(function() {
     
@@ -157,7 +162,7 @@ $(document).ready(function() {
         allowClear: true,
         width: '100%',
         placeholder: 'Familia',
-        data: datosFamilia,
+        //data: datosFamilia,
         templateResult: formatRepo, // Función para renderizar los resultados
         templateSelection: formatRepoSelection // Función para renderizar la selección
     });
@@ -170,9 +175,9 @@ $(document).ready(function() {
     }); //Aquí termina el select2:select
     var familiaSelect = $('#id_familia');
     var subfamiliaSelect = $('#id_subfamilia');
-        $('#id_proyecto').on('select2:unselect', function(e){
+        $('#id_familia').on('select2:unselect', function(e){
            
-            $('#id_subproyecto').val(null).trigger('change');
+            $('#id_subfamilia').val(null).trigger('change');
         });//Aquí termina el select2:unselect
 
     });

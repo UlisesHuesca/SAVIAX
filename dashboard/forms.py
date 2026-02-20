@@ -7,21 +7,22 @@ from solicitudes.models import Proyecto, Subproyecto
 class ProductForm(forms.ModelForm):
     class Meta:
         model = Product
-        fields = ['nombre','familia','subfamilia','unidad','iva','activo','servicio','image','gasto','critico','especs','preevaluacion', 'descripcion_especifica']
+        fields = ['nombre','familia','subfamilia','unidad','iva','caducidad','activo','servicio','image','gasto','critico','especs','preevaluacion', 'descripcion_especifica']
 
     #Sobreescribiendo el método __init__ y configurando el queryset para que esté vacío
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['familia'].queryset = Familia.objects.none()
+        self.fields['familia'].queryset = Familia.objects.all()
         self.fields['subfamilia'].queryset = Subfamilia.objects.none()
 
         if 'familia' in self.data:
             try:
                 familia_id = int(self.data.get('familia'))
-                self.fields['subfamilia'].queryset = Subproyecto.objects.filter(familia = familia_id)  
-                self.fields['familia'].queryset = Proyecto.objects.filter(id= familia_id)
+                self.fields['subfamilia'].queryset = Subfamilia.objects.filter(familia_id=familia_id).order_by('nombre')
             except (ValueError, TypeError):
                 pass  # invalid input from the client; ignore and fallback to empty City queryset
+        elif self.instance.pk:
+            self.fields['subfamilia'].queryset = self.instance.familia.subfamilia_set.order_by('nombre')
 
 class PrecioMax_Form(forms.ModelForm):
     class Meta:

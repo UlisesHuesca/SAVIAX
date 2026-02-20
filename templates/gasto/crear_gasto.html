@@ -492,11 +492,11 @@
     });
 
 
-
-
     document.addEventListener('DOMContentLoaded', function() {
         const form = document.querySelector('form');
         const btnAgregar = document.getElementById('btn_agregar');
+        syncSelectValues();
+
 
         form.addEventListener('submit', function() {
             setTimeout(function() {
@@ -504,14 +504,6 @@
             }, 50); // desactivar el botón 50ms después del clic
         });
     });
-    
-    
-
-
- 
-   
-
-   
 
     if (document.getElementById('btn_agregar')){
     document.getElementById('btn_agregar').addEventListener('submit', (event)=>{
@@ -530,9 +522,6 @@
     }
 
 
-    
-
-
 function syncSelectValues() {
     var select = document.getElementById("superintendentes");
     var current_option = select.options[select.selectedIndex];
@@ -543,9 +532,6 @@ function syncSelectValues() {
 
 document.getElementById("superintendentes").addEventListener("change", syncSelectValues);
 
-document.addEventListener("DOMContentLoaded", function() {
-    syncSelectValues();
-});
 
 var precio_mod = document.getElementById("id_precio_unitario")
 
@@ -685,6 +671,7 @@ function f_calculo_previo(){
     retenidos = document.getElementById('id_impuestos_retenidos').value
     var linea_gasto = document.getElementById('linea_gasto');
     var iva = linea_gasto.getAttribute('iva_producto')
+    console.log(iva)
 
     if (iva === "True") {
         iva_valor = 1.16
@@ -715,6 +702,23 @@ check_otros_imp.addEventListener("change", function(element){
         //otros_imp.setAttribute('class','form-control')
     } else {
         otros_impuestos.classList.add('d-none')
+        //otros_imp.setAttribute('class','form-control d-none')
+    }
+
+
+});
+
+var check_imp_retenidos = document.getElementById("Switch_Impuestos_retenidos")
+
+check_imp_retenidos.addEventListener("change", function(element){
+    let imp_retenidos = document.getElementById('id_impuestos_retenidos')
+    let impuestos_retenidos = document.getElementById('impuestos_retenidos')
+
+    if (check_imp_retenidos.checked){
+        impuestos_retenidos.classList.remove('d-none')
+        //otros_imp.setAttribute('class','form-control')
+    } else {
+        impuestos_retenidos.classList.add('d-none')
         //otros_imp.setAttribute('class','form-control d-none')
     }
 
