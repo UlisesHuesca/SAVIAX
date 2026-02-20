@@ -2163,10 +2163,10 @@ def render_salida_pdf(request, pk):
 
     data =[]
     #high = 670
-    data.append(['''Código''','''Producto''','''Referencia''','''Cliente''','''Cantidad''', '''Unidad''','''P.Unitario''', '''Importe'''])
+    data.append(['''Código''','''Producto''','''Serie''','''Cliente''','''Cantidad''', '''Unidad''','''P.Unitario''', '''Importe'''])
     for producto in productos:
         producto_nombre = Paragraph(producto.producto.articulos.producto.producto.nombre, styles["BodyText"])
-        data.append([producto.producto.articulos.producto.producto.codigo, producto_nombre, producto.referencia, producto.cliente, producto.cantidad, producto.producto.articulos.producto.producto.unidad, producto.precio, producto.precio * producto.cantidad])
+        data.append([producto.producto.articulos.producto.producto.codigo, producto_nombre, producto.producto.articulos.serie, producto.vale_salida.cliente, producto.cantidad, producto.producto.articulos.producto.producto.unidad, producto.precio, producto.precio * producto.cantidad])
         #high = high - 18
    
     c.setFillColor(black)
@@ -2219,14 +2219,16 @@ def render_salida_pdf(request, pk):
     c.drawCentredString(100, proyecto_y - 40, vale.almacenista.staff.first_name +' '+vale.almacenista.staff.last_name)
 
     #c.line(370, proyecto_y - 20, 430, proyecto_y - 20)
-    c.drawCentredString(500, proyecto_y - 30, 'Recibió')
+    
     if vale.material_recibido_por:
+        c.drawCentredString(500, proyecto_y - 30, 'Recibió')
         c.drawCentredString(500, proyecto_y - 40,vale.material_recibido_por.staff.first_name +' '+vale.material_recibido_por.staff.last_name)
     elif vale.cliente:
-        c.drawCentredString(500, proyecto_y - 40, str(vale.cliente+ ' ' + vale.destino))
+        c.drawCentredString(500, proyecto_y - 30, 'Cliente / Destino')
+        c.drawCentredString(500, proyecto_y - 40, str(vale.cliente+ ' / ' + vale.destino))
 
     c.drawCentredString(300, proyecto_y - 30, 'Autorizó')
-    c.drawCentredString(300, proyecto_y - 40, vale.solicitud.staff.staff.first_name + '--' + vale.solicitud.staff.staff.last_name)
+    c.drawCentredString(300, proyecto_y - 40, vale.solicitud.staff.staff.first_name + ' ' + vale.solicitud.staff.staff.last_name)
 
     # Franja azul final debajo de firmas
     c.setFillColor(prussian_blue)
