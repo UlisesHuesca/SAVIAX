@@ -54,7 +54,7 @@ from reportlab.lib.pagesizes import letter, portrait
 from reportlab.rl_config import defaultPageSize
 
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.lib.enums import TA_CENTER
+from reportlab.lib.enums import TA_CENTER, TA_LEFT
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, Frame
 from bs4 import BeautifulSoup
 import urllib.request, urllib.parse, urllib.error
@@ -2160,13 +2160,33 @@ def render_salida_pdf(request, pk):
 
     c.drawInlineImage('static/images/logo vordtec_documento.png',30,caja_iso-22, 2 * cm, 1 * cm) #Imagen vortec
 
+    cell_style = ParagraphStyle(
+        "cell_style",
+        parent=styles["BodyText"],
+        fontName="Helvetica",
+        fontSize=6,
+        leading=7,          # IMPORTANTÍSIMO para que no se encimen líneas
+        alignment=TA_LEFT,
+        wordWrap="CJK",     # wrap agresivo y estable
+    )
+
 
     data =[]
     #high = 670
-    data.append(['''Código''','''Producto''','''Serie''','''Cliente''','''Cantidad''', '''Unidad''','''P.Unitario''', '''Importe'''])
+    data.append(['Código','Producto','Serie','Cliente','Cantidad', 'Unidad','P.Unitario', 'Importe'])
     for producto in productos:
-        producto_nombre = Paragraph(producto.producto.articulos.producto.producto.nombre, styles["BodyText"])
-        data.append([producto.producto.articulos.producto.producto.codigo, producto_nombre, producto.producto.articulos.serie, producto.vale_salida.cliente, producto.cantidad, producto.producto.articulos.producto.producto.unidad, producto.precio, producto.precio * producto.cantidad])
+        producto_nombre = Paragraph(producto.producto.articulos.producto.producto.nombre, cell_style)
+        cliente_p = Paragraph(str(producto.vale_salida.cliente or ""), cell_style)
+        data.append([
+            producto.producto.articulos.producto.producto.codigo,
+            producto_nombre,
+            str(producto.producto.articulos.serie or ""),
+            cliente_p,  # 👈 aquí
+            str(producto.cantidad),
+            str(producto.producto.articulos.producto.producto.unidad or ""),
+            f"{producto.precio:,.2f}",
+            f"{(producto.precio * producto.cantidad):,.2f}",
+        ])
         #high = high - 18
    
     c.setFillColor(black)
@@ -2179,7 +2199,7 @@ def render_salida_pdf(request, pk):
     table.setStyle(TableStyle([ #estilos de la tabla
         ('INNERGRID',(0,0),(-1,-1), 0.25, colors.white),
         ('BOX',(0,0),(-1,-1), 0.25, colors.black),
-        ('VALIGN',(0,0),(-1,-1),'MIDDLE'),
+        ('VALIGN',(0,0),(-1,-1),'TOP'),
         #ENCABEZADO
         ('TEXTCOLOR',(0,0),(-1,0), white),
         ('FONTSIZE',(0,0),(-1,0), 10),
