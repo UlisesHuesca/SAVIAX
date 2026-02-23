@@ -2133,6 +2133,10 @@ def generar_pdf(compra):
     # Dibuja la primera página
     first_page_data = data_c[:rows_per_page_first + 1]  # Incluye encabezado
     table = Table(first_page_data, colWidths=[0.5 * cm, 1 * cm, 2 * cm, 1.5 * cm, 1.5 * cm, 4 * cm, 4 * cm, 6* cm])
+    TABLE_LEFT = 20
+    TABLE_TOP  = 690   # empieza con 690 y bájalo si tu header invade
+    BOTTOM     = 40
+    GAP        = 8
     avail_w = width - (TABLE_LEFT * 2)
     avail_h = (TABLE_TOP - GAP) - BOTTOM
     w, h = table.wrap(avail_w, avail_h)
