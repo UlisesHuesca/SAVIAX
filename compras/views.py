@@ -2173,7 +2173,7 @@ def generar_pdf(compra):
         avail_w = width - 40  # Ancho disponible considerando los márgenes
         avail_h = height - 200
         w, h = table.wrap(avail_w, avail_h)
-        high = 690
+        high = 600
         #table.wrapOn(c, avail_w, avail_h)
         table.drawOn(c, 20, high - h)
     c.showPage()
