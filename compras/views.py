@@ -2170,8 +2170,12 @@ def generar_pdf(compra):
         # Dibuja la tabla
         table = Table(current_page_data, colWidths=[1.2 * cm, 1.5 * cm, 2 * cm, 1.5 * cm, 1.3 * cm, 9.5 * cm, 1.5 * cm, 1.5 * cm])
         table.setStyle(table_style)
-        table.wrapOn(c, width, height)
-        table.drawOn(c, 20, high-total_table_height)
+        avail_w = width - 40  # Ancho disponible considerando los márgenes
+        avail_h = height - 200
+        w, h = table.wrap(avail_w, avail_h)
+        high = 690
+        #table.wrapOn(c, avail_w, avail_h)
+        table.drawOn(c, 20, high - h)
     c.showPage()
 
     # Barra azul superior
