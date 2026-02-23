@@ -2133,13 +2133,15 @@ def generar_pdf(compra):
     # Dibuja la primera página
     first_page_data = data_c[:rows_per_page_first + 1]  # Incluye encabezado
     table = Table(first_page_data, colWidths=[0.5 * cm, 1 * cm, 2 * cm, 1.5 * cm, 1.5 * cm, 4 * cm, 4 * cm, 6* cm])
-    table.setStyle(table_style)
-    table.wrapOn(c, width, height)
-    table.drawOn(c, 20, high)
+    avail_w = width - (TABLE_LEFT * 2)
+    avail_h = (TABLE_TOP - GAP) - BOTTOM
+    w, h = table.wrap(avail_w, avail_h)
 
+    table.drawOn(c, TABLE_LEFT, (TABLE_TOP - GAP) - h)
+
+    remaining_data = data_c[rows_per_page_first + 1:]
     # Actualiza la posición y los datos restantes
     #high = height - 100  # Ajustar para la primera página
-    remaining_data = data_c[rows_per_page_first + 1:]
 
     while remaining_data:
         c.showPage()
