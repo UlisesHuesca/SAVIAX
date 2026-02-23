@@ -49,6 +49,7 @@ class Reporte_Calidad(models.Model):
     reporte_hora = models.TimeField(null=True, blank=True)
     completo = models.BooleanField(default=False)
     autorizado = models.BooleanField(default=False) #Para decir si ya fue autorizado o aun no
+    image = models.ImageField(null=True, blank=True, upload_to='calidad')
 
     def __str__(self):
         return f'{self.id} - {self.articulo} - {self.completo} - {self.autorizado}'

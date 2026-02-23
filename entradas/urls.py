@@ -37,5 +37,7 @@ urlpatterns = [
     path('calidad/update_comentario/', views.update_comentario, name='update_comentario'),
     path('actualizar_calidad/', views.autorizar_calidad, name='autorizar_calidad'),
     path('calidad/entradas/autorizadas', views.calidad_entradas_autorizadas, name='calidad_entradas_autorizadas'),
+    path('entradas/reportes_calidad',views.matriz_reportes_calidad, name='matriz-reportes-calidad'),
+    path('reporte_calidad/<int:reporte_id>/pdf/', views.pdf_reporte_calidad, name='pdf_reporte_calidad'),
 
 ]
