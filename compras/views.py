@@ -2171,7 +2171,7 @@ def generar_pdf(compra):
         table = Table(current_page_data, colWidths=[1.2 * cm, 1.5 * cm, 2 * cm, 1.5 * cm, 1.3 * cm, 9.5 * cm, 1.5 * cm, 1.5 * cm])
         table.setStyle(table_style)
         TABLE_LEFT = 20
-        TABLE_TOP = 660   # <-- AJUSTA ESTO (prueba 660, 650, 640 según tu header)
+        TABLE_TOP = 500   # <-- AJUSTA ESTO (prueba 660, 650, 640 según tu header)
         BOTTOM = 40
         GAP = 8
         
