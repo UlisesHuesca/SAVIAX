@@ -671,7 +671,7 @@ def articulos_recepcion(request, pk):
         try:
             print(destinatarios)
             email = EmailMessage(
-                f'Desarrollo SAVIA. Información Recepción| SAVIA | OC Autorizada {compra.get_folio}|RQ: {compra.req.folio} |Sol: {compra.req.orden.folio}',
+                f'Información Recepción| SAVIA | OC Autorizada {compra.get_folio}|RQ: {compra.req.folio} |Sol: {compra.req.orden.folio}',
                 body=html_message,
                 from_email = settings.DEFAULT_FROM_EMAIL,
                 to= destinatarios,
