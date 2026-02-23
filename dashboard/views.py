@@ -1076,8 +1076,8 @@ def add_product(request):
             item.save()
             
             if item.critico.nombre == "Crítico":
-                calidad = Profile.objects.filter(tipo__nombre = "Supervisor_Calidad" )
-                proveedores = Profile.objects.filter(tipo__nombre = "Proveedores", staff__email__isnull=False)
+                calidad = Profile.objects.filter(tipo__nombre = "Supervisor_Calidad", staff__is_active=True )
+                proveedores = Profile.objects.filter(tipo__nombre = "Proveedores", staff__email__isnull=False, staff__is_active=True)
                 to_list = []
 
                 
@@ -1168,8 +1168,8 @@ def product_update(request, pk):
                 item.fecha_criticidad = dt.date.today()
             item.save()           
             if item.critico.nombre == "Crítico":
-                calidad = Profile.objects.filter(tipo__nombre = "Supervisor_Calidad" )
-                proveedores = Profile.objects.filter(tipo__nombre = "Proveedores", staff__email__isnull=False)
+                calidad = Profile.objects.filter(tipo__nombre = "Supervisor_Calidad", staff__is_active=True )
+                proveedores = Profile.objects.filter(tipo__nombre = "Proveedores", staff__email__isnull=False, staff__is_active=True)
                 to_list = []
 
                 
