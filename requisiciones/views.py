@@ -1115,7 +1115,7 @@ def requisicion_detalle(request, pk):
             #    orden.save()
         if productos_requisitados:
             #folio_consecutivo = obtener_consecutivo(usuario.distrito, requisiciones)
-            requi.folio = f"{usuario.distrito.abreviado}{str(requi.id).zfill(6)}"
+            requi.folio = f"{usuario.distrito.abreviado}{str(requi.id).zfill(4)}"
             requi.save()
             #form.save()
             orden.save()
