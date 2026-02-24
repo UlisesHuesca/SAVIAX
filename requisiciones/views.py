@@ -1064,13 +1064,14 @@ def update_requisicion(request):
 
     return JsonResponse('Item updated, action executed: '+data["action"], safe=False)
 
-def obtener_consecutivo(distrito, requis):
+def obtener_consecutivo(requis):
     # Obtener la última requisición del distrito basado en la fecha de creación
-    ultima_requisicion = requis.filter(orden__staff__distrito=distrito, complete=True).order_by('-created_at').first()
+    ultima_requisicion = requis.filter(complete=True).order_by('-created_at').first()
 
     if not ultima_requisicion:
         # Si no hay ninguna requisición previa, devolver 1 (será el primer folio)
         return 1
+
 
     # Extraer el número de folio (después de la abreviatura del distrito)
     ultimo_numero_folio = int(ultima_requisicion.folio.replace(distrito.abreviado, ''))
@@ -1097,6 +1098,7 @@ def requisicion_detalle(request, pk):
 
     if request.method == 'POST':
         form = RequisForm(request.POST, instance=requi)
+        requi = form.save(commit=False)
         requi.complete = True
         orden.requisitado = True
         conteo_pendientes_requisitar = productos.filter(requisitar = True).count()
@@ -1112,10 +1114,10 @@ def requisicion_detalle(request, pk):
             #    orden.requisitado = False
             #    orden.save()
         if productos_requisitados:
-            folio_consecutivo = obtener_consecutivo(usuario.distrito, requisiciones)
-            requi.folio = str(usuario.distrito.abreviado) + str(folio_consecutivo).zfill(4)
+            #folio_consecutivo = obtener_consecutivo(usuario.distrito, requisiciones)
+            requi.folio = f"{usuario.distrito.abreviado}{str(requi.id).zfill(6)}"
             requi.save()
-            form.save()
+            #form.save()
             orden.save()
             messages.success(request,f'Has realizado la requisición {requi.folio} con éxito')
             return redirect('solicitud-autorizada-orden')
@@ -2253,10 +2255,6 @@ def render_salida_pdf(request, pk):
     # Franja azul final debajo de firmas
     c.setFillColor(prussian_blue)
     c.rect(20, proyecto_y - 65, 565, 20, fill=True, stroke=False)
-
-
-
-
    
     c.save()
     c.showPage()
