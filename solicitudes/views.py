@@ -369,7 +369,7 @@ def checkout(request):
                         <p>Con los productos siguientes</p>
                         {productos_html}
                         <p><img src="data:image/png;base64,{image_base64}" alt="Imagen" style="width:50px;height:auto;border-radius:50%"/></p>
-                        <p>Este mensaje ha sido automáticamente generado por SAVIA 2.0</p>
+                        <p>Este mensaje ha sido automáticamente generado por SAVIA V2.0</p>
                     </body>
                 </html>
                 """
@@ -411,7 +411,7 @@ def checkout(request):
                         <p>Con los productos siguientes</p>
                         {productos_html}
                         <p><img src="data:image/png;base64,{image_base64}" alt="Imagen" style="width:50px;height:auto;border-radius:50%"/></p>
-                        <p>Este mensaje ha sido automáticamente generado por SAVIA 2.0</p>
+                        <p>Este mensaje ha sido automáticamente generado por SAVIA V2.0</p>
                     </body>
                 </html>
                 """
@@ -537,7 +537,7 @@ def checkout_resurtimiento(request):
 
             requi, created = Requis.objects.get_or_create(complete = True, orden = order)
             requi.folio = str(abrev) + str(requi.id).zfill(4)
-            requi.save()
+            #requi.save()
             for producto in productos:
                 ordensurtir , created = ArticulosparaSurtir.objects.get_or_create(articulos = producto)
                 requitem, created = ArticulosRequisitados.objects.get_or_create(req = requi, producto= ordensurtir, cantidad = producto.cantidad)
@@ -1727,7 +1727,7 @@ def convert_excel_inventario(existencia, valor_inventario, dict_entradas, dict_r
 
     columna_max = len(columns)+3
 
-    (ws.cell(column = columna_max, row = 1, value='{Reporte Creado Automáticamente por Savia Vordtec. UH}')).style = messages_style
+    (ws.cell(column = columna_max, row = 1, value='{Reporte Creado Automáticamente por SAVIA V. UH}')).style = messages_style
     (ws.cell(column = columna_max, row = 2, value='{Software desarrollado por Vordcab S.A. de C.V.}')).style = messages_style
     (ws.cell(column = columna_max, row = 3, value='Inventario Costo Total:')).style = messages_style
     (ws.cell(column = columna_max +1, row=3, value = valor_inventario)).style = money_resumen_style
@@ -1817,7 +1817,7 @@ def convert_excel_solicitud_matriz_productos(productos):
 
     # Agregar mensajes
     max_col = len(columns) + 2
-    ws.cell(row=1, column=max_col, value='{Reporte Creado Automáticamente por Savia X. UH}').style = styles['messages_style']
+    ws.cell(row=1, column=max_col, value='{Reporte Creado Automáticamente por SAVIA V. UH}').style = styles['messages_style']
     ws.cell(row=2, column=max_col, value='{Software desarrollado por Vordcab S.A. de C.V.}').style = styles['messages_style']
     ws.cell(row=3, column=max_col, value=f'Productos totales entre todas las solicitudes: {total_productos}').style = styles['messages_style']
     ws.cell(row=4, column=max_col, value=f'Número de artículos ordenados: {articulos_cantidad}').style = styles['messages_style']
@@ -1893,7 +1893,7 @@ def convert_excel_solicitud_matriz(ordenes):
 
     # Agregar mensajes
     max_col = len(columns) + 2
-    ws.cell(row=1, column=max_col, value='{Reporte Creado Automáticamente por Savia X. UH}').style = styles['messages_style']
+    ws.cell(row=1, column=max_col, value='{Reporte Creado Automáticamente por SAVIA V. UH}').style = styles['messages_style']
     ws.cell(row=2, column=max_col, value='{Software desarrollado por Vordcab S.A. de C.V.}').style = styles['messages_style']
     ws.column_dimensions[get_column_letter(max_col)].width = 20
 
