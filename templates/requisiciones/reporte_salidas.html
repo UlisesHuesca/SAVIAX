@@ -235,11 +235,19 @@
                             <i class="fa-solid fa-user"></i>
                         </a>
                     </td>-->
+                    {% if salida.producto.articulos.producto.producto.familia.nombre == "PRODUCTO TERMINADO" %}
+                      <td class="d-none d-lg-table-cell">
+                        <a type="submit" href="{% url 'vale-salida-pdf-pt' salida.id %}" class="btn btn-outline-info btn-lg">
+                            <i class="fa-solid fa-file-pdf fa-2xl"></i>
+                        </a>
+                    </td>
+                    {% else %}
                     <td class="d-none d-lg-table-cell">
                         <a type="submit" href="{% url 'vale-salida-pdf' salida.id %}" class="btn btn-outline-info btn-lg">
                             <i class="fa-solid fa-file-pdf fa-2xl"></i>
                         </a>
                     </td>
+                    {% endif %}
                     <td class="d-none d-lg-table-cell">
                         <a href="{% url 'devolucion-material-salida' salida.id %}" class="btn btn-outline-info btn-lg">
                             <i class="fa-solid fa-backward"></i>

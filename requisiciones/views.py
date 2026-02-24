@@ -2229,7 +2229,7 @@ def render_salida_pdf(request, pk):
     c.drawCentredString(165, proyecto_y, 'Subproyecto')
 
     c.setFillColor(colors.black)
-    c.setFont('Helvetica', 8)
+    c.setFont('Helvetica', 6)
     c.drawCentredString(70,  proyecto_y - 15, str(vale.solicitud.proyecto.nombre))
     c.drawCentredString(165, proyecto_y - 15, str(vale.solicitud.subproyecto.nombre))
 
@@ -2257,6 +2257,180 @@ def render_salida_pdf(request, pk):
 
 
 
+   
+    c.save()
+    c.showPage()
+    buf.seek(0)
+    return FileResponse(buf, as_attachment=True, filename='vale_salida_'+str(vale.id) +'.pdf')
+
+def render_salida_pdf_pt(request, pk):
+    #Configuration of the PDF object
+    buf = io.BytesIO()
+    c = canvas.Canvas(buf, pagesize=portrait(letter))
+    #Here ends conf.
+    articulo = Salidas.objects.get(id=pk)
+    vale = ValeSalidas.objects.get(id = articulo.vale_salida.id)
+    productos = Salidas.objects.filter(vale_salida = vale)
+    
+    styles = getSampleStyleSheet()
+    styles['BodyText'].fontSize = 6
+
+    #Azul Vordcab
+    prussian_blue = Color(0.0859375,0.1953125,0.30859375)
+    rojo = Color(0.59375, 0.05859375, 0.05859375)
+    #Encabezado
+    c.setFillColor(black)
+    c.setLineWidth(.2)
+    c.setFont('Helvetica',8)
+    caja_iso = 770
+    #Elaborar caja
+    #c.line(caja_iso,500,caja_iso,720)
+
+
+    c.drawString(420,caja_iso,'Preparado por:')
+    c.drawString(430,caja_iso-10,'Almacén')
+    c.drawString(510,caja_iso,'Aprobación')
+    c.drawString(480,caja_iso-10,'Subdirección Admninistrativa')
+    
+    c.drawString(50,caja_iso-30,'Número de documento')
+    c.drawString(60,caja_iso-40,'F-ALM-N4-03.01')
+    c.drawString(145,caja_iso-30,'Clasificación del documento')
+    c.drawString(175,caja_iso-40,'Registro')
+    c.drawString(255,caja_iso-30,'Nivel del documento')
+    c.drawString(280,caja_iso-40, 'N5')
+    c.drawString(340,caja_iso-30,'Revisión No.')
+    c.drawString(352,caja_iso-40,'000')
+    c.drawString(400,caja_iso-30,'Fecha de Emisión')
+    c.drawString(415,caja_iso-40,'19/03/2024')
+    c.drawString(490,caja_iso-30,'Fecha última modificación')
+    c.drawString(522,caja_iso-40,'19/03/2024')
+
+
+   
+    
+    #c.drawString(510,caja_iso-70,'Fecha:')
+    #c.drawString(540,caja_iso-70,vale.created_at.strftime("%d/%m/%Y"))
+    c.setFillColor(prussian_blue)
+
+    # REC (Dist del eje Y, Dist del eje X, LARGO DEL RECT, ANCHO DEL RECT)
+    
+    c.rect(150,caja_iso-15,250,20, fill=True, stroke=False) #TÍTULO
+    c.rect(30, caja_iso - 63, 190, 15, fill=True, stroke=False) #pROYECTO Y SUBPROYECTO
+    c.rect(520, caja_iso - 63, 40, 15, fill=True, stroke=False) #folio
+    c.setFillColor(white)
+    c.setFont('Helvetica',12)
+    c.drawCentredString(65,  caja_iso - 60, 'Proyecto')
+    c.drawCentredString(175, caja_iso - 60, 'Subproyecto')
+    c.drawCentredString(540,caja_iso-60,'Folio')
+    c.setFont('Helvetica-Bold',12)
+    c.drawCentredString(280,caja_iso-10,'Salida de Producto Terminado')
+    c.setLineWidth(.3) #Grosor
+    c.setFillColor(black)
+    c.setFont('Helvetica',8)
+    c.drawCentredString(65,  caja_iso - 75, str(vale.solicitud.proyecto.nombre))
+    c.drawCentredString(175, caja_iso - 75, str(vale.solicitud.subproyecto.nombre))
+    c.drawCentredString(540,caja_iso-75, str(vale.id))
+   
+    #c.setLineWidth(.2)
+    
+   
+    #c.setLineWidth(.3) #Grosor
+
+    c.drawInlineImage('static/images/logo vordtec_documento.png',35,caja_iso-22, 2 * cm, 1 * cm) #Imagen vortec
+
+    cell_style = ParagraphStyle(
+        "cell_style",
+        parent=styles["BodyText"],
+        fontName="Helvetica",
+        fontSize=6,
+        leading=7,          # IMPORTANTÍSIMO para que no se encimen líneas
+        alignment=TA_LEFT,
+        wordWrap="CJK",     # wrap agresivo y estable
+    )
+
+
+    data =[]
+    #high = 670
+    data.append(['Código','Cantidad','Unidad','Producto','Serie'])
+    for producto in productos:
+        producto_nombre = Paragraph(producto.producto.articulos.producto.producto.nombre, cell_style)
+        cliente_p = Paragraph(str(producto.vale_salida.cliente or ""), cell_style)
+        data.append([
+            producto.producto.articulos.producto.producto.codigo,
+            str(producto.cantidad),
+            str(producto.producto.articulos.producto.producto.unidad or ""),
+            producto_nombre,
+            str(producto.producto.articulos.serie or ""),
+            #cliente_p,  # 👈 aquí
+            #f"{producto.precio:,.2f}",
+            #f"{(producto.precio * producto.cantidad):,.2f}",
+        ])
+        #high = high - 18
+   
+    c.setFillColor(black)
+    c.setFont('Helvetica',8)
+    proyecto_y = 760
+
+    
+    width, height = letter
+    table = Table(data, colWidths=[2.0 * cm, 2.0 * cm, 2.0 * cm, 11 * cm,  3.0 * cm ])
+    table.setStyle(TableStyle([ #estilos de la tabla
+        ('INNERGRID',(0,0),(-1,-1), 0.25, colors.white),
+        ('BOX',(0,0),(-1,-1), 0.25, colors.black),
+        ('VALIGN',(0,0),(-1,-1),'TOP'),
+        #ENCABEZADO
+        ('TEXTCOLOR',(0,0),(-1,0), white),
+        ('FONTSIZE',(0,0),(-1,0), 10),
+        ('BACKGROUND',(0,0),(-1,0), prussian_blue),
+        #CUERPO
+        ('TEXTCOLOR',(0,1),(-1,-1), colors.black),
+        ('FONTSIZE',(0,1),(-1,-1), 6),
+        ]))
+    # 1) Decidimos el "top" donde quieremos que INICIE la tabla (debajo del bloque azul o debajo del encabezado)
+    top_table_y = proyecto_y - 85   # ajusta este margen a tu gusto
+   
+    # 2) Calculamos alto real
+    tw, th = table.wrap(width - 40, height)
+    # 3) Dibuja usando esquina inferior = top - alto
+    table.drawOn(c, 20, top_table_y - th)
+
+    gap_after_table = 25
+    proyecto_y = top_table_y - th - gap_after_table  # aquí anclas tu bloque 
+
+    # ---- tu bloque original usando proyecto_y ----
+    
+
+    #c.setFillColor(colors.white)
+    #c.setFont('Helvetica-Bold', 10)
+    
+
+    c.setFillColor(colors.black)
+    c.setFont('Helvetica', 8)
+   
+
+    # Firmas (igual que ya lo tienes, pero basadas en proyecto_y)
+    c.setFont('Helvetica', 8)
+    c.drawCentredString(100, proyecto_y - 30, 'Entregó')
+    c.drawCentredString(100, proyecto_y - 40, vale.almacenista.staff.first_name +' '+vale.almacenista.staff.last_name)
+
+    #c.line(370, proyecto_y - 20, 430, proyecto_y - 20)
+    
+    if vale.material_recibido_por:
+        c.drawCentredString(500, proyecto_y - 30, 'Recibió')
+        c.drawCentredString(500, proyecto_y - 40,vale.material_recibido_por.staff.first_name +' '+vale.material_recibido_por.staff.last_name)
+    elif vale.cliente:
+        c.drawCentredString(500, proyecto_y - 30, 'Recibió')
+        c.drawCentredString(500, proyecto_y - 40, str(vale.cliente)) #+ ' / ' + vale.destino))
+
+    c.drawCentredString(300, proyecto_y - 30, 'Autorizó')
+    c.drawCentredString(300, proyecto_y - 40, vale.solicitud.staff.staff.first_name + ' ' + vale.solicitud.staff.staff.last_name)
+
+    c.drawCentredString(300, proyecto_y - 55, 'Visto Bueno')
+    c.drawCentredString(300, proyecto_y - 65, vale.solicitud.superintendente.staff.first_name + ' ' + vale.solicitud.superintendente.staff.last_name)
+
+    # Franja azul final debajo de firmas
+    c.setFillColor(prussian_blue)
+    c.rect(20, proyecto_y - 95, 565, 20, fill=True, stroke=False)
    
     c.save()
     c.showPage()

@@ -39,6 +39,7 @@ urlpatterns = [
     path('inventario/historico_articulos_para_surtir/', views.historico_articulos_para_surtir, name='historico-articulos-para-surtir'),
     path('salidas/historico_salidas/', views.historico_salidas, name='historico-salidas'),
     path('salida_material/salida_pdf/<int:pk>/', views.render_salida_pdf, name='vale-salida-pdf'),
+    path('salida_material/salida_pdf_pt/<int:pk>/', views.render_salida_pdf_pt, name='vale-salida-pdf-pt'),
     path('entrada_material/entrada_pdf/<int:pk>/', views.render_entrada_pdf, name='vale-entrada-pdf'),
 
     path('requisiciones/estatus', views.requisiciones_status, name='requisiciones-status'),
