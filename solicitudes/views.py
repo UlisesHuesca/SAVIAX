@@ -1611,7 +1611,7 @@ def autorizada_sol(request, pk):
                 if producto.producto.producto.servicio == True:
                     requi, created = Requis.objects.get_or_create(complete = True, orden = order)
                     requitem, created = ArticulosRequisitados.objects.get_or_create(req = requi, producto= ordensurtir, cantidad = producto.cantidad)
-                    requi.folio = f"{usuario.distrito.abreviado}{str(requi.id).zfill(4)}"
+                    requi.folio = f"{perfil.distrito.abreviado}{str(requi.id).zfill(4)}"
                     order.requisitar=False
                     ordensurtir.requisitar=False
                     requi.save()
