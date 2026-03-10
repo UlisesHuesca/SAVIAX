@@ -1992,8 +1992,8 @@ def solicitud_productos_terminados(request):
     proyectos = Proyecto.objects.filter(activo = True)
     subproyectos = Subproyecto.objects.all()
 
-    last_order = Order.objects.filter(tipo=tipo, complete = True).order_by('-folio').first()
-
+    last_order = Order.objects.filter(tipo=tipo, complete = True).annotate(folio_num=Cast('folio', IntegerField())).order_by('-folio_num').first()
+    print('last_order:', last_order)
     proyecto_para_select2 = [
         {
             'id': proyecto.id, 
