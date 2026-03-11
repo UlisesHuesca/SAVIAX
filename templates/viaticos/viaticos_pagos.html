@@ -4,7 +4,7 @@
 {% load widget_tweaks %}
 <html>
 <head>
-{% block title %}Autorización OC{% endblock %}
+{% block title %}Viático Pago{% endblock %}
 </head>
 <body>
 {% block content %}
@@ -38,7 +38,7 @@
 <div class="modal-dialog modal-lg"  id="document" role="document">
     <div class="modal-content">
         <div class="modal-header">
-            <h5 class="modal-title">Autorizar Viático: {{viatico.id}}</h5>
+            <h5 class="modal-title">Viático: {{viatico.id}}</h5>
             <button class="btn-close" type="button" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
 
@@ -48,6 +48,9 @@
                     <tr>
                     <th scope="col"><i class="fa-solid fa-person-walking-luggage"></i> Viatico para:</th>
                     <th scope="col">{{viatico.colaborador.staff.first_name}} {{viatico.colaborador.staff.last_name}}</th>
+                    <th>{{viatico.colaborador.banco.nombre}}</th>
+                    <th>{{viatico.colaborador.cuenta_bancaria}}</th>
+                    <th>{{viatico.colaborador.clabe}}</th>
                     </tr>
                 </thead>
                 <tbody>
