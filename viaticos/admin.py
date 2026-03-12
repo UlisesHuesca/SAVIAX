@@ -11,13 +11,14 @@ class Concepto_ViaticoAdmin(admin.ModelAdmin):
     list_display = ('id','viatico','producto','precio','cantidad','comentario')
     search_fields = ('id',)
 
-class Viaticos_FacturaAdmin(admin.ModelAdmin):
-    list_display = ('id', 'subido_por')
+class Viatico_Factura_Admin(admin.ModelAdmin):
+    list_display = ('id','concepto_viatico','factura_pdf','factura_xml','uuid')
+    search_fields = ('id','uuid','concepto_viatico__viatico__folio')
 
 
 admin.site.register(Solicitud_Viatico, Solicitud_ViaticoAdmin)
 
 admin.site.register(Concepto_Viatico, Concepto_ViaticoAdmin)
 
-admin.site.register(Viaticos_Factura, Viaticos_FacturaAdmin)
+admin.site.register(Viaticos_Factura, Viatico_Factura_Admin)
 
