@@ -62,7 +62,7 @@ class Facturas(models.Model):
     def __str__(self):
         return f'id:{self.id} oc:{self.oc}'
     
-     @property   
+    @property   
     def emisor(self):
         if not self.factura_xml:
             print(f"Error: {self.id} no tiene un archivo asociado.")
