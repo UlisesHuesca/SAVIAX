@@ -15,11 +15,14 @@ class Articulo_Gasto_Admin(admin.ModelAdmin):
 class Entrada_Gasto_Ajuste_Admin(admin.ModelAdmin):
     list_display =('id','gasto','almacenista','completo')
 
-class Factura_Admin(admin.ModelAdmin):
-    list_display = ('solicitud_gasto', 'fecha_subida')
 
 class Conceptos_Entradas_Admin(admin.ModelAdmin):
     list_display =('id','entrada','concepto_material')
+
+class Factura_Admin(admin.ModelAdmin):
+    list_display = ('id','solicitud_gasto', 'fecha_subida', 'archivo_pdf', 'archivo_xml','uuid')   
+    raw_id_fields = ('solicitud_gasto',) 
+    search_fields = ('id','solicitud_gasto__id', 'solicitud_gasto__folio','uuid')
 
 admin.site.register(Solicitud_Gasto, Solicitud_Gasto_Admin)
 
