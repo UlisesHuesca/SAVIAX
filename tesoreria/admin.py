@@ -4,7 +4,7 @@ from .models import Cuenta, Pago, Facturas
 class FacturasAdmin(admin.ModelAdmin):
     search_fields = ['oc__folio','id','uuid']
     raw_id_fields = ('oc',)
-    list_display = ('id','oc','factura_pdf')
+    list_display = ('id','oc','factura_pdf','factura_xml','uuid')
 
 class PagoAdmin(admin.ModelAdmin):
     list_display = ('id','oc','gasto','viatico','tesorero','monto', 'hecho')
