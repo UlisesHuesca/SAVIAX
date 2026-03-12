@@ -181,7 +181,7 @@ class Factura(models.Model):
     archivo_pdf = models.FileField(upload_to='facturas', validators=[FileExtensionValidator(['pdf'])])
     archivo_xml = models.FileField(blank=True, null=True, upload_to='xml', validators=[FileExtensionValidator(['xml'])])
     fecha_subida= models.DateTimeField(null=True, blank=True)
-    uuid = models.CharField(max_length=36, blank=True, null=True, unique = True, db_index=True)
+    uuid = models.CharField(max_length=36, blank=True, null=True, db_index=True)
     fecha_timbrado = models.DateTimeField(null=True,blank=True)
 
     @property   
