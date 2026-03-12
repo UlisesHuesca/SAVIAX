@@ -62,8 +62,27 @@
                         <th scope="col">Solicitante:</th>
                         <th scope="col">{{gasto.staff.staff.first_name}} {{gasto.staff.staff.last_name}}</th>
                         </tr>
+                        
                     </thead>
                     <tbody>
+                        {% if gasto.colaborador %}
+                        <tr>
+                            <th>Solicitado para:</th>
+                            <th>{{gasto.colaborador.staff.first_name}} {{gasto.colaborador.staff.last_name}}s</th>
+                        </tr>
+                        <tr>
+                            <th>Banco:</th>
+                            <th>{{gasto.colaborador.banco}}</th>
+                        </tr>
+                        <tr>
+                            <th>Cuenta:</th>
+                            <th>{{gasto.colaborador.cuenta_bancaria}}</th>
+                        </tr>
+                        <tr>
+                            <th>Clabe:</th>
+                            <th>{{gasto.colaborador.clabe}}</th>
+                        </tr>
+                        {% else %}
                         <tr>
                             <th scope="col">Banco:</th>
                             <th scope="col">{{gasto.staff.banco}}</th>
@@ -76,9 +95,10 @@
                             <th scope="col">Clabe:</th>
                             <th scope="col">{{gasto.staff.clabe}}</th>
                         </tr>
+                        {% endif %}
                     </tbody>
                 </table>
-                <hr>
+               
                 <table class='table table striped'>
                     <thead>
                         <tr>
