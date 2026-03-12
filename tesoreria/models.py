@@ -6,6 +6,7 @@ from viaticos.models import Solicitud_Viatico
 #from djmoney.models.fields import MoneyField
 from simple_history.models import HistoricalRecords
 from django.core.validators import FileExtensionValidator
+import xml.etree.ElementTree as ET
 # Create your models here.
 
 
