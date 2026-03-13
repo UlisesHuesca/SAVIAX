@@ -1,4 +1,4 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from datetime import date, datetime
 from django.contrib import messages
 from django.core.mail import EmailMessage, BadHeaderError
@@ -8,6 +8,8 @@ from django.core.paginator import Paginator
 from django.conf import settings
 from django.db.models import Sum
 from django.urls import reverse
+from django.views.decorators.clickjacking import xframe_options_sameorigin
+
 import socket
 import traceback
 from smtplib import SMTPException
@@ -1057,6 +1059,18 @@ def delete_articulo_entrada(request, pk):
 
     return redirect('gasto-entrada',pk= gasto)
 
+@xframe_options_sameorigin
+def ver_gasto_pdf(request, pk):
+    gasto = get_object_or_404(Solicitud_Gasto, id=pk)
+    #if compra.req.orden.distrito.nombre != "BRASIL":
+    #    buf = generar_pdf_nueva(compra)  # tu función
+    #else:
+    buf = render_pdf_gasto(gasto.id)  
+    filename = f"Gasto_{gasto.folio}.pdf"
+
+    resp = FileResponse(buf, content_type="application/pdf")
+    resp["Content-Disposition"] = f'inline; filename="{filename}"'
+    return resp
 
 def render_pdf_gasto(request, pk):
     #Configuration of the PDF object
