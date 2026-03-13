@@ -1004,7 +1004,10 @@ def gasto_entrada(request, pk):
                         created_at_time=datetime.now().time(),
                     )
                     #Calculo el precio 
+                    if producto_inventario.price == 0:
+                        producto_inventario.price = item_producto.precio_unitario
                     producto_inventario.price = ((item_producto.precio_unitario * item_producto.cantidad)+ ((producto_inventario.cantidad_apartada + producto_inventario.cantidad) * producto_inventario.price))/(producto_inventario.cantidad + item_producto.cantidad + producto_inventario.cantidad_apartada)
+                    #La cantidad en inventario + la cantidad del producto en la entrada <-----esta parte es la que no veo sucediendo
                     #La cantidad en inventario + la cantidad del producto en la entrada
                     producto_inventario.cantidad_apartada = producto_inventario.cantidad_apartada + item_producto.cantidad
                     #producto_inventario.save()
@@ -1013,11 +1016,11 @@ def gasto_entrada(request, pk):
                
                 try:
                     email = EmailMessage(
-                        subject=f'Entrada de producto por gasto: {articulo_gasto.producto.producto.nombre} |Gasto: {articulo_gasto.gasto.folio}|Solicitud:{orden_producto.folio}',
+                        subject=f'Entrada de producto por gasto: {articulo_gasto.producto.producto.nombre} | Gasto: {articulo_gasto.gasto.id}|Solicitud:{orden_producto.folio}',
                         body=(
-                            f'Estimado {articulo_gasto.staff.staff.first_name} {articulo_gasto.staff.staff.last_name},\n'
+                            f'Estimado(a) {articulo_gasto.staff.staff.first_name} {articulo_gasto.staff.staff.last_name},\n\n'
                             f'Estás recibiendo este correo porque tu producto: {articulo_gasto.producto.producto.nombre}'
-                            f'ha sido validado por el almacenista {usuario.staff.first_name} {usuario.staff.last_name}, '
+                            f' ha sido validado por el almacenista {usuario.staff.first_name} {usuario.staff.last_name}, '
                             f'favor de pasar a firmar el vale de salida para terminar con este proceso.\n\n'
                             f' Este mensaje ha sido automáticamente generado por SAVIA VORDTEC'
                         ),
