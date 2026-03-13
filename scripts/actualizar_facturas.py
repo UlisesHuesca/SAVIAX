@@ -131,7 +131,7 @@ def obtener_registros_uuid():
             'pdf': f.archivo_pdf.name if getattr(f, 'archivo_pdf', None) else '',
             'referencia': f.solicitud_gasto_id,
             'propietario': nombre_persona(staff_gasto),
-            #'subido_por': str(f.subido_por) if f.subido_por else '',
+            'subido_por': nombre_persona(staff_gasto),
         })
 
     compras = Facturas.objects.select_related(
