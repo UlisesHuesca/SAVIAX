@@ -136,12 +136,12 @@ def obtener_registros_uuid():
 
     compras = Facturas.objects.select_related(
         'oc',
-        'oc__creado_por',
+        'oc__creada_por',
         'subido_por',
     ).exclude(uuid__isnull=True).exclude(uuid='')
 
     for f in compras:
-        creado_por = getattr(f.oc, 'creado_por', None) if f.oc else None
+        creada_por = getattr(f.oc, 'creada_por', None) if f.oc else None
 
         registros.append({
             'uuid': f.uuid,
@@ -151,7 +151,7 @@ def obtener_registros_uuid():
             'xml': f.factura_xml.name if getattr(f, 'factura_xml', None) else '',
             'pdf': f.factura_pdf.name if getattr(f, 'factura_pdf', None) else '',
             'referencia': f.oc_id,
-            'propietario': str(creado_por) if creado_por else '',
+            'propietario': str(creada_por) if creada_por else '',
             'subido_por': str(f.subido_por) if f.subido_por else '',
         })
 
