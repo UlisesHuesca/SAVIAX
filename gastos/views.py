@@ -1327,20 +1327,24 @@ def render_pdf_gasto(request, pk):
         if factura.archivo_xml:
             emisor = factura.emisor  # Aquí emisor es un diccionario
             # Convertir el total a Decimal (o float) antes de formatear
+            if not emisor:
+                continue
+
             descripciones = [item.get('descripcion', '') for item in emisor.get('resultados', [])]
             descripciones_str = ', '.join(descripciones)
-           
+
             try:
                 total_factura = Decimal(emisor.get('total') or '0.00')
             except (InvalidOperation, ValueError, TypeError):
                 total_factura = Decimal('0.00')
 
-            suma_total += total_factura  # Suma al total acumulado
+            suma_total += total_factura
             data_facturas.append([
-                descripciones_str, 
+                descripciones_str,
                 emisor.get('nombre_emisor', ''),
-                f"${total_factura:,.2f}",  # Formatea el total como una cadena de texto
+                f"${total_factura:,.2f}",
             ])
+            
 
     for i, row in enumerate(data_facturas):
         for j, item in enumerate(row):
