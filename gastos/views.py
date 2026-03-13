@@ -221,7 +221,7 @@ def crear_gasto(request):
                     archivo_procesado = eliminar_caracteres_invalidos(archivo_xml)
                     uuid_extraido, fecha_timbrado_extraida, rfc_receptor = extraer_datos_del_xml(archivo_procesado)
 
-                    RFC_RECEPTORES_ESPERADOS = {"GVO020226811", "SPP0605268G8"}
+                    RFC_RECEPTORES_ESPERADOS = {"VME121113PI3"} #,"GVO020226811", "SPP0605268G8"
                     if rfc_receptor and rfc_receptor not in RFC_RECEPTORES_ESPERADOS:
                         messages.error(
                             request,
@@ -732,7 +732,7 @@ def matriz_facturas_gasto(request, pk):
                     archivo_procesado = eliminar_caracteres_invalidos(archivo_xml)
                     uuid_extraido, fecha_timbrado_extraida, rfc_receptor = extraer_datos_del_xml(archivo_procesado)
 
-                    RFC_RECEPTORES_ESPERADOS = {"GVO020226811", "SPP0605268G8"}
+                    RFC_RECEPTORES_ESPERADOS = {"VME121113PI3"} #,"GVO020226811", "SPP0605268G8"
                     if rfc_receptor and rfc_receptor not in RFC_RECEPTORES_ESPERADOS:
                         messages.error(
                             request,

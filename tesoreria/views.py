@@ -1,38 +1,45 @@
 from django.shortcuts import render, redirect
 from django.http import HttpResponse
 from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+from django.conf import settings
+from django.db.models import Sum, Prefetch
+from django.core.paginator import Paginator
+from django.db.models.functions import Concat
+from django.urls import reverse
+from django.core.mail import EmailMessage, BadHeaderError
+
 from compras.models import ArticuloComprado, Compra
 from compras.forms import CompraForm
 from compras.filters import CompraFilter
 from compras.views import dof, attach_oc_pdf, convert_excel_matriz_compras
 from dashboard.models import Subproyecto
 from .models import Pago, Cuenta, Facturas
-from gastos.models import Solicitud_Gasto
-from viaticos.models import Solicitud_Viatico
+from gastos.models import Solicitud_Gasto, Articulo_Gasto, Factura
+from viaticos.models import Solicitud_Viatico, Viaticos_Factura
 from .forms import PagoForm, Facturas_Form, Facturas_Completas_Form, Saldo_Form, ComprobanteForm, UploadFileForm
 from .filters import PagoFilter, Matriz_Pago_Filter
 from viaticos.filters import Solicitud_Viatico_Filter
 from gastos.filters import Solicitud_Gasto_Filter
-from gastos.models import Articulo_Gasto
+from gastos.views import eliminar_caracteres_invalidos, extraer_datos_del_xml
+
 from user.models import Profile
-from django.contrib import messages
-from django.conf import settings
-from django.db.models import Sum, Prefetch
+
 from datetime import date, datetime
 from requisiciones.views import get_image_base64
 import decimal
-from django.core.mail import EmailMessage, BadHeaderError
+
 from smtplib import SMTPException
-from django.core.paginator import Paginator
+
 #Excel stuff
 from openpyxl import Workbook
 from openpyxl.styles import NamedStyle, Font, PatternFill
 from openpyxl.utils import get_column_letter
 import datetime as dt
-from django.db.models.functions import Concat
+
 import os
 import socket
-from django.urls import reverse
+
 
 
 # Create your views here.
@@ -479,35 +486,170 @@ def factura_nueva(request, pk):
     
     form = UploadFileForm()
 
-    if request.method == 'POST':
-        print('post')
-        if 'btn_registrar' in request.POST:
-            print('registrar')
-            form = UploadFileForm(request.POST, request.FILES or None)
-            
-            if form.is_valid():
-                archivo_pdf = request.FILES.get('archivo_pdf')
-                archivo_xml = request.FILES.get('archivo_xml')
+    if request.method == 'POST' and 'btn_registrar' in request.POST:
+        form = UploadFileForm(request.POST, request.FILES)
 
+        if form.is_valid():
+            archivos_pdf = request.FILES.getlist('archivo_pdf')
+            archivos_xml = request.FILES.getlist('archivo_xml')
+
+            if not archivos_pdf and not archivos_xml:
+                messages.error(request, 'Debes subir al menos un archivo PDF o XML.')
+                return HttpResponse(status=204)
+
+            comentario = request.POST.get('comentario', '')
+            facturas_registradas = []
+            facturas_duplicadas = []
+            facturas_mes_invalido = []
+            errores = []
+
+            RFC_RECEPTORES_ESPERADOS = {"VME121113PI3"} #"GVO020226811", "SPP0605268G8"
+
+            max_len = max(len(archivos_pdf), len(archivos_xml))
+
+            for i in range(max_len):
+                archivo_pdf = archivos_pdf[i] if i < len(archivos_pdf) else None
+                archivo_xml = archivos_xml[i] if i < len(archivos_xml) else None
+
+                uuid_extraido = None
+                fecha_timbrado_extraida = None
+
+                # Crear una factura nueva por iteración
+                factura = Facturas(
+                    oc=compra,
+                    hecho=True,
+                    fecha_subido=date.today(),
+                    hora_subido=datetime.now().time(),
+                    subido_por=usuario,
+                    comentario=comentario,
+                )
+
+                # Procesar XML
+                if archivo_xml:
+                    try:
+                        archivo_procesado = eliminar_caracteres_invalidos(archivo_xml)
+                        uuid_extraido, fecha_timbrado_extraida, rfc_receptor = extraer_datos_del_xml(archivo_procesado)
+
+                        if rfc_receptor and rfc_receptor not in RFC_RECEPTORES_ESPERADOS:
+                            errores.append(
+                                f"{archivo_xml.name}: RFC receptor inválido ({rfc_receptor})."
+                            )
+                            continue
+
+                        fecha_timbrado_dt = None
+                        if fecha_timbrado_extraida:
+                            try:
+                                fecha_timbrado_dt = datetime.strptime(
+                                    fecha_timbrado_extraida, "%Y-%m-%dT%H:%M:%S"
+                                )
+                            except ValueError:
+                                errores.append(
+                                    f"{archivo_xml.name}: formato de fecha inválido ({fecha_timbrado_extraida})."
+                                )
+                                continue
+
+                        # Si más adelante reactivas la validación por mes:
+                        # if fecha_timbrado_dt:
+                        #     fecha_actual = datetime.today()
+                        #     if (fecha_timbrado_dt.month != fecha_actual.month or
+                        #         fecha_timbrado_dt.year != fecha_actual.year):
+                        #         facturas_mes_invalido.append(uuid_extraido or archivo_xml.name)
+                        #         continue
+
+                        # Validación de duplicados
+                        factura_existente = Factura.objects.filter(
+                            uuid=uuid_extraido,
+                            fecha_timbrado=fecha_timbrado_extraida
+                        ).first()
+
+                        facturas_existentes = Facturas.objects.filter(
+                            uuid=uuid_extraido,
+                            fecha_timbrado=fecha_timbrado_extraida
+                        ).first()
+
+                        viaticos_factura_existente = Viaticos_Factura.objects.filter(
+                            uuid=uuid_extraido,
+                            fecha_timbrado=fecha_timbrado_extraida
+                        ).first()
+
+                        duplicada = False
+
+                        if factura_existente:
+                            if (factura_existente.solicitud_gasto.autorizar is False or
+                                factura_existente.solicitud_gasto.autorizar2 is False):
+                                factura_existente.delete()
+                            else:
+                                duplicada = True
+
+                        elif facturas_existentes:
+                            if (facturas_existentes.oc.autorizado1 is False or
+                                facturas_existentes.oc.autorizado2 is False):
+                                facturas_existentes.delete()
+                            else:
+                                duplicada = True
+
+                        elif viaticos_factura_existente:
+                            if (viaticos_factura_existente.solicitud_viatico.autorizar is False or
+                                viaticos_factura_existente.solicitud_viatico.autorizar2 is False):
+                                viaticos_factura_existente.delete()
+                            else:
+                                duplicada = True
+
+                        if duplicada:
+                            facturas_duplicadas.append(uuid_extraido or archivo_xml.name)
+                            continue
+
+                        # Guardar datos XML en la factura actual
+                        factura.factura_xml = archivo_xml
+                        factura.uuid = uuid_extraido
+                        factura.fecha_timbrado = fecha_timbrado_extraida
+
+                    except Exception as e:
+                        errores.append(f"{archivo_xml.name}: error al procesar XML ({str(e)}).")
+                        continue
+
+                # Procesar PDF
+                if archivo_pdf:
+                    factura.factura_pdf = archivo_pdf
+
+                # Si no trae nada usable, saltar
                 if not archivo_pdf and not archivo_xml:
-                    messages.error(request, 'Debes subir al menos un archivo PDF o XML.')
-                    return HttpResponse(status=204)
+                    continue
 
-                comentario = request.POST.get('comentario', '')  # Extraer el comentario
-                factura, created = Facturas.objects.get_or_create(oc=compra, hecho=False)
-                factura.factura_pdf = archivo_pdf
-                factura.factura_xml = archivo_xml
-                factura.hecho = True
-                factura.fecha_subido = date.today()
-                factura.hora_subido = datetime.now().time()
-                factura.subido_por = usuario
-                factura.comentario = comentario
                 factura.save()
-                messages.success(request, 'La factura se registró de manera exitosa')
-            else:
-                messages.error(request,'No se pudo subir tu documento')
-                for field, errors in form.errors.items():
-                    print[field] = errors.as_text()
+
+                if uuid_extraido:
+                    facturas_registradas.append(uuid_extraido)
+                elif archivo_pdf:
+                    facturas_registradas.append(f"PDF: {archivo_pdf.name}")
+
+            if facturas_registradas:
+                messages.success(
+                    request,
+                    f'Se registraron correctamente: {", ".join(facturas_registradas)}'
+                )
+
+            if facturas_duplicadas:
+                messages.warning(
+                    request,
+                    f'Las siguientes no se pudieron subir porque ya estaban registradas: {", ".join(facturas_duplicadas)}'
+                )
+
+            if facturas_mes_invalido:
+                messages.error(
+                    request,
+                    f'Las siguientes facturas no corresponden al mes/año actual: {", ".join(facturas_mes_invalido)}'
+                )
+
+            if errores:
+                messages.warning(
+                    request,
+                    'Ocurrieron errores: ' + ' | '.join(errores)
+                )
+
+            return HttpResponse(status=204)
+
+   
         else:
             messages.error(request,'No se pudo subir tu documento2')
 

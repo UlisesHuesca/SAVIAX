@@ -13,7 +13,7 @@
     <script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
         {% if messages %}
             {% for message in messages %}
-                {% if message.tags == "error" %}
+               {% if message.tags == "error" %}
                 <script>
                 Swal.fire({
                     "title":"Error",
@@ -21,12 +21,30 @@
                     "icon":"error",
                 })
                 </script>
+                {% elif message.tags == "warning" %}
+                <script>
+                Swal.fire({
+                    title: "Advertencia",
+                    text: "{{message}}",
+                    icon: "warning"
+                })
+                </script>
+
+                {% elif message.tags == "success" %}
+                <script>
+                Swal.fire({
+                    title: "Excelente",
+                    text: "{{message}}",
+                    icon: "success"
+                })
+                </script>
+
                 {% else %}
                 <script>
                 Swal.fire({
-                    "title":"Excelente",
-                    "text":"{{message}}",
-                    "icon":"success",
+                    title: "Información",
+                    text: "{{message}}",
+                    icon: "info"
                 })
                 </script>
                 {% endif %}
