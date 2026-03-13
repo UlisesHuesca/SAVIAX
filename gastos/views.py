@@ -1072,7 +1072,7 @@ def ver_gasto_pdf(request, pk):
     resp["Content-Disposition"] = f'inline; filename="{filename}"'
     return resp
 
-def render_pdf_gasto(request, pk):
+def render_pdf_gasto(pk):
     #Configuration of the PDF object
     buf = io.BytesIO()
     c = canvas.Canvas(buf, pagesize=letter)
@@ -1437,7 +1437,7 @@ def render_pdf_gasto(request, pk):
     c.save()
     buf.seek(0)
 
-    return FileResponse(buf, as_attachment=True, filename='Comprobación_Gasto_' + str(gasto.id) +'.pdf')
+    return buf
 
 def convert_excel_gasto_matriz(gastos):
     response= HttpResponse(content_type = "application/ms-excel")
