@@ -2,13 +2,19 @@ from django.shortcuts import render, redirect
 from datetime import date, datetime
 from django.contrib import messages
 from django.core.mail import EmailMessage, BadHeaderError
+from django.contrib.auth.decorators import login_required
+from django.http import JsonResponse, HttpResponse, FileResponse
+from django.core.paginator import Paginator
+from django.conf import settings
+from django.db.models import Sum
+from django.urls import reverse
 import socket
 import traceback
 from smtplib import SMTPException
 from dashboard.models import Inventario, Order, ArticulosparaSurtir, ArticulosOrdenados, Tipo_Orden, Product
 from inventoryproject.settings import EMAIL_HOST_USER
 from solicitudes.models import Proyecto, Subproyecto, Operacion
-from tesoreria.models import Pago, Cuenta
+from tesoreria.models import Pago, Cuenta, Facturas
 from .models import Solicitud_Gasto, Articulo_Gasto, Entrada_Gasto_Ajuste, Conceptos_Entradas, Factura
 from .forms import Solicitud_GastoForm, Articulo_GastoForm, Articulo_Gasto_Edit_Form, Pago_Gasto_Form, Articulo_Gasto_Factura_Form, Entrada_Gasto_AjusteForm, Conceptos_EntradasForm, FacturaForm, Autorizacion_Gasto_Form
 from tesoreria.forms import Facturas_Gastos_Form 
@@ -16,15 +22,13 @@ from tesoreria.utils import extraer_texto_de_pdf, encontrar_variables
 from compras.views import attach_oc_pdf
 from .filters import Solicitud_Gasto_Filter
 from user.models import Profile
-from django.contrib.auth.decorators import login_required
-from django.http import JsonResponse, HttpResponse, FileResponse
-from django.core.paginator import Paginator
-from django.db.models import Sum
-from django.urls import reverse
+from viaticos.models import Viaticos_Factura
+
 import os
 import base64
 import json
 import io
+import re
 import xml.etree.ElementTree as ET
 import decimal
 from django.db.models import Q
@@ -41,7 +45,7 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.enums import TA_CENTER, TA_LEFT
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, Frame
 from bs4 import BeautifulSoup
-from django.conf import settings
+
 
 #Excel stuff
 from openpyxl import Workbook
@@ -49,6 +53,88 @@ from openpyxl.styles import NamedStyle, Font, PatternFill
 from openpyxl.utils import get_column_letter
 import xlsxwriter
 from io import BytesIO
+
+#Se duplican funciones porque me arroja una referencia circular
+#######################################################################
+# Create your views here.
+def eliminar_caracteres_invalidos(archivo_xml):
+    # Definir la expresión regular para encontrar caracteres inválidos
+    regex = re.compile(r'[^\x09\x0A\x0D\x20-\uD7FF\uE000-\uFFFD\u10000-\u10FFFF]')
+
+    # Leer el contenido del archivo XML
+    xml_content = archivo_xml.read().decode('utf-8')
+
+    if xml_content.startswith("o;?"):
+        print('Detectado "o;?" en el inicio del XML')
+        xml_content = xml_content[3:]
+
+    # Eliminar caracteres inválidos según la expresión regular
+    xml_content = regex.sub('', xml_content)
+
+    # Volver a posicionar el puntero del archivo al principio
+    archivo_xml.seek(0)
+
+    # Guardar el contenido modificado en el archivo original
+    archivo_xml.write(xml_content.encode('utf-8'))
+    archivo_xml.truncate()  # Asegurarse de que no quede contenido sobrante
+
+    print('Contenido corregido guardado exitosamente.')
+
+    # Retornar el archivo con el contenido modificado
+    return archivo_xml
+
+def extraer_datos_del_xml(archivo_xml):
+    try:
+        # Parsear el archivo XML
+        archivo_xml.seek(0)
+        tree = ET.parse(archivo_xml)
+        root = tree.getroot()
+    except (ET.ParseError, FileNotFoundError) as e:
+        print(f"Error al parsear el archivo XML: {e}")
+        return None, None  # Si ocurre un error, devuelve None
+    
+    # Identificar la versión del XML y el espacio de nombres
+    version = root.tag
+    ns = {}
+    if 'http://www.sat.gob.mx/cfd/3' in version:
+        ns = {
+            'cfdi': 'http://www.sat.gob.mx/cfd/3',
+            'tfd': 'http://www.sat.gob.mx/TimbreFiscalDigital',
+            'if': 'https://www.interfactura.com/Schemas/Documentos',
+        }
+    elif 'http://www.sat.gob.mx/cfd/4' in version:
+        ns = {
+            'cfdi': 'http://www.sat.gob.mx/cfd/4',
+            'tfd': 'http://www.sat.gob.mx/TimbreFiscalDigital',
+            'if': 'https://www.interfactura.com/Schemas/Documentos',
+        }
+    else:
+        print(f"Versión del documento XML no reconocida")
+        return None, None
+    
+
+    rfc_receptor = None
+    receptor = root.find('cfdi:Receptor', ns)
+    if receptor is not None:
+        rfc_receptor = receptor.get('Rfc')
+    else:
+        print("Receptor no encontrado")
+    # Buscar el complemento donde se encuentra el UUID y la fecha de timbrado
+    complemento = root.find('cfdi:Complemento', ns)
+    if complemento is not None:
+        timbre_fiscal = complemento.find('tfd:TimbreFiscalDigital', ns)
+        if timbre_fiscal is not None:
+            uuid = timbre_fiscal.get('UUID')
+            fecha_timbrado = timbre_fiscal.get('FechaTimbrado') or root.get('Fecha')
+        else:
+            print("Timbre Fiscal Digital no encontrado")
+            return None, None, None
+    else:
+        print("Complemento no encontrado")
+        return None, None, None
+    
+    return uuid, fecha_timbrado, rfc_receptor
+################################################################################################################################
 
 # Create your views here.
 @login_required(login_url='user-login')
@@ -120,12 +206,67 @@ def crear_gasto(request):
             factura_form = FacturaForm(request.POST, request.FILES)
             if factura_form.is_valid():
                 factura = factura_form.save(commit=False)
-                factura.solicitud_gasto = gasto  # Asume que ya tienes una instancia de Solicitud_Gasto en 'gasto'
+                factura.solicitud_gasto = gasto
                 factura.fecha_subida = datetime.now()
+                factura.subido_por = usuario
+
+                archivo_xml = request.FILES.get('archivo_xml')
+                archivo_pdf = request.FILES.get('archivo_pdf')
+
+                if not archivo_pdf and not archivo_xml:
+                    messages.error(request, 'Debes subir al menos un archivo PDF o XML.')
+                    return HttpResponse(status=204)
+
+                if archivo_xml:
+                    archivo_procesado = eliminar_caracteres_invalidos(archivo_xml)
+                    uuid_extraido, fecha_timbrado_extraida, rfc_receptor = extraer_datos_del_xml(archivo_procesado)
+
+                    RFC_RECEPTORES_ESPERADOS = {"GVO020226811", "SPP0605268G8"}
+                    if rfc_receptor and rfc_receptor not in RFC_RECEPTORES_ESPERADOS:
+                        messages.error(
+                            request,
+                            f"RFC receptor inválido ({rfc_receptor}). "
+                            f"Se esperaba uno de: {', '.join(RFC_RECEPTORES_ESPERADOS)}."
+                        )
+                        return HttpResponse(status=204)
+
+                    existe_en_gastos = Factura.objects.filter(
+                        uuid=uuid_extraido,
+                        fecha_timbrado=fecha_timbrado_extraida
+                    ).exists()
+
+                    existe_en_compras = Facturas.objects.filter(
+                        uuid=uuid_extraido,
+                        fecha_timbrado=fecha_timbrado_extraida
+                    ).exists()
+
+                    existe_en_viaticos = Viaticos_Factura.objects.filter(
+                        uuid=uuid_extraido,
+                        fecha_timbrado=fecha_timbrado_extraida
+                    ).exists()
+
+                    if existe_en_gastos or existe_en_compras or existe_en_viaticos:
+                        messages.warning(
+                            request,
+                            f'La factura con UUID {uuid_extraido} ya está registrada.'
+                        )
+                        return redirect('crear-gasto')
+
+                    factura.uuid = uuid_extraido
+                    factura.fecha_timbrado = fecha_timbrado_extraida
+                    factura.archivo_xml = archivo_xml
+
+                if archivo_pdf:
+                    factura.archivo_pdf = archivo_pdf
+
+                factura.hecho = True
                 factura.save()
+
                 messages.success(request, 'Factura agregada correctamente.')
                 return redirect('crear-gasto')
 
+            else:
+                messages.error(request, 'No se pudo subir tu documento')
 
     context= {
         'facturas':facturas,
@@ -556,6 +697,7 @@ def prellenar_formulario_gastos(request):
 
 @login_required(login_url='user-login')
 def matriz_facturas_gasto(request, pk):
+    usuario = Profile.objects.get(staff__id=request.user.id)
     gasto = Solicitud_Gasto.objects.get(id = pk)
     articulos_gasto = Articulo_Gasto.objects.filter(gasto = gasto)
     facturas = Factura.objects.filter(solicitud_gasto = gasto)
@@ -575,12 +717,66 @@ def matriz_facturas_gasto(request, pk):
             factura_form = FacturaForm(request.POST, request.FILES)
             if factura_form.is_valid():
                 factura = factura_form.save(commit=False)
-                factura.solicitud_gasto = gasto  # Asume que ya tienes una instancia de Solicitud_Gasto en 'gasto'
+                factura.solicitud_gasto = gasto
                 factura.fecha_subida = datetime.now()
-                factura.save()
-                messages.success(request, 'Factura agregada correctamente.')
-                return redirect(next_url)
+                factura.subido_por = usuario
 
+                archivo_xml = request.FILES.get('archivo_xml')
+                archivo_pdf = request.FILES.get('archivo_pdf')
+
+                if not archivo_pdf and not archivo_xml:
+                    messages.error(request, 'Debes subir al menos un archivo PDF o XML.')
+                    return HttpResponse(status=204)
+
+                if archivo_xml:
+                    archivo_procesado = eliminar_caracteres_invalidos(archivo_xml)
+                    uuid_extraido, fecha_timbrado_extraida, rfc_receptor = extraer_datos_del_xml(archivo_procesado)
+
+                    RFC_RECEPTORES_ESPERADOS = {"GVO020226811", "SPP0605268G8"}
+                    if rfc_receptor and rfc_receptor not in RFC_RECEPTORES_ESPERADOS:
+                        messages.error(
+                            request,
+                            f"RFC receptor inválido ({rfc_receptor}). "
+                            f"Se esperaba uno de: {', '.join(RFC_RECEPTORES_ESPERADOS)}."
+                        )
+                        return HttpResponse(status=204)
+
+                    existe_en_gastos = Factura.objects.filter(
+                        uuid=uuid_extraido,
+                        fecha_timbrado=fecha_timbrado_extraida
+                    ).exists()
+
+                    existe_en_compras = Facturas.objects.filter(
+                        uuid=uuid_extraido,
+                        fecha_timbrado=fecha_timbrado_extraida
+                    ).exists()
+
+                    existe_en_viaticos = Viaticos_Factura.objects.filter(
+                        uuid=uuid_extraido,
+                        fecha_timbrado=fecha_timbrado_extraida
+                    ).exists()
+
+                    if existe_en_gastos or existe_en_compras or existe_en_viaticos:
+                        messages.warning(
+                            request,
+                            f'La factura con UUID {uuid_extraido} ya está registrada.'
+                        )
+                        return redirect('matriz-facturas-gasto', pk=gasto.id)
+
+                    factura.uuid = uuid_extraido
+                    factura.fecha_timbrado = fecha_timbrado_extraida
+                    factura.archivo_xml = archivo_xml
+
+                if archivo_pdf:
+                    factura.archivo_pdf = archivo_pdf
+
+                factura.hecho = True
+                factura.save()
+
+                messages.success(request, 'Factura agregada correctamente.')
+                return redirect('matriz-facturas-gasto', pk=gasto.id)
+        else:
+            messages.error(request, 'No se pudo subir tu documento')
 
     context={
         'form':form,

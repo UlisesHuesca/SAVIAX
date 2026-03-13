@@ -1,25 +1,31 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
+from django.core.paginator import Paginator
+from django.db.models import Count, Q
+from django.urls import reverse
 from datetime import date, datetime
 from django.contrib import messages
 from django.core.mail import EmailMessage, BadHeaderError
+from django.http import HttpResponse, FileResponse
+from django.conf import settings
+
 from user.models import Profile
 from smtplib import SMTPException
 from solicitudes.models import Proyecto, Subproyecto, Operacion
 from dashboard.models import Inventario
-from django.http import HttpResponse, FileResponse
+
 from tesoreria.models import Cuenta, Pago, Facturas
 from .models import Solicitud_Viatico, Concepto_Viatico, Viaticos_Factura
 from .forms import Solicitud_ViaticoForm, Concepto_ViaticoForm, Pago_Viatico_Form, Viaticos_Factura_Form, Cancelacion_viatico_Form
 from tesoreria.forms import Facturas_Viaticos_Form
+from gastos.views import  eliminar_caracteres_invalidos, extraer_datos_del_xml
+from gastos.models import Factura
 from .filters import Solicitud_Viatico_Filter
-from django.core.paginator import Paginator
-from django.db.models import Count, Q
-from django.urls import reverse
+
 import os
 import base64
 from decimal import Decimal, ROUND_HALF_UP
-from django.conf import settings
+
 import io
 import socket
 #PDF generator
@@ -74,7 +80,7 @@ def solicitud_viatico(request):
                 viatico.save()
                 form.save()
                 messages.success(request, f'La solicitud {viatico.id} ha sido creada')
-                return redirect('solicitudes-viaticos')
+                return redirect('mis-viaticos')
 
 
 
@@ -499,18 +505,64 @@ def facturas_viaticos(request, pk):
     next_url = request.GET.get('next', '/tesoreria/tesoreria/matriz_pagos/')
     if request.method == 'POST':
         if "btn_factura" in request.POST:
-            form = Viaticos_Factura_Form(request.POST or None, request.FILES or None, instance = factura)
+            form = Viaticos_Factura_Form(
+                request.POST or None,
+                request.FILES or None,
+                instance=factura
+            )
+
             if form.is_valid():
-                factura = form.save(commit = False)
+                factura = form.save(commit=False)
+
+                archivo_xml = request.FILES.get('factura_xml')
+                archivo_pdf = request.FILES.get('factura_pdf')
+
+                if not archivo_xml and not archivo_pdf:
+                    messages.error(request, 'Debes subir al menos un archivo PDF o XML.')
+                    return redirect('facturas-viaticos', pk=concepto.id)
+
+                if archivo_xml:
+                    archivo_procesado = eliminar_caracteres_invalidos(archivo_xml)
+                    uuid_extraido, fecha_timbrado_extraida, rfc_receptor = extraer_datos_del_xml(archivo_procesado)
+
+                    RFC_RECEPTORES_ESPERADOS = {"GVO020226811", "SPP0605268G8"}
+                    if rfc_receptor and rfc_receptor not in RFC_RECEPTORES_ESPERADOS:
+                        messages.error(
+                            request,
+                            f"RFC receptor inválido ({rfc_receptor}). "
+                            f"Se esperaba uno de: {', '.join(RFC_RECEPTORES_ESPERADOS)}."
+                        )
+                        return redirect('facturas-viaticos', pk=concepto.id)
+
+                    existe_en_gastos = Factura.objects.filter(uuid=uuid_extraido).exists()
+                    existe_en_compras = Facturas.objects.filter(uuid=uuid_extraido).exists()
+                    existe_en_viaticos = Viaticos_Factura.objects.filter(uuid=uuid_extraido).exists()
+
+                    if existe_en_gastos or existe_en_compras or existe_en_viaticos:
+                        messages.warning(
+                            request,
+                            f'La factura con UUID {uuid_extraido} ya está registrada.'
+                        )
+                        return redirect('facturas-viaticos', pk=concepto.id)
+
+                    factura.uuid = uuid_extraido
+                    factura.fecha_timbrado = fecha_timbrado_extraida
+
+                    # si quieres guardar el archivo ya procesado:
+                    # factura.factura_xml.save(archivo_xml.name, archivo_procesado, save=False)
+
                 factura.fecha_subido = date.today()
                 factura.hora_subido = datetime.now().time()
                 factura.hecho = True
                 factura.subido_por = usuario
                 factura.save()
-                messages.success(request,'Haz registrado tu factura')
-                return redirect('facturas-viaticos', pk= concepto.id) #No content to render nothing and send a "signal" to javascript in order to close window
+
+                messages.success(request, 'Haz registrado tu factura')
+                return redirect('facturas-viaticos', pk=concepto.id)
+
             else:
-                messages.error(request,'No está validando')
+                messages.error(request, 'No está validando')
+                
 
 
     context={
