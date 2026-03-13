@@ -312,14 +312,14 @@ def obtener_registros_uuid():
 
     compras = Facturas.objects.select_related(
         'oc',
-        'oc__creado_por',
+        'oc__creada_por',
         'subido_por',
     ).prefetch_related(
         'oc__pagos',
     ).exclude(uuid__isnull=True).exclude(uuid='')
 
     for f in compras:
-        creado_por = getattr(f.oc, 'creado_por', None) if f.oc else None
+        creado_por = getattr(f.oc, 'creada_por', None) if f.oc else None
         pagos_info = resumen_pagos(f.oc.pagos.all()) if f.oc else resumen_pagos([])
 
         registros.append({
