@@ -117,7 +117,6 @@ def obtener_registros_uuid():
     gastos = Factura.objects.select_related(
         'solicitud_gasto',
         'solicitud_gasto__staff',
-        'subido_por',
     ).exclude(uuid__isnull=True).exclude(uuid='')
 
     for f in gastos:
@@ -132,7 +131,7 @@ def obtener_registros_uuid():
             'pdf': f.archivo_pdf.name if getattr(f, 'archivo_pdf', None) else '',
             'referencia': f.solicitud_gasto_id,
             'propietario': nombre_persona(staff_gasto),
-            'subido_por': str(f.subido_por) if f.subido_por else '',
+            #'subido_por': str(f.subido_por) if f.subido_por else '',
         })
 
     compras = Facturas.objects.select_related(
