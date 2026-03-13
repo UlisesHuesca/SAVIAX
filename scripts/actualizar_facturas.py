@@ -258,24 +258,18 @@ def resumen_pagos(qs):
         return {
             'pago_status': 'SIN_PAGO',
             'pagos_count': 0,
-            'monto_total': Decimal('0'),
-            'fechas_pago': '',
-            'comprobante': '',
         }
 
-    pagados = [p for p in pagos if p.pagado_real]
-    monto_total = sum((p.monto or Decimal('0')) for p in pagos)
-    fechas_pago = ', '.join(sorted({str(p.pagado_real) for p in pagos if p.pagado_real}))
-    comprobantes = ', '.join([p.comprobante_pago.name for p in pagos if p.comprobante_pago])
+    pagos_completos = [p for p in pagos if p.hecho]
 
-    status = 'PAGADO' if pagados else 'PAGO_GENERADO_PENDIENTE'
+    if pagos_completos:
+        status = 'PAGADO'
+    else:
+        status = 'PAGO_EN_PROCESO'
 
     return {
         'pago_status': status,
         'pagos_count': len(pagos),
-        'monto_total': monto_total,
-        'fechas_pago': fechas_pago,
-        'comprobante': comprobantes,
     }
 
 
