@@ -6,6 +6,8 @@ from viaticos.models import Viaticos_Factura
 
 import csv
 from collections import defaultdict
+from decimal import Decimal
+
 
 def actualizar_facturas_compras():
     facturas = Facturas.objects.filter(uuid__isnull=True)
@@ -238,3 +240,189 @@ def reporte_uuid_duplicados(ruta_csv='uuid_duplicados.csv'):
                 ])
 
     print(f'\nReporte generado: {ruta_csv}')
+
+
+
+
+def nombre_persona(obj):
+    if not obj:
+        return ''
+    nombre = f"{getattr(obj, 'first_name', '')} {getattr(obj, 'last_name', '')}".strip()
+    return nombre or str(obj)
+
+
+def resumen_pagos(qs):
+    pagos = list(qs)
+
+    if not pagos:
+        return {
+            'pago_status': 'SIN_PAGO',
+            'pagos_count': 0,
+            'monto_total': Decimal('0'),
+            'fechas_pago': '',
+            'comprobante': '',
+        }
+
+    pagados = [p for p in pagos if p.pagado_real]
+    monto_total = sum((p.monto or Decimal('0')) for p in pagos)
+    fechas_pago = ', '.join(sorted({str(p.pagado_real) for p in pagos if p.pagado_real}))
+    comprobantes = ', '.join([p.comprobante_pago.name for p in pagos if p.comprobante_pago])
+
+    status = 'PAGADO' if pagados else 'PAGO_GENERADO_PENDIENTE'
+
+    return {
+        'pago_status': status,
+        'pagos_count': len(pagos),
+        'monto_total': monto_total,
+        'fechas_pago': fechas_pago,
+        'comprobante': comprobantes,
+    }
+
+
+def obtener_registros_uuid():
+    registros = []
+
+    gastos = Factura.objects.select_related(
+        'solicitud_gasto',
+        'solicitud_gasto__staff',
+    ).prefetch_related(
+        'solicitud_gasto__pagosg',
+    ).exclude(uuid__isnull=True).exclude(uuid='')
+
+    for f in gastos:
+        staff_gasto = getattr(f.solicitud_gasto, 'staff', None) if f.solicitud_gasto else None
+        pagos_info = resumen_pagos(f.solicitud_gasto.pagosg.all()) if f.solicitud_gasto else resumen_pagos([])
+
+        registros.append({
+            'uuid': f.uuid,
+            'modelo': 'Factura_Gasto',
+            'id': f.id,
+            'referencia': f.solicitud_gasto_id,
+            'propietario': nombre_persona(staff_gasto),
+            'subido_por': '',
+            'fecha_timbrado': f.fecha_timbrado,
+            'xml': f.archivo_xml.name if f.archivo_xml else '',
+            'pdf': f.archivo_pdf.name if f.archivo_pdf else '',
+            'pago_status': pagos_info['pago_status'],
+            'pagos_count': pagos_info['pagos_count'],
+            'monto_total': pagos_info['monto_total'],
+            'fechas_pago': pagos_info['fechas_pago'],
+            'comprobante_pago': pagos_info['comprobante'],
+        })
+
+    compras = Facturas.objects.select_related(
+        'oc',
+        'oc__creado_por',
+        'subido_por',
+    ).prefetch_related(
+        'oc__pagos',
+    ).exclude(uuid__isnull=True).exclude(uuid='')
+
+    for f in compras:
+        creado_por = getattr(f.oc, 'creado_por', None) if f.oc else None
+        pagos_info = resumen_pagos(f.oc.pagos.all()) if f.oc else resumen_pagos([])
+
+        registros.append({
+            'uuid': f.uuid,
+            'modelo': 'Factura_Compra',
+            'id': f.id,
+            'referencia': f.oc_id,
+            'propietario': nombre_persona(creado_por.staff) if getattr(creado_por, 'staff', None) else str(creado_por or ''),
+            'subido_por': str(f.subido_por) if f.subido_por else '',
+            'fecha_timbrado': f.fecha_timbrado,
+            'xml': f.factura_xml.name if f.factura_xml else '',
+            'pdf': f.factura_pdf.name if f.factura_pdf else '',
+            'pago_status': pagos_info['pago_status'],
+            'pagos_count': pagos_info['pagos_count'],
+            'monto_total': pagos_info['monto_total'],
+            'fechas_pago': pagos_info['fechas_pago'],
+            'comprobante_pago': pagos_info['comprobante'],
+        })
+
+    viaticos = Viaticos_Factura.objects.select_related(
+        'concepto_viatico',
+        'concepto_viatico__viatico',
+        'concepto_viatico__viatico__staff',
+        'subido_por',
+    ).prefetch_related(
+        'concepto_viatico__viatico__pagosv',
+    ).exclude(uuid__isnull=True).exclude(uuid='')
+
+    for f in viaticos:
+        solicitud_viatico = f.concepto_viatico.viatico if f.concepto_viatico and f.concepto_viatico.viatico else None
+        staff_viatico = getattr(solicitud_viatico, 'staff', None) if solicitud_viatico else None
+        pagos_info = resumen_pagos(solicitud_viatico.pagosv.all()) if solicitud_viatico else resumen_pagos([])
+
+        registros.append({
+            'uuid': f.uuid,
+            'modelo': 'Factura_Viatico',
+            'id': f.id,
+            'referencia': solicitud_viatico.id if solicitud_viatico else '',
+            'propietario': nombre_persona(staff_viatico),
+            'subido_por': str(f.subido_por) if f.subido_por else '',
+            'fecha_timbrado': f.fecha_timbrado,
+            'xml': f.factura_xml.name if f.factura_xml else '',
+            'pdf': f.factura_pdf.name if f.factura_pdf else '',
+            'pago_status': pagos_info['pago_status'],
+            'pagos_count': pagos_info['pagos_count'],
+            'monto_total': pagos_info['monto_total'],
+            'fechas_pago': pagos_info['fechas_pago'],
+            'comprobante_pago': pagos_info['comprobante'],
+        })
+
+    return registros
+
+
+def reporte_uuid_duplicados_con_pago(ruta_csv='uuid_duplicados_con_pago.csv'):
+    registros = obtener_registros_uuid()
+
+    agrupados = defaultdict(list)
+    for r in registros:
+        agrupados[r['uuid']].append(r)
+
+    duplicados = {uuid: items for uuid, items in agrupados.items() if len(items) > 1}
+
+    print(f'Total UUID duplicados encontrados: {len(duplicados)}')
+
+    with open(ruta_csv, mode='w', newline='', encoding='utf-8') as archivo:
+        writer = csv.writer(archivo)
+        writer.writerow([
+            'uuid',
+            'modelo',
+            'id',
+            'referencia',
+            'propietario',
+            'subido_por',
+            'fecha_timbrado',
+            'xml',
+            'pdf',
+            'pago_status',
+            'pagos_count',
+            'monto_total',
+            'fechas_pago',
+            'comprobante_pago',
+            'total_repeticiones_uuid',
+        ])
+
+        for uuid, items in duplicados.items():
+            total = len(items)
+            for item in items:
+                writer.writerow([
+                    item['uuid'],
+                    item['modelo'],
+                    item['id'],
+                    item['referencia'],
+                    item['propietario'],
+                    item['subido_por'],
+                    item['fecha_timbrado'],
+                    item['xml'],
+                    item['pdf'],
+                    item['pago_status'],
+                    item['pagos_count'],
+                    item['monto_total'],
+                    item['fechas_pago'],
+                    item['comprobante_pago'],
+                    total,
+                ])
+
+    print(f'Reporte generado: {ruta_csv}')
