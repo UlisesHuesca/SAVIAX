@@ -297,23 +297,6 @@
                                     </div>
                                 </div>
                             </div>
-                            <li class="nav-item mx-1">
-                                {% if pago.oc %}
-                                <a type="button" class="btn btn-outline-danger" href="{% url 'matriz-facturas-nomodal' pago.oc.id %}">
-                                <i class="fa-solid fa-file-pdf"></i></a>
-                                {% endif %}
-                                {% if pago.gasto %}
-
-                                <a type="button" class="btn btn-outline-danger" href="{% url 'matriz-facturas-gasto' pago.gasto.id %}">
-                                <i class="fa-solid fa-file-pdf"></i>
-                                </a>
-                                {% endif %}
-                                {% if pago.viatico %}
-                                <a type="button" class="btn btn-outline-danger" href="{% url 'matriz-facturas-viaticos' pago.viatico.id %}">
-                                    <i class="fa-solid fa-file-pdf"></i>
-                                </a>
-                                {% endif %}
-                            </li>
                         </ul>
                     </td>
                 </tr>
