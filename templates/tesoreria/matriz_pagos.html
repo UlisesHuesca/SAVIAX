@@ -403,6 +403,32 @@ function verificarDescargaIniciada(){
         }
     }, 1000); // Revisar cada segundo
 }
+
+ocument.addEventListener("show.bs.modal", function (event) {
+  const modal = event.target;
+
+  if (!modal.id.startsWith("pdfModal")) return;
+
+  const button = event.relatedTarget;
+  const url = button?.getAttribute("data-pdf-url");
+  const frame = modal.querySelector(".pdfFrame");
+
+  if (url && frame) {
+    frame.src = url;
+  }
+});
+
+document.addEventListener("hidden.bs.modal", function (event) {
+  const modal = event.target;
+
+  if (!modal.id.startsWith("pdfModal")) return;
+
+  const frame = modal.querySelector(".pdfFrame");
+
+  if (frame) {
+    frame.src = "about:blank";
+  }
+});
 </script>
 {% endblock %}
 </body>
