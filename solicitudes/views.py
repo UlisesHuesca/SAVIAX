@@ -91,7 +91,7 @@ def updateItemRes(request):
     if action == 'add':
         orderItem.cantidad = (orderItem.cantidad + 1)
         message = f"Item was added: {orderItem}"
-        orderItem.save()
+        orderItem.save(update_fields=["cantidad"])
     elif action == 'remove':
         orderItem.delete()
         message = f"Item was removed: {orderItem}"
