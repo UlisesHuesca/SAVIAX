@@ -166,11 +166,11 @@
                         </ul>
                     </td>
                     <td>
-                         <li class="nav-item mx-1">
-                                <button type = "button" class="btn btn-outline-info" data-bs-toggle="modal" data-bs-target="#pdfModal{{gasto.id|unlocalize}}" data-pdf-url="{% url 'ver_gasto_pdf' gasto.id %}" title="Registro de gasto">
-                                    <i class="fa-solid fa-file-pdf"></i>
-                                </button>
-                             </li>
+                       
+                            <button type = "button" class="btn btn-outline-info" data-bs-toggle="modal" data-bs-target="#pdfModal{{gasto.id|unlocalize}}" data-pdf-url="{% url 'ver_gasto_pdf' gasto.id %}" title="Registro de gasto">
+                                <i class="fa-solid fa-file-pdf"></i>
+                            </button>
+                             
                             
                             <!-- Modal -->
                             <div class="modal fade" id="pdfModal{{gasto.id|unlocalize}}" tabindex="-1" aria-hidden="true">
@@ -222,6 +222,33 @@ myModal.addEventListener('hidden.bs.modal', function (event) {
   location.reload();
 })
 
+
+
+document.addEventListener("show.bs.modal", function (event) {
+  const modal = event.target;
+
+  if (!modal.id.startsWith("pdfModal")) return;
+
+  const button = event.relatedTarget;
+  const url = button?.getAttribute("data-pdf-url");
+  const frame = modal.querySelector(".pdfFrame");
+
+  if (url && frame) {
+    frame.src = url;
+  }
+});
+
+document.addEventListener("hidden.bs.modal", function (event) {
+  const modal = event.target;
+
+  if (!modal.id.startsWith("pdfModal")) return;
+
+  const frame = modal.querySelector(".pdfFrame");
+
+  if (frame) {
+    frame.src = "about:blank";
+  }
+});
 </script>
 {% endblock %}
 </body>
