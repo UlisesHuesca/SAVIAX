@@ -2181,7 +2181,7 @@ def reporte_recepcionados(entradas):
     columns = [
         "Compra", "Crítico", "Req.", "Sol.",
         "Solicitado por", "Proyecto", "Subproyecto", "Fecha Recepción",
-        "Proveedor", "Concepto", "Cantidad"
+        "Proveedor", "Concepto", "Cantidad","Precio"
     ]
     
     # Encabezados
@@ -2205,7 +2205,7 @@ def reporte_recepcionados(entradas):
         proveedor = f"{articulo.articulo_comprado.oc.proveedor.nombre}" if articulo.articulo_comprado.oc and articulo.articulo_comprado.oc.proveedor else ''
         concepto = f"{articulo.articulo_comprado.producto.producto.articulos.producto.producto.codigo}|{articulo.articulo_comprado.producto.producto.articulos.producto.producto.id}|{articulo.articulo_comprado.producto.producto.articulos.producto.producto.nombre}"
         cantidad = articulo.cantidad
-
+        precio = articulo.articulo_comprado.precio_unitario
         row = [
             compra, 
             critico, 
@@ -2217,7 +2217,8 @@ def reporte_recepcionados(entradas):
             fecha_recepcion, 
             proveedor,
             concepto, 
-            cantidad
+            cantidad,
+            precio,
         ]
 
         for col_num, value in enumerate(row):
