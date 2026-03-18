@@ -9,8 +9,8 @@ class EntradaArticuloFilter(django_filters.FilterSet):
     proveedor = CharFilter(field_name='entrada__oc__proveedor__nombre__razon_social', lookup_expr='icontains')
     oc = CharFilter(field_name='entrada__oc__id', lookup_expr='icontains')
     req = CharFilter(field_name='entrada__oc__req__id', lookup_expr='icontains')
-    start_date = DateFilter(field_name = 'entrada__date', lookup_expr='gte')
-    end_date = DateFilter(field_name='entrada__date',lookup_expr='lte')
+    start_date = DateFilter(field_name = 'entrada__entrada__date', lookup_expr='gte')
+    end_date = DateFilter(field_name='entrada__entrada__date',lookup_expr='lte')
     proyecto = CharFilter(field_name='entrada__oc__req__orden__proyecto__nombre', lookup_expr='icontains')
     subproyecto = CharFilter(field_name='entrada__oc__req__orden__subproyecto__nombre', lookup_expr='icontains')
 
