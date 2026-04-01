@@ -1619,7 +1619,7 @@ def subir_evidencias(request, pk):
     usuario = Profile.objects.get(staff__id=request.user.id)
     compra = Compra.objects.get(id = pk)
     form = UploadFileForm()
-    
+    next_url = request.GET.get('next', '')
 
     if request.method == 'POST':
         if 'btn_registrar' in request.POST:
