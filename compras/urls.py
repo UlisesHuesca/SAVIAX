@@ -49,6 +49,7 @@ urlpatterns = [
     path("compras/<int:compra_id>/pdf/", views.ver_oc_pdf, name="ver_oc_pdf"),
     path('evidencias_proveedor/<int:pk>', views.evidencias_proveedor, name='evidencias-proveedor'),
     path('subir_evidencias/<int:pk>', views.subir_evidencias, name='subir-evidencias'),
+    path('update_comentario/', views.update_comentario, name='update_comentario'),
     ]
 
 if settings.DEBUG:

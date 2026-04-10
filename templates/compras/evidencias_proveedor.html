@@ -78,6 +78,7 @@
                     </thead>
                     <tbody>
                         {% for evidencia in evidencias %}
+                        
                         <tr id="evidencia-{{ evidencia.id }}">
                             <td>{{evidencia.id}}</td>
                             
@@ -329,7 +330,7 @@ function cancelar_edicion(EvidenciaId){
 
 function ActualizarComentario(evidencia_id, dato , tipo){
     console.log('User is logged in, sending data...' )
-    var url = '/proveedores_externos/update_comentario/'
+    var url = '/compras/update_comentario/'
     fetch( url, {
         method:'POST',
         headers:{

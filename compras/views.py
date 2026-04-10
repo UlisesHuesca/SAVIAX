@@ -1575,6 +1575,26 @@ def editar_comparativo(request, pk):
 
     return render(request, 'compras/actualizar_comparativo.html', context)
 
+def update_comentario(request):
+    data = json.loads(request.body)
+    pk = data["evidencia_id"]
+    dato = data["dato"]
+    tipo = data["tipo"]
+    evidencia = Evidencia.objects.get(id=pk)
+    print(evidencia.comentario)
+    if tipo == "comentario": 
+        evidencia.comentario = dato
+    if tipo == "cantidad":
+        evidencia.cantidad = dato
+    evidencia.save()
+    # Construye un objeto de respuesta que incluya el dato y el tipo.
+    response_data = {
+        'dato': dato,
+        'tipo': tipo
+    }
+
+    return JsonResponse(response_data, safe=False)
+
 def articulos_comparativo(request, pk):
     comparativo =Comparativo.objects.get(id = pk)
     articulos = Item_Comparativo.objects.filter(comparativo__id = pk , completo = True)
