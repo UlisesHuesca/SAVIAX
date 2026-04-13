@@ -232,11 +232,12 @@ def pendientes_entrada(request):
         else:
             producto_surtir = ArticulosparaSurtir.objects.get(articulos = producto_comprado.producto.producto.articulos)       
         tolerance = 0.01
-        #print(entrada_item.cantidad)
-        #print(producto_comprado.cantidad_pendiente)
-        if abs(entrada_item.cantidad_por_surtir - entrada_item.cantidad) > tolerance: #Si la cantidad de las entradas es mayor a la cantidad de la compra se rechaza
+        print(entrada_item.cantidad)
+        print(entrada_item.cantidad_por_surtir)
+
+        if abs(producto_comprado.cantidad_pendiente - entrada_item.cantidad) > tolerance: #Si la cantidad de las entradas es mayor a la cantidad de la compra se rechaza
             diferencia = entrada_item.cantidad_por_surtir - entrada_item.cantidad
-            messages.error(request,f'La cantidad de entradas sobrepasa la cantidad comprada {entrada_item.cantidad} mayor que {producto_comprado.cantidad_pendiente} = {diferencia}') 
+            messages.error(request,f'La cantidad de entradas sobrepasa la cantidad entrada {entrada_item.cantidad} mayor que la comprada {producto_comprado.cantidad_pendiente} = {diferencia}') 
         
             #messages.error(request,f'La cantidad de entradas sobrepasa la cantidad comprada {suma_cantidad} > {entrada_item.cantidad}')
         else:   #En caso de que NO sea un RESURMIENTO
