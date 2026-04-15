@@ -217,7 +217,7 @@ def pendientes_entrada(request):
 
         if entrada.oc.req.orden.tipo.tipo == 'resurtimiento': #si es resurtimiento
             try:
-                producto_surtir = ArticulosparaSurtir.objects.filter(articulos__producto=producto_comprado.producto.producto.articulos.producto, requisitar=True, articulos__orden__tipo__tipo='normal')
+                producto_surtir = ArticulosparaSurtir.objects.filter(articulos__producto=producto_comprado.producto.producto.articulos.producto, requisitar=True, articulos__orden__requisitar=True, articulos__orden__tipo__tipo='normal')
                 mismo_producto = ArticulosparaSurtir.objects.get(articulos = producto_comprado.producto.producto.articulos)
                 print('producto_surtir:',producto_surtir)
                 print('mismo_producto:',mismo_producto)
