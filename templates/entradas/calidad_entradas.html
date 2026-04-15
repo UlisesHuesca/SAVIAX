@@ -189,15 +189,15 @@
                             {% endif %}
                         </td>
                         <td>
-                            <button id="edit_comentario_{{ item.id }}" class="btn btn-outline-info" onclick="modificar_comentario('{{ item.id }}')">
+                            <button id="edit_comentario_{{ item.id|unlocalize }}" class="btn btn-outline-info" onclick="modificar_comentario('{{ item.id|unlocalize }}')">
                                 <i class="fa-solid fa-edit"></i> <!-- Icono de edición -->
                             </button>
-                            <div id="form_comentario_{{ item.id }}" class="d-none">
-                                <input type="text" id="comentario-input_{{ item.id }}" value="{% if item.reportes_calidad.exists %}{{ item.reportes_calidad.first.comentarios }}{% endif %}">
-                                <button id="save_comentario_{{ item.id }}" class="btn btn-outline-primary" onclick="guardar_comentario('{{ item.id }}')">
+                            <div id="form_comentario_{{ item.id|unlocalize }}" class="d-none">
+                                <input type="text" id="comentario-input_{{ item.id|unlocalize }}" value="{% if item.reportes_calidad.exists %}{{ item.reportes_calidad.first.comentarios }}{% endif %}">
+                                <button id="save_comentario_{{ item.id|unlocalize }}" class="btn btn-outline-primary" onclick="guardar_comentario('{{ item.id|unlocalize }}')">
                                     <i class="fa-regular fa-circle-check"></i>
                                 </button>
-                                <button id="cancel_comentario_{{ item.id }}" class="btn btn-outline-danger" onclick="cancelar_comentario('{{ item.id }}')">
+                                <button id="cancel_comentario_{{ item.id|unlocalize }}" class="btn btn-outline-danger" onclick="cancelar_comentario('{{ item.id|unlocalize }}')">
                                     <i class="fa-solid fa-circle-xmark"></i>
                                 </button>
                             </div>
@@ -206,7 +206,7 @@
                             <button class="btn btn-outline-success btn-lg" onclick="autorizarCalidad('{{ item.id|unlocalize }}', true)">
                                 <i class="fa-solid fa-check"></i>
                             </button>
-                            <button class="btn btn-outline-danger btn-lg" onclick="autorizarCalidad('{{ item.id }}', false)">
+                            <button class="btn btn-outline-danger btn-lg" onclick="autorizarCalidad('{{ item.id|unlocalize }}', false)">
                                 <i class="fa-solid fa-xmark"></i>
                             </button>
                         </td>

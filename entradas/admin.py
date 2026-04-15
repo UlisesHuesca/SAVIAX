@@ -11,7 +11,7 @@ class EntradaAdmin(admin.ModelAdmin):
 class EntradaArticuloAdmin(admin.ModelAdmin):
     list_display = ('id','entrada','cantidad','articulo_comprado','liberado','cantidad_por_surtir')
     search_fields = ['articulo_comprado__producto__producto__articulos__producto__producto__nombre']
-    raw_id_fields = ('articulo_comprado','entrada')
+    raw_id_fields = ('articulo_comprado','entrada','producto_terminado','articulo_terminado')
 
 class NC_ArticuloAdmin(admin.ModelAdmin):
     list_display = ('id','nc','cantidad','articulo_comprado')
@@ -25,11 +25,14 @@ class No_ConformidadAdmin(admin.ModelAdmin):
 
 class Reporte_CalidadAdmin(admin.ModelAdmin):
     list_display = ('id','articulo')
-    search_fields = ['articulo']
+    search_fields = ['articulo__entrada__oc__id']
     raw_id_fields = ('articulo',)
 
 class Cierre_NcAdmin(admin.ModelAdmin):
     list_display = ('id', 'nombre',)
+
+class Tipo_Nc_Admin(admin.ModelAdmin):
+    list_display = ('id', 'nombre')
     
 
 admin.site.register(Entrada, EntradaAdmin)
@@ -42,6 +45,6 @@ admin.site.register(No_Conformidad,No_ConformidadAdmin)
 
 admin.site.register(NC_Articulo, NC_ArticuloAdmin)
 
-admin.site.register(Tipo_Nc)
+admin.site.register(Tipo_Nc, Tipo_Nc_Admin)
 
 admin.site.register(Cierre_Nc,Cierre_NcAdmin)

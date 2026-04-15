@@ -1,31 +1,31 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
+from django.conf import settings
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.db.models import Q, DecimalField,  Sum, OuterRef, Subquery, DecimalField, Value, DecimalField, Q
+from django.core.paginator import Paginator
+from django.db import transaction
+from django.db.models import Q, DecimalField,  Sum, OuterRef, Subquery, DecimalField, Value, DecimalField
+from django.db.models.functions import Concat
 from django.http import JsonResponse, HttpResponse, Http404
+from django.core.mail import EmailMessage, BadHeaderError
 from .filters import EntradaArticuloFilter, No_ConformidadFilter, Reporte_CalidadFilter, EntradaCaducidadFilter, EntradaTerminadoFilter
 from compras.models import Compra, ArticuloComprado
 from compras.filters import CompraFilter
 from compras.views import attach_oc_pdf
 from dashboard.models import Inventario, Order, ArticulosparaSurtir, Producto_Calidad, Productos_Solicitud_Terminado
 from requisiciones.models import Salidas, ArticulosRequisitados, Requis
-from django.core.exceptions import ObjectDoesNotExist
-from .models import Entrada, EntradaArticulo, Reporte_Calidad, No_Conformidad, NC_Articulo
+from .models import Entrada, EntradaArticulo, Reporte_Calidad, No_Conformidad, NC_Articulo, Tipo_Nc
 from .forms import EntradaArticuloForm, Reporte_CalidadForm, NoConformidadForm, NC_ArticuloForm, NC_Almacen_ArticuloForm, Cierre_NCForm
 from user.models import Profile
 from smtplib import SMTPException
 import json
 
-from django.contrib import messages
-
 from datetime import date, datetime
 import decimal
-from django.core.mail import EmailMessage, BadHeaderError
 import socket
-from django.core.paginator import Paginator
-from django.conf import settings
 import os
 from requisiciones.views import get_image_base64
-from django.shortcuts import get_object_or_404
+
 from io import BytesIO
 import xlsxwriter
 from xlsxwriter.utility import xl_col_to_name
@@ -33,7 +33,6 @@ from openpyxl import Workbook
 from openpyxl.styles import NamedStyle, Font, PatternFill, Alignment
 from openpyxl.utils import get_column_letter
 import io
-from django.db.models.functions import Concat
 
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
@@ -1744,29 +1743,51 @@ def autorizar_calidad(request):
         data = json.loads(request.body)
         entrada_articulo_id = data['entradaArticuloId']
         autorizado = data['autorizado']  # True para palomita, False para tache
+        with transaction.atomic():
+            entrada_articulo = get_object_or_404(EntradaArticulo, id=entrada_articulo_id)
+            
+            # Verifica si el Reporte_Calidad ya existe, si no lo crea
+            reporte_calidad, created = Reporte_Calidad.objects.get_or_create(articulo=entrada_articulo)
 
-        entrada_articulo = get_object_or_404(EntradaArticulo, id=entrada_articulo_id)
-        
-        # Verifica si el Reporte_Calidad ya existe, si no lo crea
-        reporte_calidad, created = Reporte_Calidad.objects.get_or_create(articulo=entrada_articulo)
+            reporte_calidad.reporte_date = datetime.now().date()
+            reporte_calidad.reporte_hora = datetime.now().time()
+            # Actualiza los campos de EntradaArticulo y Reporte_Calidad
+            if autorizado:
+                print('autorizado')
+                entrada_articulo.calidad = True
+                reporte_calidad.autorizado = True
+            if not autorizado:
+                entrada_articulo.calidad = True
+                reporte_calidad.autorizado = False
+                tipo_nc = Tipo_Nc.objects.get(id=2)  
 
-        # Actualiza los campos de EntradaArticulo y Reporte_Calidad
-        if autorizado:
-            print('autorizado')
-            entrada_articulo.calidad = True
-            reporte_calidad.autorizado = True
-        else:
-            entrada_articulo.calidad = False
-            reporte_calidad.autorizado = True
-        # Asigna la fecha y hora actual
-        reporte_calidad.reporte_date = datetime.now().date()  # Fecha actual
-        reporte_calidad.reporte_hora = datetime.now().time()  # Hora actual
-        reporte_calidad.cantidad = entrada_articulo.cantidad
-        reporte_calidad.completo = True
-        entrada_articulo.save()
-        reporte_calidad.save()
+                nc = No_Conformidad.objects.create(
+                    almacenista=getattr(request.user, 'profile', None),
+                    oc=entrada_articulo.articulo_comprado.oc,
+                    comentario=f'No conformidad por rechazo en calidad. Reporte:{reporte_calidad.id}',
+                    nc_date=datetime.now().date(),
+                    nc_hora=datetime.now().time(),
+                    completo=True,
+                    tipo_nc=tipo_nc, 
+                )
 
-        return JsonResponse({'status': 'success', 'autorizado': autorizado})
+                NC_Articulo.objects.create(
+                    nc=nc,
+                    cantidad=entrada_articulo.cantidad,
+                    articulo_comprado=entrada_articulo.articulo_comprado,
+                    entrada_articulo=entrada_articulo,
+                    resuelto=False
+                )
+
+            # Asigna la fecha y hora actual
+            reporte_calidad.reporte_date = datetime.now().date()  # Fecha actual
+            reporte_calidad.reporte_hora = datetime.now().time()  # Hora actual
+            reporte_calidad.cantidad = entrada_articulo.cantidad
+            reporte_calidad.completo = True
+            entrada_articulo.save()
+            reporte_calidad.save()
+
+            return JsonResponse({'status': 'success', 'autorizado': autorizado})
     
 @login_required(login_url='user-login')
 def calidad_entradas(request):
@@ -1797,6 +1818,7 @@ def calidad_entradas(request):
             cantidad__gt=0,
             almacenado = False,
             calidad = False,
+            liberado = True,
             articulo_comprado__producto__producto__articulos__producto__producto__servicio=False,
             articulo_comprado__producto__producto__articulos__producto__producto__critico__in=[1, 2]  # Filtro para id 1 y 2 
         ).exclude(
