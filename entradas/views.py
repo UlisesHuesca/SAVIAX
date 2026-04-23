@@ -173,6 +173,7 @@ def pendientes_entrada(request):
         # Consulta principal
         articulos_recepcionados = EntradaArticulo.objects.filter(
             recepcion=True,
+            entrada__completo = True,
             cantidad__gt=0,
             agotado = False,
             almacenado = False,
@@ -816,7 +817,11 @@ def articulos_entrada(request, pk):
 
     usuario = Profile.objects.get(staff=request.user.id)
     if usuario.tipo.almacen == True:
-        articulos = ArticuloComprado.objects.filter(oc=pk, entrada_completa = False, seleccionado = False, producto__producto__articulos__producto__producto__servicio = False)
+        articulos = ArticuloComprado.objects.filter(
+            oc=pk, 
+            entrada_completa = False, 
+            seleccionado = False, 
+            producto__producto__articulos__producto__producto__servicio = False)
        
     else:
         articulos = ArticuloComprado.objects.filter(oc=pk, entrada_completa = False, seleccionado = False, producto__producto__articulos__producto__producto__servicio = True)
@@ -843,10 +848,15 @@ def articulos_entrada(request, pk):
         articulos_entregados = articulos_comprados.filter(entrada_completa=True) #Traigo todo los articulos que tienen la entrada completa de esa entrada
         articulos_seleccionados = articulos_entregados.filter(seleccionado = True) #De todos los entregados determino cuales están seleccionados
         num_art_entregados = articulos_entregados.count()        #cuento los articulos que tienen la entrada completa
-        for elemento in articulos_seleccionados:                  # Con este ciclo les quito el seleccionado
-            elemento.seleccionado = False
-            elemento.save()
-
+        articulos_seleccionados.update(seleccionado = False) #A todos los artículos seleccionados les quito el seleccionado por si acaso quedo alguno seleccionado
+        articulos_comprados.update(seleccionado = False) #A todos los articulos comprados les quito el seleccionado por si acaso quedo alguno seleccionado
+        articulos_comprados.filter(cantidad_pendiente=0).update(entrada_completa = True) #A todos los articulos comprados que tengan cantidad pendiente 0 les pongo la entrada completa en True
+        #Se compara los articulos comprados contra los articulos que han entrado y que están totalmente entregados
+        #En el bucle de arriba se redefine si la entrada de un articulo está completa o no por lo tanto debería de volver a calcular los artículos completos
+        num_art_entregados = articulos_comprados.filter(entrada_completa=True).count()
+        if num_art_comprados == num_art_entregados:
+            compra.entrada_completa = True
+            compra.save(update_fields=['entrada_completa'])
         for articulo in articulos_entrada:                        #Para cada de los articulos en la entrada
             producto_surtir = ArticulosparaSurtir.objects.get(articulos = articulo.articulo_comprado.producto.producto.articulos)
             producto_surtir.seleccionado = False                    #Se deselecciona el artículo para surtir relacionado
@@ -855,7 +865,7 @@ def articulos_entrada(request, pk):
                 articulo.liberado = False
                 archivo_oc = attach_oc_pdf(request, articulo.articulo_comprado.oc.id)
                 email = EmailMessage(
-                        f'Compra Autorizada {compra.get_folio}',
+                        f'Compra Autorizada {compra.id}',
                         f'Estimado *Inserte nombre de especialista*,\n Estás recibiendo este correo porque se ha recibido en almacén el producto código:{producto_surtir.articulos.producto.producto.codigo} descripción:{producto_surtir.articulos.producto.producto.nombre} el cual requiere la liberación de calidad\n Este mensaje ha sido automáticamente generado por SAVIA VORDTEC',
                         'savia@vordtec.com',
                         ['ulises_huesc@hotmail.com'],
@@ -898,19 +908,6 @@ def articulos_entrada(request, pk):
                 else:
                     producto_surtir.surtir = True        #Si NO es un SERVICIO es surtir cambia a True
             producto_surtir.save()
-        for articulo in articulos_comprados:
-            #entradas_producto = EntradaArticulo.objects.filter(articulo_comprado = articulo, entrada__oc = articulo.oc, entrada__completo = True).aggregate(Sum('cantidad'))
-            #suma_entradas = entradas_producto['cantidad__sum']
-            if articulo.cantidad_pendiente == 0:  #Si la cantidad de la compra es igual a la cantida entonces la entrada está completamente entregada
-                articulo.entrada_completa = True
-            articulo.seleccionado = False
-            articulo.save()
-        #Se compara los articulos comprados contra los articulos que han entrado y que están totalmente entregados
-        #En el bucle de arriba se redefine si la entrada de un articulo está completa o no por lo tanto debería de volver a calcular los artículos completos
-        num_art_entregados = articulos_comprados.filter(entrada_completa=True).count()
-        if num_art_comprados == num_art_entregados:
-            compra.entrada_completa = True
-        compra.save()
         entrada.save()
         messages.success(request, f'La entrada {entrada.id} se ha realizado con éxito')
         return redirect('pendientes_entrada')
