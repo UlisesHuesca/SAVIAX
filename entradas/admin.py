@@ -10,7 +10,7 @@ class EntradaAdmin(admin.ModelAdmin):
 
 class EntradaArticuloAdmin(admin.ModelAdmin):
     list_display = ('id','entrada','cantidad','articulo_comprado','liberado','cantidad_por_surtir')
-    search_fields = ['articulo_comprado__producto__producto__articulos__producto__producto__nombre']
+    search_fields = ['articulo_comprado__producto__producto__articulos__producto__producto__nombre', 'entrada__oc__id']
     raw_id_fields = ('articulo_comprado','entrada','producto_terminado','articulo_terminado')
 
 class NC_ArticuloAdmin(admin.ModelAdmin):
