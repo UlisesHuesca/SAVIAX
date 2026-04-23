@@ -2404,13 +2404,35 @@ def convert_excel_matriz_compras(compras):
         tipo_de_cambio = tipo_de_cambio_promedio_pagos or compra.tipo_de_cambio or ""
         autorizado_text = 'Autorizado' if compra.autorizado2 else 'No Autorizado' if compra.autorizado2 == False or compra.autorizado1 == False else 'Pendiente Autorización'
         pagado_text = 'Pagada' if compra.pagada else 'No Pagada'
-        entrada_text = 'Entregado' if compra.entrada_completa else 'No Entregado'
+        
+        articulos = compra.articulocomprado_set.all()
+        todos_servicios = all(articulo.producto.producto.articulos.producto.producto.servicio for articulo in articulos)
+        ningun_servicio = all(not articulo.producto.producto.articulos.producto.producto.servicio for articulo in articulos)
+
+        if todos_servicios:
+            tipo_producto = "SERVICIOS"
+        elif ningun_servicio:
+            tipo_producto = "PRODUCTOS"
+        else:
+            tipo_producto = "PRODUCTO/SERVICIOS"
+        
+        
+        if compra.entrada_completa:
+            entrada_text = 'Entregado'
+        elif compra.recepcion_completa and compra.solo_servicios:
+            entrada_text = 'Entregado'
+        else: 
+            entrada_text ='No Entregado'
+        
+        
         condicion_fecha_ultima_entrada = True
         # Definimos la fecha de referencia
         fecha_referencia = datetime.strptime("27/03/2024","%d/%m/%Y").date()
         ultima_fecha_recepcion = compra.vale_entrada.aggregate(
             ultima_fecha=Max('articulos__fecha_recepcion')
         )['ultima_fecha']
+
+       
        
         if ultima_fecha_recepcion:
         # Comparamos la fecha de vale_entrada con la fecha de referencia
@@ -2466,16 +2488,7 @@ def convert_excel_matriz_compras(compras):
         else:
             cumplimiento_entrada = "Fuera de tiempo"
 
-        articulos = compra.articulocomprado_set.all()
-        todos_servicios = all(articulo.producto.producto.articulos.producto.producto.servicio for articulo in articulos)
-        ningun_servicio = all(not articulo.producto.producto.articulos.producto.producto.servicio for articulo in articulos)
-
-        if todos_servicios:
-            tipo_producto = "SERVICIOS"
-        elif ningun_servicio:
-            tipo_producto = "PRODUCTOS"
-        else:
-            tipo_producto = "PRODUCTO/SERVICIOS"
+      
 
 
         row = [
