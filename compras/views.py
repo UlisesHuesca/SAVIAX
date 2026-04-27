@@ -2416,11 +2416,16 @@ def convert_excel_matriz_compras(compras):
         else:
             tipo_producto = "PRODUCTO/SERVICIOS"
         
-        
+        hay_no_liberados = compra.vale_entrada.filter(
+            articulos__liberado=False
+        ).exists()
+
         if compra.entrada_completa:
             entrada_text = 'Entregado'
         elif compra.recepcion_completa and compra.solo_servicios:
             entrada_text = 'Entregado'
+        elif hay_no_liberados:
+            entrada_text = 'Faltan liberaciones de calidad'
         else: 
             entrada_text ='No Entregado'
         
