@@ -9,15 +9,17 @@
 </head>
 <body>
 {% block content %}
-<hr>
-<hr>
-<hr>
+<h6>&nbsp;</h6>
+<h6>&nbsp;</h6>
+<h6>&nbsp;</h6>
     <!-- Aqui es el encabezado de los filtros -->
-    <div class = "row mt-2 bg-white">
+    <div class = "row ">
         <div class="col-12">
-            <div class="card card-body">
+            <div class="card">
+                <div class="card-header">
                 <h5>Filtro de Solicitudes Autorizadas</h5>
-                <hr>
+                </div>
+                <div class="card-body">
                 {% csrf_token %}
                 <form method="GET">
                 <div class="row g-12">
@@ -132,6 +134,7 @@
                         {% endif %}
                     </ul>
                 </form>
+                </div>
             </div>
         </div>
     </div>
