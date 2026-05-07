@@ -3,6 +3,7 @@
 {% load static %}
 {% load widget_tweaks %}
 {% load l10n %}
+{% load tt_extras %}
 <html>
 <head>
 {% block title %}Matriz Reportes Calidad{% endblock %}
@@ -20,11 +21,83 @@
                 <h5>Matriz Reportes Calidad</h5>
                 </div>
                 <div class="card-body">
-                {% csrf_token %}
+            
                     <form method="GET">
-                    <div class="row g-12">
-                    </div>
+                        {% csrf_token %}
+                        <div class="row">
+                            <div class="col-lg-3 col-sm-12">
+                                <div class="input-group mb-3">
+                                <span class="input-group-text" id="basic-addon1"><i class="fa-solid fa-hashtag"></i></span>
+                                    <div class="form-floating form-floating-group flex-grow-1">   
+                                        {{myfilter.form.oc|add_class:"form-control"|append_attr:"placeholder= Folio OC"}}
+                                        <label style="color: #121212;" for="id_staff">Folio OC</label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-lg-3 col-sm-12">
+                                <div class="input-group mb-3">
+                                <span class="input-group-text" id="basic-addon1"><i class="fa-solid fa-user"></i></span>
+                                    <div class="form-floating form-floating-group flex-grow-1">   
+                                        {{myfilter.form.proveedor|add_class:"form-control"|append_attr:"placeholder= Proveedor"}}
+                                        <label style="color: #121212;" for="id_staff">Proveedor</label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-lg-3 col-sm-12">
+                                <div class="input-group mb-3">
+                                <span class="input-group-text" id="basic-addon1"><i class="fa-solid fa-diagram-project"></i></span>
+                                    <div class="form-floating form-floating-group flex-grow-1">   
+                                        {{myfilter.form.proyecto|add_class:"form-control"|append_attr:"placeholder= Proyecto"}}
+                                        <label style="color: #121212;" for="id_proyecto">Proyecto</label>
+                                    </div>
+                                </div>
+                            </div>       
+                        </div>
+                        <div class="row">
+                            <div class="col-lg-3 col-sm-12">
+                                <div class="input-group mb-3">
+                                <span class="input-group-text" id="basic-addon1"><i class="fa-solid fa-diagram-project"></i></span>
+                                    <div class="form-floating form-floating-group flex-grow-1">   
+                                        {{myfilter.form.subproyecto|add_class:"form-control"|append_attr:"placeholder= Subproyecto"}}
+                                        <label style="color: #121212;" for="id_proyecto">Subproyecto</label>
+                                    </div>
+                                </div>
+                            </div>  
+                            <div id="serie" class="col-lg-2 col-md-auto col-sm-auto">
+                                <div class="input-group mb-3">
+                                <span class="input-group-text" id="basic-addon1"><i class="fa-regular fa-calendar"></i></span>
+                                    <div class="form-floating form-floating-group flex-grow-1">   
+                                        {% render_field myfilter.form.start_date type="date" class="form-control" %}
+                                    <label style="color: #121212;" for="id_subproyecto">Desde:</label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div id="serie" class="col-lg-2 col-md-auto col-sm-auto">
+                                <div class="input-group mb-3">
+                                <span class="input-group-text" id="basic-addon1"><i class="fa-regular fa-calendar"></i></span>
+                                    <div class="form-floating form-floating-group flex-grow-1">   
+                                        {% render_field myfilter.form.end_date type="date" class="form-control" %}
+                                    <label style="color: #121212;" for="id_subproyecto">Hasta:</label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-lg-3 col-sm-12">
+                                <div class="input-group mb-3">
+                                    <span class="input-group-text" id="basic-addon3"><i class="fa-solid fa-check"></i></span>
+                                    <div class="form-floating form-floating-group flex-grow-1">
+                                        {{ myfilter.form.autorizado|add_class:"form-select"|append_attr:"placeholder= Autorizado" }}
+                                        <label style="color: #121212;" for="id_autorizado">Autorizado</label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-2">
+                                <button class="btn btn-outline-success btn-block btn-lg mt-1" type="submit" value="Buscar"><i class="fa-solid fa-magnifying-glass"></i></button>
+                            </div>
+                        </div>
+                    <hr>
                     </form>
+                
+                  
                     <form method=POST>
                         {% csrf_token %}
                         <!--<ul class="nav nav-pills">
@@ -84,7 +157,7 @@
                 </tr>
             </thead>
             <tbody>
-                {% for reporte in reportes %}
+                {% for reporte in reportes_list %}
                 <tr>
                     <td scope="col">{{reporte.articulo.articulo_comprado.oc.id|unlocalize}}</th>
                     <td scope="col">{{reporte.articulo.articulo_comprado.oc.proveedor}}</td>
@@ -103,7 +176,35 @@
         </table>
     </div>
 </div>
+ <div>
+        <nav aria-label="Page navigation example">
+            <ul class="pagination justify-content-center">
+                {% if reportes_list.has_previous %}
+                    <li class="page-item"><a class="page-link" style="color:#3E92CC" href="{% my_url 1 'page' request.GET.urlencode %}"><i class="fa-solid fa-angles-left"></i></a></li>
+                    <li class="page-item"><a class="page-link" style="color:#3E92CC" href="{% my_url reportes_list.previous_page_number  'page' request.GET.urlencode %}"><i class="fa-solid fa-angle-left"></i></a></li>
+                {% endif %}
 
+                {% for item in reportes_list.paginator.page_range %}
+                    {% if reportes_list.number == item %}
+                        <li class="page-item active"><a href="#" class="page-link bg-dark">{{item}}</a></li>
+                    {% elif item > reportes_list.number|add:'-2' and item < reportes_list.number|add:'2' %}
+                        <li class="page-item "><a class="page-link" style="color:#3E92CC" href="{% my_url item 'page' request.GET.urlencode %}" class="page-link">{{item}}</a></li>
+                    {% endif %}
+                {% endfor %}
+
+                {% if reportes_list.paginator.num_pages > reportes_list.number|add:'2' %}
+                <li><a class="page-link" style="color:#3E92CC" href="?page={{reportes_list.number|add:'2'}}">&hellip;</a></li>
+                <li><a style="color:#3E92CC" href="?page={{ item }}">{{item}}</a></li>
+                <li><a class="page-link" style="color:#3E92CC" href="{% my_url reportes_list.paginator.num_pages 'page' request.GET.urlencode %}">{{reportes_list.paginator.num_pages}}</a></li>
+                {% endif %}
+
+                {% if reportes_list.has_next %}
+                    <li class="page-item"><a class="page-link" style="color:#3E92CC" href="{% my_url reportes_list.next_page_number 'page' request.GET.urlencode %}"><i class="fa-solid fa-chevron-right"></i></a></li>
+                    <li class="page-item"><a class="page-link" style="color:#3E92CC" href="{% my_url reportes_list.paginator.num_pages 'page' request.GET.urlencode %}"><i class="fa-solid fa-angles-right"></i></a></a></li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
 <!--Este es el modal-->
 <div class="modal fade" id ="dialog" tabindex="-1" role="dialog">
     <div class="modal-dialog modal-lg" id="document" role="document" hx-target="this">

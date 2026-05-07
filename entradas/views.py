@@ -1104,6 +1104,8 @@ def reporte_calidad(request, pk):
 
     restantes_liberacion = articulo_entrada.cantidad - sum_articulos_reportes
 
+    
+
 
     if request.method =='POST':
         form = Reporte_CalidadForm(request.POST, instance = reporte_actual)
@@ -1135,8 +1137,7 @@ def reporte_calidad(request, pk):
         else:
             messages.error(request, 'La cantidad liberada no puede ser mayor que cantidad de entradas restante')
 
-    #else:
-        #form = InventarioForm()
+    
 
     context = {
         'form': form,
@@ -1582,12 +1583,18 @@ def matriz_reportes_calidad(request):
     perfil = Profile.objects.get(staff__id=request.user.id)
     reportes = Reporte_Calidad.objects.filter(completo = True).order_by('-reporte_date')
     form = Reporte_CalidadForm()
-
+   
+    myfilter = Reporte_CalidadFilter(request.GET, queryset=reportes)
+    reportes = myfilter.qs
+    #Set up pagination
+    p = Paginator(reportes, 50)
+    page = request.GET.get('page')
+    reportes_list = p.get_page(page)
 
     context = {
-        #'form': form,
+        'myfilter':myfilter,
         'reportes':reportes,
-        #'restantes_liberacion': restantes_liberacion,
+        'reportes_list': reportes_list,
         }
 
     return render(request,'entradas/matriz_reportes_calidad.html',context)
