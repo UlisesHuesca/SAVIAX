@@ -1516,6 +1516,8 @@ def convert_excel_inventario_calidad_xlsxwriter(existencia):
     # Escribir los datos
     row_num = 0
     for inventario in existencia:
+        row_num += 1
+        
         if inventario.producto is None:
             familia = 'Sin producto asociado'
             subfamilia = ''
