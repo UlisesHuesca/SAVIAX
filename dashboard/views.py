@@ -1525,23 +1525,19 @@ def convert_excel_inventario_calidad_xlsxwriter(existencia):
                 subfamilia = inventario.producto.subfamilia.nombre
             else:
                 subfamilia = ''
-        if hasattr(inventario.producto, 'producto_calidad') and inventario.producto.producto_calidad:
+        fecha_criticidad = inventario.producto.fecha_criticidad
+        fecha_revision = inventario.producto.producto_calidad.updated_at
 
-            if inventario.producto.fecha_criticidad and inventario.producto.producto_calidad.updated_at:
+        if fecha_criticidad and fecha_revision:
+            fecha_revision_date = fecha_revision.date()
 
-                asignado = inventario.producto.producto_calidad.updated_at.strftime('%d/%m/%Y')
+            asignado = fecha_revision.strftime('%d/%m/%Y')
+            fecha_criticidad_fmt = fecha_criticidad.strftime('%d/%m/%Y')
 
-                diferencia_dias = (
-                    inventario.producto.fecha_criticidad -
-                    inventario.producto.producto_calidad.updated_at.date()
-                ).days
-
-            else:
-                asignado = ''
-                diferencia_dias = ''
-
+            diferencia_dias = (fecha_criticidad - fecha_revision_date).days
         else:
             asignado = ''
+            fecha_criticidad_fmt = ''
             diferencia_dias = ''
     
         row = [
@@ -1551,9 +1547,9 @@ def convert_excel_inventario_calidad_xlsxwriter(existencia):
             inventario.producto.unidad.nombre,
             familia,
             subfamilia,
-            inventario.producto.fecha_criticidad.strftime('%d/%m/%Y') if inventario.producto.fecha_criticidad else '',
-            str(asignado),
-            str(diferencia_dias),
+            fecha_criticidad_fmt,
+            asignado,
+            diferencia_dias,
         ]
     
         for col_num, item in enumerate(row, start=1):  # Enumerate empieza con 1 para A1, ajusta según sea necesario
