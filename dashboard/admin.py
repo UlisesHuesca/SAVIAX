@@ -45,6 +45,10 @@ class Grado_ControlAdmin(admin.ModelAdmin):
 class Solicitud_Producto_TerminadoAdmin(admin.ModelAdmin):
     raw_id_fields = ('producto','solicitud')
 
+class Producto_CalidadAdmin(admin.ModelAdmin):
+    list_display = ('id','producto','fecha_revision','resultado','comentarios')
+    search_fields = ['producto__nombre','producto__codigo']
+
 # Register your models here.
 admin.site.register(Familia)
 
@@ -72,7 +76,7 @@ admin.site.register(Proveedor_Batch)
 
 admin.site.register(Tipo_Orden)
 
-admin.site.register(Producto_Calidad)
+admin.site.register(Producto_Calidad, Producto_CalidadAdmin)
 
 admin.site.register(Grado_Control, Grado_ControlAdmin)
 
