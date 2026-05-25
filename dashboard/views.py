@@ -1557,7 +1557,7 @@ def convert_excel_inventario_calidad_xlsxwriter(existencia):
             inventario.producto.unidad.nombre,
             familia,
             subfamilia,
-            fecha_criticidad_fmt,
+            fecha_criticidad,
             asignado,
             diferencia_dias,
         ]
