@@ -1747,7 +1747,7 @@ def convert_excel_inventario(existencia, valor_inventario, dict_entradas, dict_r
             inventario.producto.codigo,
             inventario.producto.nombre,
             inventario.distrito.nombre,
-            inventario.producto.familia.nombre,
+            inventario.producto.familia.nombre if inventario.producto.familia else '',
             inventario.producto.unidad.nombre,
             inventario.cantidad,
             #inventario.apartada,  # Aquí utilizas la propiedad apartada
