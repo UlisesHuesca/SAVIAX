@@ -1525,21 +1525,27 @@ def convert_excel_inventario_calidad_xlsxwriter(existencia):
                 subfamilia = inventario.producto.subfamilia.nombre
             else:
                 subfamilia = ''
-        fecha_criticidad = inventario.producto.fecha_criticidad
-        fecha_revision = inventario.producto.producto_calidad.updated_at
+        asignado = ''
+        fecha_criticidad_fmt = ''
+        diferencia_dias = ''
 
-        if fecha_criticidad and fecha_revision:
+        fecha_criticidad = inventario.producto.fecha_criticidad
+
+        try:
+            producto_calidad = inventario.producto.producto_calidad
+        except inventario.producto.__class__.producto_calidad.RelatedObjectDoesNotExist:
+            producto_calidad = None
+
+        if fecha_criticidad:
             fecha_criticidad_date = fecha_criticidad.date()
+            fecha_criticidad_fmt = fecha_criticidad.strftime('%d/%m/%Y')
+
+        if producto_calidad and producto_calidad.updated_at and fecha_criticidad:
+            fecha_revision = producto_calidad.updated_at
             fecha_revision_date = fecha_revision.date()
 
-            fecha_criticidad_fmt = fecha_criticidad.strftime('%d/%m/%Y')
             asignado = fecha_revision.strftime('%d/%m/%Y')
-
             diferencia_dias = (fecha_revision_date - fecha_criticidad_date).days
-        else:
-            fecha_criticidad_fmt = ''
-            asignado = ''
-            diferencia_dias = ''
     
         row = [
             inventario.producto.codigo,
