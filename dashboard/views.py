@@ -1544,7 +1544,7 @@ def convert_excel_inventario_calidad_xlsxwriter(existencia):
             inventario.producto.unidad.nombre,
             familia,
             subfamilia,
-            str(inventario.producto.fecha_criticidad),
+            inventario.producto.fecha_criticidad.strftime('%d/%m/%Y') if inventario.producto.fecha_criticidad else '',
             str(asignado),
             str(diferencia_dias),
         ]
