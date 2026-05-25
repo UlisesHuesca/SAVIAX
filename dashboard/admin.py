@@ -46,7 +46,7 @@ class Solicitud_Producto_TerminadoAdmin(admin.ModelAdmin):
     raw_id_fields = ('producto','solicitud')
 
 class Producto_CalidadAdmin(admin.ModelAdmin):
-    list_display = ('id','producto','fecha_revision','resultado','comentarios')
+    list_display = ('id','producto','updated_by')
     search_fields = ['producto__nombre','producto__codigo']
 
 # Register your models here.
