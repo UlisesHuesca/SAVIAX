@@ -1529,15 +1529,16 @@ def convert_excel_inventario_calidad_xlsxwriter(existencia):
         fecha_revision = inventario.producto.producto_calidad.updated_at
 
         if fecha_criticidad and fecha_revision:
+            fecha_criticidad_date = fecha_criticidad.date()
             fecha_revision_date = fecha_revision.date()
 
-            asignado = fecha_revision.strftime('%d/%m/%Y')
             fecha_criticidad_fmt = fecha_criticidad.strftime('%d/%m/%Y')
+            asignado = fecha_revision.strftime('%d/%m/%Y')
 
-            diferencia_dias = (fecha_criticidad - fecha_revision_date).days
+            diferencia_dias = (fecha_revision_date - fecha_criticidad_date).days
         else:
-            asignado = ''
             fecha_criticidad_fmt = ''
+            asignado = ''
             diferencia_dias = ''
     
         row = [
