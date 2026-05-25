@@ -1526,16 +1526,23 @@ def convert_excel_inventario_calidad_xlsxwriter(existencia):
             else:
                 subfamilia = ''
         if hasattr(inventario.producto, 'producto_calidad') and inventario.producto.producto_calidad:
+
             if inventario.producto.fecha_criticidad and inventario.producto.producto_calidad.updated_at:
-                asignado = inventario.producto.producto_calidad.updated_at
-                diferencia_dias = (inventario.producto.fecha_criticidad - inventario.producto.producto_calidad.updated_at).days
+
+                asignado = inventario.producto.producto_calidad.updated_at.strftime('%d/%m/%Y')
+
+                diferencia_dias = (
+                    inventario.producto.fecha_criticidad -
+                    inventario.producto.producto_calidad.updated_at.date()
+                ).days
+
             else:
                 asignado = ''
                 diferencia_dias = ''
+
         else:
             asignado = ''
             diferencia_dias = ''
-        row_num += 1
     
         row = [
             inventario.producto.codigo,
