@@ -1713,7 +1713,7 @@ def convert_excel_inventario(existencia, valor_inventario, dict_entradas, dict_r
     money_resumen_style.font = Font(name ='Calibri', size = 14, bold = True)
     wb.add_named_style(money_resumen_style)
 
-    columns = ['Código','Producto','Distrito','Unidad','Cantidad','Cantidad Apartada','Cantidad Entradas','Minimos','Ubicación','Estante','Precio','Total']
+    columns = ['Código','Producto','Distrito','Familia','Unidad','Cantidad','Cantidad Apartada','Cantidad Entradas','Minimos','Ubicación','Estante','Precio','Total']
 
     for col_num in range(len(columns)):
         (ws.cell(row = row_num, column = col_num+1, value=columns[col_num])).style = head_style
@@ -1727,7 +1727,7 @@ def convert_excel_inventario(existencia, valor_inventario, dict_entradas, dict_r
 
     columna_max = len(columns)+3
 
-    (ws.cell(column = columna_max, row = 1, value='{Reporte Creado Automáticamente por SAVIA V. UH}')).style = messages_style
+    (ws.cell(column = columna_max, row = 1, value='{Reporte Creado Automáticamente por SAVIA 2.0. UH}')).style = messages_style
     (ws.cell(column = columna_max, row = 2, value='{Software desarrollado por Vordcab S.A. de C.V.}')).style = messages_style
     (ws.cell(column = columna_max, row = 3, value='Inventario Costo Total:')).style = messages_style
     (ws.cell(column = columna_max +1, row=3, value = valor_inventario)).style = money_resumen_style
@@ -1747,6 +1747,7 @@ def convert_excel_inventario(existencia, valor_inventario, dict_entradas, dict_r
             inventario.producto.codigo,
             inventario.producto.nombre,
             inventario.distrito.nombre,
+            inventario.producto.familia.nombre,
             inventario.producto.unidad.nombre,
             inventario.cantidad,
             #inventario.apartada,  # Aquí utilizas la propiedad apartada
