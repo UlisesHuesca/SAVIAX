@@ -1532,24 +1532,20 @@ def convert_excel_inventario_calidad_xlsxwriter(existencia):
         diferencia_dias = ''
 
         fecha_criticidad = inventario.producto.fecha_criticidad
-
-        
         try:
-            producto_calidad = inventario.producto.producto_calidad
+            fecha_actualizacion = inventario.producto.producto_calidad.updated_at
         except Producto_Calidad.DoesNotExist:
-            producto_calidad = None
+            fecha_actualizacion = None
 
-        if fecha_criticidad:
-            fecha_criticidad_date = fecha_criticidad.date()
-            fecha_criticidad_fmt = fecha_criticidad.strftime('%d/%m/%Y')
+        if fecha_criticidad and fecha_actualizacion:
+            diferencia_dias = (
+                fecha_actualizacion.date() - fecha_criticidad.date()
+            ).days
+        else:
+            diferencia_dias = ''
 
-        if producto_calidad and producto_calidad.updated_at and fecha_criticidad:
-            fecha_revision = producto_calidad.updated_at
-            fecha_revision_date = fecha_revision.date()
-
-            asignado = fecha_revision.strftime('%d/%m/%Y')
-            diferencia_dias = (fecha_revision_date - fecha_criticidad_date).days
-    
+            
+       
         row = [
             inventario.producto.codigo,
             inventario.producto.nombre,
@@ -1557,8 +1553,8 @@ def convert_excel_inventario_calidad_xlsxwriter(existencia):
             inventario.producto.unidad.nombre,
             familia,
             subfamilia,
-            fecha_criticidad,
-            asignado,
+            fecha_criticidad.strftime('%d/%m/%Y') if fecha_criticidad else '',
+            fecha_actualizacion.strftime('%d/%m/%Y') if fecha_actualizacion else '',
             diferencia_dias,
         ]
     
