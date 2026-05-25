@@ -1533,9 +1533,10 @@ def convert_excel_inventario_calidad_xlsxwriter(existencia):
 
         fecha_criticidad = inventario.producto.fecha_criticidad
 
+        
         try:
             producto_calidad = inventario.producto.producto_calidad
-        except inventario.producto.__class__.producto_calidad.RelatedObjectDoesNotExist:
+        except Producto_Calidad.DoesNotExist:
             producto_calidad = None
 
         if fecha_criticidad:
