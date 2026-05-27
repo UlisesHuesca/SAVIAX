@@ -113,7 +113,7 @@
                             <span class="badge bg-danger">({{conteo_servicios}})</span>
                              {% endif %}
                         </a>
-                    {% if usuario.tipo.almacen == True or usuario.tipo.nombre == "Superintendente" or usuario.tipo.nombre == "Gerente" %}
+                    {% if usuario.tipo.almacen == True or usuario.tipo.producto == True or usuario.tipo.nombre == "Gerente" %}
                     <div>
                     <div class="dropdown-divider"></div>
                     {% else %}
@@ -410,7 +410,7 @@
                     {% endif %}
                         <a class="dropdown-item" href="{% url 'solicitud-matriz' %}">Matriz Solicitudes</a>
                         <a class="dropdown-item" href="{% url 'requisiciones-status' %}">Matriz Requisiciones</a>
-                        {% if usuario.tipo.almacen == True or usuario.tipo.nombre == "Gerente" or usuario.tipo.compras == True  or usuario.tipo.superintendente == True %}
+                        {% if usuario.tipo.almacen == True or usuario.tipo.nombre == "Gerente" or usuario.tipo.compras == True  or usuario.tipo.superintendente == True  %}
                             <div>
                         {% else %}
                             <div class="d-none">
