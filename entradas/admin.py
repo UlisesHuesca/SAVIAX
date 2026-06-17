@@ -5,7 +5,7 @@ from .models import Entrada, EntradaArticulo, Reporte_Calidad, No_Conformidad, N
 class EntradaAdmin(admin.ModelAdmin):
     list_display = ('id', 'almacenista', 'oc', 'completo')
     #list_filter = ('oc',)
-    search_fields = ['oc__id', 'oc__nombre'] 
+    search_fields = ['oc__id'] 
     raw_id_fields = ('almacenista','oc')
 
 class EntradaArticuloAdmin(admin.ModelAdmin):
