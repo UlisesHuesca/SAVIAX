@@ -46,18 +46,26 @@ import socket
 @login_required(login_url='user-login')
 def compras_autorizadas(request):
     usuario = Profile.objects.get(staff__id=request.user.id)
-    if usuario.tipo.tesoreria == True:
-        compras = Compra.objects.filter(autorizado2=True, pagada=False).order_by('-folio')
-    else:
-        compras = Compra.objects.filter(flete=True,costo_fletes='1')
+    
+    #if usuario.tipo.tesoreria == True:
+    #    compras = Compra.objects.filter(autorizado2=True, pagada=False).order_by('-folio')
+    #else:
+    #    compras = Compra.objects.filter(flete=True,costo_fletes='1')
+    
     compras = Compra.objects.filter(autorizado2=True, pagada=False).order_by('-folio')
+    
     myfilter = CompraFilter(request.GET, queryset=compras)
     compras = myfilter.qs
+
+    p = Paginator(compras, 20)
+    page = request.GET.get('page')
+    compras_list = p.get_page(page)
+
     if request.method == 'POST' and 'btnReporte' in request.POST:
         return convert_excel_matriz_compras(compras)
 
     context= {
-        'compras':compras,
+        'compras_list':compras_list,
         'myfilter':myfilter,
         }
 
