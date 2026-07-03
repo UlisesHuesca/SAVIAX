@@ -15,7 +15,7 @@
                     <a class="nav-link text-white" aria-current="page" href="{% url 'dashboard-index' %}">Dashboard</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link text-white" aria-current="page" href="{% url 'user-profile' %}">{{usuario.tipo}} - {{user.first_name}} {{user.last_name}}</a>
+                    <a class="nav-link text-white" aria-current="page" href="{% url 'user-profile' %}">{{usuario.tipo.nombre}} - {{user.first_name}} {{user.last_name}}</a>
                 </li>
             </ul>
             <ul class="nav justify-content-end">
@@ -113,7 +113,7 @@
                             <span class="badge bg-danger">({{conteo_servicios}})</span>
                              {% endif %}
                         </a>
-                    {% if usuario.tipo.almacen == True or usuario.tipo.producto == True or usuario.tipo.nombre == "Gerente" %}
+                    {% if usuario.tipo.almacen == True or usuario.tipo.productos == True or usuario.tipo.nombre == "Gerente" %}
                     <div>
                     <div class="dropdown-divider"></div>
                     {% else %}
@@ -425,7 +425,7 @@
                         {% if usuario.tipo.compras == True or usuario.tipo.nombre == "Gerente" %}
                             <div>
                         {% else %}
-                            <div class="d-none"></div>
+                            <div class="d-none">
                         {% endif %}
                             <a class="dropdown-item" href="{% url 'matriz-compras' %}">Matriz Compras</a>
                             </div>
