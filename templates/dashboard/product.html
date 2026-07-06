@@ -104,7 +104,8 @@
                             <a type="button" class="btn btn-outline-light" style="background-color:#9a9b9d" data-bs-toggle="modal" data-bs-target='#dialog' hx-target="#document" hx-get="{% url 'upload_batch_products' %}">
                                 <i class="fa-solid fa-file-arrow-up"> Carga Masiva</i>
                             </a>
-                            
+                            {% endif %}
+                            {% if usuario.tipo.productos %}
                             <a class="btn btn-outline-info" id="btnActualizar" type="button" href="{% url 'add-product' %}">
                                 <i class="fa-solid fa-plus"> Agregar Producto</i>
                             </a>
@@ -148,7 +149,7 @@
                         <td>{{item.servicio}}</td>
                         <td>{{item.preciomax}}</td>
                         <td>{% if item.porcentaje %}{{item.porcentaje|multiply:100}}{%endif%}%</td>
-                        {% if usuario.tipo.superintendente == True or usuario.tipo.nombre == "Admin" or usuario.tipo.comprador %}
+                        {% if usuario.tipo.productos or usuario.tipo.nombre == "Admin" or usuario.tipo.comprador %}
                         <td>
                             <a class="btn btn-outline-info" id="btnActualizar" type="button" href="{% url 'dashboard-product-update' item.id %}"><i class="fa-solid fa-pen-to-square"></i></a>
                         </td>
