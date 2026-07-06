@@ -56,7 +56,7 @@
                 </div>
             </div>
             {% endif %}
-            {% if usuario.tipo.nombre == "SuperAdm" or usuario.tipo.producto == True or usuario.tipo.nombre == "Admin" or usuario.tipo.nombre == "Almacen" %}
+            {% if usuario.tipo.productos == True or usuario.tipo.nombre == "Admin" or usuario.tipo.nombre == "Almacen" %}
             <div class="card my-2 mx-1" style="width: 15rem;">
                 <div class="card-body">
                     <h5 class="card-title">Agregar Productos:</h5>
@@ -64,7 +64,9 @@
                     <ul class="nav nav-pills my-2" >
                         <li>
                             <a class="btn btn-outline-info btn-block mx-auto" type="button" data-bs-toggle="modal" data-bs-target="#dialog" hx-target="#document" hx-get="{% url 'solicitud-inventario-add' %}"><i class="fa-solid fa-circle-plus">Agregar</i></a>
+                            {% if usuario.tipo.nombre == "Admin" %}
                             <hr>
+                            
                             <a type="button" class="btn btn-outline-light" style="background-color:#9a9b9d" data-bs-toggle="modal" data-bs-target='#dialog' hx-target="#document" hx-get="{% url 'upload_batch_inventario' %}" title="Carga Masiva Actualizacion">
                                 <i class="fa-solid fa-file-arrow-up"> Carga Masiva Actualización</i>
                             </a>
@@ -72,7 +74,7 @@
                                 <i class="fa-solid fa-file-arrow-up"></i>
                             </a>
                             <hr>
-                            {% if usuario.tipo.nombre == "Admin" %}
+                           
                             <a class="btn btn-outline-info btn-block mx-auto" type="button" href="{% url 'ajuste-inventario' %}"><i class="fa-solid fa-circle-plus">AJUSTE</i></a>
                             {% endif %}
                         </li>
@@ -180,7 +182,9 @@
                             <th scope="col">Estante</th>
                             <th scope="col">Cantidad</th>
                             <th scope="col">Apartados</th>
+                            {% if usuario.tipo.nombre == "Admin" %}
                             <th scope="col">Entradas</th>
+                            {% endif %}
                             <th scope="col">Precio</th>
                             <th scope="col">Costo</th>
                             <th scope="col">Mínimo</th>
@@ -207,7 +211,9 @@
                                     {% endif %}
                                     <td>{{producto.cantidad|unlocalize}}</td>
                                     <td>{{producto.apartada|unlocalize}}</td>
+                                    {% if usuario.tipo.nombre == "Admin" %}
                                     <td>{{producto.cantidad_entradas}}</td>
+                                    {% endif %}
                                     <td>{{producto.price}}</td>
                                     <td>{{producto.get_total_producto}}</td>
                                     <td>{{producto.minimo}}</td>
