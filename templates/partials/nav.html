@@ -199,7 +199,7 @@
                                 <a class="dropdown-item" href="{% url 'crear-plantilla' %}">Crear Plantilla</a>
                                 <a class="dropdown-item" href="{% url 'matriz-plantillas' %}">Matriz Plantillas</a>
                                 <a class="dropdown-item" href="{% url 'solicitud-product-selection' %}">Crear Solicitud</a>
-                                {% if usuario.tipo.nombre == "Superintendente" %}
+                                {% if usuario.tipo.nombre == "Superintendente" or usuario.tipo.productos %}
                                 <a class="dropdown-item" href="{% url 'catalogo-product-selection' %}">Crear Entrada Producto Terminado</a>
                                 {% endif %}
                                 <a class="dropdown-item" href="{% url 'solicitud-matriz-productos' %}">Solicitudes por producto</a>
