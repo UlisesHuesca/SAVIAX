@@ -283,7 +283,7 @@ class Compra(models.Model):
         return f'OC{self.id}'
 
     def __str__(self):
-        return f'oc:{self.get_folio} - {self.id} - req:{self.req.folio} - sol:{self.req.orden.folio}'
+        return f'{self.folio} - {self.id} - req:{self.req.folio} - sol:{self.req.orden.folio}'
 
 
 class ArticuloComprado(models.Model):

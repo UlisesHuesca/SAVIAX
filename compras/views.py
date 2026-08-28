@@ -1968,7 +1968,7 @@ def generar_pdf(compra):
         c.setFont('Helvetica-Bold',9)
         #c.drawRightString(montos_align,170,'Impuestos Adicionales:') <<< se borra porque se encima con el total
         c.setFont('Helvetica',10)
-        costo_impuestos = format(float(compra.impuestos), ',.2f')
+        costo_impuestos = format(float(compra.impuestos_adicionales), ',.2f')
         c.drawRightString(montos_align + 90, 180, '$' + str(costo_impuestos))
         c.drawRightString(montos_align, 180, 'Impuestos:')
 
