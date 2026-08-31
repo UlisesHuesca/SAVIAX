@@ -1528,6 +1528,7 @@ def reporte_entradas(request):
 
     return render(request,'requisiciones/reporte_entradas.html', context)
 
+@login_required(login_url='user-login')
 def reporte_salidas(request):
     salidas = Salidas.objects.filter(producto__isnull=False).order_by('-vale_salida')
     myfilter = SalidasFilter(request.GET, queryset=salidas)
@@ -1750,7 +1751,7 @@ def convert_entradas_to_xls(entradas):
     money_style.font = Font(name ='Calibri', size = 10)
     wb.add_named_style(money_style)
 
-    columns = ['Folio Solicitud','Fecha','Solicitante','Proyecto','Subproyecto','Código','Articulo','Cantidad','Moneda','Tipo de Cambio','Precio']
+    columns = ['Folio Solicitud','OC','Fecha','Solicitante','Proyecto','Subproyecto','Código','Articulo','Cantidad','Moneda','Tipo de Cambio','Precio']
 
     for col_num in range(len(columns)):
         (ws.cell(row = row_num, column = col_num+1, value=columns[col_num])).style = head_style
@@ -1761,40 +1762,10 @@ def convert_entradas_to_xls(entradas):
     (ws.cell(column = columna_max, row = 1, value='{Reporte Creado Automáticamente por Savia Vordtec. UH}')).style = messages_style
     (ws.cell(column = columna_max, row = 2, value='{Software desarrollado por Vordcab S.A. de C.V.}')).style = messages_style
     
-    """rows = []
-    for entrada in entradas:
-        # Obtén todos los pagos relacionados con esta entrada
-        pagos = Pago.objects.filter(oc=entrada.entrada.oc)
-        # Calcula el tipo de cambio promedio de estos pagos
-        tipo_de_cambio_promedio_pagos = pagos.aggregate(Avg('tipo_de_cambio'))['tipo_de_cambio__avg']
-
-        # Usar el tipo de cambio de los pagos, si existe. De lo contrario, usar el tipo de cambio de la entrada
-        tipo_de_cambio = tipo_de_cambio_promedio_pagos or entrada.entrada.oc.tipo_de_cambio
-
-        row = [
-            entrada.entrada.oc.req.orden.id,
-            entrada.created_at,
-            f"{entrada.entrada.oc.req.orden.staff.staff.first_name} {entrada.entrada.oc.req.orden.staff.staff.last_name}",
-            entrada.entrada.oc.req.orden.proyecto.nombre,
-            entrada.entrada.oc.req.orden.subproyecto.nombre,
-            entrada.entrada.oc.req.orden.area.nombre,
-            entrada.articulo_comprado.producto.producto.articulos.producto.producto.codigo,
-            entrada.articulo_comprado.producto.producto.articulos.producto.producto.nombre,
-            entrada.cantidad,
-            entrada.entrada.oc.moneda.nombre,
-            tipo_de_cambio,
-            entrada.articulo_comprado.precio_unitario,
-        ]
-        if row[9] == "DOLARES":
-            if row[10] is None or row[10] < 15:
-                row[10] = 17  # O cualquier valor predeterminado que desees
-        elif row[10] is None:
-                row[10] = ""
-
-        rows.append(row)
-    """
+  
     rows = entradas.values_list(
         'entrada__oc__req__orden__id',
+        'entrada__oc__id',
         'created_at',
         Concat('entrada__oc__req__orden__staff__staff__first_name',Value(' '),'entrada__oc__req__orden__staff__staff__last_name'),
         'entrada__oc__req__orden__proyecto__nombre',
@@ -1816,14 +1787,19 @@ def convert_entradas_to_xls(entradas):
         row_num += 1
         for col_num in range(len(row)):
             (ws.cell(row = row_num, column = col_num+1, value=str(row[col_num]))).style = body_style
-            if col_num == 4:
-                (ws.cell(row = row_num, column = col_num + 1, value=row[col_num])).style = date_style
-            if col_num == 9:
-                (ws.cell(row = row_num, column = col_num + 1, value=row[col_num])).style = money_style
+            if col_num == 2:
+                value = (row[col_num]).date()
+                (ws.cell(row = row_num, column = col_num + 1, value=value)).style = date_style
+            if col_num == 8:
+                cell = (ws.cell(row = row_num, column = col_num + 1, value= row[col_num]))
+                cell.style = body_style
+                cell.number_format = '#,##0.00'
             if col_num == 10:
-                if row[8] == "DOLARES":
-                    precio_unitario = row[10]
-                    tipo_de_cambio = row[9]
+                (ws.cell(row = row_num, column = col_num + 1, value=row[col_num])).style = money_style
+            if col_num == 11:
+                if row[9] == "DOLARES":
+                    precio_unitario = row[11]
+                    tipo_de_cambio = row[10]
                     (ws.cell(row=row_num, column=col_num + 1, value=precio_unitario * tipo_de_cambio)).style = money_style
                 else:
                     (ws.cell(row=row_num, column=col_num + 1, value=row[col_num])).style = money_style
