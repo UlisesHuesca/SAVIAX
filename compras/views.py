@@ -2733,29 +2733,32 @@ def convert_excel_solicitud_matriz_productos(productos):
             condicion_fecha_ultima_entrada = False
            
         ultimo_pago = None
+        fecha_inicio = None
+        diferencia_fechas = 0
+
+        condicion_pago = getattr(producto.oc.cond_de_pago, "nombre", None)
+
         if producto.oc.pagada:
-            ultimo_pago = pagos.order_by('-pagado_date').first()
+            ultimo_pago = (pagos.exclude(pagado_date__isnull=True).order_by('-pagado_date').first())
 
-        if producto.oc.cond_de_pago.nombre == "CONTADO" and producto.oc.autorizado2 and producto.oc.pagada:
-            fecha_inicio = ultimo_pago.pagado_date
-        elif producto.oc.cond_de_pago.nombre == "CREDITO" and producto.oc.autorizado2:
+        if (condicion_pago == "CONTADO" and producto.oc.autorizado2 and producto.oc.pagada):
+            if ultimo_pago:
+                fecha_inicio = ultimo_pago.pagado_date
+        elif (condicion_pago == "CREDITO" and producto.oc.autorizado2):
             fecha_inicio = producto.oc.autorizado_date2
-        else:
-            fecha_inicio = "No existe"
-
-        if condicion_fecha_ultima_entrada != False and fecha_inicio != "No existe" or fecha_inicio is not None:
-            if fecha_ultima_entrada != None: 
+       
+        if fecha_inicio is not None:
+            if (condicion_fecha_ultima_entrada and fecha_ultima_entrada is not None): 
                 diferencia_fechas = dias_laborables(fecha_inicio, fecha_ultima_entrada)
-        elif fecha_inicio != "No existe" and fecha_inicio is not None:
-            diferencia_fechas = dias_laborables(fecha_inicio, date.today())
-        else:
-            diferencia_fechas = 0
+            else:
+                diferencia_fechas = dias_laborables(fecha_inicio,  date.today())
 
-        if producto.oc.dias_de_entrega == None:
-            producto.oc.dias_de_entrega = 0
-        if fecha_inicio == "No existe":
+        dias_de_entrega = producto.oc.dias_de_entrega or 0
+
+
+        if fecha_inicio is None:
             cumplimiento_entrada = "No Evaluable"
-        elif producto.oc.dias_de_entrega >= diferencia_fechas:
+        elif dias_de_entrega >= diferencia_fechas:
             cumplimiento_entrada = "En tiempo"
         else:
             cumplimiento_entrada = "Fuera de tiempo"
