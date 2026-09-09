@@ -2428,7 +2428,14 @@ def convert_excel_matriz_compras(compras):
             entrada_text = 'Faltan liberaciones de calidad'
         else: 
             entrada_text ='No Entregado'
-        
+
+
+        # Valores predeterminados para esta compra
+        fecha_ultima_entrada = None
+        fecha_inicio = None
+        diferencia_fechas = 0
+        no_conformidades_count = 0
+
         
         condicion_fecha_ultima_entrada = True
         # Definimos la fecha de referencia
@@ -2439,56 +2446,110 @@ def convert_excel_matriz_compras(compras):
 
        
        
-        if ultima_fecha_recepcion:
-        # Comparamos la fecha de vale_entrada con la fecha de referencia
-            if ultima_fecha_recepcion.date() >= fecha_referencia:
-                if compra.recepcion_completa:
-                    # Si la recepción está completa, usamos la fecha de recepción del vale
-                    fecha_ultima_entrada = ultima_fecha_recepcion.date()
-        elif compra.entrada_completa:  # Verificamos si entrada es True para esta compra
-            entradas = Entrada.objects.filter(oc=compra)
-            ultima_entrada = entradas.order_by('-entrada_date').first()
-           
-            if ultima_entrada:  # Verificamos si existe al menos una entrada
-                fecha_ultima_entrada = ultima_entrada.entrada_date
-                # Contabilizar no_conformidades ligadas a las entradas de esta compra
-                no_conformidades_count = No_Conformidad.objects.filter(oc=compra).count()
+        fecha_referencia = datetime.strptime(
+            "27/03/2024",
+            "%d/%m/%Y"
+        ).date()
+
+        # Buscar la última fecha de recepción
+        ultima_fecha_recepcion = compra.vale_entrada.aggregate(
+            ultima_fecha=Max("articulos__fecha_recepcion")
+        )["ultima_fecha"]
+
+        # Primero intentamos obtener la fecha mediante la recepción
+        if (
+            ultima_fecha_recepcion is not None
+            and ultima_fecha_recepcion.date() >= fecha_referencia
+            and compra.recepcion_completa
+        ):
+            fecha_ultima_entrada = ultima_fecha_recepcion.date()
+
+        # Si no se obtuvo mediante recepción, buscamos la última entrada
+        elif compra.entrada_completa:
+            ultima_entrada = (
+                Entrada.objects
+                .filter(
+                    oc=compra,
+                    entrada_date__isnull=False
+                )
+                .order_by("-entrada_date")
+                .first()
+            )
+
+            if ultima_entrada is not None:
+                fecha_ultima_entrada = ultima_entrada.entrada_date.date()
+
+                no_conformidades_count = (
+                    No_Conformidad.objects
+                    .filter(oc=compra)
+                    .count()
+                )
             else:
-                # No hay entradas para esta compra
-                fecha_ultima_entrada = "No existe"
-                condicion_fecha_ultima_entrada = False
                 no_conformidades_count = "No existe"
+
         else:
-        # El atributo 'entrada' en Compra no es True
-            fecha_ultima_entrada = "No existe"
-            condicion_fecha_ultima_entrada = False
             no_conformidades_count = "No existe"
-        
+
+
+        # Buscar el último pago válido de esta compra
         ultimo_pago = None
+
         if compra.pagada:
-            ultimo_pago = pagos.order_by('-pagado_date').first()
+            ultimo_pago = (
+                pagos
+                .exclude(pagado_date__isnull=True)
+                .order_by("-pagado_date")
+                .first()
+            )
 
-        
-        if compra.cond_de_pago.nombre == "CONTADO" and compra.autorizado2 and compra.pagada:
+
+        condicion_pago = getattr(
+            compra.cond_de_pago,
+            "nombre",
+            None
+        )
+
+        # Para contado, la fecha inicial es la fecha del último pago
+        if (
+            condicion_pago == "CONTADO"
+            and compra.autorizado2
+            and compra.pagada
+            and ultimo_pago is not None
+        ):
             fecha_inicio = ultimo_pago.pagado_date
-        elif compra.cond_de_pago.nombre == "CREDITO" and compra.autorizado2:
+
+        # Para crédito, la fecha inicial es la segunda autorización
+        elif (
+            condicion_pago == "CREDITO"
+            and compra.autorizado2
+            and compra.autorizado_date2 is not None
+        ):
             fecha_inicio = compra.autorizado_date2
-        else:
-            fecha_inicio = "No existe"
 
-        if condicion_fecha_ultima_entrada != False and fecha_inicio != "No existe" or fecha_inicio is not None:
-            if fecha_ultima_entrada != None: 
-                diferencia_fechas = dias_laborables(fecha_inicio, fecha_ultima_entrada)
-        elif fecha_inicio != "No existe" and fecha_inicio is not None:
-            diferencia_fechas = dias_laborables(fecha_inicio, date.today())
-        else:
-            diferencia_fechas = 0
+            # Si autorizado_date2 es DateTimeField, lo convertimos a date
+            if isinstance(fecha_inicio, datetime):
+                fecha_inicio = fecha_inicio.date()
 
-        if compra.dias_de_entrega == None:
-            compra.dias_de_entrega = 0
-        if fecha_inicio == "No existe":
+
+        # Calcular diferencia hasta la entrada o hasta hoy
+        if fecha_inicio is not None:
+            if fecha_ultima_entrada is not None:
+                diferencia_fechas = dias_laborables(
+                    fecha_inicio,
+                    fecha_ultima_entrada
+                )
+            else:
+                diferencia_fechas = dias_laborables(
+                    fecha_inicio,
+                    date.today()
+                )
+
+
+        dias_de_entrega = compra.dias_de_entrega or 0
+
+        if fecha_inicio is None:
             cumplimiento_entrada = "No Evaluable"
-        elif compra.dias_de_entrega >= diferencia_fechas:
+        elif dias_de_entrega >= diferencia_fechas:
             cumplimiento_entrada = "En tiempo"
         else:
             cumplimiento_entrada = "Fuera de tiempo"
@@ -2497,32 +2558,32 @@ def convert_excel_matriz_compras(compras):
 
 
         row = [
-        compra.id,
-        compra.req.folio,
-        compra.req.orden.folio,
-        compra.req.orden.proyecto.nombre,
-        compra.req.orden.subproyecto.nombre,
-        compra.req.orden.area.nombre,
-        f"{compra.req.orden.staff.staff.first_name} {compra.req.orden.staff.staff.last_name}",
-        compra.created_at,
-        compra.req.approved_at,
-        compra.proveedor.nombre.razon_social,
-        compra.cond_de_pago.nombre,
-        compra.costo_oc,
-        compra.monto_pagado,
-        pagado_text,
-        autorizado_text,
-        tipo_producto,
-        compra.dias_de_entrega,
-        compra.moneda.nombre,
-        tipo_de_cambio,
-        entrada_text,
-        fecha_ultima_entrada,
-        fecha_inicio,
-        diferencia_fechas,
-        cumplimiento_entrada,
-        no_conformidades_count
-    ]
+            compra.id,
+            compra.req.folio,
+            compra.req.orden.folio,
+            compra.req.orden.proyecto.nombre,
+            compra.req.orden.subproyecto.nombre,
+            compra.req.orden.area.nombre,
+            f"{compra.req.orden.staff.staff.first_name} {compra.req.orden.staff.staff.last_name}",
+            compra.created_at,
+            compra.req.approved_at,
+            compra.proveedor.nombre.razon_social,
+            condicion_pago or "No existe",
+            compra.costo_oc,
+            compra.monto_pagado,
+            pagado_text,
+            autorizado_text,
+            tipo_producto,
+            dias_de_entrega,
+            compra.moneda.nombre,
+            tipo_de_cambio,
+            entrada_text,
+            fecha_ultima_entrada or "No existe",
+            fecha_inicio or "No existe",
+            diferencia_fechas,
+            cumplimiento_entrada,
+            no_conformidades_count,
+        ]
         if row[16] == "DOLARES":
             if row[17] is None or row[17] < 15:
                 row[17] = 17  # o compra.pago_oc.tipo_de_cambio si así es como obtienes el valor correcto de tipo_de_cambio
