@@ -7,3 +7,4 @@ media/
 middleware.log
 .venv-old
 *.pyc
+__pycache__/
