@@ -2587,7 +2587,7 @@ def convert_excel_matriz_compras_pendientes(articulos_comprados):
     messages_style = workbook.add_format({'font_name':'Arial Narrow', 'font_size':11})
 
     columns = ['Compra', 'Requisición','Solicitud', 'Codigo', 'Producto', 'Cantidad Pendiente', 'P.U.','Total','Unidad','Proveedor',
-               'Usuario Solicitante','Pagada','Ultimo pago']
+               'Usuario Solicitante',"Aut. OC",'Pagada','Ultimo pago']
 
     columna_max = len(columns)+2
 
@@ -2622,7 +2622,7 @@ def convert_excel_matriz_compras_pendientes(articulos_comprados):
         if pagos:
             ultimo = pagos.last()
             if ultimo.pagado_date:
-                ultimo = ultimo.pagado_date.strftime('%d/%m/%Y')
+                ultimo = ultimo.pagado_date
             else:
                 ultimo = ''
         else:
@@ -2635,6 +2635,7 @@ def convert_excel_matriz_compras_pendientes(articulos_comprados):
         )
 
         precio_unitario = articulo.precio_unitario or 0
+
 
         total = (cantidad_pendiente or 0) * precio_unitario
         row = [
@@ -2649,8 +2650,10 @@ def convert_excel_matriz_compras_pendientes(articulos_comprados):
             articulo.producto.producto.articulos.producto.producto.unidad.nombre,
             articulo.oc.proveedor.nombre.razon_social,
             f"{articulo.oc.req.orden.staff.staff.first_name} {articulo.oc.req.orden.staff.staff.last_name}",
+            articulo.oc.autorizado_date2,
             pago,
             ultimo,
+
             
         ]
         
@@ -2659,7 +2662,7 @@ def convert_excel_matriz_compras_pendientes(articulos_comprados):
             cell_format = body_style
 
             # Aplica el formato de fecha para las columnas con fechas
-            if col_num in [9, 10]:  # Asume que estas son tus columnas de fechas
+            if col_num in [11, 13]:  # Asume que estas son tus columnas de fechas
                 cell_format = date_style
         
             # Aplica el formato de dinero para las columnas con valores monetarios
