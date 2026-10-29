@@ -9,6 +9,7 @@ class RequisAdmin(admin.ModelAdmin):
 
 class ValeSalidasAdmin(admin.ModelAdmin):
     list_display = ('id','solicitud','complete','created_at')
+    raw_id_fields = ('solicitud','solicitud_terminado','almacenista','proyecto','subproyecto','material_recibido_por')
 
 class Articulos_RequisitadosAdmin(admin.ModelAdmin):
     list_display = ('req','producto','cantidad')

@@ -1846,7 +1846,7 @@ def convert_salidas_to_xls(salidas):
     number_style.font = Font(name ='Calibri', size = 10)
     wb.add_named_style(number_style)
 
-    columns = ['Folio Solicitud','Fecha','Solicitante','Proyecto','Subproyecto','Área','Código','Articulo','Material recibido por','Cantidad','Precio','Total']
+    columns = ['Folio Solicitud','Fecha','Solicitante','Proyecto','Subproyecto','Activo','Área','Código','Articulo','Material recibido por','Cantidad','Precio','Total']
 
     for col_num in range(len(columns)):
         (ws.cell(row = row_num, column = col_num+1, value=columns[col_num])).style = head_style
@@ -1854,7 +1854,7 @@ def convert_salidas_to_xls(salidas):
 
     columna_max = len(columns)+2
 
-    (ws.cell(column = columna_max, row = 1, value='{Reporte Creado Automáticamente por SAVIA VORDTEC.}')).style = messages_style
+    (ws.cell(column = columna_max, row = 1, value='{Reporte Creado Automáticamente por SAVIA.}')).style = messages_style
     (ws.cell(column = columna_max, row = 2, value='{Software desarrollado por Grupo Vordcab S.A. de C.V.}')).style = messages_style
     
 
@@ -1864,6 +1864,7 @@ def convert_salidas_to_xls(salidas):
         Concat('producto__articulos__orden__staff__staff__first_name',Value(' '),'producto__articulos__orden__staff__staff__last_name'),
         'producto__articulos__orden__proyecto__nombre',
         'producto__articulos__orden__subproyecto__nombre',
+        'producto__articulos__producto__producto__activo',
         'producto__articulos__orden__area__nombre',
         'producto__articulos__producto__producto__codigo',
         'producto__articulos__producto__producto__nombre',
@@ -1883,11 +1884,11 @@ def convert_salidas_to_xls(salidas):
             if col_num == 1:
                 value = (row[col_num]).date()
                 (ws.cell(row = row_num, column = col_num+1, value = value)).style = date_style
-            if col_num == 9:
+            if col_num in [10]:
                 (ws.cell(row = row_num, column = col_num+1, value=row[col_num])).style = number_style
-            if col_num == 10:
+            if col_num in [11]:
                 (ws.cell(row = row_num, column = col_num+1, value=row[col_num])).style = money_style
-        ws.cell(row=row_num, column=len(row) + 1, value=f'=J{row_num} * K{row_num}').style = money_style
+        ws.cell(row=row_num, column=len(row) + 1, value=f'=L{row_num} * K{row_num}').style = money_style
     
     (ws.cell(column = columna_max , row = 3, value=f'=SUM(L2:L{row_num})')).style = money_resumen_style
 
