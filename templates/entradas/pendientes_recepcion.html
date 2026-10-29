@@ -94,21 +94,22 @@
                 </div>
                 <hr>
                 </form>
-                <form method=POST>
+              
+                <form method="POST" action="{{ request.get_full_path }}" onsubmit="mostrarIndicadorCarga();">
                     {% csrf_token %}
-                    <!--<ul class="nav nav-pills">
-                        <li class="nav-item mx-2">
-                            <button type="submit" class="btn btn-outline-success" value='Reporte Excel'>
-                                <i class="fa-solid fa-file-excel fa-2xl"></i>
-                            </button>
-                        </li>
-                        <li class="nav-item mx-2">
-                            <button type="button" class="btn btn-outline-danger">
-                               <i class="fa-solid fa-file-pdf fa-2xl"></i>
-                            </button>
-                        </li>
-                    </ul>-->
+
+                    <button
+                        type="submit"
+                        name="btnExcel"
+                        value="1"
+                        class="btn btn-success">
+
+                        <i class="fa-solid fa-file-excel me-2"></i>
+                        Exportar Excel
+
+                    </button>
                 </form>
+                
             </div>
         </div>
         
@@ -235,6 +236,27 @@
     </div>
 </div>
 
+<div class="modal fade" id="loadingIndicator" data-bs-backdrop="static"
+     data-bs-keyboard="false" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content sv-modal">
+            <div class="modal-body d-flex align-items-center gap-3">
+                
+                <img src="{% static 'images/SAVIA_Logo.png' %}"
+                     alt="Vordcab" width="96" class="img-fluid rounded">
+                
+                <div>
+                    <strong>Generando reporte</strong>
+                    <p class="sv-cell-subtitle mb-0">
+                        Por favor espera… <i class="fa-solid fa-mug-hot"></i>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
 <script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script>
@@ -256,6 +278,40 @@ var myModal = document.getElementById('dialog')
 myModal.addEventListener('hidden.bs.modal', function (event) {
   location.reload();
 })
+
+// Función para obtener el valor de una cookie por su nombre
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+function mostrarIndicadorCarga() {
+    const loadingElement = document.getElementById('loadingIndicator');
+    bootstrap.Modal.getOrCreateInstance(loadingElement).show();
+    verificarDescargaIniciada();
+}
+
+function verificarDescargaIniciada(){
+    const checkDescarga = setInterval(() => {
+        const descargaIniciada = getCookie('descarga_iniciada');
+        if (descargaIniciada === 'true') {
+            const loadingElement = document.getElementById('loadingIndicator');
+            bootstrap.Modal.getOrCreateInstance(loadingElement).hide();
+            document.cookie = 'descarga_iniciada=; Max-Age=0; path=/';
+            clearInterval(checkDescarga);
+        }
+    }, 500);
+}
 
 </script>
 {% endblock %}

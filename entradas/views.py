@@ -13,7 +13,8 @@ from compras.models import Compra, ArticuloComprado
 from compras.filters import CompraFilter
 from compras.views import attach_oc_pdf
 from dashboard.models import Inventario, Order, ArticulosparaSurtir, Producto_Calidad, Productos_Solicitud_Terminado
-from requisiciones.models import Salidas, ArticulosRequisitados, Requis
+from requisiciones.models import Salidas
+from tesoreria.models import Pago
 from .models import Entrada, EntradaArticulo, Reporte_Calidad, No_Conformidad, NC_Articulo, Tipo_Nc
 from .forms import EntradaArticuloForm, Reporte_CalidadForm, NoConformidadForm, NC_ArticuloForm, NC_Almacen_ArticuloForm, Cierre_NCForm
 from user.models import Profile
@@ -21,6 +22,7 @@ from smtplib import SMTPException
 import json
 
 from datetime import date, datetime
+import datetime as dt
 import decimal
 import socket
 import os
@@ -33,6 +35,7 @@ from openpyxl import Workbook
 from openpyxl.styles import NamedStyle, Font, PatternFill, Alignment
 from openpyxl.utils import get_column_letter
 import io
+
 
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
@@ -61,16 +64,29 @@ def pendientes_recepcion(request):
             if cant_entradas == cant_servicios and cant_entradas > 0:
                 compra.solo_servicios = True
                 compra.save()
+        
+        #print(articulos_recepcion)
         compras = Compra.objects.filter(
             Q(cond_de_pago__nombre ='CREDITO') | Q(pagada = True),  
             Q(solo_servicios=False),
             recepcion_completa = False , 
             autorizado2= True).order_by('-autorizado_date2')
     else:
+        #compras = Compra.objects.none()
         compras = Compra.objects.filter(Q(cond_de_pago__nombre ='CREDITO') | Q(pagada = True), solo_servicios= True, entrada_completa = False, autorizado2= True, req__orden__staff = usuario).order_by('-autorizado_date2')
 
     myfilter = CompraFilter(request.GET, queryset=compras)
     compras = myfilter.qs
+
+    
+    if request.method == 'POST' and 'btnExcel' in request.POST:
+        articulos_pendientes = ArticuloComprado.objects.filter(oc__in=compras, recepcion_completa = False).select_related(
+            'oc',
+            'oc__req',
+            'oc__req__orden',
+            'oc__proveedor'
+        ).order_by('oc__folio', 'id')
+        return convert_excel_matriz_compras_pendientes(articulos_pendientes)
 
     #Set up pagination
     p = Paginator(compras, 25)
@@ -2548,3 +2564,113 @@ def draw_wrapped_text(c, text, x, y, max_width, font_name="Helvetica", font_size
         y -= line_height
 
     return y
+
+
+def convert_excel_matriz_compras_pendientes(articulos_comprados):
+      #print('si entra a la función')
+    # Crea un objeto BytesIO para guardar el archivo Excel
+    output = BytesIO()
+    
+    # Crea un libro de trabajo y añade una hoja
+    workbook = xlsxwriter.Workbook(output, {'in_memory': True})
+    worksheet = workbook.add_worksheet("Producto_pendientes")
+
+     
+    date_format = workbook.add_format({'num_format': 'dd/mm/yyyy'})
+    # Define los estilos
+    head_style = workbook.add_format({'bold': True, 'font_color': 'FFFFFF', 'bg_color': '333366', 'font_name': 'Arial', 'font_size': 11})
+    body_style = workbook.add_format({'font_name': 'Calibri', 'font_size': 10})
+    money_style = workbook.add_format({'num_format': '$ #,##0.00', 'font_name': 'Calibri', 'font_size': 10})
+    date_style = workbook.add_format({'num_format': 'dd/mm/yyyy', 'font_name': 'Calibri', 'font_size': 10})
+    percent_style = workbook.add_format({'num_format': '0.00%', 'font_name': 'Calibri', 'font_size': 10})
+    messages_style = workbook.add_format({'font_name':'Arial Narrow', 'font_size':11})
+
+    columns = ['Compra', 'Requisición','Solicitud', 'Codigo', 'Producto', 'Cantidad Pendiente', 'Unidad','Proveedor',
+               'Usuario Solicitante','Pagada','Ultimo pago']
+
+    columna_max = len(columns)+2
+
+    worksheet.write(0, columna_max - 1, 'Reporte Creado Automáticamente por SAVIA', messages_style)
+    worksheet.write(1, columna_max - 1, 'Software desarrollado por Grupo Vordcab S.A. de C.V.', messages_style)
+    worksheet.set_column(columna_max - 1, columna_max, 30)  # Ajusta el ancho de las columnas nuevas
+    
+   
+    for i, column in enumerate(columns):
+        worksheet.write(0, i, column, head_style)
+        worksheet.set_column(i, i, 15)  # Ajusta el ancho de las columnas
+
+    worksheet.set_column('L:L', 12,  money_style)
+    worksheet.set_column('M:M', 12, money_style) 
+    # Asumiendo que ya tienes tus datos de compras
+    row_num = 0
+    for articulo in articulos_comprados:
+        
+        row_num += 1
+        # Aquí asumimos que ya hiciste el procesamiento necesario de cada compra
+        pagos = Pago.objects.filter(oc=articulo.oc)
+        if pagos:
+            ultimo = pagos.last()
+        else:
+            ultimo = None
+        if articulo.oc.pagada == True:
+            pago = 'Pagada'
+        elif articulo.oc.pagada == False and ultimo:
+            pago = 'Pagada parcialmente'
+        else:
+            pago = 'No pagado'
+        if pagos:
+            ultimo = pagos.last()
+            if ultimo.pagado_date:
+                ultimo = ultimo.pagado_date.strftime('%d/%m/%Y')
+            else:
+                ultimo = ''
+        else:
+            ultimo = ''
+        row = [
+            articulo.oc.folio,
+            articulo.oc.req.folio,
+            articulo.oc.req.orden.folio,
+            articulo.producto.producto.articulos.producto.producto.codigo,
+            articulo.producto.producto.articulos.producto.producto.nombre,
+            articulo.cantidad_pendiente if articulo.cantidad_pendiente != None else articulo.cantidad,
+            articulo.producto.producto.articulos.producto.producto.unidad.nombre,
+            articulo.oc.proveedor.nombre.razon_social,
+            f"{articulo.oc.req.orden.staff.staff.first_name} {articulo.oc.req.orden.staff.staff.last_name}",
+            pago,
+            ultimo,
+            
+        ]
+        
+        for col_num, cell_value in enumerate(row):
+        # Define el formato por defecto
+            cell_format = body_style
+
+            # Aplica el formato de fecha para las columnas con fechas
+            if col_num in [7, 8]:  # Asume que estas son tus columnas de fechas
+                cell_format = date_style
+        
+            # Aplica el formato de dinero para las columnas con valores monetarios
+            elif col_num in [11, 12]:  # Asume que estas son tus columnas de dinero
+                cell_format = money_style
+
+            # Finalmente, escribe la celda con el valor y el formato correspondiente
+            worksheet.write(row_num, col_num, cell_value, cell_format)
+
+      
+        #worksheet.write_formula(row_num, 19, f'=IF(ISBLANK(R{row_num+1}), L{row_num+1}, L{row_num+1}*R{row_num+1})', money_style)
+    
+   
+    workbook.close()
+
+    # Construye la respuesta
+    output.seek(0)
+
+    response = HttpResponse(
+        output.read(), 
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+    response['Content-Disposition'] = f'attachment; filename=Producto_pendientes_entrada_{dt.date.today()}.xlsx'
+      # Establecer una cookie para indicar que la descarga ha iniciado
+    response.set_cookie('descarga_iniciada', 'true', max_age=20)  # La cookie expira en 20 segundos
+    output.close()
+    return response

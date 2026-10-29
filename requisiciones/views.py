@@ -1759,7 +1759,7 @@ def convert_entradas_to_xls(entradas):
 
     columna_max = len(columns)+2
 
-    (ws.cell(column = columna_max, row = 1, value='{Reporte Creado Automáticamente por Savia Vordtec. UH}')).style = messages_style
+    (ws.cell(column = columna_max, row = 1, value='{Reporte Creado Automáticamente por Savia Vordtec.}')).style = messages_style
     (ws.cell(column = columna_max, row = 2, value='{Software desarrollado por Vordcab S.A. de C.V.}')).style = messages_style
     
   
@@ -1854,7 +1854,7 @@ def convert_salidas_to_xls(salidas):
 
     columna_max = len(columns)+2
 
-    (ws.cell(column = columna_max, row = 1, value='{Reporte Creado Automáticamente por SAVIA VORDTEC. UH}')).style = messages_style
+    (ws.cell(column = columna_max, row = 1, value='{Reporte Creado Automáticamente por SAVIA VORDTEC.}')).style = messages_style
     (ws.cell(column = columna_max, row = 2, value='{Software desarrollado por Grupo Vordcab S.A. de C.V.}')).style = messages_style
     
 
