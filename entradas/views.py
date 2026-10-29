@@ -56,7 +56,7 @@ def pendientes_recepcion(request):
             recepcion_completa = False, 
             autorizado2= True).order_by('-autorizado_date2')
         for compra in compras:
-            articulos_recepcion  = ArticuloComprado.objects.filter(oc=compra, recepcion_completa = False)
+            articulos_recepcion  = ArticuloComprado.objects.filter(oc=compra, recepcion_completa = False, cantidad_pendiente__gt = 0)
             servicios_pendientes = articulos_recepcion.filter(producto__producto__articulos__producto__producto__servicio=True)
             cant_entradas = articulos_recepcion.count()
             cant_servicios = servicios_pendientes.count()
@@ -69,7 +69,8 @@ def pendientes_recepcion(request):
         compras = Compra.objects.filter(
             Q(cond_de_pago__nombre ='CREDITO') | Q(pagada = True),  
             Q(solo_servicios=False),
-            recepcion_completa = False , 
+            recepcion_completa = False,
+            entrada_completa = False, 
             autorizado2= True).order_by('-autorizado_date2')
     else:
         #compras = Compra.objects.none()
@@ -80,12 +81,12 @@ def pendientes_recepcion(request):
 
     
     if request.method == 'POST' and 'btnExcel' in request.POST:
-        articulos_pendientes = ArticuloComprado.objects.filter(oc__in=compras, recepcion_completa = False).select_related(
+        articulos_pendientes = ArticuloComprado.objects.filter( Q(cantidad_pendiente__gt=0) |Q(cantidad_pendiente__isnull=True),oc__in=compras, recepcion_completa = False).select_related(
             'oc',
             'oc__req',
             'oc__req__orden',
             'oc__proveedor'
-        ).order_by('oc__folio', 'id')
+        ).order_by('-oc__id', 'id')
         return convert_excel_matriz_compras_pendientes(articulos_pendientes)
 
     #Set up pagination
@@ -2585,7 +2586,7 @@ def convert_excel_matriz_compras_pendientes(articulos_comprados):
     percent_style = workbook.add_format({'num_format': '0.00%', 'font_name': 'Calibri', 'font_size': 10})
     messages_style = workbook.add_format({'font_name':'Arial Narrow', 'font_size':11})
 
-    columns = ['Compra', 'Requisición','Solicitud', 'Codigo', 'Producto', 'Cantidad Pendiente', 'Unidad','Proveedor',
+    columns = ['Compra', 'Requisición','Solicitud', 'Codigo', 'Producto', 'Cantidad Pendiente', 'P.U.','Total','Unidad','Proveedor',
                'Usuario Solicitante','Pagada','Ultimo pago']
 
     columna_max = len(columns)+2
@@ -2626,13 +2627,25 @@ def convert_excel_matriz_compras_pendientes(articulos_comprados):
                 ultimo = ''
         else:
             ultimo = ''
+
+        cantidad_pendiente = (
+            articulo.cantidad_pendiente
+            if articulo.cantidad_pendiente is not None
+            else articulo.cantidad
+        )
+
+        precio_unitario = articulo.precio_unitario or 0
+
+        total = (cantidad_pendiente or 0) * precio_unitario
         row = [
-            articulo.oc.folio,
+            articulo.oc.id,
             articulo.oc.req.folio,
             articulo.oc.req.orden.folio,
             articulo.producto.producto.articulos.producto.producto.codigo,
             articulo.producto.producto.articulos.producto.producto.nombre,
-            articulo.cantidad_pendiente if articulo.cantidad_pendiente != None else articulo.cantidad,
+            cantidad_pendiente,
+            precio_unitario,
+            total,
             articulo.producto.producto.articulos.producto.producto.unidad.nombre,
             articulo.oc.proveedor.nombre.razon_social,
             f"{articulo.oc.req.orden.staff.staff.first_name} {articulo.oc.req.orden.staff.staff.last_name}",
@@ -2646,11 +2659,11 @@ def convert_excel_matriz_compras_pendientes(articulos_comprados):
             cell_format = body_style
 
             # Aplica el formato de fecha para las columnas con fechas
-            if col_num in [7, 8]:  # Asume que estas son tus columnas de fechas
+            if col_num in [9, 10]:  # Asume que estas son tus columnas de fechas
                 cell_format = date_style
         
             # Aplica el formato de dinero para las columnas con valores monetarios
-            elif col_num in [11, 12]:  # Asume que estas son tus columnas de dinero
+            elif col_num in [6,7]:  # Asume que estas son tus columnas de dinero
                 cell_format = money_style
 
             # Finalmente, escribe la celda con el valor y el formato correspondiente
