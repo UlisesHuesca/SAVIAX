@@ -1846,7 +1846,7 @@ def convert_salidas_to_xls(salidas):
     number_style.font = Font(name ='Calibri', size = 10)
     wb.add_named_style(number_style)
 
-    columns = ['Folio Solicitud','Fecha','Solicitante','Proyecto','Subproyecto','Activo','Área','Código','Articulo','Material recibido por','Cantidad','Precio','Total']
+    columns = ['Folio Solicitud','Fecha','Solicitante','Proyecto','Subproyecto','Familia','Área','Código','Articulo','Material recibido por','Cantidad','Precio','Total']
 
     for col_num in range(len(columns)):
         (ws.cell(row = row_num, column = col_num+1, value=columns[col_num])).style = head_style
@@ -1864,7 +1864,7 @@ def convert_salidas_to_xls(salidas):
         Concat('producto__articulos__orden__staff__staff__first_name',Value(' '),'producto__articulos__orden__staff__staff__last_name'),
         'producto__articulos__orden__proyecto__nombre',
         'producto__articulos__orden__subproyecto__nombre',
-        'producto__articulos__producto__producto__activo',
+        'producto__articulos__producto__producto__familia__nombre',
         'producto__articulos__orden__area__nombre',
         'producto__articulos__producto__producto__codigo',
         'producto__articulos__producto__producto__nombre',
