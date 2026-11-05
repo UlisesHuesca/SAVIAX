@@ -66,7 +66,7 @@
     <div class="col-lg-7">
         <div class="card">
             <div class = "card-header">
-            <h5 id="devolucion" vale="{{devolucion.id}}">Productos</h5>
+            <h5 id="devolucion" vale="{{devolucion.id|unlocalize}}">Productos</h5>
             </div>
 
             <div class='card-body'>
@@ -160,7 +160,7 @@
                             <th scope="col">{{item.comentario}}</th>
                             <th scope="col">
                             <td>
-                                <button type="button" class="btn btn-danger" onclick="deleteRow(this)" id="delete" value="Delete" id_salida ="{{item.vale_devolucion.id}}" cantidad="{{item.cantidad}}" producto="{{item.producto}}" producto_id="{{item.producto.id|unlocalize}}" referencia="{{item.vale_devolucion.salida.referencia}}" action="remove">
+                                <button type="button" class="btn btn-danger" onclick="deleteRow(this)" id="delete" value="Delete" id_salida ="{{item.vale_devolucion.id|unlocalize}}" cantidad="{{item.cantidad}}" producto="{{item.producto}}" producto_id="{{item.producto.id|unlocalize}}" referencia="{{item.vale_devolucion.salida.referencia}}" action="remove">
                                     <i class="fa-solid fa-trash-can"></i>
                                 </button>
                             </td>
