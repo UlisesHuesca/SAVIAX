@@ -156,6 +156,7 @@
                         <th class="d-none d-lg-table-cell">Fecha Recepción</th>
                         <th scope="col">Proveedor</th>
                         <th>Concepto</th>
+                        <th>Ubicacion/Estante</th>
                         <th>Cantidad</th>
                         <th scope="col">Edición cantidad</th>
                         <th>Fecha Caducidad</th>
@@ -199,7 +200,12 @@
                         <td>{{item.entrada.oc.proveedor}}</td>
                         {% endif %}
                     
-                        <td>{{item.articulo_comprado.producto.producto.articulos.producto}}</td>
+                        <td>{{item.articulo_comprado.producto.producto.articulos.producto.producto.codigo}} || {{item.articulo_comprado.producto.producto.articulos.producto.producto.nombre}}</td>
+                        {%if not item.articulo_comprado.producto.producto.articulos.producto.ubicacion  and  not item.articulo_comprado.producto.producto.articulos.producto.estante %}
+                            <td>Sin registro</td>    
+                        {% else %}
+                            <td>{{item.articulo_comprado.producto.producto.articulos.producto.ubicacion}} / {{item.articulo_comprado.producto.producto.articulos.producto.estante}}</td>
+                        {% endif %}    
                         <td class="" id="cantidad_{{item.id|unlocalize}}"
                             cantidad_compra="{{ item.articulo_comprado.cantidad }}"
                             data-total_recepcionado="{{ item.total_recepcionado }}"

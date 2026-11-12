@@ -6,6 +6,7 @@ from django.conf import settings
 from django.db.models import Sum, Prefetch
 from django.core.paginator import Paginator
 from django.db.models.functions import Concat
+from django.core.paginator import Paginator
 from django.urls import reverse
 from django.core.mail import EmailMessage, BadHeaderError
 
@@ -797,10 +798,14 @@ def mis_gastos(request):
     usuario = Profile.objects.get(staff__id=request.user.id)
     gastos = Solicitud_Gasto.objects.filter(complete=True, staff = usuario)
     myfilter = Solicitud_Gasto_Filter(request.GET, queryset=gastos)
-    gastos = myfilter.qs
+    gastos = myfilter.qs.order_by('-id')
 
+    p = Paginator(gastos, 10)
+    page = request.GET.get('page')
+    gastos_list = p.get_page(page)
+    
     context= {
-        'gastos':gastos,
+        'gastos_list':gastos_list,
         'myfilter':myfilter,
         }
 
@@ -810,10 +815,14 @@ def mis_viaticos(request):
     usuario = Profile.objects.get(staff__id=request.user.id)
     viaticos = Solicitud_Viatico.objects.filter(complete=True, staff = usuario)
     myfilter = Solicitud_Viatico_Filter(request.GET, queryset=viaticos)
-    viaticos = myfilter.qs
+    viaticos = myfilter.qs.order_by('-id')
+
+    p = Paginator(viaticos, 10)
+    page = request.GET.get('page')
+    viaticos_list = p.get_page(page)
 
     context= {
-        'viaticos':viaticos,
+        'viaticos_list':viaticos_list,
         'myfilter':myfilter,
         }
 

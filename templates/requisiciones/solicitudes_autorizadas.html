@@ -183,6 +183,7 @@
                     <th scope="col">Proyecto</th>
                     <th class="d-none d-lg-table-cell">Subproyecto</th>
                     <th scope="col">Descripción</th>
+                    <th scope="col">Ubicacion/Estante</th>
                     <th scope="col">Cantidad Solicitada</th>
                     <th scope="col">[Apartada]</th>
                     <th class="d-none d-lg-table-cell">Status</th>
@@ -209,7 +210,12 @@
                     <td class="d-none d-lg-table-cell">{{producto.articulos.orden.staff.staff.first_name}} {{producto.articulos.orden.staff.staff.last_name}}</td>
                     <td>{{producto.articulos.orden.proyecto.nombre}}</td>
                     <td class="d-none d-lg-table-cell">{{producto.articulos.orden.subproyecto.nombre}}</td>
-                    <td>{{producto.articulos.producto.producto}}</td>
+                    <td>{{producto.articulos.producto.producto.codigo}}||{{producto.articulos.producto.producto.nombre}}</td>
+                    {%if not producto.articulos.producto.ubicacion  and  not producto.articulos.producto.estante %}
+                        <td>Sin registro</td>    
+                    {% else %}
+                        <td>{{producto.articulos.producto.ubicacion}} / {{producto.articulos.producto.estante}}</td>
+                    {% endif %}    
                     <td>{{producto.articulos.cantidad}}</td>
                     <td>{{producto.articulos.producto.apartada}}</td>
                     
