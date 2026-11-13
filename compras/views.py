@@ -25,6 +25,7 @@ from entradas.models import Entrada, No_Conformidad, NC_Articulo
 import json
 from datetime import date, datetime, timedelta
 from num2words import num2words
+from xml.sax.saxutils import escape
 import socket
 
 import decimal
@@ -66,6 +67,11 @@ import datetime as dt
 #from urllib.parse import uses_params
 import ssl
 # Create your views here.
+
+def clean_text(text):
+    if text is None:
+        return ""
+    return escape(str(text))
 
 @login_required(login_url='user-login')
 def requisiciones_autorizadas(request):
@@ -167,14 +173,14 @@ def eliminar_articulos(request, pk):
 
 #Este codigo va a ser el que se va a poder importar en caso de que se llegue a solcitar en otro lado
 REGLAS_CONTROL = {
-    'documental': {
-        '1': "1. Carta origen de los productos<br>2. Certificado de calidad de los productos<br>3. Certificado de Pruebas (según producto)<br>4. Evaluación en sitio",
-        '2': "1. Carta origen de los productos<br>2. Certificado de calidad de los productos<br>3. Certificado de Pruebas (según producto)",
-        '3': "1. Carta origen de los productos<br>2. Certificado de calidad de los productos"
+     'documental': {
+        '1': "1. Carta origen de los productos<br/>2. Certificado de calidad de los productos<br/>3. Certificado de Pruebas (según producto)<br/>4. Evaluación en sitio",
+        '2': "1. Carta origen de los productos<br/>2. Certificado de calidad de los productos<br/>3. Certificado de Pruebas (según producto)",
+        '3': "1. Carta origen de los productos<br/>2. Certificado de calidad de los productos"
     },
     'inspeccion': {
-        '1': "1. Revisión de documentación de control de los procesos<br>2. Documentación de pruebas al producto<br>3. Inspección del producto o servicio en sitio por personal de Calidad de Vordtec de México S.A. de C.V.",
-        '2': "1. Revisión de documentación de control de los procesos<br>2. Documentación de pruebas al producto",
+        '1': "1. Revisión de documentación de control de los procesos<br/>2. Documentación de pruebas al producto<br/>3. Inspección del producto o servicio en sitio por personal de Calidad de Vordtec de México S.A. de C.V.",
+        '2': "1. Revisión de documentación de control de los procesos<br/>2. Documentación de pruebas al producto",
         '3': "1. Revisión de documentación de control de los procesos"
     },
     'cumplimiento': {
@@ -2169,6 +2175,13 @@ def generar_pdf(compra):
         Paragraph('Especificaciones Técnicas', header_style),
         Paragraph('Criterios de aceptación', header_style)]
     ]
+
+    data_g = [
+        [Paragraph('Documental-Grado', header_style),
+         Paragraph('Inspeccion-Grado', header_style),
+         Paragraph('Cumplimiento-Grado', header_style) ]
+    ]
+    
     item = 0
     count = 0
     max_count = 20 
@@ -2188,8 +2201,10 @@ def generar_pdf(compra):
             Paragraph(producto.producto.producto.articulos.producto.producto.nombre if producto.producto.producto.articulos.producto.producto.nombre else ' ', styleN),
             #Paragraph('AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA', styleN),
             Paragraph(producto.producto.producto.articulos.producto.producto.especs if producto.producto.producto.articulos.producto.producto.especs else ' ', styleN),
-            Paragraph(producto_calidad if producto_calidad else ' ', styleN)
+            Paragraph(producto_calidad if producto_calidad else ' ', styleN),
         ])
+
+
         if count < max_count:
             high -= 21
             count += 1
@@ -2206,6 +2221,7 @@ def generar_pdf(compra):
     w, h = table.wrap(avail_w, avail_h)
 
     table.drawOn(c, TABLE_LEFT, (TABLE_TOP - GAP) - h)
+
 
     remaining_data = data_c[rows_per_page_first + 1:]
     # Actualiza la posición y los datos restantes
@@ -2252,7 +2268,125 @@ def generar_pdf(compra):
         table.drawOn(c, TABLE_LEFT, (TABLE_TOP - GAP) - h)
     c.showPage()
 
-    # Barra azul superior
+
+
+    #Apartir de aqui lo que va a pasar es qe vamos a validar que efectivamente exista alguna de las dos opciones 
+    productos_con_calidad = []
+
+    #hay_datos_calidad = False
+    for prod in productos:
+        calidad = getattr(prod.producto.producto.articulos.producto.producto, 'producto_calidad', None)
+        if calidad:
+            if (calidad.documental and calidad.g_documental) or \
+               (calidad.inspeccion and calidad.g_inspeccion) or \
+               (calidad.cumplimiento and calidad.g_cumplimiento):
+                productos_con_calidad.append(prod)
+                #hay_datos_calidad = True
+                #break 
+
+    # si ponemos hay_datos_calidad
+    if productos_con_calidad:
+        styles_q = getSampleStyleSheet()
+        header_style_q = ParagraphStyle(
+            name='HeaderStyleQ',
+            parent=styles_q['Normal'],
+            fontSize=8,
+            textColor='white',
+            alignment=1,
+            fontName='Helvetica-Bold'
+        )
+        body_style_q = ParagraphStyle(
+            name='BodyStyleQ',
+            parent=styles_q['Normal'],
+            fontSize=7,
+            textColor=colors.black,
+            alignment=0
+        )
+        title_style_q = ParagraphStyle(
+            name='TitleStyleQ',
+            parent=styles_q['Normal'],
+            fontSize=8,
+            textColor=colors.black,
+            alignment=0,
+            fontName='Helvetica-Bold'
+        )
+
+        chunk_products = 3 
+
+        # y ponemos productos solamento aqui
+        for i in range(0, len(productos_con_calidad), chunk_products):
+            if i > 0:
+                c.showPage() 
+                
+            c.setFillColor(prussian_blue)
+            c.rect(150, height - 50, 320, 30, fill=True, stroke=False)
+            c.setFillColor(colors.white)
+            c.setFont('Helvetica-Bold', 14)
+            c.drawCentredString(310, height - 40, 'Requisitos de Control de Calidad')
+            c.drawInlineImage('static/images/logo vordtec_documento.png', 40, height - 60, 2.5 * cm, 1.25 * cm)
+
+            #y aqui, vamos a cambiar la logica para que agregue los productos que no tengan control de calidad por asi decirlo pero que sus hermanos si tenga al menos uno 
+            chunk_prods = productos_con_calidad[i:i+chunk_products]
+            
+            data_calidad = [
+                [Paragraph('Control de Calidad', header_style_q), Paragraph('Documentación', header_style_q)]
+            ]
+            style_calidad = [
+                ('BACKGROUND', (0, 0), (-1, 0), prussian_blue),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+                ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
+                ('GRID', (0, 0), (-1, -1), 0.5, colors.black),
+                ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+            ]
+
+            current_row = 1
+            for prod in chunk_prods:
+                # Limpiamos el texto por si trae caracteres extraños de esta forma el PDF no nos chillaria a la hora de ser pinntado esto con la funcion clean_text
+                calidad = getattr(prod.producto.producto.articulos.producto.producto, 'producto_calidad', None)
+                codigo = clean_text(getattr(prod.producto.producto.articulos.producto.producto, 'codigo', 'N/A'))
+                nombre = clean_text(getattr(prod.producto.producto.articulos.producto.producto, 'nombre', 'N/A'))
+                prod_str = f"Producto: {codigo} - {nombre}"
+                
+                data_calidad.append([Paragraph(f"<b>{prod_str}</b>", title_style_q), ''])
+                style_calidad.append(('SPAN', (0, current_row), (-1, current_row)))
+                style_calidad.append(('BACKGROUND', (0, current_row), (-1, current_row), colors.lightgrey))
+                current_row += 1
+
+                grado_doc, txt_doc = "No hay registro", "No aplica"
+                if calidad and calidad.documental and calidad.g_documental:
+                    grado_doc = clean_text(calidad.g_documental.nombre)
+                    txt_doc = REGLAS_CONTROL['documental'].get(str(calidad.g_documental.id), "No aplica")
+                data_calidad.append([Paragraph(f"Documental - {grado_doc}", body_style_q), Paragraph(txt_doc, body_style_q)])
+                current_row += 1
+
+                grado_ins, txt_ins = "No hay registro", "No aplica"
+                if calidad and calidad.inspeccion and calidad.g_inspeccion:
+                    grado_ins = clean_text(calidad.g_inspeccion.nombre)
+                    txt_ins = REGLAS_CONTROL['inspeccion'].get(str(calidad.g_inspeccion.id), "No aplica")
+                data_calidad.append([Paragraph(f"Inspección - {grado_ins}", body_style_q), Paragraph(txt_ins, body_style_q)])
+                current_row += 1
+
+                grado_cum, txt_cum = "No hay registro", "No aplica"
+                if calidad and calidad.cumplimiento and calidad.g_cumplimiento:
+                    grado_cum = clean_text(calidad.g_cumplimiento.nombre)
+                    txt_cum = REGLAS_CONTROL['cumplimiento'].get(str(calidad.g_cumplimiento.id), "No aplica")
+                data_calidad.append([Paragraph(f"Cumplimiento - {grado_cum}", body_style_q), Paragraph(txt_cum, body_style_q)])
+                current_row += 1
+
+
+            table_calidad = Table(data_calidad, colWidths=[6 * cm, 11 * cm])
+            table_calidad.setStyle(TableStyle(style_calidad))
+            
+            w_cal, h_cal = table_calidad.wrapOn(c, width, height)
+            y_pos = max(20, height - 80 - h_cal)
+                
+            table_calidad.drawOn(c, 20, y_pos)
+
+        c.showPage() 
+
+   #------------
+   
+    #     # Barra azul superior
     c.setFillColor(prussian_blue)
     c.rect(150, height - 50, 320, 30, fill=True, stroke=False)  # Ajusta las coordenadas según sea necesario
 

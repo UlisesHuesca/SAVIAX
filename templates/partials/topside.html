@@ -1,122 +1,120 @@
 {% load static %}
 <html>
 <head>
-
-<!--<link rel="stylesheet" href="{% static 'css/style.css' %}"-->
-
-
-{% block title %}
-
-{% endblock %}
+{% block title %}Home Page{% endblock %}
 <h6>&nbsp;</h6>
 <h8>&nbsp;</h8>
 
 <h6 class="d-lg-none">&nbsp;</h6>
 
+<style>
+    .boton-dashboard {
+        min-height: 120px; 
+        transition: transform 0.2s;
+    }
+    .boton-dashboard:hover {
+        transform: scale(1.03); 
+    }
+</style>
+
 </head>
 <body>
 {% block content %}
 <div class="container">
-    <div class="row m-4">
-        <div class="col-md-12 col-lg-10">
-            <div class="card" style="opacity: 0.8; background: hsla(0, 0%, 100%, 0.55); 
-            backdrop-filter: blur(30px);">
+    <div class="row justify-content-center my-4"> 
+        
+        <div class="col-md-12 col-lg-10 mx-auto">
+            <div class="card" style="opacity: 0.8; background: hsla(0, 0%, 100%, 0.55); backdrop-filter: blur(30px);">
                 <div class="card-header text-center">
                     <strong>
                         <img class="rounded-circle" src="{% static 'images/SAVIA_Logo.png' %}" id="logo" alt="SAVIA" style="width: 220px; height: 220px;">
                         <h1 style="color: #122D45">SAVIA VORDTEC</h1>
                     </strong>
                 </div>
+                
                 <div class="card-body">
                     {% if usuario.tipo.comprador == True %}
-                    <div class="row mt-1">
-                        <div class="col-md-4">
-                            <a class="text-decoration-none text-dark" href="{% url 'requisicion-autorizada'  %}">
-                                <div class="card my-card shadow text-center p-3">
-                                    <h4>Requisiciones Autorizadas <i class="fa-solid fa-bag-shopping"></i></h4>
-                                    <h3></h3>
+                    <div class="row mt-1 d-flex align-items-stretch">
+                        <div class="col-md-4 mb-3">
+                            <a class="text-decoration-none text-dark d-block h-100" href="{% url 'requisicion-autorizada' %}">
+                                <div class="card my-card shadow text-center p-3 h-100 boton-dashboard d-flex flex-column justify-content-center">
+                                    <h4 class="mb-0">Requisiciones Autorizadas <br><i class="fa-solid fa-bag-shopping mt-2"></i></h4>
                                 </div>
                             </a>
                         </div>
-                        <div class="col-md-4">
-                            <a class="text-decoration-none text-dark" href="{% url 'matriz-compras' %}">
-                                <div class="card my-card shadow text-center p-3">
-                                    <h4>Reporte de Compras<i class="fa-solid fa-cart-shopping"></i></h4>
-                                    <h3></h3>
+                        <div class="col-md-4 mb-3">
+                            <a class="text-decoration-none text-dark d-block h-100" href="{% url 'matriz-compras' %}">
+                                <div class="card my-card shadow text-center p-3 h-100 boton-dashboard d-flex flex-column justify-content-center">
+                                    <h4 class="mb-0">Reporte de Compras <br><i class="fa-solid fa-cart-shopping mt-2"></i></h4>
                                 </div>
                             </a>
                         </div>
-                        <div class="col-md-4">
-                            <a class="text-decoration-none text-dark" href="{% url 'comparativos' %}">
-                                <div class="card my-card shadow text-center p-3">
-                                    <h4>Comparativos <i class="fa-solid fa-scale-unbalanced-flip"></i></h4>
-                                    <h3></h3>
+                        <div class="col-md-4 mb-3">
+                            <a class="text-decoration-none text-dark d-block h-100" href="{% url 'comparativos' %}">
+                                <div class="card my-card shadow text-center p-3 h-100 boton-dashboard d-flex flex-column justify-content-center">
+                                    <h4 class="mb-0">Comparativos <br><i class="fa-solid fa-scale-unbalanced-flip mt-2"></i></h4>
                                 </div>
                             </a>
                         </div>
                     </div>
-                    {%else%}
-                    <div class="row mt-1">
-                        <div class="col-md-4">
-                            <a class="text-decoration-none text-dark" href="{% url 'dashboard-staff' %}">
-                                <div class="card my-card shadow text-center p-3">
-                                    <h4>Personal <i class="fa-solid fa-users"></i></h4>
-                                    <h3>{{conteo_usuario}}</h3>
+                    
+                    {% else %}
+                    
+                    <div class="row mt-1 d-flex align-items-stretch">
+                        <div class="col-md-4 mb-3">
+                            <a class="text-decoration-none text-dark d-block h-100" href="{% url 'dashboard-staff' %}">
+                                <div class="card my-card shadow text-center p-3 h-100 boton-dashboard d-flex flex-column justify-content-center">
+                                    <h4 class="mb-0">Personal <br><i class="fa-solid fa-users mt-2"></i></h4>
+                                    <h3 class="mt-2">{{conteo_usuario}}</h3>
                                 </div>
                             </a>
                         </div>
-                        <div class="col-md-4">
-                            <a class="text-decoration-none text-dark" href="{% url 'dashboard-product' %}">
-                                <div class="card my-card shadow text-center p-3">
-                                    <h4>Productos <i class="fa-solid fa-box"></i></h4>
-                                    <h3>{{conteo_productos}}</h3>
+                        <div class="col-md-4 mb-3">
+                            <a class="text-decoration-none text-dark d-block h-100" href="{% url 'dashboard-product' %}">
+                                <div class="card my-card shadow text-center p-3 h-100 boton-dashboard d-flex flex-column justify-content-center">
+                                    <h4 class="mb-0">Productos <br><i class="fa-solid fa-box mt-2"></i></h4>
+                                    <h3 class="mt-2">{{conteo_productos}}</h3>
                                 </div>
                             </a>
                         </div>
-                        <div class="col-md-4">
-                            <a class="text-decoration-none text-dark" href="{% url 'dashboard-order' %}">
-                                <div class="card my-card shadow text-center p-3">
-                                    <h4>Solicitudes <i class="fa-solid fa-truck-fast"></i></h4>
-                                    <h3>{{solicitudes_generadas}}</h3>
+                        <div class="col-md-4 mb-3">
+                            <a class="text-decoration-none text-dark d-block h-100" href="{% url 'dashboard-order' %}">
+                                <div class="card my-card shadow text-center p-3 h-100 boton-dashboard d-flex flex-column justify-content-center">
+                                    <h4 class="mb-0">Solicitudes <br><i class="fa-solid fa-truck-fast mt-2"></i></h4>
+                                    <h3 class="mt-2">{{solicitudes_generadas}}</h3>
                                 </div>
                             </a>
                         </div>
-                        
                     </div>
                     {% endif %}
-                    <div class="row mt-2">
-                        <div class="col-md-4">
-                            <a class="text-decoration-none text-dark"  href="{% url 'user-profile' %}">
-                                <div class="card my-card shadow text-center p-3">
-                                    <h4>Perfil <i class="fa-solid fa-user"></i></h4>
-                                    <h3></h3>
+                    
+                    <div class="row mt-2 d-flex align-items-stretch">
+                        <div class="col-md-4 mb-3">
+                            <a class="text-decoration-none text-dark d-block h-100" href="{% url 'user-profile' %}">
+                                <div class="card my-card shadow text-center p-3 h-100 boton-dashboard d-flex flex-column justify-content-center">
+                                    <h4 class="mb-0">Perfil <br><i class="fa-solid fa-user mt-2"></i></h4>
                                 </div>
                             </a>
                         </div>
-                        <div class="col-md-4">
-                            <a class="text-decoration-none text-dark"  href="{% url 'solicitud-product-selection' %}">
-                                <div class="card my-card shadow text-center p-3">
-                                    <h4>Crear Solicitud <i class="fa-solid fa-pen-to-square"></i></h4>
-                                    <h3></h3>
+                        <div class="col-md-4 mb-3">
+                            <a class="text-decoration-none text-dark d-block h-100" href="{% url 'solicitud-product-selection' %}">
+                                <div class="card my-card shadow text-center p-3 h-100 boton-dashboard d-flex flex-column justify-content-center">
+                                    <h4 class="mb-0">Crear Solicitud <br><i class="fa-solid fa-pen-to-square mt-2"></i></h4>
                                 </div>
                             </a>
                         </div>
-                        <div class="col-md-4">
-                            <a class="text-decoration-none text-dark"  href="{% url 'solicitud-matriz' %}">
-                                <div class="card my-card shadow text-center p-3">
-                                    <h4>Solicitud Status <i class="fa-solid fa-shoe-prints"></i></h4>
-                                    <h3></h3>
+                        <div class="col-md-4 mb-3">
+                            <a class="text-decoration-none text-dark d-block h-100" href="{% url 'solicitud-matriz' %}">
+                                <div class="card my-card shadow text-center p-3 h-100 boton-dashboard d-flex flex-column justify-content-center">
+                                    <h4 class="mb-0">Solicitud Status <br><i class="fa-solid fa-shoe-prints mt-2"></i></h4>
                                 </div>
                             </a>
                         </div>
-                       
                     </div>
+
                 </div>
             </div>
         </div>
-        
-        
-
     </div>
 </div>
 {% endblock %}
