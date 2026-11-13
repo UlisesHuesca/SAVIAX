@@ -165,19 +165,62 @@ def eliminar_articulos(request, pk):
 
     return render(request,'compras/eliminar_articulos.html', context)
 
+#Este codigo va a ser el que se va a poder importar en caso de que se llegue a solcitar en otro lado
+REGLAS_CONTROL = {
+    'documental': {
+        '1': "1. Carta origen de los productos<br>2. Certificado de calidad de los productos<br>3. Certificado de Pruebas (según producto)<br>4. Evaluación en sitio",
+        '2': "1. Carta origen de los productos<br>2. Certificado de calidad de los productos<br>3. Certificado de Pruebas (según producto)",
+        '3': "1. Carta origen de los productos<br>2. Certificado de calidad de los productos"
+    },
+    'inspeccion': {
+        '1': "1. Revisión de documentación de control de los procesos<br>2. Documentación de pruebas al producto<br>3. Inspección del producto o servicio en sitio por personal de Calidad de Vordtec de México S.A. de C.V.",
+        '2': "1. Revisión de documentación de control de los procesos<br>2. Documentación de pruebas al producto",
+        '3': "1. Revisión de documentación de control de los procesos"
+    },
+    'cumplimiento': {
+        '1': "1. Realizando una evaluación en el lugar de las actividades relevantes.",
+        '2': "1. Identificando cómo el producto, componente o actividad suministrado cumple con los requisitos mencionados cuando están limitados por acuerdo legales, contractuales o de propiedad",
+        '3': "1. Realizando la inspección del primer artículo"
+    }
+}
+
 def articulos_restantes(request, pk):
-    productos = ArticulosRequisitados.objects.filter(req = pk, cantidad_comprada__lt = F("cantidad"), cancelado=False)
-    #productos = ArticulosRequisitados.objects.filter(req = pk, cantidad_comprada__lt = F("cantidad"))
-    requis = Requis.objects.get(id = pk)
-    next_url = request.GET.get('next','requisiciones-status')
+    productos_qs = ArticulosRequisitados.objects.filter(req=pk, cantidad_comprada__lt=F("cantidad"), cancelado=False)
+    requis = Requis.objects.get(id=pk)
+    next_url = request.GET.get('next', 'requisiciones-status')
+
+    productos = []
+    for prod in productos_qs:
+        calidad = getattr(prod.producto.articulos.producto.producto, 'producto_calidad', None)
+        
+        txt_doc, txt_ins, txt_cum = "", "", ""
+        
+        if calidad:
+            if calidad.documental and calidad.g_documental:
+                grado_id = str(calidad.g_documental.id) 
+                txt_doc = REGLAS_CONTROL['documental'].get(grado_id, "")
+                
+            if calidad.inspeccion and calidad.g_inspeccion:
+                grado_id = str(calidad.g_inspeccion.id)
+                txt_ins = REGLAS_CONTROL['inspeccion'].get(grado_id, "")
+                
+            if calidad.cumplimiento and calidad.g_cumplimiento:
+                grado_id = str(calidad.g_cumplimiento.id)
+                txt_cum = REGLAS_CONTROL['cumplimiento'].get(grado_id, "")
+                
+        prod.txt_doc = txt_doc
+        prod.txt_ins = txt_ins
+        prod.txt_cum = txt_cum
+        
+        productos.append(prod)
 
     context = {
         'productos': productos,
         'requis': requis,
         'next_url': next_url,
-        }
+    }
 
-    return render(request,'compras/articulos_restantes.html', context)
+    return render(request, 'compras/articulos_restantes.html', context)
 
 def dof():
 #Trying to fetch DOF
