@@ -64,6 +64,16 @@
                     <h5 class="offcanvas-title" id="offcanvasNavbarLabel">Menú</h5>
                     <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
                 </div>
+
+<!-- RRR-->
+                <div class="dropdown-divider"></div>
+                    <h6 class="dropdown-header">Documentos Legales</h6>
+                    <div class="dropdown-divider"></div>
+                    <a class="dropdown-item" href="{% url 'descargar-aviso-privacidad' %}" target="_blank">
+                        <i class="fa-solid fa-file-pdf text-danger"></i> Aviso de Privacidad
+                    </a>
+
+<!--RRRR-->
                 <div class="offcanvas-body">
                     {% if usuario.tipo.configuracion == False %}
                     <div class="d-none">

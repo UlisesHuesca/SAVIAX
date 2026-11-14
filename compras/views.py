@@ -41,7 +41,7 @@ from reportlab.lib.pagesizes import letter
 from reportlab.rl_config import defaultPageSize
 
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.lib.enums import TA_CENTER
+from reportlab.lib.enums import TA_CENTER, TA_JUSTIFY
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, Frame
 from bs4 import BeautifulSoup
 import urllib.request, urllib.parse, urllib.error
@@ -170,6 +170,490 @@ def eliminar_articulos(request, pk):
         }
 
     return render(request,'compras/eliminar_articulos.html', context)
+
+def generar_aviso_privacidad():
+    #Configuration of the PDF object
+    buf = io.BytesIO()
+  
+    c = canvas.Canvas(buf, pagesize=letter)
+    #Here ends conf.
+    width, height = letter
+    #Azul Vordcab
+    prussian_blue = Color(0.0859375,0.1953125,0.30859375)
+    rojo = Color(0.59375, 0.05859375, 0.05859375)
+    #Encabezado
+    c.setFillColor(black)
+    c.setLineWidth(.2)
+    c.setFont('Helvetica',8)
+    caja_iso = 760
+    #Elaborar caja
+    #c.line(caja_iso,500,caja_iso,720)
+    c.drawInlineImage('static/images/logo vordtec_documento.png',45,742, 2 * cm, 1.0 * cm) #Imagen vortec
+    # c.drawString(425,caja_iso,'Preparado por:')
+    # c.drawString(435,caja_iso-10,'SUBAD')
+    # c.drawString(520,caja_iso,'Aprobación')
+    # c.drawString(515,caja_iso-10,'SUBD ADTVO')
+    # c.drawString(35,caja_iso-20,'Número de documento')
+    # c.drawString(36,caja_iso-30,'SEOV-ADQ-N4-01.08')
+    # c.drawString(145,caja_iso-20,'Clasificación del documento')
+    # c.drawString(175,caja_iso-30,'No Controlado')
+    # c.drawString(255,caja_iso-20,'Nivel del documento')
+    # c.drawString(280,caja_iso-30, 'N5')
+    # c.drawString(340,caja_iso-20,'Revisión No.')
+    # c.drawString(352,caja_iso-30,'001')
+    # c.drawString(410,caja_iso-20,'Fecha de Emisión')
+    # c.drawString(425,caja_iso-30,'14/02/2022')
+    # c.drawString(510,caja_iso-20,'Fecha de Revisión')
+    # c.drawString(525,caja_iso-30,'12/09/2023')
+    #Primera Tabla
+    caja_proveedor = caja_iso - 85
+    c.setFont('Helvetica',12)
+    c.setFillColor(prussian_blue)
+    # REC (Dist del eje Y, Dist del eje X, LARGO DEL RECT, ANCHO DEL RECT)
+    c.rect(160,750,295,20, fill=True, stroke=False) #Barra azul superior Título
+    c.setFillColor(white)
+    c.setLineWidth(.2)
+    c.setFont('Helvetica-Bold',14)
+    c.drawCentredString(305,755,'Aviso de Privacidad para Proveedores')
+    c.setLineWidth(.3) #Grosor
+    
+
+    c.setFillColor(white)
+    c.setFont('Helvetica-Bold',11)
+    #c.drawString(200,caja_proveedor,'Objetivo')
+    inicio_central = 300
+    #c.line(inicio_central,caja_proveedor-25,inicio_central,520) #Linea Central de caja Proveedor | Detalle
+    c.setFillColor(black)
+    c.setFont('Helvetica-Bold',9)
+    
+
+    #Segundo Parrafo
+    segundo_parrafo = caja_proveedor - 65
+    c.setFont('Helvetica',12)
+    c.setFillColor(prussian_blue)
+    # REC (Dist del eje Y, Dist del eje X, LARGO DEL RECT, ANCHO DEL RECT)
+    c.rect(20,   segundo_parrafo - 8,565,20, fill=True, stroke=False) #Barra azul superior 
+    
+   
+   
+    c.setFillColor(black)
+    c.setFont('Helvetica',9)
+
+    #Cuarta tabla
+    cuarta_tabla = segundo_parrafo - 127
+    c.setFont('Helvetica',12)
+    c.setFillColor(prussian_blue)
+    # REC (Dist del eje Y, Dist del eje X, LARGO DEL RECT, ANCHO DEL RECT)
+    c.rect(20, cuarta_tabla - 8,565,20, fill=True, stroke=False) #Barra azul superior 
+    #c.rect(20, cuarta_tabla - 100,565,5, fill=True, stroke=False) #Linea posterior horizontal
+   
+   
+    c.setFillColor(black)
+    c.setFont('Helvetica',9)
+   
+
+    texto = """El presente aviso de privacidad en lo sucesivo "EL AVISO" se emite en cumplimiento a lo dispuesto por el artículo 15 de la
+            Ley Federal de Protección de Datos Personales en Posesión de los Particulares en lo sucesivo "LA LEY", y sus correlativos del 
+            Reglamento de la Ley Federal de Protección de Datos Personales en Posesión de los Particulares en lo sucesivo "EL REGLAMENTO",
+            y se pone a disposición de los proveedores que entreguen datos o información de carácter personal a VORDTEC DE MÉXICO, S.A. DE C.V. <br/>
+            """
+    
+    texto2 = """VORDTEC DE MÉXICO, S.A. DE C.V. con domicilio en Carretera Xalapa-Veracruz Km. 298, Int. A, Palo Gacho, C.P. 91633, Municipio Emiliano Zapata,
+            Veracruz, es responsable del tratamiento de sus datos personales..<br/>
+            VORDTEC DE MÉXICO, S.A. DE C.V. en su carácter de responsable del tratamiento de datos personales observa los principios de licitud, calidad, consentimiento, 
+            información, finalidad, lealtad, proporcionalidad y responsabilidad, previstos en la Ley Federal de Protección de Datos Personales en Posesión de los Particulares.<br/>
+            """
+    texto3 = """Al tener una relación comercial con VORDTEC DE MÉXICO S.A. DE C.V., otorga su consentimiento expreso para el tratamiento de estos 
+    datos conforme a lo dispuesto en el artículo 8 de “LA LEY”.<br/>
+    Los datos personales que recabamos de usted para dar cumplimiento a los fines descritos en el presente "AVISO", son recabados cuando usted nos 
+    los proporciona a través de nuestros empleados, aplicaciones móviles, de manera telefónica, por correo electrónico, y cuando obtenemos información 
+    a través de otras fuentes de acceso público permitidas por "LA LEY" y “EL REGLAMENTO”.<br/>
+Los datos que se solicitarán serán los siguientes:<br/>
+A) Datos generales:<br/>
+o Acta constitutiva si es Persona Moral o Alta de Hacienda si es Persona Física.<br/>
+o Constancia de situación Fiscal.<br/>
+o Comprobante de Domicilio.<br/>
+o Carta con datos bancarios para recibir pagos.<br/>
+o Datos de contacto como correo electrónico y teléfono.<br/>
+o Constancia de cumplimiento de obligaciones (32 D).<br/>
+B) Adicional y solo para Proveedores de Servicios:<br/>
+o Currículo de servicios.<br/>
+o Cotización de precios unitarios de sus servicios<br/>
+o Carta Garantía de los servicios solo aplica para servicios de infraestructura y mantenimiento.<br/>
+o Opinión de cumplimento de obligaciones de seguridad social para proveedores de servicios<br/>
+o Lista de activos con la que desarrollara las actividades<br/>
+o Requisitos en Materia de Gestión de Seguridad, Salud y Medio Ambiente.<br/>
+C) Adicional y solo para Proveedores de Muebles:<br/>
+o Factura o contrato de mutuo con la que comprueba la propiedad de mueble.<br/>
+o Tarjeta de circulación.<br/>
+o Verificaciones y póliza de seguro de responsabilidad amplia.<br/>
+D) Evaluacion de proveedores:<br/>
+o Documentos con informacion de procesos o procedimientos.<br/>
+o Documentos con informacion de metodos de prueba e inspeccion de productos.<br/>
+o Certificados de calidad, certificados de fabricación certificados de pruebas realizadas,<br/>
+certificados de origen y procedimientos.<br/>
+o Documentos que comprueben la calificacion del personal.<br/>
+"""
+    texto4 = """Sus datos personales serán utilizados para las siguientes finalidades, finalidades que dieron origen y son necesarias para la existencia,
+             mantenimiento y cumplimiento de la relación comercial entre usted y VORDTEC DE MÉXICO:<br/>
+
+o Identificación y contacto.<br/>
+o Participar en el proceso de evaluación, selección de proveedores.<br/>
+o Verificar y confirmar su identidad como proveedor, así como la autenticidad de la información que nos proporciona, incluyendo la de sus terceros autorizados,
+ tales como sus referencias, obligados solidarios, avales o fiadores y empleados del proveedor, según resulte aplicable.<br/>
+o Realizar procesos de investigación internos y externos, y realizar auditorías.<br/>
+o Cotizar productos y/o servicios.<br/>
+o Elaborar, verificar y dar seguimiento al cumplimiento del objeto del contrato celebrado, y, en su caso, la renovación correspondiente.<br/>
+o Para el control, vigilancia y acceso a las instalaciones de GRUPO VORDCAB.<br/>
+o Facturación o pago derivado de la relación contractual.<br/>
+o Creación, actualización, personalización, mantenimiento y autenticación de su cuenta de usuario.<br/>
+o Atención de dudas, quejas, comentarios, sugerencias, aclaraciones y seguimiento a las mismas.<br/>
+o Notificar cambios de condiciones y mantenimiento de la relación comercial.<br/>
+o Cumplimiento de obligaciones legales y normativas, así como de requerimientos de autoridades gubernamentales o judiciales Federales, Estatales o Municipales 
+y/o entidades regulatorias.<br/>
+o Realizar tratamientos de técnicas de análisis masivo de datos para realizar actividades de perfilamiento.<br/>
+"""
+   
+    texto5 = """Hacemos de su conocimiento que sus datos personales serán resguardados bajo estrictas medidas de seguridad administrativas, técnicas y físicas las
+                cuales han sido implementadas con el objeto de proteger sus datos personales contra daño, pérdida, alteración, destrucción o el uso, acceso o
+                tratamiento no autorizados.<br/>
+"""
+    texto6 = """VORDTEC DE MÉXICO podrá dar tratamiento a datos personales de identificación y contacto, tales como nombre completo, correo electrónico y número telefónico,
+        de terceras personas, como los empleados del proveedor, autorizados del proveedor, referencias del proveedor, obligados solidarios, avales o fiadores, cuando usted los
+        proporcione para el cumplimiento de la relación contractual, o para participar en el proceso de evaluación y selección de proveedores, por lo que usted al 
+        proporcionarlos reconoce haber informado a dichos terceros sobre el uso de sus datos personales, haber obtenido de forma previa el consentimiento de estos últimos 
+        para que VORDTEC DE MÉXICO pueda tratar sus datos personales para los fines antes señalados y haberles informado sobre el presente aviso de privacidad..<br/>
+"""
+    texto7 = """VORDTEC DE MÉXICO no recabará ni dará tratamiento a datos personales sensibles de ninguna clase.<br/>
+"""
+    texto8 = """Usted o su representante legal debidamente acreditado podrán ejercer, cuando procedan, los derechos de acceso, rectificación, cancelación u oposición en
+            lo sucesivo "DERECHOS ARCO" que la "LEY" prevé.<br/><br/>
+
+El ejercicio de los "DERECHOS ARCO" así como la revocación de su consentimiento para el tratamiento de sus datos personales se realizará a través de la presentación de
+la solicitud respectiva, que por escrito deba presentar el titular de los datos personales, su apoderado o representante legal o bien al correo electrónico de contacto
+de nuestros empleados.<br/><br/>
+
+Su solicitud deberá indicar nombre completo y apellidos, copia simple, legible y vigente de su identificación oficial, en caso de utilizar medios electrónicos, deberá 
+adjuntar la versión digitalizada de la misma (escaneo), correo electrónico o domicilio que designe para notificaciones y algún número telefónico de contacto. Si su 
+solicitud es presentada por su apoderado o representante legal, deberá adicionalmente acompañar, los documentos oficiales que acrediten dicha representación.<br/><br/>
+
+En caso de que la información proporcionada en su solicitud sea errónea o insuficiente para atenderla, o bien no se acompañen los documentos de acreditación 
+correspondientes, se le hará un requerimiento dentro de los cinco días hábiles siguientes a la recepción de su solicitud, para que aporte los elementos o documentos 
+necesarios para dar trámite a la misma. Usted contará con un plazo de diez días hábiles para atender dicho requerimiento, en caso de no dar respuesta a dicho 
+requerimiento en el plazo otorgado, su solicitud se tendrá por no presentada.<br/>
+"""
+    texto9 = """Sus datos personales no serán transferidos a terceros sin su consentimiento, salvo por lo dispuesto en el artículo 37 de "LA LEY":<br/><br/>
+o	Cuando la transferencia se realice entre sociedades controladoras, subsidiarias o afiliadas bajo el control común de VORDTEC DE MÉXICO, o a una sociedad matriz o a 
+cualquier sociedad del mismo grupo de VORDTEC DE MÉXICO que opere bajo los mismos procesos y políticas internas.<br/>
+o Cuando la transferencia sea necesaria para la prevención o el diagnóstico médico, la prestación de asistencia sanitaria, tratamiento médico o la gestión de servicios 
+sanitarios.<br/>
+o Cuando la transferencia sea necesaria por virtud de un contrato celebrado o por celebrar que sea en su interés, por VORDTEC DE MÉXICO y un tercero.<br/>
+o Cuando la transferencia sea precisa para el mantenimiento o cumplimiento de una relación jurídica entre VORDTEC DE MÉXICO y usted, tales como las instituciones
+bancarias y crediticias, cámaras de comercio, socios comerciales, entre otras.<br/>
+o Cuando la transferencia sea necesaria o legalmente exigida para la salvaguarda de un interés público, o para la procuración o administración de justicia, o cuando sea 
+solicitado por autoridades competentes.<br/>
+"""
+    texto10 = """VORDTEC DE MÉXICO conservará su información durante el tiempo que la necesite para el propósito para el que se recabó, a menos que nos solicite la 
+    eliminación de la misma, y, en tal caso, siempre que VORDTEC DE MÉXICO ya no tenga la necesidad de conservar su información por otros motivos. VORDTEC DE MÉXICO 
+    podrá conservar sus datos personales por períodos más prolongados que los que requieren las leyes aplicables, si es de nuestro interés comercial legítimo y las leyes 
+    no lo prohíben..<br/>"""
+    texto11 = """Tenga en cuenta que cuando hayamos recabado su información personal en función de su consentimiento y usted retire dicho consentimiento, o ejerza sus
+      derechos ARCO (a suprimir su información personal), es posible que mantengamos su información bloqueada y disponible tanto tiempo como se requiera para cumplir 
+      con las leyes aplicables y para que VORDTEC DE MÉXICO cumpla con sus responsabilidades derivadas del procesamiento de sus datos<br/>"""
+    texto12 = """VORDTEC DE MÉXICO se reserva el derecho de efectuar en cualquier tiempo modificaciones o actualizaciones al presente "AVISO". Las modificaciones que 
+    se efectúen se pondrán a su disposición a través de alguno o algunos de los siguientes medios: anuncios visibles en nuestras instalaciones, aplicaciones móviles y/o 
+    vía correo electrónico a la dirección más reciente que tengamos de usted.<br/>
+    """
+    texto13 = """El hecho de que usted nos proporcione por cualquier medio sus datos implica que otorga su consentimiento libre, específico, informado e inequívoco para el 
+    tratamiento de estos, en los términos del presente aviso de privacidad, sin perjuicio de la facultad que usted tiene de ejercer sus derechos ARCO."""
+
+    texto14 = """ """
+
+  
+    titulo1 = """ """
+    titulo2 = """1. Responsable de la protección de sus Datos Personales"""
+    titulo3 = """2. Datos personales que recabamos y medios de obtención"""
+    titulo4 = """3. Finalidades del Tratamiento de los Datos Personales."""
+    titulo5 = """4. Medios para limitar el uso o divulgación de sus datos personales."""
+    titulo6 = """5. Datos Personales de terceros."""
+    titulo7 = """6. Datos personales sensibles."""
+    titulo8 = """7. Derechos ARCO."""
+    titulo9 = """8. Transferencia de datos."""
+    titulo10 = """9. Conservación de datos"""
+    titulo11 = """10. Modificaciones al presente aviso de privacidad"""
+    titulo12 = """11. Consentimiento"""
+    
+    styles = getSampleStyleSheet()
+    styleN = styles["BodyText"]
+    styleN.fontSize = 10
+    styleN.alignment = TA_JUSTIFY
+   
+    styleT = styles["Normal"]
+    styleT.textColor = white
+    styleT.alignment = TA_JUSTIFY
+
+    styleItalic = ParagraphStyle(
+        'Title',
+        parent = styles["BodyText"],
+        fontName = 'Helvetica-Oblique',
+        fontSize = 8,
+        alignment = TA_JUSTIFY
+    )
+
+    titulo1 = Paragraph(titulo1, styleT)
+    parrafo = Paragraph(texto, styleN)
+    titulo2 = Paragraph(titulo2, styleT)
+    parrafo2 = Paragraph(texto2, styleN)
+    titulo3 = Paragraph(titulo3, styleT)
+    parrafo3 = Paragraph(texto3, styleN)
+    parrafo4 = Paragraph(texto4, styleN)
+    titulo4 = Paragraph(titulo4, styleT)
+    parrafo5 = Paragraph(texto5, styleN)
+    titulo5 = Paragraph(titulo5, styleT)
+    parrafo6 = Paragraph(texto6, styleN)
+    titulo6 = Paragraph(titulo6, styleT)
+    parrafo7 = Paragraph(texto7, styleN)
+    titulo7 = Paragraph(titulo7, styleT)
+    parrafo8 = Paragraph(texto8, styleN)
+    titulo8 = Paragraph(titulo8, styleT)
+    parrafo9 = Paragraph(texto9, styleN)
+    titulo9 = Paragraph(titulo9, styleT)
+    parrafo10 = Paragraph(texto10, styleN)
+    titulo10 = Paragraph(titulo10, styleT)
+    parrafo11 = Paragraph(texto11, styleN)
+    parrafo12 = Paragraph(texto12, styleN)
+    titulo11 = Paragraph(titulo11, styleT)
+    parrafo13 = Paragraph(texto13, styleN)
+    titulo12 = Paragraph(titulo12, styleT)
+    parrafo14 = Paragraph(texto14, styleN)
+    
+
+
+    ancho, alto = letter  # Asegúrate de tener estas dimensiones definidas
+    #frame = Frame(120, 720, ancho - 100, alto - 100, id='frameTextoConstante')  # Ajusta las dimensiones según sea necesario
+    elementos = [
+        titulo1, Spacer(1,25), 
+        parrafo, Spacer(1,25),
+        titulo2,Spacer(1,25), 
+        parrafo2, Spacer(1,25),
+        titulo3,Spacer(1,25), 
+        parrafo3,
+        ]
+    
+  
+    # Continuar con SimpleDocTemplate
+    frame = Frame(30, 0, width-50, height-50, id='frameTextoConstante')
+    frame.addFromList(elementos, c)
+    
+    # Finalizar la página actual y comenzar una nueva
+    c.showPage()
+
+    prussian_blue = Color(0.0859375,0.1953125,0.30859375)
+    #Encabezado
+    c.setFillColor(black)
+    c.setLineWidth(.2)
+    c.setFont('Helvetica',8)
+    caja_iso = 760
+    c.drawInlineImage('static/images/logo vordtec_documento.png',45,742, 2 * cm, 1.0 * cm) #Imagen vortec
+    # c.drawString(425,caja_iso,'Preparado por:')
+    # c.drawString(435,caja_iso-10,'SUBAD')
+    # c.drawString(520,caja_iso,'Aprobación')
+    # c.drawString(515,caja_iso-10,'SUBD ADTVO')
+    # c.drawString(35,caja_iso-20,'Número de documento')
+    # c.drawString(36,caja_iso-30,'SEOV-ADQ-N4-01.08')
+    # c.drawString(145,caja_iso-20,'Clasificación del documento')
+    # c.drawString(175,caja_iso-30,'No Controlado')
+    # c.drawString(255,caja_iso-20,'Nivel del documento')
+    # c.drawString(280,caja_iso-30, 'N5')
+    # c.drawString(340,caja_iso-20,'Revisión No.')
+    # c.drawString(352,caja_iso-30,'001')
+    # c.drawString(410,caja_iso-20,'Fecha de Emisión')
+    # c.drawString(425,caja_iso-30,'14/02/2022')
+    # c.drawString(510,caja_iso-20,'Fecha de Revisión')
+    # c.drawString(525,caja_iso-30,'12/09/2023')
+    #Primera Tabla
+    caja_proveedor = caja_iso - 120
+    c.setFont('Helvetica',12)
+    c.setFillColor(prussian_blue)
+    # REC (Dist del eje Y, Dist del eje X, LARGO DEL RECT, ANCHO DEL RECT)
+    c.rect(160,750,295,20, fill=True, stroke=False) #Barra azul superior Título
+    c.setFillColor(white)
+    c.setLineWidth(.2)
+    c.setFont('Helvetica-Bold',14)
+    c.drawCentredString(305,755,'Aviso de Privacidad para Proveedores')
+    c.setLineWidth(.3) #Grosor
+
+    primer_parrafo = 605 
+    c.setFont('Helvetica',12)
+    c.setFillColor(prussian_blue)
+    # REC (Dist del eje Y, Dist del eje X, LARGO DEL RECT, ANCHO DEL RECT)
+    c.rect(20, primer_parrafo + 80,565,20, fill=True, stroke=False) #Barra azul superior | 3. Finalidades del Tratamiento de los Datos Personales.
+    c.rect(20, primer_parrafo - 218,565,20, fill=True, stroke=False) #Barra azul superior | 4. Medios para limitar el uso o divulgación de sus datos personales.
+    c.rect(20, primer_parrafo - 320,565,20, fill=True, stroke=False) #Barra azul superior |5. Datos Personales de terceros.
+    c.rect(20, primer_parrafo - 475,565,20, fill=True, stroke=False) #Barra azul superior | 6. Datos personales sensibles
+    
+    # Agregar contenido a la segunda página
+    elementos_segunda_pagina = [
+        titulo4, Spacer(1,25),
+        parrafo4, Spacer(1,25),
+        titulo5, Spacer(1,25),
+        parrafo5, Spacer(1,25),
+        titulo6, Spacer(1,25),
+        parrafo6, Spacer(1,25),
+        titulo7, Spacer(1,25),
+        parrafo7, Spacer(1,25),
+    ]
+
+    # Crear frame para la segunda página y agregar elementos
+    frame_segunda_pagina = Frame(30, 0, width-50, height-85, id='frameTextoConstante2')
+    frame_segunda_pagina.addFromList(elementos_segunda_pagina, c)
+
+    c.showPage()
+
+    prussian_blue = Color(0.0859375,0.1953125,0.30859375)
+    #Encabezado
+    c.setFillColor(black)
+    c.setLineWidth(.2)
+    c.setFont('Helvetica',8)
+    caja_iso = 760
+    c.drawInlineImage('static/images/logo vordtec_documento.png',45,742, 2 * cm, 1.0 * cm) #Imagen vortec
+    # c.drawString(425,caja_iso,'Preparado por:')
+    # c.drawString(435,caja_iso-10,'SUBAD')
+    # c.drawString(520,caja_iso,'Aprobación')
+    # c.drawString(515,caja_iso-10,'SUBD ADTVO')
+    # c.drawString(35,caja_iso-20,'Número de documento')
+    # c.drawString(36,caja_iso-30,'SEOV-ADQ-N4-01.08')
+    # c.drawString(145,caja_iso-20,'Clasificación del documento')
+    # c.drawString(175,caja_iso-30,'Controlado')
+    # c.drawString(255,caja_iso-20,'Nivel del documento')
+    # c.drawString(280,caja_iso-30, 'N5')
+    # c.drawString(340,caja_iso-20,'Revisión No.')
+    # c.drawString(352,caja_iso-30,'001')
+    # c.drawString(410,caja_iso-20,'Fecha de Emisión')
+    # c.drawString(425,caja_iso-30,'14/02/2022')
+    # c.drawString(510,caja_iso-20,'Fecha de Revisión')
+    # c.drawString(525,caja_iso-30,'')
+    #Primera Tabla
+    caja_proveedor = caja_iso - 150
+    c.setFont('Helvetica',12)
+    c.setFillColor(prussian_blue)
+    # REC (Dist del eje Y, Dist del eje X, LARGO DEL RECT, ANCHO DEL RECT)
+    c.rect(160,750,295,20, fill=True, stroke=False) #Barra azul superior Título
+    c.setFillColor(white)
+    c.setLineWidth(.2)
+    c.setFont('Helvetica-Bold',14)
+    c.drawCentredString(305,755,'Aviso de Privacidad para Proveedores')
+    c.setLineWidth(.3) #Grosor
+
+    primer_parrafo = 605 
+    c.setFont('Helvetica',12)
+    c.setFillColor(prussian_blue)
+    # REC (Dist del eje Y, Dist del eje X, LARGO DEL RECT, ANCHO DEL RECT)
+    c.rect(20, primer_parrafo + 75,565,20, fill=True, stroke=False) #Barra azul superior | 7. Derechos ARCO
+    c.rect(20, primer_parrafo - 200,565,20, fill=True, stroke=False) #Barra azul superior | 8. Transferencia de datos.
+    c.rect(20, primer_parrafo - 445,565,20, fill=True, stroke=False) #Barra azul superior | 9. Conservación de datos
+    
+    # Agregar contenido a la segunda página
+    elementos_tercera_pagina = [
+        titulo8, Spacer(1,25),
+        parrafo8, Spacer(1,25),
+        titulo9, Spacer(1,25),
+        parrafo9, Spacer(1,25),
+        titulo10, Spacer(1,25),
+        parrafo10, Spacer(1,25),
+    ]
+     # Crear frame para la segunda página y agregar elementos
+    frame_tercera_pagina = Frame(30, 0, width-50, height-90, id='frameTextoConstante3')
+    frame_tercera_pagina.addFromList(elementos_tercera_pagina, c)
+
+
+    c.showPage()
+
+    prussian_blue = Color(0.0859375,0.1953125,0.30859375)
+    #Encabezado
+    c.setFillColor(black)
+    c.setLineWidth(.2)
+    c.setFont('Helvetica',8)
+    caja_iso = 760
+    c.drawInlineImage('static/images/logo vordtec_documento.png',45,742, 2 * cm, 1.0 * cm) #Imagen vortec
+    # c.drawString(425,caja_iso,'Preparado por:')
+    # c.drawString(435,caja_iso-10,'SUBAD')
+    # c.drawString(520,caja_iso,'Aprobación')
+    # c.drawString(515,caja_iso-10,'SUBD ADTVO')
+    # c.drawString(35,caja_iso-20,'Número de documento')
+    # c.drawString(36,caja_iso-30,'SEOV-ADQ-N4-01.08')
+    # c.drawString(145,caja_iso-20,'Clasificación del documento')
+    # c.drawString(175,caja_iso-30,'Controlado')
+    # c.drawString(255,caja_iso-20,'Nivel del documento')
+    # c.drawString(280,caja_iso-30, 'N5')
+    # c.drawString(340,caja_iso-20,'Revisión No.')
+    # c.drawString(352,caja_iso-30,'001')
+    # c.drawString(410,caja_iso-20,'Fecha de Emisión')
+    # c.drawString(425,caja_iso-30,'14/02/2022')
+    # c.drawString(510,caja_iso-20,'Fecha de Revisión')
+    # c.drawString(525,caja_iso-30,'')
+    
+    #Primera Tabla
+    caja_proveedor = caja_iso - 150
+    c.setFont('Helvetica',12)
+    c.setFillColor(prussian_blue)
+    # REC (Dist del eje Y, Dist del eje X, LARGO DEL RECT, ANCHO DEL RECT)
+    c.rect(160,750,295,20, fill=True, stroke=False) #Barra azul superior Título
+    c.setFillColor(white)
+    c.setLineWidth(.2)
+    c.setFont('Helvetica-Bold',14)
+    c.drawCentredString(305,755,'Aviso de Privacidad para Proveedores')
+    c.setLineWidth(.3) #Grosor
+
+    primer_parrafo = 605 
+    c.setFont('Helvetica',12)
+    c.setFillColor(prussian_blue)
+    # REC (Dist del eje Y, Dist del eje X, LARGO DEL RECT, ANCHO DEL RECT)
+    c.rect(20, primer_parrafo + 21,565,20, fill=True, stroke=False) #Barra azul superior |10.	Modificaciones al presente aviso de privacidad
+    c.rect(20, primer_parrafo - 96,565,20, fill=True, stroke=False) #Barra azul superior | Datos Bancarios Dólares
+    
+    # Agregar contenido a la segunda página
+    elementos_cuarta_pagina = [
+        parrafo11, Spacer(1,25),
+        titulo11, Spacer(1,25),
+        parrafo12, Spacer(1,25),
+        titulo12, Spacer(1,25),
+        parrafo13, Spacer(1,25),
+        
+        parrafo14, Spacer(1,25),
+    ]
+
+    c.setFont('Helvetica',10)
+    c.setFillColor(black)
+    c.drawString(150,caja_iso-350,'RECIBÍ DE CONFORMIDAD Y DOY MI CONSENTIMIENTO')
+    c.drawString(25,caja_iso-380,'Nombre y Firma')
+    c.drawString(25,caja_iso-400,'Fecha')
+    c.line(150,caja_iso - 380,420, caja_iso - 380)
+    c.line(150,caja_iso - 400,420, caja_iso - 400)
+
+    # Crear frame para la segunda página y agregar elementos
+    frame_cuarta_pagina = Frame(30, 0, width-50, height-70, id='frameTextoConstante4')
+    frame_cuarta_pagina.addFromList(elementos_cuarta_pagina, c)
+    # Guardar el canvas
+    c.save()
+    buf.seek(0)
+    return buf 
+
+#Este es el metodo que en lugar de descargar como tal el AP lo que hace es que lo muestra en una pestaña extra
+def descargar_aviso_privacidad_pdf(request):
+    buf = generar_aviso_privacidad()
+    # Cambiamos a False para que el navegador lo abra en una pestaña nueva en lugar de descargarlo
+    return FileResponse(buf, as_attachment=False, filename='Aviso_de_Privacidad' +'.pdf')
+
+#Se debe de descomentar este porque con este se descarga y con el de arriba es una vista previa 
+
+# def descargar_aviso_privacidad_pdf(request):
+#     buf = generar_aviso_privacidad()
+#     return FileResponse(buf, as_attachment=True, filename='Aviso_de_Privacidad' +'.pdf')
+
+def attach_aviso_privacidad_pdf(request):
+    buf = generar_aviso_privacidad()
+    return buf.getvalue()
 
 #Este codigo va a ser el que se va a poder importar en caso de que se llegue a solcitar en otro lado
 REGLAS_CONTROL = {
@@ -1282,7 +1766,7 @@ def autorizar_oc2(request, pk):
         porcentaje = "{0:.2f}%".format((costo_oc/compra.req.orden.subproyecto.presupuesto)*100)
     else:
         porcentaje = ""
-
+#
     if request.method == 'POST':
         compra.autorizado2 = True
         compra.oc_autorizada_por2 = usuario
@@ -1341,6 +1825,7 @@ def autorizar_oc2(request, pk):
                     </body>
                 </html>
             """
+            pdf_privacidad = attch_aviso_privacidad_pdf(request)
             try:
                 email = EmailMessage(
                     f'OC Autorizada Gerencia {compra.get_folio}|RQ: {compra.req.folio} |Sol: {compra.req.orden.folio}',
@@ -1361,7 +1846,8 @@ def autorizar_oc2(request, pk):
                             settings.DEFAULT_FROM_EMAIL,
                             ['ulises_huesc@hotmail.com',],
                             )
-                        email.attach(f'folio:{compra.get_folio}.pdf',archivo_oc,'application/pdf')
+                        email.attach(f'folio:{compra.get_folio}.pdf',archivo_oc,'application/pdf',)
+                        email.attach("Aviso_de_privacidad.pdf", pdf_privacidad, "application/pdf",)
                         email.send()
                 messages.success(request, f'{usuario.staff.first_name} has autorizado la solicitud {compra.get_folio}')
             except (BadHeaderError, SMTPException, socket.gaierror) as e:
@@ -2281,6 +2767,7 @@ def generar_pdf(compra):
                (calidad.inspeccion and calidad.g_inspeccion) or \
                (calidad.cumplimiento and calidad.g_cumplimiento):
                 productos_con_calidad.append(prod)
+
                 #hay_datos_calidad = True
                 #break 
 

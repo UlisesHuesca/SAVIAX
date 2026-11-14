@@ -50,6 +50,8 @@ urlpatterns = [
     path('evidencias_proveedor/<int:pk>', views.evidencias_proveedor, name='evidencias-proveedor'),
     path('subir_evidencias/<int:pk>', views.subir_evidencias, name='subir-evidencias'),
     path('update_comentario/', views.update_comentario, name='update_comentario'),
+
+    path('descargar-aviso-privacidad/', views.descargar_aviso_privacidad_pdf, name='descargar-aviso-privacidad'),
     ]
 
 if settings.DEBUG:
