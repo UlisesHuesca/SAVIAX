@@ -7,7 +7,7 @@ from django.core.paginator import Paginator
 from django.db.models import F, Avg, Value, ExpressionWrapper, fields, Sum, Q, Case, When, DecimalField, Max, Prefetch, OuterRef, Subquery, Count, FloatField
 from django.db.models.functions import Concat, Coalesce
 from django.conf import settings
-from django.core.mail import EmailMessage, BadHeaderError
+from django.core.mail import EmailMessage, BadHeaderError, get_connection
 from django.core.files.base import ContentFile
 from dashboard.models import Inventario, Order, ArticulosOrdenados, ArticulosparaSurtir, Producto_Calidad
 from requisiciones.models import Requis, ArticulosRequisitados
@@ -563,7 +563,7 @@ solicitado por autoridades competentes.<br/>
         parrafo10, Spacer(1,25),
     ]
      # Crear frame para la segunda página y agregar elementos
-    frame_tercera_pagina = Frame(30, 0, width-50, height-90, id='frameTextoConstante3')
+    frame_tercera_pagina = Frame(30, 0, width-50, height-95, id='frameTextoConstante3')
     frame_tercera_pagina.addFromList(elementos_tercera_pagina, c)
 
 
@@ -1571,6 +1571,7 @@ def autorizar_oc1(request, pk):
     total_costo_oc = 0
     total_costo_autorizado = 0
     total_costo_pagado = 0
+
     # Recorremos cada compra para calcular los totales.
     for comprax in compras_por_sumar:
         # Ajustamos el costo_oc si la moneda es DOLARES.
@@ -1779,6 +1780,10 @@ def autorizar_oc2(request, pk):
         img_path2 = os.path.join(static_path,'images','logo vordtec_documento.png')
         image_base64 = get_image_base64(img_path)
         logo_v_base64 = get_image_base64(img_path2)
+        pdf_privacidad = attach_aviso_privacidad_pdf(request)
+                # --- CONEXIÓN ÚNICA PARA TODOS LOS CORREOS ---
+        connection = get_connection()
+        
         if compra.cond_de_pago.nombre == "CREDITO":
             html_message2 = f"""
                 <html>
@@ -1787,7 +1792,7 @@ def autorizar_oc2(request, pk):
                     </head>
                     <body>
                         <p>Estimado(a) {compra.proveedor.contacto}| Proveedor {compra.proveedor.nombre}:,</p>
-                        <p>Estás recibiendo este correo porque has sido seleccionado para surtirnos la OC adjunta con folio: {compra.folio}.<p>
+                        <p>Estás recibiendo este correo porque has sido seleccionado para surtirnos la OC adjunta con folio: {compra.get_folio}.<p>
                         <p>&nbsp;</p>
                         <p> Atte. {compra.creada_por.staff.first_name} {compra.creada_por.staff.last_name}</p> 
                         <p>GRUPO VORDCAB S.A. de C.V.</p>
@@ -1797,62 +1802,81 @@ def autorizar_oc2(request, pk):
                     </body>
                 </html>
             """
+            
             try:
-                email = EmailMessage(
-                f'Compra Autorizada {compra.get_folio}|SAVIA',
-                body=html_message2,
-                from_email =settings.DEFAULT_FROM_EMAIL,
-                to= ['ulises_huesc@hotmail.com', compra.creada_por.staff.email, compra.proveedor.email, 'lizeth.ojeda@vordtec.com'],
-                headers={'Content-Type': 'text/html'}
+                connection.open()
+                
+                # --- PRIMER CORREO (Al Proveedor) ---
+                email1 = EmailMessage(
+                    f'Compra Autorizada {compra.get_folio}|SAVIA',
+                    body=html_message2,
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    to= ['ulises_huesc@hotmail.com', compra.creada_por.staff.email, compra.proveedor.email, 'lizeth.ojeda@vordtec.com'], # <--- LÍNEA ORIGINAL
+                    #to= ['ricardo.olivo@grupovordcab.com'], # <--- LÍNEA DE PRUEBA
+                    headers={'Content-Type': 'text/html'},
+                    connection=connection # <--- CONEXIÓN AQUÍ
                 )
-                email.content_subtype = "html " # Importante para que se interprete como HTML
-                email.attach(f'folio:{compra.get_folio}.pdf',archivo_oc,'application/pdf')
-                email.send()
-            except (BadHeaderError, SMTPException, socket.gaierror) as e:
-                error_message = f'correo de notificación no ha sido enviado debido a un error: {e}'
-            html_message = f"""
-                <html>
-                    <head>
-                        <meta charset="UTF-8">
-                    </head>
-                    <body>
-                        <p><img src="data:image/jpeg;base64,{logo_v_base64}" alt="Imagen" style="width:100px;height:auto;"/></p>
-                        <p>Estimado {compra.req.orden.staff.staff.first_name} {compra.req.orden.staff.staff.last_name},</p>
-                        <p>Estás recibiendo este correo porque tu OC {compra.get_folio} | RQ: {compra.req.folio} |Sol: {compra.req.orden.folio} ha sido autorizada por {compra.oc_autorizada_por2.staff.first_name} {compra.oc_autorizada_por2.staff.last_name},</p>
-                        <p>El siguiente paso del sistema: Recepción por parte de Almacén |Compra a crédito</p>
-                        <p><img src="data:image/png;base64,{image_base64}" alt="Imagen" style="width:50px;height:auto;border-radius:50%"/></p>
-                        <p>Este mensaje ha sido automáticamente generado por SAVIA 2.0</p>
-                    </body>
-                </html>
-            """
-            pdf_privacidad = attch_aviso_privacidad_pdf(request)
-            try:
-                email = EmailMessage(
+                email1.content_subtype = "html" 
+                email1.attach(f'folio:{compra.get_folio}.pdf', archivo_oc, 'application/pdf')
+                email1.attach("Aviso_de_Privacidad.pdf", pdf_privacidad, "application/pdf") 
+                email1.send()
+                print("Correo 1 (Proveedor) enviado con éxito")
+                
+                # --- SEGUNDO CORREO (Al Solicitante) ---
+                html_message = f"""
+                    <html>
+                        <head>
+                            <meta charset="UTF-8">
+                        </head>
+                        <body>
+                            <p><img src="data:image/jpeg;base64,{logo_v_base64}" alt="Imagen" style="width:100px;height:auto;"/></p>
+                            <p>Estimado {compra.req.orden.staff.staff.first_name} {compra.req.orden.staff.staff.last_name},</p>
+                            <p>Estás recibiendo este correo porque tu OC {compra.get_folio} | RQ: {compra.req.folio} |Sol: {compra.req.orden.folio} ha sido autorizada por {compra.oc_autorizada_por2.staff.first_name} {compra.oc_autorizada_por2.staff.last_name},</p>
+                            <p>El siguiente paso del sistema: Recepción por parte de Almacén |Compra a crédito</p>
+                            <p><img src="data:image/png;base64,{image_base64}" alt="Imagen" style="width:50px;height:auto;border-radius:50%"/></p>
+                            <p>Este mensaje ha sido automáticamente generado por SAVIA 2.0</p>
+                        </body>
+                    </html>
+                """
+                email2 = EmailMessage(
                     f'OC Autorizada Gerencia {compra.get_folio}|RQ: {compra.req.folio} |Sol: {compra.req.orden.folio}',
                     body=html_message,
-                    #f'Estimado {requi.orden.staff.staff.staff.first_name} {requi.orden.staff.staff.staff.last_name},\n Estás recibiendo este correo porque tu solicitud: {requi.orden.folio}| Req: {requi.folio} ha sido autorizada,\n por {requi.requi_autorizada_por.staff.staff.first_name} {requi.requi_autorizada_por.staff.staff.last_name}.\n El siguiente paso del sistema: Generación de OC \n\n Este mensaje ha sido automáticamente generado por SAVIA VORDTEC',
-                    from_email = settings.DEFAULT_FROM_EMAIL,
-                    to= ['ulises_huesc@hotmail.com',],#[requi.orden.staff.staff.staff.email],
-                    headers={'Content-Type': 'text/html'}
-                    )
-                email.content_subtype = "html " # Importante para que se interprete como HTML
-                email.send()
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    to= ['ulises_huesc@hotmail.com',], # <--- LÍNEA ORIGINAL
+                    #to= ['ricardo.olivo@grupovordcab.com'], # <--- LÍNEA DE PRUEBA
+                    headers={'Content-Type': 'text/html'},
+                    connection=connection # <--- CONEXIÓN AQUÍ
+                )
+                email2.content_subtype = "html" 
+                email2.attach("Aviso_de_Privacidad.pdf", pdf_privacidad, "application/pdf") 
+                email2.send()
+                print("Correo 2 (Solicitante) enviado con éxito")
+                
+                # --- TERCER CORREO (Al Especialista) ---
                 for producto in productos:
                     if producto.producto.producto.articulos.producto.producto.especialista == True:
                         archivo_oc = attach_oc_pdf(request, compra.id)
-                        email = EmailMessage(
+                        email3 = EmailMessage(
                             f'Compra Autorizada {compra.get_folio}',
                             f'Estimado proveedor,\n Estás recibiendo este correo porque ha sido aprobada una OC que contiene el producto código:{producto.producto.producto.articulos.producto.producto.codigo} descripción:{producto.producto.producto.articulos.producto.producto.nombre} el cual requiere la liberación de calidad\n Este mensaje ha sido automáticamente generado por SAVIA X',
                             settings.DEFAULT_FROM_EMAIL,
-                            ['ulises_huesc@hotmail.com',],
-                            )
-                        email.attach(f'folio:{compra.get_folio}.pdf',archivo_oc,'application/pdf',)
-                        email.attach("Aviso_de_privacidad.pdf", pdf_privacidad, "application/pdf",)
-                        email.send()
+                            ['ulises_huesc@hotmail.com'], # <--- LÍNEA ORIGINAL
+                            #['ricardo.olivo@grupovordcab.com'], # <--- LÍNEA DE PRUEBA
+                            connection=connection # <--- CONEXIÓN AQUÍ
+                        )
+                        email3.attach(f'folio:{compra.get_folio}.pdf', archivo_oc, 'application/pdf')
+                        email3.attach("Aviso_de_Privacidad.pdf", pdf_privacidad, "application/pdf") 
+                        email3.send()
+                        print("Correo 3 (Especialista) enviado con éxito")
+                        
                 messages.success(request, f'{usuario.staff.first_name} has autorizado la solicitud {compra.get_folio}')
-            except (BadHeaderError, SMTPException, socket.gaierror) as e:
+                
+            except Exception as e:
+                print(f"Error al enviar los correos: {e}")
                 error_message = f'{usuario.staff.first_name} has autorizado la compra {compra.folio} pero el correo de notificación no ha sido enviado debido a un error: {e}'
                 messages.warning(request, error_message)   
+            finally:
+                connection.close() # <--- CERRAMOS LA CONEXIÓN AQUÍ
         else:
             html_message = f"""
                     <html>
@@ -1870,22 +1894,27 @@ def autorizar_oc2(request, pk):
                     </html>
                 """
             try:
+                connection.open()
                 email = EmailMessage(
                     f'OC Autorizada Gerencia {compra.get_folio}|RQ: {compra.req.folio} |Sol: {compra.req.orden.folio}',
                     body=html_message,
-                    #f'Estimado {requi.orden.staff.staff.staff.first_name} {requi.orden.staff.staff.staff.last_name},\n Estás recibiendo este correo porque tu solicitud: {requi.orden.folio}| Req: {requi.folio} ha sido autorizada,\n por {requi.requi_autorizada_por.staff.staff.first_name} {requi.requi_autorizada_por.staff.staff.last_name}.\n El siguiente paso del sistema: Generación de OC \n\n Este mensaje ha sido automáticamente generado por SAVIA VORDTEC',
                     from_email = settings.DEFAULT_FROM_EMAIL,
-                    to= ['ulises_huesc@hotmail.com'],#[requi.orden.staff.staff.staff.email],
-                    headers={'Content-Type': 'text/html'}
+                    to= ['ulises_huesc@hotmail.com'], # <--- LÍNEA ORIGINAL (Descomentar al terminar pruebas)
+                    #to= ['ricardo.olivo@grupovordcab.com'], # <--- LÍNEA DE PRUEBA
+                    headers={'Content-Type': 'text/html'},
+                    connection=connection
                     )
-                email.content_subtype = "html " # Importante para que se interprete como HTML
+                email.content_subtype = "html " 
+                email.attach("Aviso_de_Privacidad.pdf", pdf_privacidad, "application/pdf") 
                 email.send()
+                print("Correo (Contado) enviado con éxito")
                 messages.success(request, f'{usuario.staff.first_name} has autorizado la compra {compra.get_folio}')
-            except (BadHeaderError, SMTPException, socket.gaierror) as e:
+            except Exception as e:
+                print(f"Error al enviar correo: {e}")
                 error_message = f'{usuario.staff.first_name} has autorizado la compra {compra.get_folio} pero el correo de notificación no ha sido enviado debido a un error: {e}'
                 messages.warning(request, error_message)   
-        return redirect('autorizacion-oc2')
-
+            finally:
+                connection.close()
     context={
         'suma_presupuesto':suma_presupuesto,
         'compra':compra,
@@ -3357,7 +3386,7 @@ def convert_excel_solicitud_matriz_productos(productos):
     (ws.cell(column=columna_max + 1, row=1, value='Total de OCs')).style = head_style
     (ws.cell(column=columna_max + 2, row=1, value='Estatus del Proveedor')).style = head_style
     (ws.cell(column=columna_max + 3, row=1, value='Costo Total de OCs')).style = head_style
-
+    
     # Agregar datos por proveedor
     fila_inicio = 2
     for index, proveedor_data in enumerate(ocs_por_proveedor, start=fila_inicio):
@@ -3460,7 +3489,7 @@ def convert_excel_solicitud_matriz_productos(productos):
         ultimo_pago = None
         fecha_inicio = None
         diferencia_fechas = 0
-
+        
         condicion_pago = getattr(producto.oc.cond_de_pago, "nombre", None)
 
         if producto.oc.pagada:
@@ -3593,6 +3622,7 @@ def convert_excel_productos_requisitados(articulos):
             ws.column_dimensions[get_column_letter(col_num + 1)].width = 30
 
 
+    #Tiene afortunado pero tamb = 'mmm no tiens' jaja alv esta de la = 08834
 
     columna_max = len(columns)+2
 

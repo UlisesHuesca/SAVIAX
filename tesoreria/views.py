@@ -8,7 +8,7 @@ from django.core.paginator import Paginator
 from django.db.models.functions import Concat
 from django.core.paginator import Paginator
 from django.urls import reverse
-from django.core.mail import EmailMessage, BadHeaderError
+from django.core.mail import EmailMessage, BadHeaderError, get_connection
 
 from compras.models import ArticuloComprado, Compra
 from compras.forms import CompraForm
@@ -23,6 +23,7 @@ from .filters import PagoFilter, Matriz_Pago_Filter
 from viaticos.filters import Solicitud_Viatico_Filter
 from gastos.filters import Solicitud_Gasto_Filter
 from gastos.views import eliminar_caracteres_invalidos, extraer_datos_del_xml
+from compras.views import dof, attach_oc_pdf, convert_excel_matriz_compras, attach_aviso_privacidad_pdf
 
 from user.models import Profile
 
@@ -144,19 +145,44 @@ def compras_pagos(request, pk):
             monto_total= monto_actual + suma_pago
             compra.monto_pagado = monto_total
             costo_oc = compra.costo_plus_adicionales
+            print("====== INICIANDO VALIDACIÓN DE PAGO ======")
+            print(f"Monto actual: {monto_actual}")
+            print(f"Monto total: {monto_total}")
+            print(f"Costo OC: {costo_oc}")
+            print(f"Condición de pago: {compra.cond_de_pago.nombre}")
+            print(f"Redondeado total: {round(monto_total,2)} | Redondeado costo: {round(costo_oc,2)}")
+            print("==========================================")
             if monto_actual <= 0:
                 messages.error(request,f'El pago {monto_actual} debe ser mayor a 0')
             elif round(monto_total,2) <= round(costo_oc,2):
+                
+                # Validamos si con este pago ya se ejecuto y determinamos si esta pagado o no 
                 if round(monto_total,2) == round(costo_oc,2):
-                    compra.pagada= True
-                    if compra.cond_de_pago.nombre == "CONTADO":
-                        pagos = Pago.objects.filter(oc=compra, hecho=True)
-                        archivo_oc = attach_oc_pdf(request, compra.id)
-                        static_path = settings.STATIC_ROOT
-                        img_path = os.path.join(static_path,'images','SAVIA_Logo.png')
-                        img_path2 = os.path.join(static_path,'images','logo vordtec_documento.png')
-                        image_base64 = get_image_base64(img_path)
-                        logo_v_base64 = get_image_base64(img_path2)
+                    compra.pagada = True
+                else:
+                    compra.pagada = False 
+                
+        
+                if compra.cond_de_pago.nombre == "CONTADO":
+                    pagos = Pago.objects.filter(oc=compra, hecho=True)
+                    archivo_oc = attach_oc_pdf(request, compra.id)
+                    
+                    # Generamos el PDF del aviso de privacidad
+                    pdf_privacidad = attach_aviso_privacidad_pdf(request)
+                    
+                    static_path = settings.STATIC_ROOT
+                    img_path = os.path.join(static_path,'images','SAVIA_Logo.png')
+                    img_path2 = os.path.join(static_path,'images','logo vordtec_documento.png')
+                    image_base64 = get_image_base64(img_path)
+                    logo_v_base64 = get_image_base64(img_path2)
+                    
+                    # --- CONEXIÓN ÚNICA PARA TODOS LOS CORREOS ---
+                    connection = get_connection()
+                    
+                    try:
+                        connection.open()
+                        
+                        # --- PRIMER CORREO (Al solicitante) ---
                         html_message = f"""
                             <html>
                                 <head>
@@ -165,23 +191,27 @@ def compras_pagos(request, pk):
                                 <body>
                                     <p><img src="data:image/jpeg;base64,{logo_v_base64}" alt="Imagen" style="width:100px;height:auto;"/></p>
                                     <p>Estimado {compra.req.orden.staff.staff.first_name} {compra.req.orden.staff.staff.last_name},</p>
-                                    <p>Estás recibiendo este correo porque tu OC {compra.get_folio} | RQ: {compra.req.folio} |Sol: {compra.req.orden.folio} ha sido pagada por {pago.tesorero.staff.first_name} {pago.tesorero.staff.last_name},</p>
-                                    <p>Referencia:{compra.referencia}
+                                    <p>Estás recibiendo este correo porque se ha registrado un pago de tu OC {compra.get_folio} | RQ: {compra.req.folio} |Sol: {compra.req.orden.folio} por {pago.tesorero.staff.first_name} {pago.tesorero.staff.last_name},</p>
+                                    <p>Referencia: {compra.referencia or 'No asignada'}</p>
                                     <p>El siguiente paso del sistema: Recepción por parte de Almacén</p>
                                     <p><img src="data:image/png;base64,{image_base64}" alt="Imagen" style="width:50px;height:auto;border-radius:50%"/></p>
                                     <p>Este mensaje ha sido automáticamente generado por SAVIA 2.0</p>
                                 </body>
                             </html>
                             """
-                        email = EmailMessage(
-                            f'OC Pagada {compra.get_folio}|RQ: {compra.req.folio} |Sol: {compra.req.orden.folio}',
+                        email1 = EmailMessage(
+                            f'Pago Registrado {compra.get_folio}|RQ: {compra.req.folio} |Sol: {compra.req.orden.folio}',
                             body=html_message,
-                            from_email = settings.DEFAULT_FROM_EMAIL,
-                            to= ['ulises_huesc@hotmail.com', compra.req.orden.staff.staff.email],
-                            headers={'Content-Type': 'text/html'}
+                            from_email=settings.DEFAULT_FROM_EMAIL,
+                            #to=['ricardo.olivo@grupovordcab.com'], # <--- LÍNEA DE PRUEBA
+                            to=['ulises_huesc@hotmail.com', compra.req.orden.staff.staff.email], # <--- LÍNEA ORIGINAL
+                            headers={'Content-Type': 'text/html'},
+                            connection=connection # <--- AGREGAMOS LA CONEXIÓN AQUÍ
                         )
-                        email.content_subtype = "html " # Importante para que se interprete como HTML
-                        email.send()
+                        email1.content_subtype = "html"
+                        email1.send(fail_silently=False) # <--- QUITAMOS LA CONEXIÓN DE AQUÍ
+                        print("Correo 1 (Solicitante) enviado con éxito")
+
                         html_message2 = f"""
                             <html>
                                 <head>
@@ -199,35 +229,53 @@ def compras_pagos(request, pk):
                                 </body>
                             </html>
                             """
-                        try:
-                            email = EmailMessage(
+                        email2 = EmailMessage(
                             f'Compra Autorizada {compra.get_folio}|SAVIA',
                             body=html_message2,
-                            from_email =settings.DEFAULT_FROM_EMAIL,
-                            to= ['ulises_huesc@hotmail.com', compra.creada_por.staff.email, compra.proveedor.email, 'lizeth.ojeda@vordtec.com'],
-                            headers={'Content-Type': 'text/html'}
-                            )
-                            email.content_subtype = "html " # Importante para que se interprete como HTML
-                            email.attach(f'OC_folio_{compra.get_folio}.pdf',archivo_oc,'application/pdf')
-                            email.attach('Pago.pdf',request.FILES['comprobante_pago'].read(),'application/pdf')
-                            if pagos.count() > 0:
-                                for pago in pagos:
-                                    email.attach(f'Pago_folio_{pago.id}.pdf',pago.comprobante_pago.path,'application/pdf')
-                            email.send()
-                            for producto in productos:
-                                if producto.producto.producto.articulos.producto.producto.especialista == True:
-                                    archivo_oc = attach_oc_pdf(request, compra.id)
-                                    email = EmailMessage(
+                            from_email=settings.DEFAULT_FROM_EMAIL,
+                            #to=['ricardo.olivo@grupovordcab.com'], # <--- LÍNEA DE PRUEBA
+                            to=['ulises_huesc@hotmail.com', compra.creada_por.staff.email, compra.proveedor.email, 'lizeth.ojeda@vordtec.com'], # <--- LÍNEA ORIGINAL
+                            headers={'Content-Type': 'text/html'},
+                            connection=connection # <--- AGREGAMOS LA CONEXIÓN AQUÍ
+                        )
+                        email2.content_subtype = "html" 
+                        email2.attach(f'OC_folio_{compra.get_folio}.pdf', archivo_oc, 'application/pdf')
+                        email2.attach('Pago.pdf', request.FILES['comprobante_pago'].read(), 'application/pdf')
+                        email2.attach("Aviso_de_Privacidad.pdf", pdf_privacidad, "application/pdf")
+                        
+                        if pagos.count() > 0:
+                            for pago_anterior in pagos:
+                                if pago_anterior.comprobante_pago and os.path.exists(pago_anterior.comprobante_pago.path):
+                                    try:
+                                        with open(pago_anterior.comprobante_pago.path, 'rb') as archivo_pdf:
+                                            email2.attach(f'Pago_folio_{pago_anterior.id}.pdf', archivo_pdf.read(), 'application/pdf')
+                                    except Exception as e:
+                                        print(f"Error al adjuntar el archivo del pago {pago_anterior.id}: {e}")
+                                else:
+                                    print(f"Advertencia: El archivo del pago {pago_anterior.id} no existe en el disco, se omitió.")
+                        
+                        email2.send(fail_silently=False) # <--- QUITAMOS LA CONEXIÓN DE AQUÍ
+                        print("Correo 2 (Proveedor) enviado con éxito")
+                        
+                        for producto in productos:
+                            if producto.producto.producto.articulos.producto.producto.especialista == True:
+                                email3 = EmailMessage(
                                     f'Compra Autorizada {compra.get_folio}',
-                                    f'Estimado Especialista,\n Estás recibiendo este correo porque ha sido pagada una OC que contiene el producto código:{producto.producto.producto.articulos.producto.producto.codigo} descripción:{producto.producto.producto.articulos.producto.producto.codigo} el cual requiere la liberación de calidad\n Este mensaje ha sido automáticamente generado por SAVIA X',
+                                    f'Estimado Especialista,\n Estás recibiendo este correo porque se ha registrado un pago de una OC que contiene el producto código:{producto.producto.producto.articulos.producto.producto.codigo} descripción:{producto.producto.producto.articulos.producto.producto.nombre} el cual requiere la liberación de calidad\n Este mensaje ha sido automáticamente generado por SAVIA X',
                                     settings.DEFAULT_FROM_EMAIL,
-                                    ['ulises_huesc@hotmail.com'],
-                                    )
-                                    email.attach(f'folio:{compra.get_folio}.pdf',archivo_oc,'application/pdf')
-                                    email.send()
-                        except (BadHeaderError, SMTPException, socket.gaierror) as e:
-                            error_message = f'Gracias por registrar tu pago, {usuario.staff.first_name} Atencion: el correo de notificación no ha sido enviado debido a un error: {e}'
-                            messages.warning(request, error_message) 
+                                    #['ricardo.olivo@grupovordcab.com'], # <--- LÍNEA DE PRUEBA
+                                    ['ulises_huesc@hotmail.com'], # <--- LÍNEA ORIGINAL
+                                    connection=connection # <--- AGREGAMOS LA CONEXIÓN AQUÍ
+                                )
+                                email3.attach(f'folio:{compra.get_folio}.pdf', archivo_oc, 'application/pdf')
+                                email3.attach("Aviso_de_Privacidad.pdf", pdf_privacidad, "application/pdf")
+                                email3.send(fail_silently=False) # <--- QUITAMOS LA CONEXIÓN DE AQUÍ
+                                print("Correo 3 (Especialista) enviado con éxito")
+                    except Exception as e:
+                        print(f"Error al enviar los correos: {e}")
+                        messages.warning(request, f'Pago registrado, pero ocurrió un error al enviar los correos: {e}')
+                    finally:
+                        connection.close() # Cerramos la conexión cuando terminamos
 
                 pago.save()
                 compra.save()
@@ -237,6 +285,7 @@ def compras_pagos(request, pk):
 
                 messages.success(request,f'Gracias por registrar tu pago, {usuario.staff.first_name}')
                 return redirect('compras-autorizadas') 
+                
             elif monto_total > compra.costo_plus_adicionales:
                 messages.error(request,f'El monto total pagado {monto_total} es mayor que el costo de la compra {costo_oc}')
             else:
@@ -268,7 +317,7 @@ def edit_comprobante_pago(request, pk):
         form = ComprobanteForm(request.POST, request.FILES, instance=pago)
         if form.is_valid():
             form.save()
-            return HttpResponse(status=204) #No content to render nothing and send a "signal" to javascript in order to close window
+            return HttpResponse(status=204) 
     
     context = {
         'pago':pago,
