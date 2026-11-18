@@ -66,12 +66,16 @@
                 </div>
 
 <!-- RRR-->
+                          <!-- RRR-->
+                {% if usuario.tipo.nombre == "Admin" or usuario.tipo.nombre == 'SuperAdm'%}
                 <div class="dropdown-divider"></div>
                     <h6 class="dropdown-header">Documentos Legales</h6>
                     <div class="dropdown-divider"></div>
                     <a class="dropdown-item" href="{% url 'descargar-aviso-privacidad' %}" target="_blank">
                         <i class="fa-solid fa-file-pdf text-danger"></i> Aviso de Privacidad
                     </a>
+                {% endif %}
+                <!--RRRR-->
 
 <!--RRRR-->
                 <div class="offcanvas-body">

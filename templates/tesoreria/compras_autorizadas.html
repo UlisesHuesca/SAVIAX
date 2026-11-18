@@ -103,11 +103,6 @@
                                 <i class="fa-solid fa-file-excel fa-2xl"></i>
                             </button>
                         </li>
-                        <!--<li class="nav-item mx-2">
-                            <button type="button" class="btn btn-outline-danger">
-                               <i class="fa-solid fa-file-pdf fa-2xl"></i>
-                            </button>
-                        </li>-->
                         <li class="nav-item mx-2">
                             <div class="btn-group btn-group" role="group" aria-label="Large button group">
                                 <a type="button" class="btn btn-outline-info active" style="color:#F5F5F5; background:#3E92CC; border-color: #3E92CC;" href="{% url 'compras-autorizadas' %}">Compras</a>
@@ -120,7 +115,6 @@
             </div>
         </div>
     </div>
-    <!-- Aquí terminan el encabezado de los filtros -->
 
     <div id="loadingIndicator" style="display:none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); z-index: 1000;">
         <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); display: flex; flex-direction: row; align-items: center; justify-content: center;">
@@ -129,8 +123,6 @@
         </div>
     </div>
 
-
-<!-- Esta es la zona donde se crean los mensajes perrones con sweet alert -->
 <div class="row my-4">
     <div class="col-md-4">
     <script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -180,6 +172,7 @@
                     <th>Cancelar</th>
                 </tr>
             </thead>
+
             <tbody>
                 {% for compra in compras_list %}
                 <tr>
@@ -194,19 +187,23 @@
                     <td class="d-none d-md-table-cell">{{compra.moneda}}</td>
                     <td class="d-none d-md-table-cell">${{compra.monto_pagado}}</td>
                     <td class="d-none d-md-table-cell">{{compra.cond_de_pago}}</td>
-                    <td
-                        <li class="nav-item m-1">
-                            <a type="button" 
-                            class="btn {% if compra.Compra.exists %}btn-outline-info{% else %}btn-outline-danger{% endif %}" 
-                            href="{% url 'matriz-facturas-nomodal' compra.id %}?next={{ request.path }}" 
-                            data-bs-toggle="tooltip" 
-                            data-bs-placement="top" 
-                            title="{% if compra.Compra.exists %}Tiene Facturas{% else %}No tiene Facturas{% endif %}" 
-                            style="background-color: white;">
-                                <i class="fa-solid {% if compra.Compra.exists %}fa-file-circle-check{% else %}fa-file-circle-xmark{% endif %}"></i>
-                            </a>
-                        </li>
+                    
+                    <td>
+                        <ul class="nav nav-pills">
+                            <li class="nav-item m-1">
+                                <a type="button" 
+                                class="btn {% if compra.Compra.exists %}btn-outline-info{% else %}btn-outline-danger{% endif %}" 
+                                href="{% url 'matriz-facturas-nomodal' compra.id %}?next={{ request.path }}" 
+                                data-bs-toggle="tooltip" 
+                                data-bs-placement="top" 
+                                title="{% if compra.Compra.exists %}Tiene Facturas{% else %}No tiene Facturas{% endif %}" 
+                                style="background-color: white;">
+                                    <i class="fa-solid {% if compra.Compra.exists %}fa-file-circle-check{% else %}fa-file-circle-xmark{% endif %}"></i>
+                                </a>
+                            </li>
+                        </ul>
                     </td>
+                    
                     <td>
                         <ul class="nav nav-pills">
                             <li class="nav-item m-1">
@@ -215,6 +212,14 @@
                             <li class="nav-item m-1">
                                 <a id="myBtn" type="button" class="btn btn-outline-info" href="{% url 'compras-pagos' compra.id %}">Pago</a>
                             </li>
+                                                        
+                            <!-- NUEVO BOTÓN VER OC -->
+                            <li class="nav-item m-1">
+                                <button type="button" class="btn btn-outline-secondary btn-ver-oc" data-pdf-url="{% url 'ver_oc_pdf' compra.id %}" title="Ver Orden de Compra">
+                                    <i class="fa-solid fa-file-pdf"></i> Ver OC
+                                </button>
+                            </li>
+
                             <li class="nav-item m-1">
                                 <button id="myBtn2" type="button" 
                                         class="btn {% if compra.Compra.exists %}btn-outline-info{% else %}btn-outline-danger{% endif %}" 
@@ -230,7 +235,6 @@
                             <li class="nav-item m-1">
                                 <button id="myBtn2" type="button" class="btn btn-outline-info" data-bs-toggle="modal" data-bs-target="#dialog" hx-target="#document" hx-get="{% url 'saldo-a-favor' compra.id %}">Saldo a Favor</button>
                             </li>
-
                         </ul>
                     </td>
                     <td>
@@ -246,7 +250,6 @@
                     <li class="page-item"><a class="page-link" style="color:#3E92CC" href="{% my_url 1 'page' request.GET.urlencode %}"><i class="fa-solid fa-angles-left"></i></a></li>
                     <li class="page-item"><a class="page-link" style="color:#3E92CC" href="{% my_url compras_list.previous_page_number  'page' request.GET.urlencode %}"><i class="fa-solid fa-angle-left"></i></a></li>
                 {% endif %}
-
                 {% for item in compras_list.paginator.page_range %}
                     {% if compras_list.number == item %}
                         <li class="page-item active"><a href="#" class="page-link bg-dark">{{item}}</a></li>
@@ -272,10 +275,23 @@
 </div>
 
 
-<!--Este es el modal-->
 <div class="modal fade" id ="dialog" tabindex="-1" role="dialog">
     <div class="modal-dialog modal-lg" id="document" role="document" hx-target="this">
 
+    </div>
+</div>
+
+<div class="modal fade" id="pdfModalOC" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Orden de Compra</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" style="height:80vh;">
+                <iframe class="pdfFrameOC" src="" style="width:100%; height:100%; border:0;"></iframe>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -302,7 +318,34 @@ myModal.addEventListener('hidden.bs.modal', function (event) {
   location.reload();
 })
 
-// Función para obtener el valor de una cookie por su nombre
+// --- LÓGICA PARA EL MODAL DE VER OC ---
+document.addEventListener('DOMContentLoaded', function() {
+    const botonesOC = document.querySelectorAll('.btn-ver-oc');
+    
+    botonesOC.forEach(boton => {
+        boton.addEventListener('click', function() {
+            const urlPdf = this.getAttribute('data-pdf-url');
+            const modalElement = document.getElementById('pdfModalOC');
+            const iframe = modalElement.querySelector('.pdfFrameOC');
+            
+            iframe.src = urlPdf;
+            
+            const bootstrapModal = bootstrap.Modal.getOrCreateInstance(modalElement);
+            bootstrapModal.show();
+        });
+    });
+    
+    const modalElement = document.getElementById('pdfModalOC');
+    if (modalElement) {
+        modalElement.addEventListener('hidden.bs.modal', function () {
+            const iframe = modalElement.querySelector('.pdfFrameOC');
+            if (iframe) {
+                iframe.src = "about:blank";
+            }
+        });
+    }
+});
+
 function getCookie(name) {
     let cookieValue = null;
     if (document.cookie && document.cookie !== '') {
@@ -327,18 +370,14 @@ function verificarDescargaIniciada(){
     const checkDescarga = setInterval(() => {
         const descargaIniciada = getCookie('descarga_iniciada');
         if (descargaIniciada === 'true') {
-            // Ocultar el indicador de carga
             document.getElementById('loadingIndicator').style.display = 'none';
-            
-            // Opcional: Borrar la cookie si es necesario
             document.cookie = 'descarga_iniciada=; Max-Age=-99999999;';
-            
             clearInterval(checkDescarga);
         }
-    }, 1000); // Revisar cada segundo
+    }, 1000); 
 }
-
 </script>
 {% endblock %}
 </body>
 </html>
+
