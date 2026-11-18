@@ -112,6 +112,8 @@
                     <th class="d-none d-lg-table-cell">Solicitado</th>
                     <th scope="col">Autorizado</th>
                     <th class="d-none d-lg-table-cell">Colaborador</th>
+                    <th scope="col">Proyecto</th>
+                    <th scope="col">Subproyecto</th>
                     <th scope="col">Importe</th>
                     <th scope="col">Autorización Gerencia</th>
                     <th>Detalles</th>
@@ -140,6 +142,8 @@
                     {% else %}
                     <td class="d-none d-lg-table-cell">{{gasto.staff.staff.first_name}} {{gasto.staff.staff.last_name}}</td>
                     {% endif %}
+                    <td>{{ gasto.proyectos }}</td>
+                    <td>{{ gasto.subproyectos }}</td>
                     <td>${{gasto.get_total_solicitud}}</td>
                     <td>Gerente 
                         {% if orden.autorizar2 %} 
