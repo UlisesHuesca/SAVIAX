@@ -3,6 +3,7 @@
 {% load widget_tweaks %}
 {% load static %}
 {% load tt_extras %}
+
 <html>
 <head>
 {% block title %}Solicitudes | Vista: Por orden{% endblock %}
@@ -12,6 +13,7 @@
 <hr>
 <hr>
 <hr>
+{% comment %} gastps_pendientes_autorizar2 {% endcomment %}
 <div class="row my-4">
         <div class="col-md-12">
         <div class="card card-body">
@@ -54,9 +56,9 @@
                     <li class="nav-item mx-2">
                         <button type="submit" class="btn btn-outline-success" name="btnExcel"><i class="fa-solid fa-file-excel fa-2xl"></i></button>
                     </li>
-                    <li class="nav-item mx-2">
+                    {% comment %} <li class="nav-item mx-2">
                         <button type="button" class="btn btn-outline-danger"><i class="fa-solid fa-file-pdf fa-2xl"></i></button>
-                    </li>
+                    </li> {% endcomment %}
                     <!--<li class="nav-item mx-2">
                         <a class="btn btn-outline-info" href="{% url 'solicitud-matriz-productos' %}">Productos</a>
                     </li>-->
@@ -81,38 +83,41 @@
     </div>
 </div>
 <div class = "row mt-2">
-    <div class="col-md-10">
-        <table class="table bg-white">
-            <thead class="text-black" style="background-color: #F5F5F5;">
-                <tr>
-                    <th scope="col">Folio</th>
-                    <th scope="col">Solicitado por</th>
-                    <th scope="col">Autorización N1</th>
-                    <th scope="col">Proyecto</th>
-                    <th scope="col">Subproyecto</th>
-                    <th scope="col">Creado</th>
-                    <th scope="col">Total</th>
-                    <th scope="col">Acción</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for orden in ordenes_list %}
-                <tr>
-                    <th scope="row">{{orden.id}}</th>
-                    <td>{{orden.staff.staff.first_name}} {{orden.staff.staff.last_name}}</td>
-                    <td>{{orden.superintendente.staff.first_name}} {{orden.superintendente.staff.last_name}}</td>
-                    <td>{{orden.proyecto.nombre}}</td>
-                    <td>{{orden.subproyecto.nombre}}</td>
-                    <td>{{orden.created_at}}</td>
-                    <td>${{orden.get_total_solicitud}}</td>
-                    <td><a id="myBtn" type="button" class="btn btn-outline-info" data-bs-toggle="modal" data-bs-target='#dialog' hx-target="#document" hx-get="{% url 'detalle-gastos' orden.id %}">Productos</a>
-                    <a type="button" class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#dialog" hx-target="#document" hx-get="{% url 'autorizar-gasto2' orden.id %}" ><i class="fa-solid fa-circle-check"></i></a>
-                    <a type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#dialog" hx-target="#document" hx-get="{% url 'cancelar-gasto2' orden.id %}"><i class="fa-solid fa-xmark"></i></a>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+    <div class="col-12">
+        <div class="table-responsive">
+            <table class="table bg-white">
+                <thead class="text-black" style="background-color: #F5F5F5;">
+                    <tr>
+                        <th scope="col">Folio</th>
+                        <th scope="col">Solicitado por</th>
+                        <th scope="col">Autorización N1</th>
+                        <th scope="col">Proyecto</th>
+                        <th scope="col">Subproyecto</th>
+                        <th scope="col">Creado</th>
+                        <th scope="col">Total</th>
+                        <th scope="col">Acción</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for orden in ordenes_list %}
+                    <tr>
+                        <th scope="row">{{orden.id}}</th>
+                        <td>{{orden.staff.staff.first_name}} {{orden.staff.staff.last_name}}</td>
+                        <td>{{orden.superintendente.staff.first_name}} {{orden.superintendente.staff.last_name}}</td>
+                        <td>{{orden.proyecto.nombre}}</td>
+                        <td>{{orden.subproyecto.nombre}}</td>
+                        <td>{{orden.created_at}}</td>
+                        <td>${{orden.get_total_solicitud}}</td>
+                        <td>
+                            <a id="myBtn" type="button" class="btn btn-outline-info" data-bs-toggle="modal" data-bs-target='#dialog' hx-target="#document" hx-get="{% url 'detalle-gastos' orden.id %}">Productos</a>
+                            <a type="button" class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#dialog" hx-target="#document" hx-get="{% url 'autorizar-gasto2' orden.id %}" ><i class="fa-solid fa-circle-check"></i></a>
+                            <a type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#dialog" hx-target="#document" hx-get="{% url 'cancelar-gasto2' orden.id %}"><i class="fa-solid fa-xmark"></i></a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
         <nav aria-label="Page navigation example">
             <ul class="pagination justify-content-center">
                 {% if ordenes_list.has_previous %}
