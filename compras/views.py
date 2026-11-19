@@ -3080,8 +3080,8 @@ def convert_excel_matriz_compras(compras):
     ws.cell(row=16, column = columna_max, value="% de cumplimiento").style = head_style
 
 
-    ws.cell(row=14, column=columna_max + 1, value=f"=COUNTIF(S:S, \"Entregado\")").style = body_style
-    ws.cell(row=15, column=columna_max + 1, value=f"=COUNTIFS(Y:Y, \"<>No Existe\", Y:Y, \">0\")").style = body_style
+    ws.cell(row=14, column=columna_max + 1, value=f'=COUNTIFS(T2:T{row_num}, "<>No Entregado", T2:T{row_num}, "<>Entrada", T2:T{row_num}, "<>")').style = body_style
+    ws.cell(row=15, column=columna_max + 1, value=f'=COUNTIF(Y2:Y{row_num}, ">0")').style = body_style
     ws.cell(row=16, column=columna_max + 1, value=f"=1-IFERROR(({get_column_letter(columna_max+1)}15/{get_column_letter(columna_max+1)}14), 0)").style = percent_style
 
     rows = []
@@ -3123,7 +3123,6 @@ def convert_excel_matriz_compras(compras):
             entrada_text ='No Entregado'
 
 
-        # Valores predeterminados para esta compra
         fecha_ultima_entrada = None
         fecha_inicio = None
         diferencia_fechas = 0
@@ -3131,25 +3130,24 @@ def convert_excel_matriz_compras(compras):
 
         
         condicion_fecha_ultima_entrada = True
-        # Definimos la fecha de referencia
         fecha_referencia = datetime.strptime("27/03/2024","%d/%m/%Y").date()
         ultima_fecha_recepcion = compra.vale_entrada.aggregate(
             ultima_fecha=Max('articulos__fecha_recepcion')
         )['ultima_fecha']
 
-       
+        no_conformidades_count = No_Conformidad.objects.filter(oc=compra).count()
+        if no_conformidades_count == 0:
+            no_conformidades_count = "No existe"
        
         fecha_referencia = datetime.strptime(
             "27/03/2024",
             "%d/%m/%Y"
         ).date()
 
-        # Buscar la última fecha de recepción
         ultima_fecha_recepcion = compra.vale_entrada.aggregate(
             ultima_fecha=Max("articulos__fecha_recepcion")
         )["ultima_fecha"]
 
-        # Primero intentamos obtener la fecha mediante la recepción
         if (
             ultima_fecha_recepcion is not None
             and ultima_fecha_recepcion.date() >= fecha_referencia
@@ -3157,7 +3155,6 @@ def convert_excel_matriz_compras(compras):
         ):
             fecha_ultima_entrada = ultima_fecha_recepcion.date()
 
-        # Si no se obtuvo mediante recepción, buscamos la última entrada
         elif compra.entrada_completa:
             ultima_entrada = (
                 Entrada.objects
@@ -3171,18 +3168,12 @@ def convert_excel_matriz_compras(compras):
 
             if ultima_entrada is not None:
                 fecha_ultima_entrada = ultima_entrada.entrada_date.date()
-
-                no_conformidades_count = (
-                    No_Conformidad.objects
-                    .filter(oc=compra)
-                    .count()
-                )
             else:
-                no_conformidades_count = "No existe"
-
+                fecha_ultima_entrada = "No existe"
+                condicion_fecha_ultima_entrada = False
         else:
-            no_conformidades_count = "No existe"
-
+            fecha_ultima_entrada = "No existe"
+            condicion_fecha_ultima_entrada = False
 
         # Buscar el último pago válido de esta compra
         ultimo_pago = None
@@ -3284,15 +3275,28 @@ def convert_excel_matriz_compras(compras):
             row[17] = ""
 
         rows.append(row)
-
     for row in rows:
         row_num += 1
         for col_num in range(len(row)):
-            (ws.cell(row = row_num, column = col_num+1, value=str(row[col_num]))).style = body_style
-            if col_num == 8 or col_num == 7 or col_num == 20 or col_num ==21    :
-                (ws.cell(row = row_num, column = col_num+1, value=row[col_num])).style = date_style
-            if col_num == 10 or col_num == 11 or col_num == 12 or col_num == 17 or col_num == 18:
-                (ws.cell(row = row_num, column = col_num+1, value=row[col_num])).style = money_style
+            val = row[col_num]
+            
+            if col_num == 24 and isinstance(val, (int, float)):
+                (ws.cell(row=row_num, column=col_num+1, value=val)).style = body_style
+            else:
+                (ws.cell(row=row_num, column=col_num+1, value=str(val))).style = body_style
+                
+            if col_num in [7, 8, 20, 21]:
+                (ws.cell(row=row_num, column=col_num+1, value=val)).style = date_style
+            if col_num in [10, 11, 12, 17, 18]:
+                (ws.cell(row=row_num, column=col_num+1, value=val)).style = money_style
+    # for row in rows:
+    #     row_num += 1
+    #     for col_num in range(len(row)):
+    #         (ws.cell(row = row_num, column = col_num+1, value=str(row[col_num]))).style = body_style
+    #         if col_num == 8 or col_num == 7 or col_num == 20 or col_num ==21    :
+    #             (ws.cell(row = row_num, column = col_num+1, value=row[col_num])).style = date_style
+    #         if col_num == 10 or col_num == 11 or col_num == 12 or col_num == 17 or col_num == 18:
+    #             (ws.cell(row = row_num, column = col_num+1, value=row[col_num])).style = money_style
         # Agregamos la fórmula DATEDIF. Asumiendo que las columnas 'Creado' y 'Req. Autorizada'
         # están en las posiciones 8 y 9 respectivamente (empezando desde 0), las posiciones en Excel serán 9 y 10 (empezando desde 1).
         #ws.cell(row=row_num, column=len(columns)-1, value=f"=NETWORKDAYS(I{row_num}, H{row_num})").style = body_style
