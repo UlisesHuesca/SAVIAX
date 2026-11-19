@@ -1713,7 +1713,7 @@ def convert_excel_inventario(existencia, valor_inventario, dict_entradas, dict_r
     money_resumen_style.font = Font(name ='Calibri', size = 14, bold = True)
     wb.add_named_style(money_resumen_style)
 
-    columns = ['Código','Producto','Distrito','Familia','Unidad','Cantidad','Cantidad Apartada','Cantidad Entradas','Minimos','Ubicación','Estante','Precio','Total']
+    columns = ['Código','Producto','Distrito','Familia','Unidad','Cantidad','Cantidad Apartada','Minimos','Ubicación','Estante','Precio','Total']
 
     for col_num in range(len(columns)):
         (ws.cell(row = row_num, column = col_num+1, value=columns[col_num])).style = head_style
@@ -1752,7 +1752,6 @@ def convert_excel_inventario(existencia, valor_inventario, dict_entradas, dict_r
             inventario.cantidad,
             #inventario.apartada,  # Aquí utilizas la propiedad apartada
             inventario.total_apartado,
-            inventario.total_entradas,
             inventario.minimo,
             inventario.ubicacion,
             inventario.estante,

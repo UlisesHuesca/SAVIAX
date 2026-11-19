@@ -166,6 +166,7 @@
                     <th scope="col">Importe OC</th>
                     <th class="d-none d-md-table-cell">Moneda</th>
                     <th class="d-none d-md-table-cell">Pagado</th>
+                    <th class="d-none d-md-table-cell">Estado de Entrada</th>
                     <th class="d-none d-md-table-cell">Condiciones</th>
                     <th class="d-none d-md-table-cell">Facturas</th>
                     <th scope="col">Acción</th>
@@ -186,6 +187,9 @@
                     <td>${{compra.costo_plus_adicionales}}</td>
                     <td class="d-none d-md-table-cell">{{compra.moneda}}</td>
                     <td class="d-none d-md-table-cell">${{compra.monto_pagado}}</td>
+                    <td class="d-none d-md-table-cell">
+                        <span class="badge {{ compra.estado_entrada_badge }}">{{ compra.estado_entrada_texto }}</span>
+                    </td>
                     <td class="d-none d-md-table-cell">{{compra.cond_de_pago}}</td>
                     
                     <td>

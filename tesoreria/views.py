@@ -3,7 +3,7 @@ from django.http import HttpResponse
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.conf import settings
-from django.db.models import Sum, Prefetch
+from django.db.models import Sum, Prefetch, Q
 from django.core.paginator import Paginator
 from django.db.models.functions import Concat
 from django.core.paginator import Paginator
@@ -64,6 +64,24 @@ def compras_autorizadas(request):
     p = Paginator(compras, 20)
     page = request.GET.get('page')
     compras_list = p.get_page(page)
+
+    for compra in compras_list:
+        # Buscamos si hay artículos en los vales de entrada pendientes de liberar o de calidad
+        hay_pendientes = compra.vale_entrada.filter(
+            Q(articulos__liberado=False) | Q(articulos__calidad=False)
+        ).exists()
+        if compra.entrada_completa:
+            compra.estado_entrada_texto = 'Entregada'
+            compra.estado_entrada_badge = 'bg-info' # Azul
+        elif compra.recepcion_completa and compra.solo_servicios:
+            compra.estado_entrada_texto = 'Entregada'
+            compra.estado_entrada_badge = 'bg-info'
+        elif hay_pendientes:
+            compra.estado_entrada_texto = 'Faltan liberaciones'
+            compra.estado_entrada_badge = 'bg-warning' # Amarillo
+        else:
+            compra.estado_entrada_texto = 'No entregado aún'
+            compra.estado_entrada_badge = 'bg-warning' # Amarillo
 
     if request.method == 'POST' and 'btnReporte' in request.POST:
         return convert_excel_matriz_compras(compras)
