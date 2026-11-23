@@ -404,12 +404,20 @@ def subproyectos_edit(request, pk):
 def staff(request):
     usuario = Profile.objects.get(staff=request.user)
 
-    perfiles = Profile.objects.filter(staff__is_active = True,)
+    perfiles = (Profile.objects
+                .select_related('staff', 'tipo')
+                .prefetch_related('almacen')
+                .filter(staff__is_active = True)
+                )
+    
     cuenta_perfiles = perfiles.count()
 
     myfilter = ProfileFilter(request.GET, queryset=perfiles)
     perfiles = myfilter.qs
     cuenta_filtrados = perfiles.count()
+
+    if request.method == 'POST' and 'btnExcel' in request.POST:
+        return convert_excel_staff(perfiles)
 
     #Set up pagination
     p = Paginator(perfiles, 30)
@@ -1579,5 +1587,63 @@ def convert_excel_inventario_calidad_xlsxwriter(existencia):
 
     
     response['Content-Disposition'] = f'attachment; filename=Calidad_Productos_{date.today()}.xlsx'
+    output.close()
+    return response
+
+
+def convert_excel_staff(perfiles):
+    output = BytesIO()
+    workbook = xlsxwriter.Workbook(output, {'in_memory': True})
+    worksheet = workbook.add_worksheet('Usuarios')
+
+    head_style = workbook.add_format({
+        'bold': True, 'font_color': 'white', 'bg_color': '333366',
+        'font_name': 'Arial', 'font_size': 11
+    })
+    body_style = workbook.add_format({'font_name': 'Calibri', 'font_size': 10})
+
+    columns = ['ID', 'User', 'Nombre', 'Almacén', 'Perfil', 'Activo', 'Teléfono', 'Email']
+
+    for i, column in enumerate(columns):
+        worksheet.write(0, i, column, head_style)
+
+    worksheet.set_column('A:A', 10)
+    worksheet.set_column('B:B', 22)
+    worksheet.set_column('C:C', 32)
+    worksheet.set_column('D:D', 40)
+    worksheet.set_column('E:E', 20)
+    worksheet.set_column('F:F', 12)
+    worksheet.set_column('G:G', 18)
+    worksheet.set_column('H:H', 32)
+
+    row_num = 0
+    for p in perfiles:
+        row_num += 1
+        almacenes = ', '.join([a.nombre for a in p.almacen.all()]) or ''
+        nombre_completo = (
+            f"{p.staff.first_name} {p.staff.last_name}".strip()
+            if p.staff else ''
+        )
+        row = [
+            p.id,
+            p.staff.username if p.staff else '',
+            nombre_completo,
+            almacenes,
+            p.tipo.nombre if p.tipo else '',
+            'Activo' if (p.staff and p.staff.is_active) else 'Inactivo',
+            p.phone or '',
+            (p.staff.email if p.staff else '') or '',
+        ]
+        for col_num, item in enumerate(row):
+            worksheet.write(row_num, col_num, item, body_style)
+
+    workbook.close()
+    output.seek(0)
+
+    response = HttpResponse(
+        output.read(),
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
+    response['Content-Disposition'] = f'attachment; filename=Usuarios_{date.today()}.xlsx'
     output.close()
     return response

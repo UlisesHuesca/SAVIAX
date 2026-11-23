@@ -99,9 +99,19 @@
             </div>
             <hr>
         </form>
+        <div class="row g-12 mb-2">
+            <div class="col-12 text-end">
+                <form method="POST">
+                    {% csrf_token %}
+                    <button type="submit" name="btnExcel" class="btn btn-outline-success">
+                        <i class="fa-solid fa-file-excel"></i> Descargar Matriz
+                    </button>
+                </form>
+            </div>
+        </div>
     </div>
 </div>
-
+ 
 
 <!-- Aquí empieza la generación de la tabla -->
 <div class = "row mt-2">
