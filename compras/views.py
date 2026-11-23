@@ -3167,7 +3167,7 @@ def convert_excel_matriz_compras(compras):
             )
 
             if ultima_entrada is not None:
-                fecha_ultima_entrada = ultima_entrada.entrada_date.date()
+                fecha_ultima_entrada = ultima_entrada.entrada_date
             else:
                 fecha_ultima_entrada = "No existe"
                 condicion_fecha_ultima_entrada = False
