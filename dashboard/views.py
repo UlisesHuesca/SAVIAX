@@ -498,13 +498,21 @@ def revision_producto_calidad(request, pk):
 def proveedores(request):
     usuario = Profile.objects.get(staff=request.user)
     # Obtén los IDs de los proveedores que cumplan con las condiciones deseadas
-    proveedores_dir = Proveedor_direcciones.objects.all()
-    #proveedores_dir = Proveedor_direcciones.objects.filter(Q(estatus__nombre='NUEVO') | Q(estatus__nombre='APROBADO'))
-    proveedores_ids = proveedores_dir.values_list('nombre', flat=True).distinct()
-    proveedores = Proveedor.objects.filter(completo=True)
-    #cantidad_preevaluaciones = proveedor.prevaluaciones.count()
 
-    total_prov = proveedores.count()
+    if usuario.tipo.proveedores:
+        proveedores_dir = Proveedor_direcciones.objects.all()
+        #proveedores_dir = Proveedor_direcciones.objects.filter(Q(estatus__nombre='NUEVO') | Q(estatus__nombre='APROBADO'))
+        #proveedores_ids = proveedores_dir.values_list('nombre', flat=True).distinct()
+        proveedores = Proveedor.objects.filter(completo=True)
+        #cantidad_preevaluaciones = proveedor.prevaluaciones.count()
+        total_prov = proveedores.count()
+    else:
+        proveedores_dir = Proveedor_direcciones.objects.none()
+        proveedores = Proveedor.objects.none()
+        total_prov = proveedores.count()
+
+
+    
 
     myfilter=ProveedorFilter(request.GET, queryset=proveedores)
     proveedores = myfilter.qs
