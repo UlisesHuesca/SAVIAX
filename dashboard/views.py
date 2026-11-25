@@ -499,20 +499,14 @@ def proveedores(request):
     usuario = Profile.objects.get(staff=request.user)
     # Obtén los IDs de los proveedores que cumplan con las condiciones deseadas
 
-    if usuario.tipo.proveedores:
-        proveedores_dir = Proveedor_direcciones.objects.all()
-        #proveedores_dir = Proveedor_direcciones.objects.filter(Q(estatus__nombre='NUEVO') | Q(estatus__nombre='APROBADO'))
-        #proveedores_ids = proveedores_dir.values_list('nombre', flat=True).distinct()
-        proveedores = Proveedor.objects.filter(completo=True)
-        #cantidad_preevaluaciones = proveedor.prevaluaciones.count()
-        total_prov = proveedores.count()
-    else:
-        proveedores_dir = Proveedor_direcciones.objects.none()
-        proveedores = Proveedor.objects.none()
-        total_prov = proveedores.count()
+  
+    proveedores_dir = Proveedor_direcciones.objects.all()
+    #proveedores_dir = Proveedor_direcciones.objects.filter(Q(estatus__nombre='NUEVO') | Q(estatus__nombre='APROBADO'))
+    #proveedores_ids = proveedores_dir.values_list('nombre', flat=True).distinct()
+    proveedores = Proveedor.objects.filter(completo=True)
+    #cantidad_preevaluaciones = proveedor.prevaluaciones.count()
+    total_prov = proveedores.count()
 
-
-    
 
     myfilter=ProveedorFilter(request.GET, queryset=proveedores)
     proveedores = myfilter.qs
@@ -650,7 +644,13 @@ def add_proveedor_direccion(request, pk):
 
     usuario = Profile.objects.get(staff=request.user)
     proveedor = Proveedor.objects.get(id=pk)
+
     form = ProveedoresDireccionesForm()
+
+    if usuario.tipo.proveedores == False:
+        estatus = Estatus_proveedor.objects.filter(id=2)
+        form.fields['estatus'].queryset = estatus
+        
 
     if request.method =='POST':
         item, created = Proveedor_direcciones.objects.get_or_create(nombre = proveedor, creado_por = usuario, completo = False)
@@ -665,8 +665,8 @@ def add_proveedor_direccion(request, pk):
         else:
             errors = form.errors.as_text()
             messages.error(request,f'No esta validando. Errores:{errors}')
-    else:
-        form = ProveedoresDireccionesForm()
+    #else:
+    #    form = ProveedoresDireccionesForm()
 
 
     context = {
@@ -685,20 +685,26 @@ def add_proveedores2(request, pk=None):
     proveedores = Proveedor.objects.filter(proveedor_direcciones__id__in=proveedores_dir_ids)
     print('proveedores:',proveedores.count())
 
-    if usuario.tipo.proveedores == True:
-        ProveedorDireccionesFormSet = inlineformset_factory(Proveedor, Proveedor_direcciones, form=Add_ProveedoresDireccionesForm, extra=1)
+    if usuario.tipo.proveedores:
+        form = ProveedoresForm()
+        form_proveedores=Add_ProveedoresDireccionesForm()
+        
     else:
-        ProveedorDireccionesFormSet = inlineformset_factory(Proveedor, Proveedor_direcciones, form=ProveedoresDireccionesForm, extra=1)
+        form = ProveedoresForm()
+        form_proveedores=ProveedoresDireccionesForm()
+        estatus = Estatus_proveedor.objects.filter(id=2)
+        form_proveedores.fields['estatus'].queryset = estatus
+
     
 
     if request.method == 'POST':
         form = ProveedoresForm(request.POST, instance = proveedor)
-        formset = ProveedorDireccionesFormSet(request.POST, instance=proveedor)
-        if form.is_valid() and formset.is_valid():
+        form_proveedores = ProveedoresDireccionesForm(request.POST, instance=proveedor)
+        if form.is_valid() and  form_proveedores.is_valid():
             proveedor = form.save(commit=False)
             proveedor.completo = True
             proveedor.save()
-            direcciones = formset.save(commit=False)
+            direcciones =  form_proveedores.save(commit=False)
             direccion = direcciones[0]
             direccion.distrito = usuario.distrito
             if usuario.tipo.proveedores == False:
@@ -713,15 +719,15 @@ def add_proveedores2(request, pk=None):
         else:
             #print(form.errors) 
             #print(formset.errors) 
-            messages.success(request, f'No está validando{form.errors}{formset.errors}')
+            messages.success(request, f'No está validando{form.errors}{ form_proveedores.errors}')
 
-    else:
-        form = ProveedoresForm(instance=proveedor)
-        formset = ProveedorDireccionesFormSet(instance=proveedor)
+    #else:
+    #    form = ProveedoresForm(instance=proveedor)
+    #    form_proveedores= ProveedoresDireccionesForm(instance=proveedor)
 
     context = {
         'form': form,
-        'formset': formset,
+        'f': form_proveedores,
     }
     return render(request, 'dashboard/add_proveedores_&_direccion.html', context)
 

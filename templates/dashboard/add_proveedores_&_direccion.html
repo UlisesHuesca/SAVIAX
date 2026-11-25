@@ -83,10 +83,10 @@
                         </div>
                     </div>
                     
-                    {{ formset.management_form}}
+                   
                     <hr>
-                    {% for f in formset %}
-                    {{f.id}}
+                  
+                  
                     <div class="col-12">
                         <div class="input-group mb-3">
                         <span class="input-group-text" id="basic-addon1"><i class="fa-solid fa-location-dot"></i></span>
@@ -215,7 +215,7 @@
                         </div>
                     </div>
                     </div>
-                    {% endfor %}
+                    
                     <hr>
                     <a class="btn btn-outline-secondary" href="{% url 'dashboard-proveedores' %}">Cancelar</a>
                     <input id="BtnActualizar" class="btn btn-outline-info d-none" type='submit' value="Actualizar">
