@@ -647,8 +647,8 @@ def add_proveedor_direccion(request, pk):
 
     form = ProveedoresDireccionesForm()
 
-    if usuario.tipo.proveedores == False:
-        estatus = Estatus_proveedor.objects.filter(id=2)
+    if usuario.tipo.compras:
+        estatus = Estatus_proveedor.objects.exclude(id=1)
         form.fields['estatus'].queryset = estatus
         
 
@@ -692,7 +692,7 @@ def add_proveedores2(request, pk=None):
     else:
         form = ProveedoresForm()
         form_proveedores=ProveedoresDireccionesForm()
-        estatus = Estatus_proveedor.objects.filter(id=2)
+        estatus = Estatus_proveedor.objects.exclude(id=1)
         form_proveedores.fields['estatus'].queryset = estatus
 
     
