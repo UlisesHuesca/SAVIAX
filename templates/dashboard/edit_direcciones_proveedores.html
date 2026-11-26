@@ -4,16 +4,17 @@
 {% load widget_tweaks %}
 <html>
 <head>
-{% block title %}Agregar Proveedor{% endblock %}
+{% block title %}Editar Proveedor{% endblock %}
 </head>
 <body>
 {% block content %}
-<hr>
+<h6>&nbsp;</h6>
+<h6>&nbsp;</h6>
 <div class="container">
     <div class="row mt-5">
         <div class="col-md-6 offset-md-3">
             <div class="border bg-white p-3">
-                <h3>Agregar Proveedor</h3>
+                <h3>Editar Proveedor</h3>
                 <hr>
                 <form method="POST" id='ProductForm'>
                     {% csrf_token %}

@@ -815,12 +815,15 @@ def add_proveedores(request, pk=None):
     }
     return render(request, 'dashboard/proveedor_exist_&_direccion.html', context)
 
+
+#Esta vista parece ya no estar funcionando en ningún lado
 @login_required(login_url='user-login')
 def edit_proveedores(request, pk):
     usuario = Profile.objects.get(staff=request.user)
     proveedor_direccion = Proveedor_direcciones.objects.get(id=pk)
     proveedor = Proveedor.objects.get(id = proveedor_direccion.nombre.id)
     #romper
+    
 
     ProveedorDireccionesFormSet = inlineformset_factory(Proveedor, Proveedor_direcciones, form =ProveedoresDireccionesForm, extra=0)
     form = ProveedoresForm(instance=proveedor)
@@ -860,6 +863,16 @@ def edit_proveedor_direccion(request, pk):
     direccion = Proveedor_direcciones.objects.get(id = pk)
     proveedor = Proveedor.objects.get(id = direccion.nombre.id)
 
+    
+    if usuario.tipo.proveedores:
+        form = ProveedoresDireccionesForm(instance=direccion)
+    else:
+        form =ProveedoresDireccionesForm(instance=direccion)
+        estatus = Estatus_proveedor.objects.exclude(id=1)
+        form.fields['estatus'].queryset = estatus
+
+
+
     if request.method =='POST':
         form = ProveedoresDireccionesForm(request.POST, instance = direccion)
         if form.is_valid():
@@ -870,8 +883,8 @@ def edit_proveedor_direccion(request, pk):
             direccion.save()
             messages.success(request,'Has actualizado correctamente la direccion del proveedor')
             return redirect('dashboard-proveedores')
-    else:
-        form = ProveedoresDireccionesForm(instance = direccion)
+    #else:
+    #    form = ProveedoresDireccionesForm(instance = direccion)
 
 
     context = {
