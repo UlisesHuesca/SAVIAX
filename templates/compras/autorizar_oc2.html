@@ -1,6 +1,7 @@
 {% extends 'partials/base_w_nav.html' %}
 {% load crispy_forms_tags %}
 {% load static %}
+{% load widget_tweaks %}
 <html>
 <head>
 {% block title %}Autorización OC{% endblock %}
@@ -9,7 +10,7 @@
 {% block content %}
     <div class="modal-content">
         <div class="modal-header">
-            <h5 class="modal-title" id="compra" value={{compra.id}}>Autorizar Compra: {{compra.get_folio}}</h5>
+            <h5 class="modal-title" id="compra" value={{compra.id}}>Autorizar Compra: {{compra.folio}}</h5>
             <button class="btn-close" type="button" data-bs-dismiss ="modal" aria-label="Close"></button>
         </div>
 
@@ -31,40 +32,50 @@
                             <th scope="col">{{compra.req.orden.subproyecto.nombre}}</th>
                         </tr>
                         <tr>
-                            <th scope="col">Presupuesto Proyecto:</th>
-                            <th scope="col" id="proyecto" value={{suma_presupuesto}}>{{suma_presupuesto}}</th>
-                        </tr>
-                        <tr>
-                            <th scope="col">Presupuesto Subproyecto:</th>
-                            <th scope="col" id="subproyecto" value={{compra.req.orden.subproyecto}}>{{compra.req.orden.subproyecto.presupuesto}}</th>
-                        </tr>
-                        <tr>
                             <th scope="col">Solicitud:</th>
                             <th scope="col">{{compra.req.orden.folio}}</th>
                         </tr>
                         <tr>
                             <th scope="col">Solicitante:</th>
-                            <th scope="col">{{compra.req.orden.staff.staff.first_name}} {{compra.req.orden.staff.staff.last_name}}</th>
+                            <th scope="col">{{compra.req.orden.staff.staff.staff.first_name}} {{compra.req.orden.staff.staff.staff.last_name}}</th>
+                        </tr>
+                        <tr>
+                            <th>Activo</th>
+                            <th>{% if compra.req.orden.activo.eco_unidad == null %}No registrado{% else %}{{compra.req.orden.activo.eco_unidad}} | {{compra.req.orden.activo.descripcion}}{% endif %}</th>
                         </tr>
                         <tr>
                             <th scope="col">Proveedor</th>
                             <th scope="col">{{compra.proveedor}}</th>
                         </tr>
+                        {% if compra.opciones_condiciones %}
+                        <tr>
+                            <th scope="col">Comentarios OC:</th>
+                            <th scope="col"  style="max-width: 400px; word-break: break-word; white-space: normal; overflow-y: auto;" >
+                               
+                                {{compra.opciones_condiciones}}
+                                
+                            </th>
+                        </tr>
+                        {% endif %}
+                        {% if compra.req.orden.comentario and compra.comentario_solicitud %}
+                        <tr>
+                            <th scope="col">Comentarios Solicitud:</th>
+                            <th scope="col"> {{compra.req.orden.comentario}}</th>
+                        </tr>
+                        {% endif %}
                         {% if compra.deposito_comprador %}
                         <tr>
                             <th scope="col">Comentario:</th>
                             <th scope="col"  style="color:#3e92cc" id="subproyecto">Esta OC se depositará a la cuenta del colaborador(a): {{compra.deposito_colaborador.staff.first_name}} {{compra.deposito_colaborador.staff.last_name}}</th>
                         </tr>
                         {% endif %}
-                        {% if compra.comentario_gerencia %}
                         <tr>
-                            <th scope="col">Comentario de Compras</th>
-                            <th scope="col">{{compra.comentario_gerencia}}</th>
+                            <th scope="col">Presupuesto Subproyecto:</th>
+                            <th scope="col" id="subproyecto" value={{compra.req.orden.subproyecto}}>{{compra.req.orden.subproyecto.presupuesto}}</th>
                         </tr>
-                        {% endif %}
                         <tr style="color:#3e92cc">
-                            <th scope="col">Importe OC:</th>
-                            <th scope="col">${{costo_oc}}</th>
+                            <th scope="col">Subtotal:</th>
+                            <th scope="col">${{costo_oc|floatformat:2}}</th>
                         </tr>
                         {% if compra.costo_fletes %}
                         <tr style="color:#3e92cc">
@@ -80,7 +91,7 @@
                         {% endif %}
                         <tr style="color:#3e92cc">
                             <th scope="col">Total OC:</th>
-                            <th scope="col">$ {{compra.costo_plus_adicionales}}</th>
+                            <th scope="col">$ {{compra.costo_plus_adicionales|floatformat:2}}</th>
                         </tr>
                         <tr>
                             <th scope="col">Porcentaje Gasto/Subproyecto:</th>
@@ -90,40 +101,59 @@
                             <th scope="col">Presupuesto remanente:*</th>
                             <th scope="col" id="resta">{{resta|floatformat:2}}</th>
                         </tr>
+                        <tr>
+                            <th scope="col">Comentarios:*</th>
+                            <th scope="col" id="resta">{{compra.comentarios}}</th>
+                        </tr>
                     </tbody>
                 </table>
                 {% if tipo_cambio %}
                 <p style="color:#3e92cc">Esta OC se realizó en dólares, su valor es estimado al tipo de cambio: {{tipo_cambio}}</p>
                 {% endif %}
-
-                <table class='table table-dark table-striped'>
-                    <thead>
-                        <tr>
-                            <th scope="col-3">#</th>
-                            <th scope="col-2">Código</th>
-                            <th scope="col-3">Artículos</th>
-                            <th scope="col-3">Cantidad</th>
-                            <th scope="col-3">P.U.</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                    {% for producto in productos %}
-                        <tr>
-                            <th scope="row"><img class='row-image' src="{{producto.producto.producto.articulos.producto.producto.imageURL}}"></th>
-                            <td>{{producto.producto.producto.articulos.producto.producto.codigo}}</td>
-                            <td>{{producto.producto.producto.articulos.producto.producto.nombre}}</td>
-                            <td>{{producto.cantidad}}</td>
-                            <td>${{producto.precio_unitario|floatformat:2}}</td>
-                        </tr>
-                   {% endfor %}
-                   </tbody>
-                </table>
+                <div class="table-responsive">
+                    <table class='table table-dark table-striped'>
+                        <thead>
+                            <tr>
+                                <th scope="col-3">#</th>
+                                <th scope="col-2">Código</th>
+                                <th scope="col-3">Artículos</th>
+                                <th>Comentario</th>
+                                <th scope="col-3">Cantidad</th>
+                                <th scope="col-3">P.U.</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        {% for producto in productos %}
+                            <tr>
+                                <th scope="row"><img class='row-image' src="{{producto.producto.producto.articulos.producto.producto.imageURL}}"></th>
+                                <td>{{producto.producto.producto.articulos.producto.producto.codigo}}</td>
+                                <td>{{producto.producto.producto.articulos.producto.producto}}</td>
+                                <td style="max-width: 400px; word-break: break-word; white-space: normal; overflow-y: auto;">{{producto.producto.producto.articulos.comentario}}</td>
+                                <td>{{producto.cantidad}}</td>
+                                <td>${{producto.precio_unitario|floatformat:2}}</td>
+                            </tr>
+                    {% endfor %}
+                    </tbody>
+                    </table>
+                </div>
+                <p style="max-width: 400px; word-break: break-word; white-space: normal; overflow-y: auto;">Comentario Solicitud:&nbsp;<strong>{{compra.req.orden.comentario}}</strong> </p>
         </div>
 
         <div class="modal-footer">
             <form action="{% url 'autorizar-oc2' compra.id %}" method=POST>
                 {% csrf_token %}
-                <h6>¿Autorizar la OC: {{compra.get_folio}}?</h6>
+                    <div class="row my-2">
+                        <div class="col-12">
+                            <div class="input-group mb-3">
+                                <span class="input-group-text" id="basic-addon1"><i class="fa-regular fa-message"></i></span>
+                                <div class="form-floating form-floating-group flex-grow-1">   
+                                    {{form.comentario_gerencia|add_class:"form-control"|append_attr:"placeholder=Comentario*"}}
+                                    <label for="id_nombre">Comentario*</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                <h6>¿Autorizar OC: {{compra.folio}}?</h6>
                 <button class="btn btn-success" type="submit">Autorizar</button>
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
             </form>

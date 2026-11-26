@@ -1767,7 +1767,7 @@ def autorizar_oc2(request, pk):
         porcentaje = "{0:.2f}%".format((costo_oc/compra.req.orden.subproyecto.presupuesto)*100)
     else:
         porcentaje = ""
-#
+
     if request.method == 'POST':
         compra.autorizado2 = True
         compra.oc_autorizada_por2 = usuario
@@ -1870,7 +1870,7 @@ def autorizar_oc2(request, pk):
                         print("Correo 3 (Especialista) enviado con éxito")
                         
                 messages.success(request, f'{usuario.staff.first_name} has autorizado la solicitud {compra.get_folio}')
-                
+
             except Exception as e:
                 print(f"Error al enviar los correos: {e}")
                 error_message = f'{usuario.staff.first_name} has autorizado la compra {compra.folio} pero el correo de notificación no ha sido enviado debido a un error: {e}'
@@ -1915,6 +1915,9 @@ def autorizar_oc2(request, pk):
                 messages.warning(request, error_message)   
             finally:
                 connection.close()
+    
+            return redirect("autorizacion-oc2")
+
     context={
         'suma_presupuesto':suma_presupuesto,
         'compra':compra,
@@ -1925,7 +1928,7 @@ def autorizar_oc2(request, pk):
         'porcentaje':porcentaje,
         'costo_total':costo_total,
         }
-
+ 
     return render(request, 'compras/autorizar_oc2.html',context)
 
 @login_required(login_url='user-login')
