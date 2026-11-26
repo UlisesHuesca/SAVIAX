@@ -126,8 +126,8 @@
                             {% if conteo_servicios > 0 %}
                             <span class="badge bg-danger">({{conteo_servicios}})</span>
                              {% endif %}
-                        </a>
-                    {% if usuario.tipo.almacen == True or usuario.tipo.productos == True or usuario.tipo.nombre == "Gerente" %}
+                        </a> 
+                    {% if usuario.tipo.almacen == True or usuario.tipo.productos == True or usuario.tipo.nombre == "Gerente" or usuario.tipo.nombre == "Proveedores" or usuario.tipo.nombre == "Supervisor_Calidad" %}
                     <div>
                     <div class="dropdown-divider"></div>
                     {% else %}
@@ -179,6 +179,11 @@
                                 Salidas | Producto Terminado 
                             </a>-->
                         </div>
+                    {% if usuario.tipo.nombre == "Proveedores" or usuario.tipo.nombre == "Supervisor_Calidad" %}
+                        <a class="dropdown-item" href="{% url 'entradas_nc' %}">
+                            Entradas NC's
+                        </a>
+                    {% endif %}
                     </div>
                     {% if usuario.tipo.calidad == False %}
                     <div class="d-none">

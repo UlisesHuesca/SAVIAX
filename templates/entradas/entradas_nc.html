@@ -4,7 +4,7 @@
 {% load widget_tweaks %}
 {% load tt_extras %}
 {% load l10n %}
-
+ 
 <html>
 <head>
 {% block title %}Matriz Producto NC{% endblock %}
@@ -124,7 +124,9 @@
                     <th scope="col">Comentario</th>
                     <th scope="col">Fecha</th>
                     <th scope="col">Productos</th>
+                    {% if usuario.tipo.nombre == "Comprador" %}
                     <th>Cierre</th>
+                    {% endif %}
                 </tr>
             </thead>
             <tbody>
@@ -139,6 +141,7 @@
                     <td>{{nc.nc_date}} </td>
                     <td>
                         <a class="btn btn-outline-info btn-block mx-auto" type="button" data-bs-toggle="modal" data-bs-target="#dialog" hx-target="#document" hx-get="{% url 'productos_nc' nc.id %}"><i class="fa-solid fa-list-ul"></i></a>
+                    {% if usuario.tipo.nombre == "Comprador" %}                    
                     <td>
                     {% if nc.cierre != None %}
                     <button class="btn btn-outline-info btn-block mx-auto" type="button" data-bs-toggle="modal" data-bs-target="#infoModal" 
@@ -163,6 +166,7 @@
                     </button>
                     {% endif %}
                     </td>
+                    {% endif %}
                 </tr>
                 {% endfor %}
             </tbody>
